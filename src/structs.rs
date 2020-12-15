@@ -81,14 +81,14 @@ pub struct UnitCell {
 }
 
 impl UnitCell {
-    pub fn new() -> UnitCell {
+    pub fn new(a: f64, b: f64, c: f64, alpha: f64, beta: f64, gamma: f64) -> UnitCell {
         UnitCell {
-            a: 0.0,
-            b: 0.0,
-            c: 0.0,
-            alpha: 0.0,
-            beta: 0.0,
-            gamma: 0.0,
+            a: a,
+            b: b,
+            c: c,
+            alpha: alpha,
+            beta: beta,
+            gamma: gamma,
         }
     }
 }
@@ -98,9 +98,9 @@ pub struct Symmetry {
 }
 
 impl Symmetry {
-    pub fn new() -> Symmetry {
+    pub fn new(symbols: Vec<usize>) -> Symmetry {
         Symmetry {
-            symbols: vec!(1)
+            symbols: symbols
         }
     }
 }

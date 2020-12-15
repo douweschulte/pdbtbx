@@ -1,8 +1,15 @@
 use super::lexitem::*;
 use super::structs::*;
 use std::str::FromStr;
+use std::fs;
 
-pub fn lex(input: &String) -> Result<Vec<LexItem>, String> {
+pub fn open(filename: &str) -> Result<PDB, String> {
+    let content = fs::read_to_string(filename).expect("Could not read file.");
+    let lexed = lex(&content)?;
+    Ok(parse(&lexed))
+}
+
+fn lex(input: &String) -> Result<Vec<LexItem>, String> {
     let mut result = Vec::new();
     let mut linenumber = 0;
 
@@ -21,7 +28,7 @@ pub fn lex(input: &String) -> Result<Vec<LexItem>, String> {
                 "SCALE3" => result.push(lex_scale(linenumber, line, 2).expect("SCALE3 error")),
                 "MODEL " => result.push(LexItem::Model(line[6..].split_whitespace().collect::<String>())),
                 "ENDMDL" => result.push(LexItem::EndModel()),
-                _ => println!("Unknown: {}", line)
+                _ => ()//println!("Unknown: {}", line)
             }
         } else {
             if line.len() > 2 {
@@ -101,7 +108,7 @@ fn parse_number<T: FromStr>(linenumber: usize, input: &[char]) -> Result<T, Stri
 }
 
 
-pub fn parse(input: &Vec<LexItem>) -> PDB {
+fn parse(input: &Vec<LexItem>) -> PDB {
     let stack = input.clone();
     let mut pdb = PDB::new();
     let mut current_model = Model::new(None);
@@ -157,14 +164,15 @@ pub fn parse(input: &Vec<LexItem>) -> PDB {
                 }
                 pdb.scale().factors[*n] = *row;
             },
-            LexItem::Crystal(a, b, c, alpha, beta, gamma, symmetry) => (),
+            LexItem::Crystal(a, b, c, alpha, beta, gamma, symmetry) => {
+                pdb.unit_cell = Some(UnitCell::new(*a, *b, *c, *alpha, *beta, *gamma));
+                pdb.symmetry = Some(Symmetry::new(symmetry.to_vec()));
+            },
             _ => ()
         }
     }
 
     pdb.models.push(current_model);
-
-    println!("Found {} atoms", pdb.atoms().len());
 
     pdb
 }
