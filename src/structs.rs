@@ -1,9 +1,9 @@
 pub struct PDB {
-    remarks: Vec<String>,
-    scale: Scale,
-    unit_cell: UnitCell,
-    symmetry: Symmetry,
-    models: Vec<Model>,
+    pub remarks: Vec<String>,
+    pub scale: Option<Scale>,
+    pub unit_cell: Option<UnitCell>,
+    pub symmetry: Option<Symmetry>,
+    pub models: Vec<Model>,
 }
 
 pub struct Scale {
@@ -24,30 +24,104 @@ pub struct Symmetry {
 }
 
 pub struct Model {
-    id: String,
-    chains: Vec<Chain>,
-    hetero_atoms: Vec<Atom>,
+    pub id: String,
+    pub chains: Vec<Chain>,
+    pub hetero_atoms: Vec<Atom>,
 }
 
 pub struct Chain {
-    id: char,
-    residues: Vec<Residue>
+    pub id: char,
+    pub residues: Vec<Residue>
 }
 
 pub struct Residue {
-    id: String,
-    serial_number: usize,
-    atoms: Vec<Atom>
+    pub id: String,
+    pub serial_number: usize,
+    pub atoms: Vec<Atom>
 }
 
 pub struct Atom {
-    serial_number: usize,
-    atom_name: [char; 4],
-    x: f64,
-    y: f64,
-    z: f64,
-    occupancy: f64,
-    b_factor: f64,
-    element: [char; 2],
-    charge: [char; 2],
+    pub serial_number: usize,
+    pub atom_name: [char; 4],
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub occupancy: f64,
+    pub b_factor: f64,
+    pub element: [char; 2],
+    pub charge: [char; 2],
+}
+
+impl PDB {
+    pub fn new() -> PDB {
+        PDB {
+            remarks: Vec::new(),
+            scale: None,
+            unit_cell: None,
+            symmetry: None,
+            models: Vec::new(),
+        }
+    }
+}
+
+impl Scale {
+    pub fn new() -> Scale {
+        Scale {
+            factors: [[0.0; 4]; 3]
+        }
+    }
+}
+
+impl UnitCell {
+    pub fn new() -> UnitCell {
+        UnitCell {
+            a: 0.0,
+            b: 0.0,
+            c: 0.0,
+            alpha: 0.0,
+            beta: 0.0,
+            gamma: 0.0,
+        }
+    }
+}
+
+impl Symmetry {
+    pub fn new() -> Symmetry {
+        Symmetry {
+            symbols: vec!(1)
+        }
+    }
+}
+
+impl Model {
+    pub fn new() -> Model { Model {id: "".to_string(), chains: Vec::new(), hetero_atoms: Vec::new()}}
+}
+
+impl Chain {
+    pub fn new(id: Option<char>) -> Chain {
+        let mut c = 'a';
+        if let Some(ch) = id {
+            c = ch;
+        }
+        Chain {
+            id: c,
+            residues: Vec::new(),
+        }
+    }
+}
+
+impl Residue {
+    pub fn new(number: usize, atom: Option<Atom>) -> Residue {
+        let mut res = Residue {
+            id: "".to_string(),
+            serial_number: number,
+            atoms: Vec::new(),
+        };
+
+        if let Some(a) = atom {
+            res.atoms.push(a);
+        }
+
+        res
+    }
 }
