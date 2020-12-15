@@ -11,4 +11,5 @@ fn main() {
         .expect("Something went wrong reading the file");
 
     let lexed = parser::lex(&contents).expect("Something wrong wile lexing");
+    let parsed = parser::parse(&lexed);
 }

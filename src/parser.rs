@@ -60,9 +60,9 @@ fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, Stri
     let b_factor = parse_number(linenumber, &chars[60..66])?;
     let segment_id = [chars[72], chars[73], chars[74], chars[75]];
     let element = [chars[76], chars[77]];
-    let charge = [' ', ' '];
+    let mut charge = [' ', ' '];
     if chars.len() == 80 {
-        let charge = [chars[79], chars[80]];
+        charge = [chars[79], chars[80]];
     }
 
     Ok(LexItem::Atom(hetero, serial_number, atom_name, alternate_location, residue_name, chain_id, residue_serial_number, insertion, x, y, z, occupancy, b_factor, segment_id, element, charge))
@@ -96,20 +96,19 @@ fn parse_number<T: FromStr>(linenumber: usize, input: &[char]) -> Result<T, Stri
     let string = input.iter().collect::<String>().split_whitespace().collect::<String>();
     match string.parse::<T>() {
         Ok(v) => Ok(v),
-        Err(e) => Err(format!("\"{}\" is not a valid number (line: {})", string, linenumber))
+        Err(_) => Err(format!("\"{}\" is not a valid number (line: {})", string, linenumber))
     }
 }
 
 
-fn parse(input: &Vec<LexItem>) -> PDB {
-    let mut stack = input.clone();
+pub fn parse(input: &Vec<LexItem>) -> PDB {
+    let stack = input.clone();
     let mut pdb = PDB::new();
     let mut current_model = Model::new();
-    pdb.models.push(current_model);
 
     for item in stack {
         match item {
-            LexItem::Remark(text) => pdb.remarks.push(text),
+            LexItem::Remark(text) => pdb.remarks.push(text.to_string()),
             LexItem::Atom(hetero, s, n, _, r, c, rs, _, x, y, z, o, b, _, e, ch) => {
                 let atom = Atom {
                     serial_number: *s,
@@ -126,32 +125,42 @@ fn parse(input: &Vec<LexItem>) -> PDB {
                 if *hetero {
                     current_model.hetero_atoms.push(atom);
                 } else {
-                    let mut current_chain = &mut Chain::new(Some(*c));
+                    let mut current_chain = None;
                     for chain in &mut current_model.chains {
                         if chain.id == *c {
-                            current_chain = chain;
+                            current_chain = Some(chain);
                             break;
                         }
                     }
-
-                    let mut current_residue = None;
-                    for residue in &mut current_chain.residues {
-                        if residue.serial_number == *rs {
-                            current_residue = Some(residue);
-                            break;
+                    
+                    if let Some(chain) = current_chain {
+                        let mut current_residue = None;
+                        for residue in &mut chain.residues {
+                            if residue.serial_number == *rs {
+                                current_residue = Some(residue);
+                                break;
+                            }
                         }
-                    }
 
-                    if let Some(res) = current_residue {
-                        res.atoms.push(atom);
+                        if let Some(res) = current_residue {
+                            res.atoms.push(atom);
+                        } else {
+                            chain.residues.push(Residue::new(*rs, Some(*r), Some(atom)));
+                        }
                     } else {
-                        current_chain.residues.push(Residue::new(*rs, Some(atom)));
+                        let mut chain = Chain::new(Some(*c));
+                        chain.residues.push(Residue::new(*rs, Some(*r), Some(atom)));
+                        current_model.chains.push(chain);
                     }
                 }
             }
             _ => ()
         }
     }
+
+    pdb.models.push(current_model);
+
+    println!("Found {} atoms", pdb.atoms().len());
 
     pdb
 }

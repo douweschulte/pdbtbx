@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub struct PDB {
     pub remarks: Vec<String>,
     pub scale: Option<Scale>,
@@ -35,7 +37,7 @@ pub struct Chain {
 }
 
 pub struct Residue {
-    pub id: String,
+    pub id: [char; 3],
     pub serial_number: usize,
     pub atoms: Vec<Atom>
 }
@@ -61,6 +63,38 @@ impl PDB {
             symmetry: None,
             models: Vec::new(),
         }
+    }
+
+    pub fn chains(&mut self) -> Vec<&mut Chain> {
+        let mut output = Vec::new();
+
+        for model in &mut self.models {
+            for chain in &mut model.chains {
+                output.push(chain)
+            }
+        }
+
+        output
+    }
+
+    pub fn residues(&mut self) -> Vec<&mut Residue> {
+        let mut output = Vec::new();
+
+        for model in &mut self.models {
+            output.append(&mut model.residues())
+        }
+
+        output
+    }
+
+    pub fn atoms(&mut self) -> Vec<&mut Atom> {
+        let mut output = Vec::new();
+
+        for model in &mut self.models {
+            output.append(&mut model.atoms())
+        }
+
+        output
     }
 }
 
@@ -95,6 +129,32 @@ impl Symmetry {
 
 impl Model {
     pub fn new() -> Model { Model {id: "".to_string(), chains: Vec::new(), hetero_atoms: Vec::new()}}
+
+    pub fn residues(&mut self) -> Vec<&mut Residue> {
+        let mut output = Vec::new();
+
+        for chain in &mut self.chains {
+            for residue in &mut chain.residues {
+                output.push(residue)
+            }
+        }
+
+        output
+    }
+
+    pub fn atoms(&mut self) -> Vec<&mut Atom> {
+        let mut output = Vec::new();
+
+        for chain in &mut self.chains {
+            output.append(&mut chain.atoms())
+        }
+
+        for het in &mut self.hetero_atoms {
+            output.push(het)
+        }
+
+        output
+    }
 }
 
 impl Chain {
@@ -108,18 +168,34 @@ impl Chain {
             residues: Vec::new(),
         }
     }
+
+    pub fn atoms(&mut self) -> Vec<&mut Atom> {
+        let mut output = Vec::new();
+
+        for residue in &mut self.residues {
+            for atom in &mut residue.atoms {
+                output.push(atom)
+            }
+        }
+
+        output
+    }
 }
 
 impl Residue {
-    pub fn new(number: usize, atom: Option<Atom>) -> Residue {
+    pub fn new(number: usize, name: Option<[char; 3]>, atom: Option<Atom>) -> Residue {
         let mut res = Residue {
-            id: "".to_string(),
+            id: [' ', ' ', ' '],
             serial_number: number,
             atoms: Vec::new(),
         };
 
         if let Some(a) = atom {
             res.atoms.push(a);
+        }
+
+        if let Some(n) = name {
+            res.id = n;
         }
 
         res
