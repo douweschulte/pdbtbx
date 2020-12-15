@@ -16,9 +16,9 @@ pub fn lex(input: &String) -> Result<Vec<LexItem>, String> {
                 "HETATM" => result.push(lex_atom
                 (linenumber, line, true).expect("HETATM error")),
                 "CRYST1" => result.push(lex_cryst(linenumber, line).expect("CRYST1 error")),
-                "SCALE1" => result.push(lex_scale(linenumber, line, 1).expect("SCALE1 error")),
-                "SCALE2" => result.push(lex_scale(linenumber, line, 2).expect("SCALE2 error")),
-                "SCALE3" => result.push(lex_scale(linenumber, line, 3).expect("SCALE3 error")),
+                "SCALE1" => result.push(lex_scale(linenumber, line, 0).expect("SCALE1 error")),
+                "SCALE2" => result.push(lex_scale(linenumber, line, 1).expect("SCALE2 error")),
+                "SCALE3" => result.push(lex_scale(linenumber, line, 2).expect("SCALE3 error")),
                 "MODEL " => result.push(LexItem::Model(line[6..].split_whitespace().collect::<String>())),
                 "ENDMDL" => result.push(LexItem::EndModel()),
                 _ => println!("Unknown: {}", line)
@@ -104,23 +104,13 @@ fn parse_number<T: FromStr>(linenumber: usize, input: &[char]) -> Result<T, Stri
 pub fn parse(input: &Vec<LexItem>) -> PDB {
     let stack = input.clone();
     let mut pdb = PDB::new();
-    let mut current_model = Model::new();
+    let mut current_model = Model::new(None);
 
     for item in stack {
         match item {
             LexItem::Remark(text) => pdb.remarks.push(text.to_string()),
             LexItem::Atom(hetero, s, n, _, r, c, rs, _, x, y, z, o, b, _, e, ch) => {
-                let atom = Atom {
-                    serial_number: *s,
-                    atom_name: *n,
-                    x: *x,
-                    y: *y,
-                    z: *z,
-                    occupancy: *o,
-                    b_factor: *b,
-                    element: *e,
-                    charge: *ch,
-                };
+                let atom = Atom::new(*r, *s, *n, *x, *y, *z, *o, *b, *e, *ch);
 
                 if *hetero {
                     current_model.hetero_atoms.push(atom);
@@ -154,6 +144,20 @@ pub fn parse(input: &Vec<LexItem>) -> PDB {
                     }
                 }
             }
+            LexItem::Model(name) => {
+                if current_model.atoms().len() > 0 {
+                    pdb.models.push(current_model)
+                }
+
+                current_model = Model::new(Some(name));
+            }
+            LexItem::Scale(n, row) => {
+                if pdb.scale.is_none() {
+                    pdb.scale = Some(Scale::new());
+                }
+                pdb.scale().factors[*n] = *row;
+            },
+            LexItem::Crystal(a, b, c, alpha, beta, gamma, symmetry) => (),
             _ => ()
         }
     }
