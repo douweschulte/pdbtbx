@@ -1,50 +1,113 @@
 use super::lexitem::*;
 use super::structs::*;
+
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::str::FromStr;
-use std::fs;
 
-pub fn open(filename: &str) -> Result<PDB, String> {
-    let content = fs::read_to_string(filename).expect("Could not read file.");
-    let lexed = lex(&content)?;
-    Ok(parse(&lexed))
-}
+pub fn parse(filename: &str) -> Result<PDB, String> {
+    // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
+    let file = File::open(filename).expect("Could not open file");
+    let reader = BufReader::new(file);
 
-fn lex(input: &String) -> Result<Vec<LexItem>, String> {
-    let mut result = Vec::new();
     let mut linenumber = 0;
 
-    for line in input.split("\n") {
+    let mut pdb = PDB::new();
+    let mut current_model = Model::new(None);
+
+    for read_line in reader.lines() {
+        let line = &read_line.expect("Line not read");
         linenumber += 1;
-        if line.len() > 6 {
+        let lineresult = if line.len() > 6 {
             match &line[..6] {
-                "REMARK" => result.push(lex_remark(line)),
-                "ATOM  " => result.push(lex_atom
-                (linenumber, line, false).expect("ATOM error")),
-                "HETATM" => result.push(lex_atom
-                (linenumber, line, true).expect("HETATM error")),
-                "CRYST1" => result.push(lex_cryst(linenumber, line).expect("CRYST1 error")),
-                "SCALE1" => result.push(lex_scale(linenumber, line, 0).expect("SCALE1 error")),
-                "SCALE2" => result.push(lex_scale(linenumber, line, 1).expect("SCALE2 error")),
-                "SCALE3" => result.push(lex_scale(linenumber, line, 2).expect("SCALE3 error")),
-                "MODEL " => result.push(LexItem::Model(line[6..].split_whitespace().collect::<String>())),
-                "ENDMDL" => result.push(LexItem::EndModel()),
-                _ => ()//println!("Unknown: {}", line)
+                "REMARK" => Ok(lex_remark(line)),
+                "ATOM  " => lex_atom(linenumber, line, false),
+                "HETATM" => lex_atom(linenumber, line, true),
+                "CRYST1" => lex_cryst(linenumber, line),
+                "SCALE1" => lex_scale(linenumber, line, 0),
+                "SCALE2" => lex_scale(linenumber, line, 1),
+                "SCALE3" => lex_scale(linenumber, line, 2),
+                "MODEL " => Ok(LexItem::Model(
+                    line[6..].split_whitespace().collect::<String>(),
+                )),
+                "ENDMDL" => Ok(LexItem::EndModel()),
+                _ => Err("Unknown option".to_string()),
             }
         } else {
             if line.len() > 2 {
                 match &line[..3] {
-                    "TER"    => result.push(LexItem::TER()),
-                    "END"    => result.push(LexItem::End()),
-                    _ => println!("Unknown short line: {}", line)
+                    "TER" => Ok(LexItem::TER()),
+                    "END" => Ok(LexItem::End()),
+                    _ => Err(format!("Unknown short line: {}", line)),
                 }
+            } else if line != "" {
+                Err(format!("Short line: \"{}\" {}", line, line.len()))
+            } else {
+                Ok(LexItem::Empty())
             }
-            else if line != "" {
-                println!("Short line: \"{}\" {}", line, line.len())
+        };
+
+        if let Ok(result) = lineresult {
+            match result {
+                LexItem::Remark(text) => pdb.remarks.push(text.to_string()),
+                LexItem::Atom(hetero, s, n, _, r, c, rs, _, x, y, z, o, b, _, e, ch) => {
+                    let atom = Atom::new(r, s, n, x, y, z, o, b, e, ch);
+
+                    if hetero {
+                        current_model.hetero_atoms.push(atom);
+                    } else {
+                        let mut current_chain = None;
+                        for chain in &mut current_model.chains {
+                            if chain.id == c {
+                                current_chain = Some(chain);
+                                break;
+                            }
+                        }
+
+                        if let Some(chain) = current_chain {
+                            let mut current_residue = None;
+                            for residue in &mut chain.residues {
+                                if residue.serial_number == rs {
+                                    current_residue = Some(residue);
+                                    break;
+                                }
+                            }
+
+                            if let Some(res) = current_residue {
+                                res.atoms.push(atom);
+                            } else {
+                                chain.residues.push(Residue::new(rs, Some(r), Some(atom)));
+                            }
+                        } else {
+                            let mut chain = Chain::new(Some(c));
+                            chain.residues.push(Residue::new(rs, Some(r), Some(atom)));
+                            current_model.chains.push(chain);
+                        }
+                    }
+                }
+                LexItem::Model(name) => {
+                    if current_model.atoms().len() > 0 {
+                        pdb.models.push(current_model)
+                    }
+
+                    current_model = Model::new(Some(&name));
+                }
+                LexItem::Scale(n, row) => {
+                    if pdb.scale.is_none() {
+                        pdb.scale = Some(Scale::new());
+                    }
+                    pdb.scale().factors[n] = row;
+                }
+                LexItem::Crystal(a, b, c, alpha, beta, gamma, symmetry) => {
+                    pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
+                    pdb.symmetry = Some(Symmetry::new(symmetry.to_vec()));
+                }
+                _ => (),
             }
         }
     }
-    
-    Ok(result)
+    pdb.models.push(current_model);
+    Ok(pdb)
 }
 
 fn lex_remark(line: &str) -> LexItem {
@@ -72,7 +135,24 @@ fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, Stri
         charge = [chars[79], chars[80]];
     }
 
-    Ok(LexItem::Atom(hetero, serial_number, atom_name, alternate_location, residue_name, chain_id, residue_serial_number, insertion, x, y, z, occupancy, b_factor, segment_id, element, charge))
+    Ok(LexItem::Atom(
+        hetero,
+        serial_number,
+        atom_name,
+        alternate_location,
+        residue_name,
+        chain_id,
+        residue_serial_number,
+        insertion,
+        x,
+        y,
+        z,
+        occupancy,
+        b_factor,
+        segment_id,
+        element,
+        charge,
+    ))
 }
 
 fn lex_cryst(linenumber: usize, line: &str) -> Result<LexItem, String> {
@@ -84,9 +164,22 @@ fn lex_cryst(linenumber: usize, line: &str) -> Result<LexItem, String> {
     let beta = parse_number(linenumber, &chars[40..47])?;
     let gamma = parse_number(linenumber, &chars[47..54])?;
     // TODO: make a fancy error message if a part of the space group is not numeric
-    let space_group = &chars[56..].iter().collect::<String>().split_whitespace().map(|x| x.parse::<usize>().unwrap()).collect::<Vec<usize>>();
+    let space_group = &chars[56..]
+        .iter()
+        .collect::<String>()
+        .split_whitespace()
+        .map(|x| x.parse::<usize>().unwrap())
+        .collect::<Vec<usize>>();
 
-    Ok(LexItem::Crystal(a, b, c, alpha, beta, gamma, space_group.to_vec()))
+    Ok(LexItem::Crystal(
+        a,
+        b,
+        c,
+        alpha,
+        beta,
+        gamma,
+        space_group.to_vec(),
+    ))
 }
 
 fn lex_scale(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String> {
@@ -100,80 +193,16 @@ fn lex_scale(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String>
 }
 
 fn parse_number<T: FromStr>(linenumber: usize, input: &[char]) -> Result<T, String> {
-    let string = input.iter().collect::<String>().split_whitespace().collect::<String>();
+    let string = input
+        .iter()
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<String>();
     match string.parse::<T>() {
         Ok(v) => Ok(v),
-        Err(_) => Err(format!("\"{}\" is not a valid number (line: {})", string, linenumber))
+        Err(_) => Err(format!(
+            "\"{}\" is not a valid number (line: {})",
+            string, linenumber
+        )),
     }
 }
-
-
-fn parse(input: &Vec<LexItem>) -> PDB {
-    let stack = input.clone();
-    let mut pdb = PDB::new();
-    let mut current_model = Model::new(None);
-
-    for item in stack {
-        match item {
-            LexItem::Remark(text) => pdb.remarks.push(text.to_string()),
-            LexItem::Atom(hetero, s, n, _, r, c, rs, _, x, y, z, o, b, _, e, ch) => {
-                let atom = Atom::new(*r, *s, *n, *x, *y, *z, *o, *b, *e, *ch);
-
-                if *hetero {
-                    current_model.hetero_atoms.push(atom);
-                } else {
-                    let mut current_chain = None;
-                    for chain in &mut current_model.chains {
-                        if chain.id == *c {
-                            current_chain = Some(chain);
-                            break;
-                        }
-                    }
-                    
-                    if let Some(chain) = current_chain {
-                        let mut current_residue = None;
-                        for residue in &mut chain.residues {
-                            if residue.serial_number == *rs {
-                                current_residue = Some(residue);
-                                break;
-                            }
-                        }
-
-                        if let Some(res) = current_residue {
-                            res.atoms.push(atom);
-                        } else {
-                            chain.residues.push(Residue::new(*rs, Some(*r), Some(atom)));
-                        }
-                    } else {
-                        let mut chain = Chain::new(Some(*c));
-                        chain.residues.push(Residue::new(*rs, Some(*r), Some(atom)));
-                        current_model.chains.push(chain);
-                    }
-                }
-            }
-            LexItem::Model(name) => {
-                if current_model.atoms().len() > 0 {
-                    pdb.models.push(current_model)
-                }
-
-                current_model = Model::new(Some(name));
-            }
-            LexItem::Scale(n, row) => {
-                if pdb.scale.is_none() {
-                    pdb.scale = Some(Scale::new());
-                }
-                pdb.scale().factors[*n] = *row;
-            },
-            LexItem::Crystal(a, b, c, alpha, beta, gamma, symmetry) => {
-                pdb.unit_cell = Some(UnitCell::new(*a, *b, *c, *alpha, *beta, *gamma));
-                pdb.symmetry = Some(Symmetry::new(symmetry.to_vec()));
-            },
-            _ => ()
-        }
-    }
-
-    pdb.models.push(current_model);
-
-    pdb
-}
-
