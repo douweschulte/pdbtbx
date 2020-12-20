@@ -54,19 +54,19 @@ impl PDB {
     pub fn scale(&mut self) -> &mut Scale {
         match &mut self.scale {
             Some(s) => s,
-            None    => panic!("Expected a Scale but it was not in place (it was None).")
+            None => panic!("Expected a Scale but it was not in place (it was None)."),
         }
     }
 }
 
 pub struct Scale {
-    pub factors: [[f64; 4]; 3]
+    pub factors: [[f64; 4]; 3],
 }
 
 impl Scale {
     pub fn new() -> Scale {
         Scale {
-            factors: [[0.0; 4]; 3]
+            factors: [[0.0; 4]; 3],
         }
     }
 }
@@ -91,6 +91,25 @@ impl UnitCell {
             gamma: gamma,
         }
     }
+
+    pub fn a(&self) -> f64 {
+        self.a
+    }
+    pub fn b(&self) -> f64 {
+        self.b
+    }
+    pub fn c(&self) -> f64 {
+        self.c
+    }
+    pub fn alpha(&self) -> f64 {
+        self.alpha
+    }
+    pub fn beta(&self) -> f64 {
+        self.beta
+    }
+    pub fn gamma(&self) -> f64 {
+        self.gamma
+    }
 }
 
 pub struct Symmetry {
@@ -99,9 +118,7 @@ pub struct Symmetry {
 
 impl Symmetry {
     pub fn new(symbols: Vec<usize>) -> Symmetry {
-        Symmetry {
-            symbols: symbols
-        }
+        Symmetry { symbols: symbols }
     }
 }
 
@@ -112,11 +129,11 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(name: Option<&str>) -> Model { 
+    pub fn new(name: Option<&str>) -> Model {
         let mut model = Model {
             id: "".to_string(),
-            chains: Vec::new(), 
-            hetero_atoms: Vec::new()
+            chains: Vec::new(),
+            hetero_atoms: Vec::new(),
         };
 
         if let Some(n) = name {
@@ -155,7 +172,7 @@ impl Model {
 
 pub struct Chain {
     pub id: char,
-    pub residues: Vec<Residue>
+    pub residues: Vec<Residue>,
 }
 
 impl Chain {
@@ -196,7 +213,7 @@ impl Residue {
             id: [' ', ' ', ' '],
             serial_number: number,
             atoms: Vec::new(),
-            amino_acid: false
+            amino_acid: false,
         };
 
         if let Some(a) = atom {
@@ -206,9 +223,16 @@ impl Residue {
         if let Some(n) = name {
             res.id = n;
 
-            let trimmed_name = n.iter().collect::<String>().split_whitespace().collect::<String>();
+            let trimmed_name = n
+                .iter()
+                .collect::<String>()
+                .split_whitespace()
+                .collect::<String>();
 
-            let amino_acid_names = vec!("ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL");
+            let amino_acid_names = vec![
+                "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS",
+                "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
+            ];
             if amino_acid_names.contains(&trimmed_name.as_str()) {
                 res.amino_acid = true;
             }
@@ -232,7 +256,18 @@ pub struct Atom {
 }
 
 impl Atom {
-    pub fn new(residue: [char; 3], serial_number: usize, atom_name: [char; 4], x: f64, y: f64, z: f64, occupancy: f64, b_factor: f64, element: [char; 2], charge: [char; 2]) -> Atom {
+    pub fn new(
+        residue: [char; 3],
+        serial_number: usize,
+        atom_name: [char; 4],
+        x: f64,
+        y: f64,
+        z: f64,
+        occupancy: f64,
+        b_factor: f64,
+        element: [char; 2],
+        charge: [char; 2],
+    ) -> Atom {
         let mut atom = Atom {
             serial_number: serial_number,
             atom_name: atom_name,
@@ -246,9 +281,14 @@ impl Atom {
             backbone: false,
         };
 
-        let amino_acid_names = vec!("ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL");
-        let backbone_names = vec!("N", "CA", "C", "O");
-        if amino_acid_names.contains(&residue.iter().collect::<String>().as_str()) && backbone_names.contains(&atom.atom_name().as_str()) {
+        let amino_acid_names = vec![
+            "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS",
+            "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
+        ];
+        let backbone_names = vec!["N", "CA", "C", "O"];
+        if amino_acid_names.contains(&residue.iter().collect::<String>().as_str())
+            && backbone_names.contains(&atom.atom_name().as_str())
+        {
             atom.backbone = true;
         }
 
@@ -264,7 +304,11 @@ impl Atom {
     }
 
     pub fn atom_name(&self) -> String {
-        self.atom_name.iter().collect::<String>().split_whitespace().collect::<String>()
+        self.atom_name
+            .iter()
+            .collect::<String>()
+            .split_whitespace()
+            .collect::<String>()
     }
 
     pub fn occupancy(&self) -> f64 {
@@ -276,11 +320,19 @@ impl Atom {
     }
 
     pub fn element(&self) -> String {
-        self.element.iter().collect::<String>().split_whitespace().collect::<String>()
+        self.element
+            .iter()
+            .collect::<String>()
+            .split_whitespace()
+            .collect::<String>()
     }
 
     pub fn charge(&self) -> String {
-        self.charge.iter().collect::<String>().split_whitespace().collect::<String>()
+        self.charge
+            .iter()
+            .collect::<String>()
+            .split_whitespace()
+            .collect::<String>()
     }
 
     pub fn backbone(&self) -> bool {

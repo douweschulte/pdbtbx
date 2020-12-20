@@ -1,5 +1,6 @@
 mod lexitem;
 mod parser;
+mod save;
 mod structs;
 
 use std::env;
@@ -33,4 +34,6 @@ fn main() {
 
     println!("Average B factor: {}", avg);
     println!("Scale: {:?}", pdb.scale().factors);
+
+    save::save(&pdb, &format!("{}_saved", args[1]));
 }

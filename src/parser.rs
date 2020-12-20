@@ -111,7 +111,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
 }
 
 fn lex_remark(line: &str) -> LexItem {
-    LexItem::Remark(line[5..].to_string())
+    LexItem::Remark(line[6..].to_string())
 }
 
 fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, String> {
