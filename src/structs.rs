@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 pub struct PDB {
-    pub remarks: Vec<String>,
+    pub remarks: Vec<(usize, String)>,
     pub scale: Option<Scale>,
     pub unit_cell: Option<UnitCell>,
     pub symmetry: Option<Symmetry>,
@@ -264,7 +264,7 @@ impl Residue {
 
 pub struct Atom {
     serial_number: usize,
-    atom_name: [char; 4],
+    name: [char; 4],
     x: f64,
     y: f64,
     z: f64,
@@ -290,7 +290,7 @@ impl Atom {
     ) -> Atom {
         let mut atom = Atom {
             serial_number: serial_number,
-            atom_name: atom_name,
+            name: atom_name,
             x: x,
             y: y,
             z: z,
@@ -307,7 +307,7 @@ impl Atom {
         ];
         let backbone_names = vec!["N", "CA", "C", "O"];
         if amino_acid_names.contains(&residue.iter().collect::<String>().as_str())
-            && backbone_names.contains(&atom.atom_name().as_str())
+            && backbone_names.contains(&atom.name().as_str())
         {
             atom.backbone = true;
         }
@@ -319,24 +319,127 @@ impl Atom {
         (self.x, self.y, self.z)
     }
 
+    pub fn set_pos(&mut self, new_pos: (f64, f64, f64)) -> Result<(), String> {
+        if new_pos.0.is_finite() && new_pos.1.is_finite() && new_pos.2.is_finite() {
+            self.x = new_pos.0;
+            self.y = new_pos.1;
+            self.z = new_pos.2;
+            Ok(())
+        } else {
+            Err(format!(
+                "One (or more) of values of the new position is not finite for atom {} values {:?}",
+                self.serial_number, new_pos
+            ))
+        }
+    }
+
+    pub fn x(&self) -> f64 {
+        self.x
+    }
+
+    pub fn set_x(&mut self, new_pos: f64) -> Result<(), String> {
+        if new_pos.is_finite() {
+            self.x = new_pos;
+            Ok(())
+        } else {
+            Err(format!(
+                "The value of the new x position is not finite for atom {} value {}",
+                self.serial_number, new_pos
+            ))
+        }
+    }
+
+    pub fn y(&self) -> f64 {
+        self.y
+    }
+
+    pub fn set_y(&mut self, new_pos: f64) -> Result<(), String> {
+        if new_pos.is_finite() {
+            self.y = new_pos;
+            Ok(())
+        } else {
+            Err(format!(
+                "The value of the new y position is not finite for atom {} value {}",
+                self.serial_number, new_pos
+            ))
+        }
+    }
+
+    pub fn z(&self) -> f64 {
+        self.z
+    }
+
+    pub fn set_z(&mut self, new_pos: f64) -> Result<(), String> {
+        if new_pos.is_finite() {
+            self.z = new_pos;
+            Ok(())
+        } else {
+            Err(format!(
+                "The value of the new z position is not finite for atom {} value {}",
+                self.serial_number, new_pos
+            ))
+        }
+    }
+
     pub fn serial_number(&self) -> usize {
         self.serial_number
     }
 
-    pub fn atom_name(&self) -> String {
-        self.atom_name
+    pub fn set_serial_number(&mut self, new_serial_number: usize) {
+        self.serial_number = new_serial_number;
+    }
+
+    pub fn name(&self) -> String {
+        self.name
             .iter()
             .collect::<String>()
             .split_whitespace()
             .collect::<String>()
     }
 
+    pub fn set_name(&mut self, new_name: &str) -> Result<(), String> {
+        let chars = new_name.to_ascii_uppercase().chars().collect::<Vec<char>>();
+        if chars.len() < 5 {
+            self.name = [chars[0], chars[1], chars[2], chars[3]];
+            Ok(())
+        } else {
+            Err(format!(
+                "New name is too long (max 4 chars) for atom {} name {}",
+                self.serial_number, new_name
+            ))
+        }
+    }
+
     pub fn occupancy(&self) -> f64 {
         self.occupancy
     }
 
+    pub fn set_occupancy(&mut self, new_occupancy: f64) -> Result<(), String> {
+        if new_occupancy.is_finite() {
+            self.occupancy = new_occupancy;
+            Ok(())
+        } else {
+            Err(format!(
+                "The value of the new occupancy is not finite for atom {} value {}",
+                self.serial_number, new_occupancy
+            ))
+        }
+    }
+
     pub fn b_factor(&self) -> f64 {
         self.b_factor
+    }
+
+    pub fn set_b_factor(&mut self, new_b_factor: f64) -> Result<(), String> {
+        if new_b_factor.is_finite() {
+            self.b_factor = new_b_factor;
+            Ok(())
+        } else {
+            Err(format!(
+                "The value of the new b_factor is not finite for atom {} value {}",
+                self.serial_number, new_b_factor
+            ))
+        }
     }
 
     pub fn element(&self) -> String {
@@ -347,12 +450,44 @@ impl Atom {
             .collect::<String>()
     }
 
+    pub fn set_element(&mut self, new_element: &str) -> Result<(), String> {
+        let chars = new_element
+            .to_ascii_uppercase()
+            .chars()
+            .collect::<Vec<char>>();
+        if chars.len() <= 2 {
+            self.element = [chars[0], chars[1]];
+            Ok(())
+        } else {
+            Err(format!(
+                "New element is too long (max 2 chars) for atom {} name {}",
+                self.serial_number, new_element
+            ))
+        }
+    }
+
     pub fn charge(&self) -> String {
         self.charge
             .iter()
             .collect::<String>()
             .split_whitespace()
             .collect::<String>()
+    }
+
+    pub fn set_charge(&mut self, new_charge: &str) -> Result<(), String> {
+        let chars = new_charge
+            .to_ascii_uppercase()
+            .chars()
+            .collect::<Vec<char>>();
+        if chars.len() <= 2 {
+            self.charge = [chars[0], chars[1]];
+            Ok(())
+        } else {
+            Err(format!(
+                "New charge is too long (max 2 chars) for atom {} name {}",
+                self.serial_number, new_charge
+            ))
+        }
     }
 
     pub fn backbone(&self) -> bool {

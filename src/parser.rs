@@ -20,7 +20,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
         linenumber += 1;
         let lineresult = if line.len() > 6 {
             match &line[..6] {
-                "REMARK" => Ok(lex_remark(line)),
+                "REMARK" => lex_remark(linenumber, line),
                 "ATOM  " => lex_atom(linenumber, line, false),
                 "HETATM" => lex_atom(linenumber, line, true),
                 "CRYST1" => lex_cryst(linenumber, line),
@@ -49,7 +49,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
 
         if let Ok(result) = lineresult {
             match result {
-                LexItem::Remark(text) => pdb.remarks.push(text.to_string()),
+                LexItem::Remark(num, text) => pdb.remarks.push((num, text.to_string())),
                 LexItem::Atom(hetero, s, n, _, r, c, rs, _, x, y, z, o, b, _, e, ch) => {
                     let atom = Atom::new(r, s, n, x, y, z, o, b, e, ch);
 
@@ -110,8 +110,15 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
     Ok(pdb)
 }
 
-fn lex_remark(line: &str) -> LexItem {
-    LexItem::Remark(line[6..].to_string())
+fn lex_remark(linenumber: usize, line: &str) -> Result<LexItem, String> {
+    Ok(LexItem::Remark(
+        parse_number(linenumber, &line.chars().collect::<Vec<char>>()[7..10])?,
+        if line.len() > 11 {
+            line[11..].to_string()
+        } else {
+            "".to_string()
+        },
+    ))
 }
 
 fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, String> {

@@ -35,5 +35,5 @@ fn main() {
     println!("Average B factor: {}", avg);
     println!("Scale: {:?}", pdb.scale().factors);
 
-    save::save(&pdb, &format!("{}_saved", args[1]));
+    save::save(&pdb, &format!("{}_saved", args[1])).expect("Save not successful");
 }

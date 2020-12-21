@@ -1,5 +1,5 @@
 pub enum LexItem {
-    Remark(String),
+    Remark(usize, String),
     Atom(
         bool,
         usize,

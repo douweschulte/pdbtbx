@@ -10,7 +10,9 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
 
     // Remarks
     for line in &pdb.remarks {
-        writer.write_fmt(format_args!("REMARK{}\n", line)).unwrap();
+        writer
+            .write_fmt(format_args!("REMARK {:3} {}\n", line.0, line.1))
+            .unwrap();
     }
 
     // Cryst
@@ -78,7 +80,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                         .write_fmt(format_args!(
                             "ATOM  {:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{:>2}\n",
                             atom.serial_number(),
-                            atom.atom_name(),
+                            atom.name(),
                             residue.id(),
                             chain.id,
                             residue.serial_number,
@@ -100,7 +102,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                 .write_fmt(format_args!(
                     "HETATM{:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{:>2}\n",
                     atom.serial_number(),
-                    atom.atom_name(),
+                    atom.name(),
                     "A", // Residue identifier
                     "A", // Chain identifier
                     1, // Residue serial number
