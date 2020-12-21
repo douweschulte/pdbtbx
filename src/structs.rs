@@ -113,12 +113,24 @@ impl UnitCell {
 }
 
 pub struct Symmetry {
+    space_group: char,
     symbols: Vec<usize>,
 }
 
 impl Symmetry {
-    pub fn new(symbols: Vec<usize>) -> Symmetry {
-        Symmetry { symbols: symbols }
+    pub fn new(space_group: char, symbols: Vec<usize>) -> Symmetry {
+        Symmetry {
+            space_group: space_group,
+            symbols: symbols,
+        }
+    }
+
+    pub fn symbols(&self) -> &Vec<usize> {
+        &self.symbols
+    }
+
+    pub fn space_group(&self) -> char {
+        self.space_group
     }
 }
 
@@ -239,6 +251,14 @@ impl Residue {
         }
 
         res
+    }
+
+    pub fn id(&self) -> String {
+        self.id
+            .iter()
+            .collect::<String>()
+            .split_whitespace()
+            .collect::<String>()
     }
 }
 
