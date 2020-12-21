@@ -67,14 +67,14 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                         if let Some(chain) = current_chain {
                             let mut current_residue = None;
                             for residue in &mut chain.residues {
-                                if residue.serial_number == rs {
+                                if residue.serial_number() == rs {
                                     current_residue = Some(residue);
                                     break;
                                 }
                             }
 
                             if let Some(res) = current_residue {
-                                res.atoms.push(atom);
+                                res.add_atom(atom);
                             } else {
                                 chain.residues.push(Residue::new(rs, Some(r), Some(atom)));
                             }

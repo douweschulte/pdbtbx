@@ -213,10 +213,10 @@ impl Chain {
 }
 
 pub struct Residue {
-    pub id: [char; 3],
-    pub serial_number: usize,
-    pub atoms: Vec<Atom>,
-    pub amino_acid: bool,
+    id: [char; 3],
+    serial_number: usize,
+    atoms: Vec<Atom>,
+    amino_acid: bool,
 }
 
 impl Residue {
@@ -259,6 +259,43 @@ impl Residue {
             .collect::<String>()
             .split_whitespace()
             .collect::<String>()
+    }
+
+    pub fn set_id(&mut self, new_id: &str) -> Result<(), String> {
+        let chars = new_id.to_ascii_uppercase().chars().collect::<Vec<char>>();
+        if chars.len() <= 3 {
+            self.id = [chars[0], chars[1], chars[2]];
+            Ok(())
+        } else {
+            Err(format!(
+                "New id is too long (max 4 chars) for residue {} name {}",
+                self.serial_number, new_id
+            ))
+        }
+    }
+
+    pub fn serial_number(&self) -> usize {
+        self.serial_number
+    }
+
+    pub fn set_serial_number(&mut self, new_number: usize) {
+        self.serial_number = new_number;
+    }
+
+    pub fn atoms(&self) -> Vec<&Atom> {
+        let mut output = Vec::new();
+        for atom in &self.atoms {
+            output.push(atom);
+        }
+        output
+    }
+
+    pub fn add_atom(&mut self, new_atom: Atom) {
+        self.atoms.push(new_atom);
+    }
+
+    pub fn amino_acid(&self) -> bool {
+        self.amino_acid
     }
 }
 

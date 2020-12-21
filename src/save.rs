@@ -75,7 +75,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
 
         for chain in &model.chains {
             for residue in &chain.residues {
-                for atom in &residue.atoms {
+                for atom in residue.atoms() {
                     writer
                         .write_fmt(format_args!(
                             "ATOM  {:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{:>2}\n",
@@ -83,7 +83,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                             atom.name(),
                             residue.id(),
                             chain.id,
-                            residue.serial_number,
+                            residue.serial_number(),
                             atom.pos().0,
                             atom.pos().1,
                             atom.pos().2,
