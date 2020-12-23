@@ -20,7 +20,7 @@ pub enum LexItem {
     ),
     Scale(usize, [f64; 4]),
     Crystal(f64, f64, f64, f64, f64, f64, char, Vec<usize>),
-    Model(String),
+    Model(usize),
     EndModel(),
     TER(),
     End(),

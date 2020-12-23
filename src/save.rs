@@ -1,4 +1,4 @@
-use super::structs::*;
+use crate::structs::*;
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -69,43 +69,39 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     for model in &pdb.models {
         if multiple_models {
             writer
-                .write_fmt(format_args!("MODEL        {}\n", model.id))
+                .write_fmt(format_args!("MODEL        {}\n", model.serial_number()))
                 .unwrap();
         }
 
-        for chain in &model.chains {
-            for residue in &chain.residues {
-                for atom in residue.atoms() {
-                    writer
-                        .write_fmt(format_args!(
-                            "ATOM  {:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{:>2}\n",
-                            atom.serial_number(),
-                            atom.name(),
-                            residue.id(),
-                            chain.id,
-                            residue.serial_number(),
-                            atom.pos().0,
-                            atom.pos().1,
-                            atom.pos().2,
-                            atom.occupancy(),
-                            atom.b_factor(),
-                            atom.element(),
-                            atom.charge(),
-                        ))
-                        .unwrap();
-                }
-            }
+        for atom in model.atoms() {
+            writer
+                .write_fmt(format_args!(
+                    "ATOM  {:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{:>2}\n",
+                    atom.serial_number(),
+                    atom.name(),
+                    atom.residue().unwrap().id(),
+                    atom.residue().unwrap().chain().unwrap().id,
+                    atom.residue().unwrap().serial_number(),
+                    atom.pos().0,
+                    atom.pos().1,
+                    atom.pos().2,
+                    atom.occupancy(),
+                    atom.b_factor(),
+                    atom.element(),
+                    atom.charge(),
+                ))
+                .unwrap();
         }
         writer.write_fmt(format_args!("TER\n")).unwrap();
-        for atom in &model.hetero_atoms {
+        for atom in model.hetero_atoms() {
             writer
                 .write_fmt(format_args!(
                     "HETATM{:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{:>2}\n",
                     atom.serial_number(),
                     atom.name(),
-                    "A", // Residue identifier
-                    "A", // Chain identifier
-                    1, // Residue serial number
+                    atom.residue().unwrap().id(),
+                    atom.residue().unwrap().chain().unwrap().id,
+                    atom.residue().unwrap().serial_number(),
                     atom.pos().0,
                     atom.pos().1,
                     atom.pos().2,

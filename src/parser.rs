@@ -27,9 +27,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                 "SCALE1" => lex_scale(linenumber, line, 0),
                 "SCALE2" => lex_scale(linenumber, line, 1),
                 "SCALE3" => lex_scale(linenumber, line, 2),
-                "MODEL " => Ok(LexItem::Model(
-                    line[6..].split_whitespace().collect::<String>(),
-                )),
+                "MODEL " => lex_model(linenumber, line),
                 "ENDMDL" => Ok(LexItem::EndModel()),
                 _ => Err("Unknown option".to_string()),
             }
@@ -51,46 +49,20 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
             match result {
                 LexItem::Remark(num, text) => pdb.remarks.push((num, text.to_string())),
                 LexItem::Atom(hetero, s, n, _, r, c, rs, _, x, y, z, o, b, _, e, ch) => {
-                    let atom = Atom::new(r, s, n, x, y, z, o, b, e, ch);
+                    let atom = Atom::new(None, s, n, x, y, z, o, b, e, ch);
 
                     if hetero {
-                        current_model.hetero_atoms.push(atom);
+                        current_model.add_hetero_atom(atom, c, rs, r);
                     } else {
-                        let mut current_chain = None;
-                        for chain in &mut current_model.chains {
-                            if chain.id == c {
-                                current_chain = Some(chain);
-                                break;
-                            }
-                        }
-
-                        if let Some(chain) = current_chain {
-                            let mut current_residue = None;
-                            for residue in &mut chain.residues {
-                                if residue.serial_number() == rs {
-                                    current_residue = Some(residue);
-                                    break;
-                                }
-                            }
-
-                            if let Some(res) = current_residue {
-                                res.add_atom(atom);
-                            } else {
-                                chain.residues.push(Residue::new(rs, Some(r), Some(atom)));
-                            }
-                        } else {
-                            let mut chain = Chain::new(Some(c));
-                            chain.residues.push(Residue::new(rs, Some(r), Some(atom)));
-                            current_model.chains.push(chain);
-                        }
+                        current_model.add_atom(atom, c, rs, r);
                     }
                 }
-                LexItem::Model(name) => {
+                LexItem::Model(number) => {
                     if current_model.atoms().len() > 0 {
                         pdb.models.push(current_model)
                     }
 
-                    current_model = Model::new(Some(&name));
+                    current_model = Model::new(Some(number));
                 }
                 LexItem::Scale(n, row) => {
                     if pdb.scale.is_none() {
@@ -119,6 +91,17 @@ fn lex_remark(linenumber: usize, line: &str) -> Result<LexItem, String> {
             "".to_string()
         },
     ))
+}
+
+fn lex_model(linenumber: usize, line: &str) -> Result<LexItem, String> {
+    Ok(LexItem::Model(parse_number(
+        linenumber,
+        &line[6..]
+            .split_whitespace()
+            .collect::<String>()
+            .chars()
+            .collect::<Vec<char>>()[..],
+    )?))
 }
 
 fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, String> {
