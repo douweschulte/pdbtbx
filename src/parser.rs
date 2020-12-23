@@ -49,7 +49,8 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
             match result {
                 LexItem::Remark(num, text) => pdb.remarks.push((num, text.to_string())),
                 LexItem::Atom(hetero, s, n, _, r, c, rs, _, x, y, z, o, b, _, e, ch) => {
-                    let atom = Atom::new(None, s, n, x, y, z, o, b, e, ch);
+                    let atom = Atom::new(None, s, n, x, y, z, o, b, e, ch)
+                        .expect("Invalid characters in atom creation");
 
                     if hetero {
                         current_model.add_hetero_atom(atom, c, rs, r);
@@ -79,6 +80,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
         }
     }
     pdb.models.push(current_model);
+    pdb.fix_pointers_of_children();
     Ok(pdb)
 }
 

@@ -16,7 +16,7 @@ impl Residue {
         name: Option<[char; 3]>,
         atom: Option<Atom>,
         chain: Option<&mut Chain>,
-    ) -> Residue {
+    ) -> Option<Residue> {
         let mut res = Residue {
             id: [' ', ' ', ' '],
             serial_number: number,
@@ -24,7 +24,8 @@ impl Residue {
             chain: None,
         };
 
-        if let Some(a) = atom {
+        if let Some(mut a) = atom {
+            a.set_residue(&mut res);
             res.atoms.push(a);
         }
 
@@ -33,15 +34,17 @@ impl Residue {
         }
 
         if let Some(n) = name {
+            if !check_char3(n) {
+                return None;
+            }
             res.id = n;
         }
 
-        res
+        Some(res)
     }
 
     pub fn id(&self) -> String {
         let str_id = self.id.iter().collect::<String>();
-        println!("{}, {:?}, {:?}", self.serial_number, str_id, self.id);
         if str_id != "   " {
             str_id.split_whitespace().collect::<String>()
         } else {
@@ -52,8 +55,15 @@ impl Residue {
     pub fn set_id(&mut self, new_id: &str) -> Result<(), String> {
         let chars = new_id.to_ascii_uppercase().chars().collect::<Vec<char>>();
         if chars.len() <= 3 {
-            self.id = [chars[0], chars[1], chars[2]];
-            Ok(())
+            if !check_chars(new_id.to_string()) {
+                self.id = [chars[0], chars[1], chars[2]];
+                Ok(())
+            } else {
+                Err(format!(
+                    "New id has invalid characters for residue {} name {}",
+                    self.serial_number, new_id
+                ))
+            }
         } else {
             Err(format!(
                 "New id is too long (max 3 chars) for residue {} name {}",
@@ -111,7 +121,18 @@ impl Residue {
         self.chain = Some(new_chain);
     }
 
-    pub fn chain(&self) -> Option<&Chain> {
+    pub fn chain(&self) -> &Chain {
+        if let Some(reference) = self.chain {
+            unsafe { &*reference }
+        } else {
+            panic!(format!(
+                "No value for chain parent for the current residue {}",
+                self.serial_number
+            ))
+        }
+    }
+
+    pub fn chain_safe(&self) -> Option<&Chain> {
         if let Some(reference) = self.chain {
             Some(unsafe { &*reference })
         } else {
@@ -124,6 +145,13 @@ impl Residue {
             Some(unsafe { &mut *reference })
         } else {
             None
+        }
+    }
+
+    pub fn fix_pointers_of_children(&mut self) {
+        let reference: *mut Residue = self;
+        for atom in &mut self.atoms {
+            atom.set_residue_pointer(reference);
         }
     }
 }

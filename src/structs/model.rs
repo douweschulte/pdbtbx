@@ -99,10 +99,11 @@ impl Model {
         residue_name: [char; 3],
     ) {
         let mut found = false;
-        let mut new_chain = Chain::new(Some(chain_id));
+        let mut new_chain =
+            Chain::new(Some(chain_id)).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
         for chain in &mut self.chains {
-            if chain.id == chain_id {
+            if chain.id() == chain_id {
                 current_chain = chain;
                 found = true;
                 break;
@@ -184,10 +185,11 @@ impl Model {
         residue_name: [char; 3],
     ) {
         let mut found = false;
-        let mut new_chain = Chain::new(Some(chain_id));
+        let mut new_chain =
+            Chain::new(Some(chain_id)).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
         for chain in &mut self.hetero_atoms {
-            if chain.id == chain_id {
+            if chain.id() == chain_id {
                 current_chain = chain;
                 found = true;
                 break;
@@ -279,5 +281,14 @@ impl Model {
         }
 
         output
+    }
+
+    pub fn fix_pointers_of_children(&mut self) {
+        for chain in &mut self.chains {
+            chain.fix_pointers_of_children();
+        }
+        for chain in &mut self.hetero_atoms {
+            chain.fix_pointers_of_children();
+        }
     }
 }

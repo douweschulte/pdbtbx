@@ -91,4 +91,10 @@ impl PDB {
             None => panic!("Expected a Scale but it was not in place (it was None)."),
         }
     }
+
+    pub fn fix_pointers_of_children(&mut self) {
+        for model in &mut self.models {
+            model.fix_pointers_of_children();
+        }
+    }
 }

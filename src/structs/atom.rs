@@ -28,7 +28,7 @@ impl Atom {
         b_factor: f64,
         element: [char; 2],
         charge: [char; 2],
-    ) -> Atom {
+    ) -> Option<Atom> {
         let mut atom = Atom {
             serial_number: serial_number,
             name: atom_name,
@@ -46,7 +46,11 @@ impl Atom {
             atom.residue = Some(reference);
         }
 
-        atom
+        if !check_char4(atom_name) || !check_char2(element) || !check_char2(charge) {
+            None
+        } else {
+            Some(atom)
+        }
     }
 
     pub fn pos(&self) -> (f64, f64, f64) {
@@ -134,8 +138,15 @@ impl Atom {
     pub fn set_name(&mut self, new_name: &str) -> Result<(), String> {
         let chars = new_name.to_ascii_uppercase().chars().collect::<Vec<char>>();
         if chars.len() < 5 {
-            self.name = [chars[0], chars[1], chars[2], chars[3]];
-            Ok(())
+            if !check_chars(new_name.to_string()) {
+                self.name = [chars[0], chars[1], chars[2], chars[3]];
+                Ok(())
+            } else {
+                Err(format!(
+                    "New name has invalid characters for atom {} name {}",
+                    self.serial_number, new_name
+                ))
+            }
         } else {
             Err(format!(
                 "New name is too long (max 4 chars) for atom {} name {}",
@@ -190,8 +201,15 @@ impl Atom {
             .chars()
             .collect::<Vec<char>>();
         if chars.len() <= 2 {
-            self.element = [chars[0], chars[1]];
-            Ok(())
+            if !check_chars(new_element.to_string()) {
+                self.element = [chars[0], chars[1]];
+                Ok(())
+            } else {
+                Err(format!(
+                    "New element has invalid characters for atom {} name {}",
+                    self.serial_number, new_element
+                ))
+            }
         } else {
             Err(format!(
                 "New element is too long (max 2 chars) for atom {} name {}",
@@ -214,8 +232,15 @@ impl Atom {
             .chars()
             .collect::<Vec<char>>();
         if chars.len() <= 2 {
-            self.charge = [chars[0], chars[1]];
-            Ok(())
+            if !check_chars(new_charge.to_string()) {
+                self.charge = [chars[0], chars[1]];
+                Ok(())
+            } else {
+                Err(format!(
+                    "New charge has invalid characters for atom {} name {}",
+                    self.serial_number, new_charge
+                ))
+            }
         } else {
             Err(format!(
                 "New charge is too long (max 2 chars) for atom {} name {}",
@@ -228,7 +253,22 @@ impl Atom {
         self.residue = Some(new_residue);
     }
 
-    pub fn residue(&self) -> Option<&Residue> {
+    pub fn set_residue_pointer(&mut self, new_residue: *mut Residue) {
+        self.residue = Some(new_residue);
+    }
+
+    pub fn residue(&self) -> &Residue {
+        if let Some(reference) = self.residue {
+            unsafe { &*reference }
+        } else {
+            panic!(format!(
+                "No value for residue parent for the current atom {}",
+                self.serial_number
+            ))
+        }
+    }
+
+    pub fn residue_safe(&self) -> Option<&Residue> {
         if let Some(reference) = self.residue {
             Some(unsafe { &*reference })
         } else {
@@ -245,7 +285,7 @@ impl Atom {
     }
 
     pub fn backbone(&self) -> Option<bool> {
-        let residue = self.residue();
+        let residue = self.residue_safe();
         if residue.is_some() {
             let backbone_names = vec!["N", "CA", "C", "O"];
             if residue.unwrap().amino_acid() && backbone_names.contains(&self.name().as_str()) {

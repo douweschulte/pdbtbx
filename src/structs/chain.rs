@@ -3,19 +3,35 @@ use crate::structs::*;
 
 #[derive(Debug)]
 pub struct Chain {
-    pub id: char,
+    id: char,
     residues: Vec<Residue>,
 }
 
 impl Chain {
-    pub fn new(id: Option<char>) -> Chain {
+    pub fn new(id: Option<char>) -> Option<Chain> {
         let mut c = 'a';
         if let Some(ch) = id {
+            if !check_char(ch) {
+                return None;
+            }
             c = ch;
         }
-        Chain {
+        Some(Chain {
             id: c,
             residues: Vec::new(),
+        })
+    }
+
+    pub fn id(&self) -> char {
+        self.id
+    }
+
+    pub fn set_id(&mut self, new_id: char) -> bool {
+        if check_char(new_id) {
+            self.id = new_id;
+            true
+        } else {
+            false
         }
     }
 
@@ -65,9 +81,10 @@ impl Chain {
         residue_serial_number: usize,
         residue_name: [char; 3],
     ) {
-        let ptr: *mut Chain = self;
         let mut found = false;
-        let mut new_residue = Residue::new(residue_serial_number, Some(residue_name), None, None);
+        let mut new_residue =
+            Residue::new(residue_serial_number, Some(residue_name), None, Some(self))
+                .expect("Invalid chars in Residue creation");
         let mut current_residue = &mut new_residue;
         for residue in &mut self.residues {
             if residue.serial_number() == residue_serial_number {
@@ -78,10 +95,20 @@ impl Chain {
         }
 
         current_residue.add_atom(new_atom);
-        current_residue.set_chain_pointer(ptr);
 
         if !found {
-            self.residues.push(new_residue)
+            self.residues.push(new_residue);
+            // Fix the pointer of the atom
+            let n = self.residues.len();
+            self.residues[n - 1].fix_pointers_of_children();
+        }
+    }
+
+    pub fn fix_pointers_of_children(&mut self) {
+        let reference: *mut Chain = self;
+        for res in &mut self.residues {
+            res.set_chain_pointer(reference);
+            res.fix_pointers_of_children();
         }
     }
 }
