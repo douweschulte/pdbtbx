@@ -5,10 +5,11 @@ use crate::structs::*;
 pub struct Chain {
     id: char,
     residues: Vec<Residue>,
+    model: Option<*mut Model>,
 }
 
 impl Chain {
-    pub fn new(id: Option<char>) -> Option<Chain> {
+    pub fn new(id: Option<char>, model: Option<&mut Model>) -> Option<Chain> {
         let mut c = 'a';
         if let Some(ch) = id {
             if !check_char(ch) {
@@ -16,10 +17,17 @@ impl Chain {
             }
             c = ch;
         }
-        Some(Chain {
+        let mut c = Chain {
             id: c,
             residues: Vec::new(),
-        })
+            model: None,
+        };
+
+        if let Some(m) = model {
+            c.model = Some(m);
+        }
+
+        Some(c)
     }
 
     pub fn id(&self) -> char {
@@ -102,11 +110,102 @@ impl Chain {
         current_residue.add_atom(new_atom);
     }
 
+    pub fn set_model(&mut self, new_model: &mut Model) {
+        self.model = Some(new_model);
+    }
+
+    pub fn set_model_pointer(&mut self, new_model: *mut Model) {
+        self.model = Some(new_model);
+    }
+
+    pub fn model(&self) -> &Model {
+        if let Some(reference) = self.model {
+            unsafe { &*reference }
+        } else {
+            panic!(format!(
+                "No value for model parent for the current chain {}",
+                self.id
+            ))
+        }
+    }
+
+    pub fn model_safe(&self) -> Option<&Model> {
+        if let Some(reference) = self.model {
+            Some(unsafe { &*reference })
+        } else {
+            None
+        }
+    }
+
+    fn model_mut(&self) -> &mut Model {
+        if let Some(reference) = self.model {
+            unsafe { &mut *reference }
+        } else {
+            panic!(format!(
+                "No value for model parent for the current chain {}",
+                self.id
+            ))
+        }
+    }
+
+    fn model_mut_safe(&self) -> Option<&mut Model> {
+        if let Some(reference) = self.model {
+            Some(unsafe { &mut *reference })
+        } else {
+            None
+        }
+    }
+
     pub fn fix_pointers_of_children(&mut self) {
         let reference: *mut Chain = self;
         for res in &mut self.residues {
             res.set_chain_pointer(reference);
             res.fix_pointers_of_children();
         }
+    }
+
+    pub fn remove_residue(&mut self, index: usize) {
+        self.residues.remove(index);
+    }
+
+    pub fn remove_residue_serial_number(&mut self, serial_number: usize) -> bool {
+        let index = self
+            .residues
+            .iter()
+            .position(|a| a.serial_number() == serial_number);
+
+        if let Some(i) = index {
+            self.remove_residue(i);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn remove_residue_id(&mut self, id: String) -> bool {
+        let index = self.residues.iter().position(|a| a.id() == id);
+
+        if let Some(i) = index {
+            self.remove_residue(i);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn remove(&mut self) {
+        self.model_mut().remove_chain_id(self.id());
+    }
+}
+
+use std::fmt;
+impl fmt::Display for Chain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "CHAIN ID:{}, Residues: {}",
+            self.id(),
+            self.residues.len()
+        )
     }
 }

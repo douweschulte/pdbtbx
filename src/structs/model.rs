@@ -6,18 +6,24 @@ pub struct Model {
     serial_number: usize,
     chains: Vec<Chain>,
     hetero_atoms: Vec<Chain>,
+    pdb: Option<*mut PDB>,
 }
 
 impl Model {
-    pub fn new(serial_number: Option<usize>) -> Model {
+    pub fn new(serial_number: Option<usize>, pdb: Option<&mut PDB>) -> Model {
         let mut model = Model {
             serial_number: 0,
             chains: Vec::new(),
             hetero_atoms: Vec::new(),
+            pdb: None,
         };
 
         if let Some(n) = serial_number {
             model.serial_number = n;
+        }
+
+        if let Some(p) = pdb {
+            model.pdb = Some(p);
         }
 
         model
@@ -100,7 +106,7 @@ impl Model {
     ) {
         let mut found = false;
         let mut new_chain =
-            Chain::new(Some(chain_id)).expect("Invalid characters in chain creation");
+            Chain::new(Some(chain_id), Some(self)).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
         for chain in &mut self.chains {
             if chain.id() == chain_id {
@@ -187,7 +193,7 @@ impl Model {
     ) {
         let mut found = false;
         let mut new_chain =
-            Chain::new(Some(chain_id)).expect("Invalid characters in chain creation");
+            Chain::new(Some(chain_id), Some(self)).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
         for chain in &mut self.hetero_atoms {
             if chain.id() == chain_id {
@@ -284,12 +290,93 @@ impl Model {
         output
     }
 
+    pub fn set_pdb(&mut self, new_pdb: &mut PDB) {
+        self.pdb = Some(new_pdb);
+    }
+
+    pub fn set_pdb_pointer(&mut self, new_pdb: *mut PDB) {
+        self.pdb = Some(new_pdb);
+    }
+
+    pub fn pdb(&self) -> &PDB {
+        if let Some(reference) = self.pdb {
+            unsafe { &*reference }
+        } else {
+            panic!(format!(
+                "No value for PDB parent for the current model {}",
+                self.serial_number
+            ))
+        }
+    }
+
+    pub fn pdb_safe(&self) -> Option<&PDB> {
+        if let Some(reference) = self.pdb {
+            Some(unsafe { &*reference })
+        } else {
+            None
+        }
+    }
+
+    fn pdb_mut(&self) -> &mut PDB {
+        if let Some(reference) = self.pdb {
+            unsafe { &mut *reference }
+        } else {
+            panic!(format!(
+                "No value for PDB parent for the current model {}",
+                self.serial_number
+            ))
+        }
+    }
+
+    fn pdb_mut_safe(&self) -> Option<&mut PDB> {
+        if let Some(reference) = self.pdb {
+            Some(unsafe { &mut *reference })
+        } else {
+            None
+        }
+    }
+
     pub fn fix_pointers_of_children(&mut self) {
+        let reference: *mut Model = self;
         for chain in &mut self.chains {
+            chain.set_model_pointer(reference);
             chain.fix_pointers_of_children();
         }
         for chain in &mut self.hetero_atoms {
+            chain.set_model_pointer(reference);
             chain.fix_pointers_of_children();
         }
+    }
+
+    pub fn remove_chain(&mut self, index: usize) {
+        self.chains.remove(index);
+    }
+
+    pub fn remove_chain_id(&mut self, id: char) -> bool {
+        let index = self.chains.iter().position(|a| a.id() == id);
+
+        if let Some(i) = index {
+            self.remove_chain(i);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn remove(&mut self) {
+        self.pdb_mut()
+            .remove_model_serial_number(self.serial_number());
+    }
+}
+
+use std::fmt;
+impl fmt::Display for Model {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "MODEL SerialNumber:{}, Chains: {}",
+            self.serial_number,
+            self.chains.len()
+        )
     }
 }

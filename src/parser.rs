@@ -13,7 +13,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
     let mut linenumber = 0;
 
     let mut pdb = PDB::new();
-    let mut current_model = Model::new(None);
+    let mut current_model = Model::new(None, Some(&mut pdb));
 
     for read_line in reader.lines() {
         let line = &read_line.expect("Line not read");
@@ -63,7 +63,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                         pdb.models.push(current_model)
                     }
 
-                    current_model = Model::new(Some(number));
+                    current_model = Model::new(Some(number), Some(&mut pdb));
                 }
                 LexItem::Scale(n, row) => {
                     if pdb.scale.is_none() {

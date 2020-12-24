@@ -93,8 +93,35 @@ impl PDB {
     }
 
     pub fn fix_pointers_of_children(&mut self) {
+        let reference: *mut PDB = self;
         for model in &mut self.models {
+            model.set_pdb_pointer(reference);
             model.fix_pointers_of_children();
         }
+    }
+
+    pub fn remove_model(&mut self, index: usize) {
+        self.models.remove(index);
+    }
+
+    pub fn remove_model_serial_number(&mut self, serial_number: usize) -> bool {
+        let index = self
+            .models
+            .iter()
+            .position(|a| a.serial_number() == serial_number);
+
+        if let Some(i) = index {
+            self.remove_model(i);
+            true
+        } else {
+            false
+        }
+    }
+}
+
+use std::fmt;
+impl fmt::Display for PDB {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "PDB Models: {}", self.models.len())
     }
 }

@@ -276,7 +276,18 @@ impl Atom {
         }
     }
 
-    fn residue_mut(&self) -> Option<&mut Residue> {
+    fn residue_mut(&self) -> &mut Residue {
+        if let Some(reference) = self.residue {
+            unsafe { &mut *reference }
+        } else {
+            panic!(format!(
+                "No value for residue parent for the current atom {}",
+                self.serial_number
+            ))
+        }
+    }
+
+    fn residue_mut_safe(&self) -> Option<&mut Residue> {
         if let Some(reference) = self.residue {
             Some(unsafe { &mut *reference })
         } else {
@@ -296,6 +307,11 @@ impl Atom {
         } else {
             None
         }
+    }
+
+    pub fn remove(&mut self) {
+        self.residue_mut()
+            .remove_atom_serial_number(self.serial_number());
     }
 }
 

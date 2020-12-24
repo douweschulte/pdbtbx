@@ -140,7 +140,18 @@ impl Residue {
         }
     }
 
-    fn chain_mut(&self) -> Option<&mut Chain> {
+    fn chain_mut(&self) -> &mut Chain {
+        if let Some(reference) = self.chain {
+            unsafe { &mut *reference }
+        } else {
+            panic!(format!(
+                "No value for chain parent for the current residue {}",
+                self.serial_number
+            ))
+        }
+    }
+
+    fn chain_mut_safe(&self) -> Option<&mut Chain> {
         if let Some(reference) = self.chain {
             Some(unsafe { &mut *reference })
         } else {
@@ -153,6 +164,40 @@ impl Residue {
         for atom in &mut self.atoms {
             atom.set_residue_pointer(reference);
         }
+    }
+
+    pub fn remove_atom(&mut self, index: usize) {
+        self.atoms.remove(index);
+    }
+
+    pub fn remove_atom_serial_number(&mut self, serial_number: usize) -> bool {
+        let index = self
+            .atoms
+            .iter()
+            .position(|a| a.serial_number() == serial_number);
+
+        if let Some(i) = index {
+            self.remove_atom(i);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn remove_atom_name(&mut self, name: String) -> bool {
+        let index = self.atoms.iter().position(|a| a.name() == name);
+
+        if let Some(i) = index {
+            self.remove_atom(i);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn remove(&mut self) {
+        self.chain_mut()
+            .remove_residue_serial_number(self.serial_number());
     }
 }
 
