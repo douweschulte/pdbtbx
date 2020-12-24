@@ -59,8 +59,14 @@ fn main() {
     );
     println!("Scale: {:?}", pdb.scale().factors);
 
-    // TODO: This should obviously print 1 as amount of models...
-    println!("{}", pdb.atoms()[62].residue().chain().model().pdb());
+    println!(
+        "{} {} {} {} {}",
+        pdb.atoms()[62],
+        pdb.atoms()[62].residue(),
+        pdb.atoms()[62].residue().chain(),
+        pdb.atoms()[62].residue().chain().model(),
+        pdb.atoms()[62].residue().chain().model().pdb()
+    );
 
     save::save(&pdb, &format!("{}_saved", args[1])).expect("Save not successful");
 }

@@ -202,12 +202,12 @@ impl Model {
                 break;
             }
         }
+        if !found {
+            self.hetero_atoms.push(new_chain);
+            current_chain = self.hetero_atoms.last_mut().unwrap();
+        }
 
         current_chain.add_atom(new_atom, residue_serial_number, residue_name);
-
-        if !found {
-            self.chains.push(new_chain)
-        }
     }
 
     pub fn all_chains(&self) -> Vec<&Chain> {
@@ -376,7 +376,7 @@ impl fmt::Display for Model {
             f,
             "MODEL SerialNumber:{}, Chains: {}",
             self.serial_number,
-            self.chains.len()
+            self.chains.len() + self.hetero_atoms.len()
         )
     }
 }
