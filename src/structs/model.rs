@@ -109,12 +109,13 @@ impl Model {
                 break;
             }
         }
+        if !found {
+            // As this moves the chain the atom should be added later to keep the reference intact
+            self.chains.push(new_chain);
+            current_chain = (&mut self.chains).last_mut().unwrap();
+        }
 
         current_chain.add_atom(new_atom, residue_serial_number, residue_name);
-
-        if !found {
-            self.chains.push(new_chain)
-        }
     }
 
     pub fn hetero_chains(&self) -> Vec<&Chain> {

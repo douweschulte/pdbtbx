@@ -93,15 +93,13 @@ impl Chain {
                 break;
             }
         }
+        if !found {
+            // As this moves the residue the atom should be added later to keep the reference intact
+            self.residues.push(new_residue);
+            current_residue = self.residues.last_mut().unwrap();
+        }
 
         current_residue.add_atom(new_atom);
-
-        if !found {
-            self.residues.push(new_residue);
-            // Fix the pointer of the atom
-            let n = self.residues.len();
-            self.residues[n - 1].fix_pointers_of_children();
-        }
     }
 
     pub fn fix_pointers_of_children(&mut self) {

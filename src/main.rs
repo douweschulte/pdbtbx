@@ -59,5 +59,28 @@ fn main() {
     );
     println!("Scale: {:?}", pdb.scale().factors);
 
+    let atom = structs::Atom::new(
+        None,
+        123,
+        [' ', 'I', 'O', 'P'],
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        [' ', 'P'],
+        [' ', ' '],
+    )
+    .unwrap();
+    pdb.models[0].residues_mut()[62].add_atom(atom);
+    println!(
+        "{}",
+        pdb.models[0].residues()[62]
+            .atoms()
+            .last()
+            .unwrap()
+            .residue()
+    );
+
     save::save(&pdb, &format!("{}_saved", args[1])).expect("Save not successful");
 }
