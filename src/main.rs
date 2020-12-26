@@ -17,9 +17,9 @@ fn main() {
 
     println!(
         "Found {} atoms, in {} residues, in {} chains, in {} models it all took {} ms",
-        pdb.atoms().collect::<Vec<_>>().len(),
-        pdb.residues().collect::<Vec<_>>().len(),
-        pdb.chains().collect::<Vec<_>>().len(),
+        pdb.all_atoms().collect::<Vec<_>>().len(),
+        pdb.all_residues().collect::<Vec<_>>().len(),
+        pdb.all_chains().collect::<Vec<_>>().len(),
         pdb.models().collect::<Vec<_>>().len(),
         time.as_millis()
     );
@@ -43,9 +43,6 @@ fn main() {
             total_side += 1;
             avg_side += atom.b_factor();
         }
-        if atom.anisotropic_temperature_factors().is_none() {
-            println!("No ANISOU for atom {}", atom);
-        }
     }
 
     println!("Counted for averages");
@@ -61,6 +58,8 @@ fn main() {
         avg, avg_back, avg_side
     );
     println!("Scale: {:?}", pdb.scale().factors);
+
+    pdb.renumber();
 
     save::save(&pdb, &format!("{}_saved", args[1])).expect("Save not successful");
 }
