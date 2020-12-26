@@ -85,6 +85,46 @@ impl PDB {
         output
     }
 
+    pub fn hetero_atoms(&self) -> Vec<&Atom> {
+        let mut output = Vec::new();
+
+        for model in &self.models {
+            output.append(&mut model.hetero_atoms())
+        }
+
+        output
+    }
+
+    pub fn hetero_atoms_mut(&mut self) -> Vec<&mut Atom> {
+        let mut output = Vec::new();
+
+        for model in &mut self.models {
+            output.append(&mut model.hetero_atoms_mut())
+        }
+
+        output
+    }
+
+    pub fn all_atoms(&self) -> Vec<&Atom> {
+        let mut output = Vec::new();
+
+        for model in &self.models {
+            output.append(&mut model.all_atoms())
+        }
+
+        output
+    }
+
+    pub fn all_atoms_mut(&mut self) -> Vec<&mut Atom> {
+        let mut output = Vec::new();
+
+        for model in &mut self.models {
+            output.append(&mut model.all_atoms_mut())
+        }
+
+        output
+    }
+
     pub fn scale(&mut self) -> &mut Scale {
         match &mut self.scale {
             Some(s) => s,

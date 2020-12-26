@@ -22,6 +22,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
             match &line[..6] {
                 "REMARK" => lex_remark(linenumber, line),
                 "ATOM  " => lex_atom(linenumber, line, false),
+                "ANISOU" => lex_anisou(linenumber, line),
                 "HETATM" => lex_atom(linenumber, line, true),
                 "CRYST1" => lex_cryst(linenumber, line),
                 "SCALE1" => lex_scale(linenumber, line, 0),
@@ -56,6 +57,23 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                         current_model.add_hetero_atom(atom, c, rs, r);
                     } else {
                         current_model.add_atom(atom, c, rs, r);
+                    }
+                }
+                LexItem::Anisou(s, n, _, _r, _c, _rs, _, factors, _, _e, _ch) => {
+                    let mut found = false;
+                    for atom in current_model.all_atoms_mut().iter_mut().rev() {
+                        if atom.serial_number() == s {
+                            atom.set_anisotropic_temperature_factors(factors);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if !found {
+                        println!(
+                            "Could not find atom for temperature factors, coupled to atom {} {}",
+                            s,
+                            n.iter().collect::<String>()
+                        )
                     }
                 }
                 LexItem::Model(number) => {
@@ -141,6 +159,49 @@ fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, Stri
         z,
         occupancy,
         b_factor,
+        segment_id,
+        element,
+        charge,
+    ))
+}
+
+fn lex_anisou(linenumber: usize, line: &str) -> Result<LexItem, String> {
+    let chars: Vec<char> = line.chars().collect();
+    let serial_number = parse_number(linenumber, &chars[7..11])?;
+    let atom_name = [chars[12], chars[13], chars[14], chars[15]];
+    let alternate_location = chars[16];
+    let residue_name = [chars[17], chars[18], chars[19]];
+    let chain_id = chars[21];
+    let residue_serial_number = parse_number(linenumber, &chars[22..26])?;
+    let insertion = chars[26];
+    let ai: isize = parse_number(linenumber, &chars[28..35])?;
+    let bi: isize = parse_number(linenumber, &chars[35..42])?;
+    let ci: isize = parse_number(linenumber, &chars[42..49])?;
+    let di: isize = parse_number(linenumber, &chars[49..56])?;
+    let ei: isize = parse_number(linenumber, &chars[56..63])?;
+    let fi: isize = parse_number(linenumber, &chars[63..70])?;
+    let a = (ai as f64) / 10000.0;
+    let b = (bi as f64) / 10000.0;
+    let c = (ci as f64) / 10000.0;
+    let d = (di as f64) / 10000.0;
+    let e = (ei as f64) / 10000.0;
+    let f = (fi as f64) / 10000.0;
+    let segment_id = [chars[72], chars[73], chars[74], chars[75]];
+    let element = [chars[76], chars[77]];
+    let mut charge = [' ', ' '];
+    if chars.len() == 80 {
+        charge = [chars[79], chars[80]];
+    }
+
+    Ok(LexItem::Anisou(
+        serial_number,
+        atom_name,
+        alternate_location,
+        residue_name,
+        chain_id,
+        residue_serial_number,
+        insertion,
+        [[a, b, c], [d, e, f]],
         segment_id,
         element,
         charge,

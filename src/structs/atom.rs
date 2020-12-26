@@ -14,6 +14,7 @@ pub struct Atom {
     element: [char; 2],
     charge: [char; 2],
     residue: Option<*mut Residue>,
+    anisotropic_temperature_factors: Option<[[f64; 3]; 2]>,
 }
 
 impl Atom {
@@ -40,6 +41,7 @@ impl Atom {
             element: element,
             charge: charge,
             residue: None,
+            anisotropic_temperature_factors: None,
         };
 
         if let Some(reference) = residue {
@@ -247,6 +249,14 @@ impl Atom {
                 self.serial_number, new_charge
             ))
         }
+    }
+
+    pub fn anisotropic_temperature_factors(&self) -> Option<[[f64; 3]; 2]> {
+        self.anisotropic_temperature_factors
+    }
+
+    pub fn set_anisotropic_temperature_factors(&mut self, factors: [[f64; 3]; 2]) {
+        self.anisotropic_temperature_factors = Some(factors);
     }
 
     pub fn set_residue(&mut self, new_residue: &mut Residue) {

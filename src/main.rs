@@ -43,6 +43,9 @@ fn main() {
             total_side += 1;
             avg_side += atom.b_factor();
         }
+        if atom.anisotropic_temperature_factors().is_none() {
+            println!("No ANISOU for atom {}", atom);
+        }
     }
 
     println!("Counted for averages");
