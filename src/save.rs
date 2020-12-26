@@ -91,6 +91,26 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                     atom.charge(),
                 ))
                 .unwrap();
+            if atom.anisotropic_temperature_factors().is_some() {
+                writer
+                    .write_fmt(format_args!(
+                        "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{:>2}\n",
+                        atom.serial_number(),
+                        atom.name(),
+                        atom.residue().id(),
+                        atom.residue().chain().id(),
+                        atom.residue().serial_number(),
+                        (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0) as isize,
+                        (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0) as isize,
+                        (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0) as isize,
+                        (atom.anisotropic_temperature_factors().unwrap()[1][0] * 10000.0) as isize,
+                        (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0) as isize,
+                        (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0) as isize,
+                        atom.element(),
+                        atom.charge(),
+                    ))
+                    .unwrap();
+            }
         }
         writer.write_fmt(format_args!("TER\n")).unwrap();
         for atom in model.hetero_atoms() {
