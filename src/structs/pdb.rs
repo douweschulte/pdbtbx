@@ -7,7 +7,7 @@ pub struct PDB {
     pub scale: Option<Scale>,
     pub unit_cell: Option<UnitCell>,
     pub symmetry: Option<Symmetry>,
-    pub models: Vec<Model>,
+    models: Vec<Model>,
 }
 
 impl PDB {
@@ -21,108 +21,101 @@ impl PDB {
         }
     }
 
-    pub fn chains(&self) -> Vec<&Chain> {
-        let mut output = Vec::new();
-
-        for model in &self.models {
-            for chain in model.chains() {
-                output.push(chain)
-            }
-        }
-
-        output
+    pub fn add_model(&mut self, new_model: Model) {
+        self.models.push(new_model);
+        self.models.last_mut().unwrap().fix_pointers_of_children();
     }
 
-    pub fn chains_mut(&mut self) -> Vec<&mut Chain> {
-        let mut output = Vec::new();
-
-        for model in &mut self.models {
-            for chain in model.chains_mut() {
-                output.push(chain)
-            }
-        }
-
-        output
+    pub fn models(&self) -> impl DoubleEndedIterator<Item = &Model> + '_ {
+        self.models.iter()
     }
 
-    pub fn residues(&self) -> Vec<&Residue> {
-        let mut output = Vec::new();
-
-        for model in &self.models {
-            output.append(&mut model.residues())
-        }
-
-        output
+    pub fn models_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Model> + '_ {
+        self.models.iter_mut()
     }
 
-    pub fn residues_mut(&mut self) -> Vec<&mut Residue> {
-        let mut output = Vec::new();
-
-        for model in &mut self.models {
-            output.append(&mut model.residues_mut())
-        }
-
-        output
+    pub fn chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
+        self.models.iter().map(|a| a.chains()).flatten()
     }
 
-    pub fn atoms(&self) -> Vec<&Atom> {
-        let mut output = Vec::new();
-
-        for model in &self.models {
-            output.append(&mut model.atoms())
-        }
-
-        output
+    pub fn chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
+        self.models.iter_mut().map(|a| a.chains_mut()).flatten()
     }
 
-    pub fn atoms_mut(&mut self) -> Vec<&mut Atom> {
-        let mut output = Vec::new();
-
-        for model in &mut self.models {
-            output.append(&mut model.atoms_mut())
-        }
-
-        output
+    pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
+        self.models.iter().map(|a| a.residues()).flatten()
     }
 
-    pub fn hetero_atoms(&self) -> Vec<&Atom> {
-        let mut output = Vec::new();
-
-        for model in &self.models {
-            output.append(&mut model.hetero_atoms())
-        }
-
-        output
+    pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
+        self.models.iter_mut().map(|a| a.residues_mut()).flatten()
     }
 
-    pub fn hetero_atoms_mut(&mut self) -> Vec<&mut Atom> {
-        let mut output = Vec::new();
-
-        for model in &mut self.models {
-            output.append(&mut model.hetero_atoms_mut())
-        }
-
-        output
+    pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
+        self.models.iter().map(|a| a.atoms()).flatten()
     }
 
-    pub fn all_atoms(&self) -> Vec<&Atom> {
-        let mut output = Vec::new();
-
-        for model in &self.models {
-            output.append(&mut model.all_atoms())
-        }
-
-        output
+    pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
+        self.models.iter_mut().map(|a| a.atoms_mut()).flatten()
     }
 
-    pub fn all_atoms_mut(&mut self) -> Vec<&mut Atom> {
-        let mut output = Vec::new();
+    pub fn hetero_chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
+        self.models.iter().map(|a| a.hetero_chains()).flatten()
+    }
 
-        for model in &mut self.models {
-            output.append(&mut model.all_atoms_mut())
-        }
+    pub fn hetero_chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
+        self.models
+            .iter_mut()
+            .map(|a| a.hetero_chains_mut())
+            .flatten()
+    }
 
-        output
+    pub fn hetero_residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
+        self.models.iter().map(|a| a.hetero_residues()).flatten()
+    }
+
+    pub fn hetero_residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
+        self.models
+            .iter_mut()
+            .map(|a| a.hetero_residues_mut())
+            .flatten()
+    }
+
+    pub fn hetero_atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
+        self.models.iter().map(|a| a.hetero_atoms()).flatten()
+    }
+
+    pub fn hetero_atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
+        self.models
+            .iter_mut()
+            .map(|a| a.hetero_atoms_mut())
+            .flatten()
+    }
+
+    pub fn all_chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
+        self.models.iter().map(|a| a.all_chains()).flatten()
+    }
+
+    pub fn all_chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
+        self.models.iter_mut().map(|a| a.all_chains_mut()).flatten()
+    }
+
+    pub fn all_residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
+        self.models.iter().map(|a| a.all_residues()).flatten()
+    }
+
+    pub fn all_residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
+        self.models
+            .iter_mut()
+            .map(|a| a.all_residues_mut())
+            .flatten()
+    }
+
+    pub fn all_atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
+        self.models.iter().map(|a| a.all_atoms()).flatten()
+    }
+
+    pub fn all_atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
+        self.models.iter_mut().map(|a| a.all_atoms_mut()).flatten()
     }
 
     pub fn scale(&mut self) -> &mut Scale {

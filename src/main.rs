@@ -17,10 +17,10 @@ fn main() {
 
     println!(
         "Found {} atoms, in {} residues, in {} chains, in {} models it all took {} ms",
-        pdb.atoms().len(),
-        pdb.residues().len(),
-        pdb.chains().len(),
-        pdb.models.len(),
+        pdb.atoms().collect::<Vec<_>>().len(),
+        pdb.residues().collect::<Vec<_>>().len(),
+        pdb.chains().collect::<Vec<_>>().len(),
+        pdb.models().collect::<Vec<_>>().len(),
         time.as_millis()
     );
 
@@ -61,15 +61,6 @@ fn main() {
         avg, avg_back, avg_side
     );
     println!("Scale: {:?}", pdb.scale().factors);
-
-    println!(
-        "{} {} {} {} {}",
-        pdb.atoms()[62],
-        pdb.atoms()[62].residue(),
-        pdb.atoms()[62].residue().chain(),
-        pdb.atoms()[62].residue().chain().model(),
-        pdb.atoms()[62].residue().chain().model().pdb()
-    );
 
     save::save(&pdb, &format!("{}_saved", args[1])).expect("Save not successful");
 }

@@ -65,8 +65,8 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     }
 
     // Models
-    let multiple_models = pdb.models.len() > 1;
-    for model in &pdb.models {
+    let multiple_models = pdb.models().size_hint().0 > 1;
+    for model in pdb.models() {
         if multiple_models {
             writer
                 .write_fmt(format_args!("MODEL        {}\n", model.serial_number()))

@@ -80,20 +80,12 @@ impl Residue {
         self.serial_number = new_number;
     }
 
-    pub fn atoms(&self) -> Vec<&Atom> {
-        let mut output = Vec::new();
-        for atom in &self.atoms {
-            output.push(atom);
-        }
-        output
+    pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
+        self.atoms.iter()
     }
 
-    pub fn atoms_mut(&mut self) -> Vec<&mut Atom> {
-        let mut output = Vec::new();
-        for atom in &mut self.atoms {
-            output.push(atom);
-        }
-        output
+    pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
+        self.atoms.iter_mut()
     }
 
     pub fn add_atom(&mut self, mut new_atom: Atom) {

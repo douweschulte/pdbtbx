@@ -61,7 +61,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                 }
                 LexItem::Anisou(s, n, _, _r, _c, _rs, _, factors, _, _e, _ch) => {
                     let mut found = false;
-                    for atom in current_model.all_atoms_mut().iter_mut().rev() {
+                    for atom in current_model.all_atoms_mut().rev() {
                         if atom.serial_number() == s {
                             atom.set_anisotropic_temperature_factors(factors);
                             found = true;
@@ -77,8 +77,8 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                     }
                 }
                 LexItem::Model(number) => {
-                    if current_model.atoms().len() > 0 {
-                        pdb.models.push(current_model)
+                    if current_model.atoms().collect::<Vec<_>>().len() > 0 {
+                        pdb.add_model(current_model)
                     }
 
                     current_model = Model::new(Some(number), Some(&mut pdb));
@@ -97,7 +97,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
             }
         }
     }
-    pdb.models.push(current_model);
+    pdb.add_model(current_model);
     pdb.fix_pointers_of_children();
     Ok(pdb)
 }

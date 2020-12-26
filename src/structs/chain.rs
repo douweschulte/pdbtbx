@@ -43,44 +43,20 @@ impl Chain {
         }
     }
 
-    pub fn residues(&self) -> Vec<&Residue> {
-        let mut output = Vec::new();
-
-        for residue in &self.residues {
-            output.push(residue);
-        }
-
-        output
+    pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
+        self.residues.iter()
     }
 
-    pub fn residues_mut(&mut self) -> Vec<&mut Residue> {
-        let mut output = Vec::new();
-
-        for residue in &mut self.residues {
-            output.push(residue);
-        }
-
-        output
+    pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
+        self.residues.iter_mut()
     }
 
-    pub fn atoms(&self) -> Vec<&Atom> {
-        let mut output = Vec::new();
-
-        for residue in &self.residues {
-            output.append(&mut residue.atoms());
-        }
-
-        output
+    pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
+        self.residues.iter().map(|a| a.atoms()).flatten()
     }
 
-    pub fn atoms_mut(&mut self) -> Vec<&mut Atom> {
-        let mut output = Vec::new();
-
-        for residue in &mut self.residues {
-            output.append(&mut residue.atoms_mut());
-        }
-
-        output
+    pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
+        self.residues.iter_mut().map(|a| a.atoms_mut()).flatten()
     }
 
     pub fn add_atom(
