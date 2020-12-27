@@ -1,5 +1,5 @@
 use super::lexitem::*;
-use super::structs::*;
+use super::super::structs::*;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};

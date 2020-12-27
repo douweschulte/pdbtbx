@@ -1,4 +1,3 @@
-mod lexitem;
 mod parser;
 mod save;
 mod structs;
