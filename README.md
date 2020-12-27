@@ -37,12 +37,15 @@ Primarily a hobby project to work more with Rust, but with a bit of luck it coul
   - [x] Tell if a residue is an amino acid
   - [x] Tell if an atom is in the backbone
   - [x] Renumber PDB
+  - [x] Apply affine transformations to atoms
   - [ ] Find position in Å
-  - [ ] Apply affine transformations to atoms
   - [ ] Find symmetry partners (affine) transformations for space_group
 - General
+  - [ ] Create different abstraction for models, they are defined to be the same atoms so enforce that and help with that
   - [ ] Add documentation to EVERY function
   - [ ] Measure parser to find suboptimal coding (faster is always better)
+    - [x] Using 'opt-level = 3' makes the execution more than 10x faster
+    - [ ] Use perf or similar to find hotspots in the code
 
 
 ## License
