@@ -153,25 +153,26 @@ impl PDB {
     }
 
     pub fn renumber(&mut self) {
-        let mut counter = 1;
-        for atom in self.atoms_mut() {
-            atom.set_serial_number(counter);
-            counter += 1;
-        }
-        counter = 1;
-        for residue in self.residues_mut() {
-            residue.set_serial_number(counter);
-            counter += 1;
-        }
-        counter = 0;
-        for chain in self.chains_mut() {
-            chain.set_id(std::char::from_u32((65 + counter % 26) as u32).unwrap());
-            counter += 1;
-        }
-        counter = 1;
+        let mut model_counter = 1;
         for model in self.models_mut() {
-            model.set_serial_number(counter);
-            counter += 1;
+            model.set_serial_number(model_counter);
+            model_counter += 1;
+
+            let mut counter = 1;
+            for atom in model.atoms_mut() {
+                atom.set_serial_number(counter);
+                counter += 1;
+            }
+            counter = 1;
+            for residue in model.residues_mut() {
+                residue.set_serial_number(counter);
+                counter += 1;
+            }
+            counter = 0;
+            for chain in model.chains_mut() {
+                chain.set_id(std::char::from_u32((65 + counter % 26) as u32).unwrap());
+                counter += 1;
+            }
         }
     }
 
