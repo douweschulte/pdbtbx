@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::structs::*;
+use crate::transformation::*;
 use std::fmt;
 
 #[derive(Debug)]
@@ -190,6 +191,12 @@ impl Residue {
     pub fn remove(&mut self) {
         self.chain_mut()
             .remove_residue_serial_number(self.serial_number());
+    }
+
+    pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        for atom in self.atoms_mut() {
+            atom.apply_transformation(transformation);
+        }
     }
 }
 

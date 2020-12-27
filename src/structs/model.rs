@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::structs::*;
+use crate::transformation::*;
 
 #[derive(Debug)]
 pub struct Model {
@@ -280,6 +281,12 @@ impl Model {
     pub fn remove(&mut self) {
         self.pdb_mut()
             .remove_model_serial_number(self.serial_number());
+    }
+
+    pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        for atom in self.all_atoms_mut() {
+            atom.apply_transformation(transformation);
+        }
     }
 }
 

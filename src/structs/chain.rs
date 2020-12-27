@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::structs::*;
+use crate::transformation::*;
 
 #[derive(Debug)]
 pub struct Chain {
@@ -176,6 +177,12 @@ impl Chain {
 
     pub fn remove(&mut self) {
         self.model_mut().remove_chain_id(self.id());
+    }
+
+    pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        for atom in self.atoms_mut() {
+            atom.apply_transformation(transformation);
+        }
     }
 }
 

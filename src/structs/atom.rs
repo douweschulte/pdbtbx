@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::structs::*;
+use crate::transformation::*;
 use std::fmt;
 
 #[derive(Debug)]
@@ -322,6 +323,10 @@ impl Atom {
     pub fn remove(&mut self) {
         self.residue_mut()
             .remove_atom_serial_number(self.serial_number());
+    }
+
+    pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        self.set_pos(transformation.apply(self.pos())).unwrap();
     }
 }
 

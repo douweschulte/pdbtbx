@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::structs::*;
+use crate::transformation::*;
 
 #[derive(Debug)]
 pub struct PDB {
@@ -171,6 +172,12 @@ impl PDB {
         for model in self.models_mut() {
             model.set_serial_number(counter);
             counter += 1;
+        }
+    }
+
+    pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        for atom in self.all_atoms_mut() {
+            atom.apply_transformation(transformation);
         }
     }
 }
