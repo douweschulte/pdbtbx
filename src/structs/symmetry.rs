@@ -22,3 +22,9 @@ impl Symmetry {
         self.space_group
     }
 }
+
+impl Clone for Symmetry {
+    fn clone(&self) -> Self {
+        Symmetry::new(self.space_group, self.symbols.clone())
+    }
+}

@@ -341,3 +341,25 @@ impl fmt::Display for Atom {
         )
     }
 }
+
+impl Clone for Atom {
+    fn clone(&self) -> Self {
+        let mut atom = Atom::new(
+            None,
+            self.serial_number,
+            self.name,
+            self.x,
+            self.y,
+            self.z,
+            self.occupancy,
+            self.b_factor,
+            self.element,
+            self.charge,
+        )
+        .unwrap();
+
+        atom.anisotropic_temperature_factors = self.anisotropic_temperature_factors;
+
+        atom
+    }
+}

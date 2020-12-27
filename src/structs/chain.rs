@@ -86,6 +86,11 @@ impl Chain {
         current_residue.add_atom(new_atom);
     }
 
+    fn add_residue(&mut self, mut residue: Residue) {
+        residue.set_chain(self);
+        self.residues.push(residue);
+    }
+
     pub fn set_model(&mut self, new_model: &mut Model) {
         self.model = Some(new_model);
     }
@@ -183,5 +188,17 @@ impl fmt::Display for Chain {
             self.id(),
             self.residues.len()
         )
+    }
+}
+
+impl Clone for Chain {
+    fn clone(&self) -> Self {
+        let mut chain = Chain::new(Some(self.id), None).unwrap();
+
+        for residue in self.residues() {
+            chain.add_residue(residue.clone());
+        }
+
+        chain
     }
 }

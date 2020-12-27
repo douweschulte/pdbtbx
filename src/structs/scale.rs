@@ -12,3 +12,13 @@ impl Scale {
         }
     }
 }
+
+impl Clone for Scale {
+    fn clone(&self) -> Self {
+        let mut scale = Scale::new();
+
+        scale.factors = self.factors.clone();
+
+        scale
+    }
+}

@@ -41,3 +41,9 @@ impl UnitCell {
         self.gamma
     }
 }
+
+impl Clone for UnitCell {
+    fn clone(&self) -> Self {
+        UnitCell::new(self.a, self.b, self.c, self.alpha, self.beta, self.gamma)
+    }
+}

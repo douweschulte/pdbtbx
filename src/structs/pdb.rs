@@ -181,3 +181,19 @@ impl fmt::Display for PDB {
         write!(f, "PDB Models: {}", self.models.len())
     }
 }
+
+impl Clone for PDB {
+    fn clone(&self) -> Self {
+        let mut pdb = PDB::new();
+        pdb.remarks = self.remarks.clone();
+        pdb.scale = self.scale.clone();
+        pdb.symmetry = self.symmetry.clone();
+        pdb.unit_cell = self.unit_cell.clone();
+
+        for model in self.models() {
+            pdb.add_model(model.clone());
+        }
+
+        pdb
+    }
+}

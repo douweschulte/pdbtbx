@@ -194,6 +194,16 @@ impl Model {
         current_chain.add_atom(new_atom, residue_serial_number, residue_name);
     }
 
+    fn add_chain(&mut self, mut chain: Chain) {
+        chain.set_model(self);
+        self.chains.push(chain);
+    }
+
+    fn add_hetero_chain(&mut self, mut chain: Chain) {
+        chain.set_model(self);
+        self.hetero_atoms.push(chain);
+    }
+
     pub fn set_pdb(&mut self, new_pdb: &mut PDB) {
         self.pdb = Some(new_pdb);
     }
@@ -282,5 +292,21 @@ impl fmt::Display for Model {
             self.serial_number,
             self.chains.len() + self.hetero_atoms.len()
         )
+    }
+}
+
+impl Clone for Model {
+    fn clone(&self) -> Self {
+        let mut model = Model::new(Some(self.serial_number), None);
+
+        for chain in self.chains() {
+            model.add_chain(chain.clone());
+        }
+
+        for chain in self.hetero_chains() {
+            model.add_hetero_chain(chain.clone());
+        }
+
+        model
     }
 }

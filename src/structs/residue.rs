@@ -204,3 +204,15 @@ impl fmt::Display for Residue {
         )
     }
 }
+
+impl Clone for Residue {
+    fn clone(&self) -> Self {
+        let mut res = Residue::new(self.serial_number, Some(self.id), None, None).unwrap();
+
+        for atom in self.atoms() {
+            res.add_atom(atom.clone());
+        }
+
+        res
+    }
+}
