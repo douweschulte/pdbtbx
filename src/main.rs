@@ -1,4 +1,5 @@
 mod parser;
+mod reference_tables;
 mod save;
 mod structs;
 mod transformation;
@@ -59,6 +60,15 @@ fn main() {
         avg, avg_back, avg_side
     );
     println!("Scale: {:?}", pdb.scale().transformation());
+
+    let index = reference_tables::get_index_for_symbol("P 21 21 21").unwrap();
+
+    println!(
+        "{:?}, {:?}, {}",
+        reference_tables::get_transformation(index),
+        reference_tables::get_symbol_for_index(index),
+        index
+    );
 
     pdb.renumber();
 

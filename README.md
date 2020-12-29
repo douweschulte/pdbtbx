@@ -42,7 +42,6 @@ Primarily a hobby project to work more with Rust, but with a bit of luck it coul
   - [x] Tell if an atom is in the backbone
   - [x] Renumber PDB
   - [x] Apply affine transformations to atoms
-  - [ ] Find position in Å
   - [ ] Find symmetry partners (affine) transformations for space_group
 - General
   - [ ] Create different abstraction for models, they are defined to be the same atoms so enforce that and help with that
