@@ -58,7 +58,7 @@ fn main() {
         "Average B factor: Total: {:.3}, Backbone: {:.3}, Sidechains: {:.3}",
         avg, avg_back, avg_side
     );
-    println!("Scale: {:?}", pdb.scale().factors);
+    println!("Scale: {:?}", pdb.scale().transformation());
 
     pdb.renumber();
 

@@ -94,19 +94,19 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                     if pdb.scale.is_none() {
                         pdb.scale = Some(Scale::new());
                     }
-                    pdb.scale().factors[n] = row;
+                    pdb.scale().set_row(n, row);
                 }
                 LexItem::OrigX(n, row) => {
                     if pdb.origx.is_none() {
                         pdb.origx = Some(OrigX::new());
                     }
-                    pdb.origx().factors[n] = row;
+                    pdb.origx().set_row(n, row);
                 }
                 LexItem::MtriX(n, ser, row, given) => {
                     let mut found = false;
                     for mtrix in &mut pdb.mtrix {
                         if mtrix.serial_number == ser {
-                            mtrix.factors[n] = row;
+                            mtrix.set_row(n, row);
                             mtrix.contained = given;
                             found = true;
                             break;
@@ -115,7 +115,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                     if !found {
                         let mut mtrix = MtriX::new();
                         mtrix.serial_number = ser;
-                        mtrix.factors[n] = row;
+                        mtrix.set_row(n, row);
                         mtrix.contained = given;
                         pdb.mtrix.push(mtrix);
                     }

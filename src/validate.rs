@@ -6,6 +6,15 @@ pub fn validate(pdb: &PDB) -> bool {
     if pdb.amount_models() > 1 {
         output = output && validate_models(pdb)
     }
+    if pdb.scale.is_some() {
+        output = output && pdb.scale.as_ref().unwrap().valid();
+    }
+    if pdb.origx.is_some() {
+        output = output && pdb.origx.as_ref().unwrap().valid();
+    }
+    for m in &pdb.mtrix {
+        output = output && m.valid();
+    }
     return output;
 }
 

@@ -47,63 +47,66 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
 
     // Scale
     if let Some(scale) = &pdb.scale {
+        let m = scale.transformation().matrix();
         writer.write_fmt(format_args!(
             "SCALE1    {:10.6}{:10.6}{:10.6}     {:10.5}\nSCALE2    {:10.6}{:10.6}{:10.6}     {:10.5}\nSCALE3    {:10.6}{:10.6}{:10.6}     {:10.5}\n",
-            scale.factors[0][0],
-            scale.factors[0][1],
-            scale.factors[0][2],
-            scale.factors[0][3],
-            scale.factors[1][0],
-            scale.factors[1][1],
-            scale.factors[1][2],
-            scale.factors[1][3],
-            scale.factors[2][0],
-            scale.factors[2][1],
-            scale.factors[2][2],
-            scale.factors[2][3],
+            m[0][0],
+            m[0][1],
+            m[0][2],
+            m[0][3],
+            m[1][0],
+            m[1][1],
+            m[1][2],
+            m[1][3],
+            m[2][0],
+            m[2][1],
+            m[2][2],
+            m[2][3],
         )).unwrap();
     }
 
     // OrigX
     if let Some(origx) = &pdb.origx {
+        let m = origx.transformation().matrix();
         writer.write_fmt(format_args!(
             "ORIGX1    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX2    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX3    {:10.6}{:10.6}{:10.6}     {:10.5}\n",
-            origx.factors[0][0],
-            origx.factors[0][1],
-            origx.factors[0][2],
-            origx.factors[0][3],
-            origx.factors[1][0],
-            origx.factors[1][1],
-            origx.factors[1][2],
-            origx.factors[1][3],
-            origx.factors[2][0],
-            origx.factors[2][1],
-            origx.factors[2][2],
-            origx.factors[2][3],
+            m[0][0],
+            m[0][1],
+            m[0][2],
+            m[0][3],
+            m[1][0],
+            m[1][1],
+            m[1][2],
+            m[1][3],
+            m[2][0],
+            m[2][1],
+            m[2][2],
+            m[2][3],
         )).unwrap();
     }
 
     // MtriX
     for mtrix in &pdb.mtrix {
+        let m = mtrix.transformation().matrix();
         writer.write_fmt(format_args!(
             "MTRIX1 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\nMTRIX2 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\nMTRIX3 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\n",
             mtrix.serial_number,
-            mtrix.factors[0][0],
-            mtrix.factors[0][1],
-            mtrix.factors[0][2],
-            mtrix.factors[0][3],
+            m[0][0],
+            m[0][1],
+            m[0][2],
+            m[0][3],
             if mtrix.contained {'1'} else {' '},
             mtrix.serial_number,
-            mtrix.factors[1][0],
-            mtrix.factors[1][1],
-            mtrix.factors[1][2],
-            mtrix.factors[1][3],
+            m[1][0],
+            m[1][1],
+            m[1][2],
+            m[1][3],
             if mtrix.contained {'1'} else {' '},
             mtrix.serial_number,
-            mtrix.factors[2][0],
-            mtrix.factors[2][1],
-            mtrix.factors[2][2],
-            mtrix.factors[2][3],
+            m[2][0],
+            m[2][1],
+            m[2][2],
+            m[2][3],
             if mtrix.contained {'1'} else {' '},
         )).unwrap();
     }

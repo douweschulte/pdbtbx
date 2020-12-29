@@ -6,6 +6,12 @@ pub struct TransformationMatrix {
 }
 
 impl TransformationMatrix {
+    pub fn matrix(&self) -> [[f64; 4]; 4] {
+        self.matrix
+    }
+    pub fn set_matrix(&mut self, new_matrix: [[f64; 4]; 4]) {
+        self.matrix = new_matrix;
+    }
     pub fn identity() -> Self {
         TransformationMatrix {
             matrix: [
@@ -165,5 +171,15 @@ impl TransformationMatrix {
                 ],
             ],
         }
+    }
+}
+
+impl Clone for TransformationMatrix {
+    fn clone(&self) -> Self {
+        let mut orig = TransformationMatrix::identity();
+
+        orig.matrix = self.matrix.clone();
+
+        orig
     }
 }

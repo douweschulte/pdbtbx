@@ -1,5 +1,5 @@
 ## Description
-Primarily a hobby project to work more with Rust, but with a bit of luck it could end up being useful for someone. For now (27 Dec 2020) it can parse simple (crystallographic) PDBs, edit the PDB in place, gives some handy functionality and is able to svae the PDB.
+Primarily a hobby project to work more with Rust, but with a bit of luck it could end up being useful for someone. For now (27 Dec 2020) it can parse simple (crystallographic) PDBs, edit the PDB in place, gives some handy functionality and is able to save the PDB.
 
 ## Functionality
 (not guarenteed complete) and stuff to do
@@ -48,6 +48,8 @@ Primarily a hobby project to work more with Rust, but with a bit of luck it coul
   - [ ] Create different abstraction for models, they are defined to be the same atoms so enforce that and help with that
     - [x] Created a simple validator which is stricter then chimera :/
   - [ ] Add documentation to EVERY function
+  - [ ] Add unit tests + continuous integration
+  - [ ] Create fancy (helpful) errors + warnings
   - [ ] Measure parser to find suboptimal coding (faster is always better)
     - [x] Using 'opt-level = 3' makes the execution more than 10x faster
     - [ ] Use perf or similar to find hotspots in the code
