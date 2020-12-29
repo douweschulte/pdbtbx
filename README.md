@@ -11,6 +11,8 @@ Primarily a hobby project to work more with Rust, but with a bit of luck it coul
   - [x] MODEL
   - [x] REMARK
   - [x] SCALEn
+  - [x] ORIGXn
+  - [x] MTRIXn
   - [x] Use streams (minimise memory usage)
 - Save PDB
   - [x] ANISOU
@@ -20,6 +22,8 @@ Primarily a hobby project to work more with Rust, but with a bit of luck it coul
   - [x] MODEL
   - [x] REMARK
   - [x] SCALEn
+  - [x] ORIGXn
+  - [x] MTRIXn
   - [ ] Test with other software
      - [x] 1ubq.pdb works with Chimera
      - [ ] pTLS-6484.pdb does not work with Chimera
@@ -42,6 +46,7 @@ Primarily a hobby project to work more with Rust, but with a bit of luck it coul
   - [ ] Find symmetry partners (affine) transformations for space_group
 - General
   - [ ] Create different abstraction for models, they are defined to be the same atoms so enforce that and help with that
+    - [x] Created a simple validator which is stricter then chimera :/
   - [ ] Add documentation to EVERY function
   - [ ] Measure parser to find suboptimal coding (faster is always better)
     - [x] Using 'opt-level = 3' makes the execution more than 10x faster

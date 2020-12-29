@@ -1,5 +1,6 @@
 use super::lexitem::*;
-use super::super::structs::*;
+use crate::structs::*;
+use crate::validate::*;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -28,6 +29,12 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                 "SCALE1" => lex_scale(linenumber, line, 0),
                 "SCALE2" => lex_scale(linenumber, line, 1),
                 "SCALE3" => lex_scale(linenumber, line, 2),
+                "ORIGX1" => lex_origx(linenumber, line, 0),
+                "ORIGX2" => lex_origx(linenumber, line, 1),
+                "ORIGX3" => lex_origx(linenumber, line, 2),
+                "MTRIX1" => lex_mtrix(linenumber, line, 0),
+                "MTRIX2" => lex_mtrix(linenumber, line, 1),
+                "MTRIX3" => lex_mtrix(linenumber, line, 2),
                 "MODEL " => lex_model(linenumber, line),
                 "ENDMDL" => Ok(LexItem::EndModel()),
                 _ => Err("Unknown option".to_string()),
@@ -77,7 +84,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                     }
                 }
                 LexItem::Model(number) => {
-                    if current_model.atoms().collect::<Vec<_>>().len() > 0 {
+                    if current_model.amount_atoms() > 0 {
                         pdb.add_model(current_model)
                     }
 
@@ -89,6 +96,30 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                     }
                     pdb.scale().factors[n] = row;
                 }
+                LexItem::OrigX(n, row) => {
+                    if pdb.origx.is_none() {
+                        pdb.origx = Some(OrigX::new());
+                    }
+                    pdb.origx().factors[n] = row;
+                }
+                LexItem::MtriX(n, ser, row, given) => {
+                    let mut found = false;
+                    for mtrix in &mut pdb.mtrix {
+                        if mtrix.serial_number == ser {
+                            mtrix.factors[n] = row;
+                            mtrix.contained = given;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if !found {
+                        let mut mtrix = MtriX::new();
+                        mtrix.serial_number = ser;
+                        mtrix.factors[n] = row;
+                        mtrix.contained = given;
+                        pdb.mtrix.push(mtrix);
+                    }
+                }
                 LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, symmetry) => {
                     pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
                     pdb.symmetry = Some(Symmetry::new(spacegroup, symmetry.to_vec()));
@@ -99,7 +130,11 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
     }
     pdb.add_model(current_model);
     pdb.fix_pointers_of_children();
-    Ok(pdb)
+    if validate(&pdb) {
+        Ok(pdb)
+    } else {
+        Err("Not a valid PDB resulting model".to_string())
+    }
 }
 
 fn lex_remark(linenumber: usize, line: &str) -> Result<LexItem, String> {
@@ -245,6 +280,31 @@ fn lex_scale(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String>
     let d = parse_number(linenumber, &chars[45..55])?;
 
     Ok(LexItem::Scale(n, [a, b, c, d]))
+}
+
+fn lex_origx(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String> {
+    let chars: Vec<char> = line.chars().collect();
+    let a = parse_number(linenumber, &chars[10..20])?;
+    let b = parse_number(linenumber, &chars[20..30])?;
+    let c = parse_number(linenumber, &chars[30..40])?;
+    let d = parse_number(linenumber, &chars[45..55])?;
+
+    Ok(LexItem::OrigX(n, [a, b, c, d]))
+}
+
+fn lex_mtrix(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String> {
+    let chars: Vec<char> = line.chars().collect();
+    let ser = parse_number(linenumber, &chars[7..10])?;
+    let a = parse_number(linenumber, &chars[10..20])?;
+    let b = parse_number(linenumber, &chars[20..30])?;
+    let c = parse_number(linenumber, &chars[30..40])?;
+    let d = parse_number(linenumber, &chars[45..55])?;
+    let mut given = false;
+    if chars.len() >= 60 {
+        given = chars[59] == '1';
+    }
+
+    Ok(LexItem::MtriX(n, ser, [a, b, c, d], given))
 }
 
 fn parse_number<T: FromStr>(linenumber: usize, input: &[char]) -> Result<T, String> {

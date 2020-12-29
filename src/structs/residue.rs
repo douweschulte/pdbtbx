@@ -81,6 +81,18 @@ impl Residue {
         self.serial_number = new_number;
     }
 
+    pub fn amount_atoms(&self) -> usize {
+        self.atoms.len()
+    }
+
+    pub fn atom(&self, index: usize) -> Option<&Atom> {
+        self.atoms.get(index)
+    }
+
+    pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
+        self.atoms.get_mut(index)
+    }
+
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
         self.atoms.iter()
     }

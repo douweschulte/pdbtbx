@@ -15,7 +15,7 @@ pub struct Atom {
     element: [char; 2],
     charge: [char; 2],
     residue: Option<*mut Residue>,
-    anisotropic_temperature_factors: Option<[[f64; 3]; 2]>,
+    atf: Option<[[f64; 3]; 2]>,
 }
 
 impl Atom {
@@ -42,7 +42,7 @@ impl Atom {
             element: element,
             charge: charge,
             residue: None,
-            anisotropic_temperature_factors: None,
+            atf: None,
         };
 
         if let Some(reference) = residue {
@@ -253,11 +253,11 @@ impl Atom {
     }
 
     pub fn anisotropic_temperature_factors(&self) -> Option<[[f64; 3]; 2]> {
-        self.anisotropic_temperature_factors
+        self.atf
     }
 
     pub fn set_anisotropic_temperature_factors(&mut self, factors: [[f64; 3]; 2]) {
-        self.anisotropic_temperature_factors = Some(factors);
+        self.atf = Some(factors);
     }
 
     pub fn set_residue(&mut self, new_residue: &mut Residue) {
@@ -328,13 +328,22 @@ impl Atom {
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.set_pos(transformation.apply(self.pos())).unwrap();
     }
+
+    pub fn corresponds(&self, other: &Atom) -> bool {
+        self.serial_number == other.serial_number
+            && self.name() == other.name()
+            && self.element() == other.element()
+            && self.charge() == other.charge()
+            && ((self.atf.is_none() && other.atf.is_none())
+                || (self.atf.is_some() && other.atf.is_some()))
+    }
 }
 
 impl fmt::Display for Atom {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "ATOM ID:{}, Number:{}, Element: {}, X:{}, Y:{}, Z:{}, OCC:{}, B:{}",
+            "ATOM ID: {}, Number: {}, Element: {}, X: {}, Y: {}, Z: {}, OCC: {}, B: {}, ANISOU: {}",
             self.name(),
             self.serial_number(),
             self.element(),
@@ -342,7 +351,8 @@ impl fmt::Display for Atom {
             self.y(),
             self.z(),
             self.occupancy(),
-            self.b_factor()
+            self.b_factor(),
+            self.atf.is_some()
         )
     }
 }
@@ -363,7 +373,7 @@ impl Clone for Atom {
         )
         .unwrap();
 
-        atom.anisotropic_temperature_factors = self.anisotropic_temperature_factors;
+        atom.atf = self.atf;
 
         atom
     }

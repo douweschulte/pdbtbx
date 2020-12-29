@@ -44,6 +44,30 @@ impl Chain {
         }
     }
 
+    pub fn amount_residues(&self) -> usize {
+        self.residues.len()
+    }
+
+    pub fn amount_atoms(&self) -> usize {
+        self.residues().fold(0, |sum, res| res.amount_atoms() + sum)
+    }
+
+    pub fn residue(&self, index: usize) -> Option<&Residue> {
+        self.residues.get(index)
+    }
+
+    pub fn residue_mut(&mut self, index: usize) -> Option<&mut Residue> {
+        self.residues.get_mut(index)
+    }
+
+    pub fn atom(&self, index: usize) -> Option<&Atom> {
+        self.atoms().nth(index)
+    }
+
+    pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
+        self.atoms_mut().nth(index)
+    }
+
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
         self.residues.iter()
     }

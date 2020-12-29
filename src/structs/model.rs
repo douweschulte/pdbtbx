@@ -38,6 +38,58 @@ impl Model {
         self.serial_number = new_number;
     }
 
+    pub fn amount_chains(&self) -> usize {
+        self.chains.len()
+    }
+
+    pub fn amount_residues(&self) -> usize {
+        self.chains()
+            .fold(0, |sum, chain| chain.amount_residues() + sum)
+    }
+
+    pub fn amount_atoms(&self) -> usize {
+        self.chains()
+            .fold(0, |sum, chain| chain.amount_atoms() + sum)
+    }
+
+    pub fn total_amount_chains(&self) -> usize {
+        self.chains.len() + self.hetero_atoms.len()
+    }
+
+    pub fn total_amount_residues(&self) -> usize {
+        self.all_chains()
+            .fold(0, |sum, chain| chain.amount_residues() + sum)
+    }
+
+    pub fn total_amount_atoms(&self) -> usize {
+        self.all_chains()
+            .fold(0, |sum, chain| chain.amount_atoms() + sum)
+    }
+
+    pub fn chain(&self, index: usize) -> Option<&Chain> {
+        self.all_chains().nth(index)
+    }
+
+    pub fn chain_mut(&mut self, index: usize) -> Option<&mut Chain> {
+        self.all_chains_mut().nth(index)
+    }
+
+    pub fn residue(&self, index: usize) -> Option<&Residue> {
+        self.all_residues().nth(index)
+    }
+
+    pub fn residue_mut(&mut self, index: usize) -> Option<&mut Residue> {
+        self.all_residues_mut().nth(index)
+    }
+
+    pub fn atom(&self, index: usize) -> Option<&Atom> {
+        self.all_atoms().nth(index)
+    }
+
+    pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
+        self.all_atoms_mut().nth(index)
+    }
+
     pub fn chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
         self.chains.iter()
     }

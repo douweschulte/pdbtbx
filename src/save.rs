@@ -64,6 +64,50 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
         )).unwrap();
     }
 
+    // OrigX
+    if let Some(origx) = &pdb.origx {
+        writer.write_fmt(format_args!(
+            "ORIGX1    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX2    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX3    {:10.6}{:10.6}{:10.6}     {:10.5}\n",
+            origx.factors[0][0],
+            origx.factors[0][1],
+            origx.factors[0][2],
+            origx.factors[0][3],
+            origx.factors[1][0],
+            origx.factors[1][1],
+            origx.factors[1][2],
+            origx.factors[1][3],
+            origx.factors[2][0],
+            origx.factors[2][1],
+            origx.factors[2][2],
+            origx.factors[2][3],
+        )).unwrap();
+    }
+
+    // MtriX
+    for mtrix in &pdb.mtrix {
+        writer.write_fmt(format_args!(
+            "MTRIX1 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\nMTRIX2 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\nMTRIX3 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\n",
+            mtrix.serial_number,
+            mtrix.factors[0][0],
+            mtrix.factors[0][1],
+            mtrix.factors[0][2],
+            mtrix.factors[0][3],
+            if mtrix.contained {'1'} else {' '},
+            mtrix.serial_number,
+            mtrix.factors[1][0],
+            mtrix.factors[1][1],
+            mtrix.factors[1][2],
+            mtrix.factors[1][3],
+            if mtrix.contained {'1'} else {' '},
+            mtrix.serial_number,
+            mtrix.factors[2][0],
+            mtrix.factors[2][1],
+            mtrix.factors[2][2],
+            mtrix.factors[2][3],
+            if mtrix.contained {'1'} else {' '},
+        )).unwrap();
+    }
+
     // Models
     let multiple_models = pdb.models().size_hint().0 > 1;
     for model in pdb.models() {

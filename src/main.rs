@@ -2,6 +2,7 @@ mod parser;
 mod save;
 mod structs;
 mod transformation;
+mod validate;
 
 use std::env;
 use std::time::Instant;
@@ -17,10 +18,10 @@ fn main() {
 
     println!(
         "Found {} atoms, in {} residues, in {} chains, in {} models it all took {} ms",
-        pdb.all_atoms().collect::<Vec<_>>().len(),
-        pdb.all_residues().collect::<Vec<_>>().len(),
-        pdb.all_chains().collect::<Vec<_>>().len(),
-        pdb.models().collect::<Vec<_>>().len(),
+        pdb.total_amount_atoms(),
+        pdb.total_amount_residues(),
+        pdb.total_amount_chains(),
+        pdb.amount_models(),
         time.as_millis()
     );
 

@@ -32,6 +32,8 @@ pub enum LexItem {
         [char; 2],
     ),
     Scale(usize, [f64; 4]),
+    OrigX(usize, [f64; 4]),
+    MtriX(usize, usize, [f64; 4], bool),
     Crystal(f64, f64, f64, f64, f64, f64, char, Vec<usize>),
     Model(usize),
     EndModel(),
