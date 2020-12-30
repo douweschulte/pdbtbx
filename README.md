@@ -1,3 +1,5 @@
+![Compile & Test](https://github.com/nonnominandus/rust-pdb/workflows/Compile%20&%20Test/badge.svg)
+
 ## Description
 Primarily a hobby project to work more with Rust, but with a bit of luck it could end up being useful for someone. For now (27 Dec 2020) it can parse simple (crystallographic) PDBs, edit the PDB in place, gives some handy functionality and is able to save the PDB.
 
