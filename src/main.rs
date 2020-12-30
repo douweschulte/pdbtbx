@@ -75,14 +75,14 @@ fn main() {
 
     let water = create_waterbox(pdb.unit_cell().size());
 
-    save::save(&water, "waterbox.pdb").expect("Save not successful");
+    save::save(&water, "example-pdbs/waterbox.pdb").expect("Save not successful");
     save::save(&pdb, &format!("{}_saved", args[1])).expect("Save not successful");
 }
 
 fn create_waterbox(size: (f64, f64, f64)) -> structs::PDB {
     let now = Instant::now();
 
-    let mut liquid = parser::parse("liquid.pdb").unwrap();
+    let mut liquid = parser::parse("example-pdbs/liquid.pdb").unwrap();
 
     let time = now.elapsed();
 
