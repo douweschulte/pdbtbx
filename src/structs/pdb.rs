@@ -8,7 +8,7 @@ pub struct PDB {
     pub scale: Option<Scale>,
     pub origx: Option<OrigX>,
     pub mtrix: Vec<MtriX>,
-    pub unit_cell: Option<UnitCell>,
+    unit_cell: Option<UnitCell>,
     pub symmetry: Option<Symmetry>,
     models: Vec<Model>,
 }
@@ -24,6 +24,28 @@ impl PDB {
             symmetry: None,
             models: Vec::new(),
         }
+    }
+
+    pub fn has_unit_cell(&self) -> bool {
+        self.unit_cell.is_some()
+    }
+
+    pub fn unit_cell(&self) -> &UnitCell {
+        match &self.unit_cell {
+            Some(u) => u,
+            None => panic!("PDB has no unit cell"),
+        }
+    }
+
+    pub fn unit_cell_mut(&mut self) -> &mut UnitCell {
+        match &mut self.unit_cell {
+            Some(u) => u,
+            None => panic!("PDB has no unit cell"),
+        }
+    }
+
+    pub fn set_unit_cell(&mut self, cell: UnitCell) {
+        self.unit_cell = Some(cell);
     }
 
     pub fn add_model(&mut self, new_model: Model) {
@@ -295,7 +317,7 @@ impl Clone for PDB {
         for model in self.models() {
             pdb.add_model(model.clone());
         }
-
+        pdb.fix_pointers_of_children();
         pdb
     }
 }

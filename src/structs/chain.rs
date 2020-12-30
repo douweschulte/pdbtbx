@@ -11,15 +11,15 @@ pub struct Chain {
 
 impl Chain {
     pub fn new(id: Option<char>, model: Option<&mut Model>) -> Option<Chain> {
-        let mut c = 'a';
+        let mut id_ch = 'A';
         if let Some(ch) = id {
             if !check_char(ch) {
                 return None;
             }
-            c = ch;
+            id_ch = ch;
         }
         let mut c = Chain {
-            id: c,
+            id: id_ch,
             residues: Vec::new(),
             model: None,
         };
@@ -208,6 +208,17 @@ impl Chain {
             atom.apply_transformation(transformation);
         }
     }
+
+    pub fn join(&mut self, other: Chain) {
+        for atom in other.atoms() {
+            self.add_atom(
+                atom.clone(),
+                atom.residue().serial_number(),
+                atom.residue().id_array(),
+            )
+        }
+        self.fix_pointers_of_children();
+    }
 }
 
 use std::fmt;
@@ -229,7 +240,7 @@ impl Clone for Chain {
         for residue in self.residues() {
             chain.add_residue(residue.clone());
         }
-
+        chain.fix_pointers_of_children();
         chain
     }
 }

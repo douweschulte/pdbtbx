@@ -26,7 +26,6 @@ pub fn get_transformation(index: usize) -> Option<&'static [(usize, &'static str
 }
 
 pub fn get_atomic_number(element: &str) -> Option<usize> {
-    ELEMENT_SYMBOLS.iter().find(|a| **a == element);
     let mut counter = 1;
     for item in ELEMENT_SYMBOLS {
         if *item == element {
@@ -42,6 +41,17 @@ pub fn get_atomic_radius(atomic_number: usize) -> Option<f64> {
         Some(n) => Some(*n),
         None => None,
     }
+}
+
+pub fn get_amino_acid_number(aa: &str) -> Option<usize> {
+    let mut counter = 1;
+    for item in AMINO_ACIDS {
+        if *item == aa {
+            return Some(counter);
+        }
+        counter += 1;
+    }
+    None
 }
 
 const SYMBOL_TRANSFORMATION: &[&[(usize,&str)]] = &[
@@ -292,6 +302,10 @@ const ELEMENT_RADII: &[f64] = &[
     2.46, 2.48, 2.46, 2.42, 2.38, 2.32, 2.49, 2.93, 2.84, 2.82, 2.86, 2.84, 2.83, 2.80, 2.80, 2.77,
     2.76, 2.75, 2.73, 2.72, 2.71, 2.77, 2.70, 2.64, 2.58, 2.53, 2.49, 2.44, 2.33, 2.30, 2.26, 2.29,
     2.42, 2.49, 2.50, 2.50, 2.47, 2.43, 2.58, 2.92, 2.93, 2.89, 2.85, 2.83, 2.80, 2.78, 2.76, 2.64,
+];
+const AMINO_ACIDS: &[&str] = &[
+    "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS",
+    "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
 ];
 
 const HERMANN_MAUGUIN_SYMBOL: &[&str] = &[

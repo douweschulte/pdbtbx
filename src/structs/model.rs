@@ -229,8 +229,10 @@ impl Model {
         residue_name: [char; 3],
     ) {
         let mut found = false;
-        let mut new_chain =
-            Chain::new(Some(chain_id), Some(self)).expect("Invalid characters in chain creation");
+        let mut new_chain = Chain::new(Some(chain_id), Some(self)).expect(&format!(
+            "Invalid characters in chain creation ({})",
+            chain_id
+        ));
         let mut current_chain = &mut new_chain;
         for chain in &mut self.hetero_atoms {
             if chain.id() == chain_id {
@@ -340,6 +342,26 @@ impl Model {
             atom.apply_transformation(transformation);
         }
     }
+
+    pub fn join(&mut self, other: Model) {
+        for atom in other.atoms() {
+            self.add_atom(
+                atom.clone(),
+                atom.residue().chain().id(),
+                atom.residue().serial_number(),
+                atom.residue().id_array(),
+            )
+        }
+        for atom in other.hetero_atoms() {
+            self.add_hetero_atom(
+                atom.clone(),
+                atom.residue().chain().id(),
+                atom.residue().serial_number(),
+                atom.residue().id_array(),
+            )
+        }
+        self.fix_pointers_of_children();
+    }
 }
 
 use std::fmt;
@@ -365,7 +387,7 @@ impl Clone for Model {
         for chain in self.hetero_chains() {
             model.add_hetero_chain(chain.clone());
         }
-
+        model.fix_pointers_of_children();
         model
     }
 }

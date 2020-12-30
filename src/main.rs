@@ -7,6 +7,7 @@ mod validate;
 
 use std::env;
 use std::time::Instant;
+use transformation::*;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -72,5 +73,53 @@ fn main() {
 
     pdb.renumber();
 
+    let water = create_waterbox(pdb.unit_cell().size());
+
+    save::save(&water, "waterbox.pdb").expect("Save not successful");
     save::save(&pdb, &format!("{}_saved", args[1])).expect("Save not successful");
+}
+
+fn create_waterbox(size: (f64, f64, f64)) -> structs::PDB {
+    let now = Instant::now();
+
+    let mut liquid = parser::parse("liquid.pdb").unwrap();
+
+    let time = now.elapsed();
+
+    println!("Time to parse liquid.pdb {}ms", time.as_millis());
+
+    let cell = liquid.unit_cell().size().clone();
+    let fa = (size.0 / cell.0).ceil() as usize;
+    let fb = (size.1 / cell.1).ceil() as usize;
+    let fc = (size.2 / cell.2).ceil() as usize;
+
+    for a in 0..fa {
+        for b in 0..fb {
+            for c in 0..fc {
+                let mut extra = liquid.model(0).unwrap().clone();
+                extra.apply_transformation(&TransformationMatrix::translation(
+                    a as f64 * cell.0,
+                    b as f64 * cell.1,
+                    c as f64 * cell.2,
+                ));
+                liquid.model_mut(0).unwrap().join(extra);
+            }
+        }
+    }
+
+    for atom in liquid.atoms_mut() {
+        if atom.x() < 0.0
+            || atom.x() > size.0
+            || atom.y() < 0.0
+            || atom.y() > size.1
+            || atom.z() < 0.0
+            || atom.z() > size.2
+        {
+            atom.remove();
+        }
+    }
+
+    liquid.renumber();
+
+    liquid
 }

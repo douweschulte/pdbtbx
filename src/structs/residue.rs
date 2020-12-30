@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
 use std::fmt;
@@ -51,6 +52,10 @@ impl Residue {
         } else {
             " ".to_string()
         }
+    }
+
+    pub fn id_array(&self) -> [char; 3] {
+        self.id
     }
 
     pub fn set_id(&mut self, new_id: &str) -> Result<(), String> {
@@ -107,11 +112,7 @@ impl Residue {
     }
 
     pub fn amino_acid(&self) -> bool {
-        let amino_acid_names = vec![
-            "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS",
-            "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
-        ];
-        if amino_acid_names.contains(&self.id().as_str()) {
+        if reference_tables::get_amino_acid_number(self.id().as_str()).is_some() {
             true
         } else {
             false
@@ -210,6 +211,13 @@ impl Residue {
             atom.apply_transformation(transformation);
         }
     }
+
+    pub fn join(&mut self, other: Residue) {
+        for atom in other.atoms {
+            self.add_atom(atom)
+        }
+        self.fix_pointers_of_children();
+    }
 }
 
 impl fmt::Display for Residue {
@@ -231,7 +239,7 @@ impl Clone for Residue {
         for atom in self.atoms() {
             res.add_atom(atom.clone());
         }
-
+        res.fix_pointers_of_children();
         res
     }
 }

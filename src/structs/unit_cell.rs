@@ -40,6 +40,9 @@ impl UnitCell {
     pub fn gamma(&self) -> f64 {
         self.gamma
     }
+    pub fn size(&self) -> (f64, f64, f64) {
+        (self.a, self.b, self.c)
+    }
 }
 
 impl Clone for UnitCell {

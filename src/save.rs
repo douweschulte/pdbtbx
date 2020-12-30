@@ -16,7 +16,8 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     }
 
     // Cryst
-    if let Some(unit_cell) = &pdb.unit_cell {
+    if pdb.has_unit_cell() {
+        let unit_cell = pdb.unit_cell();
         let sym = if let Some(symmetry) = &pdb.symmetry {
             format!(
                 "{} {}",

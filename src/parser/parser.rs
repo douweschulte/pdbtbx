@@ -121,7 +121,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                     }
                 }
                 LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, symmetry) => {
-                    pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
+                    pdb.set_unit_cell(UnitCell::new(a, b, c, alpha, beta, gamma));
                     pdb.symmetry = Some(Symmetry::new(spacegroup, symmetry.to_vec()));
                 }
                 _ => (),
@@ -171,10 +171,22 @@ fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, Stri
     let x = parse_number(linenumber, &chars[30..38])?;
     let y = parse_number(linenumber, &chars[38..46])?;
     let z = parse_number(linenumber, &chars[46..54])?;
-    let occupancy = parse_number(linenumber, &chars[54..60])?;
-    let b_factor = parse_number(linenumber, &chars[60..66])?;
-    let segment_id = [chars[72], chars[73], chars[74], chars[75]];
-    let element = [chars[76], chars[77]];
+    let mut occupancy = 1.0;
+    if chars.len() >= 60 {
+        occupancy = parse_number(linenumber, &chars[54..60])?;
+    }
+    let mut b_factor = 0.0;
+    if chars.len() >= 66 {
+        b_factor = parse_number(linenumber, &chars[60..66])?;
+    }
+    let mut segment_id = [' ', ' ', ' ', ' '];
+    if chars.len() >= 75 {
+        segment_id = [chars[72], chars[73], chars[74], chars[75]];
+    }
+    let mut element = [' ', ' '];
+    if chars.len() >= 77 {
+        element = [chars[76], chars[77]];
+    }
     let mut charge = [' ', ' '];
     if chars.len() == 80 {
         charge = [chars[79], chars[80]];
