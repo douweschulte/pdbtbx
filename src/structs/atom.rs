@@ -70,12 +70,13 @@ impl Atom {
     }
 
     /// Get the position of the atom as a tuple of f64, in the following order: (x, y, z)
+    /// Returned in the units of the PDB file, which is defined to be orthogonal coordinate system in Å
     pub fn pos(&self) -> (f64, f64, f64) {
         (self.x, self.y, self.z)
     }
 
     /// Set the position of the atom as a tuple of f64, in the following order: (x, y, z)
-    /// # Panics
+    /// ## Panics
     /// It panics if one or more of the numbers are not finite (`f64.is_finite()`)
     pub fn set_pos(&mut self, new_pos: (f64, f64, f64)) -> Result<(), String> {
         if new_pos.0.is_finite() && new_pos.1.is_finite() && new_pos.2.is_finite() {
@@ -91,10 +92,15 @@ impl Atom {
         }
     }
 
+    /// Get the X position of the atom
+    /// Returned in the units of the PDB file, which is defined to be orthogonal coordinate system in Å
     pub fn x(&self) -> f64 {
         self.x
     }
 
+    /// Set the X position of the atom
+    /// ## Panics
+    /// It panics if `new_pos` is not finite (`f64.is_finite()`)
     pub fn set_x(&mut self, new_pos: f64) -> Result<(), String> {
         if new_pos.is_finite() {
             self.x = new_pos;
@@ -107,10 +113,15 @@ impl Atom {
         }
     }
 
+    /// Get the Y position of the atom
+    /// Returned in the units of the PDB file, which is defined to be orthogonal coordinate system in Å
     pub fn y(&self) -> f64 {
         self.y
     }
 
+    /// Set the Y position of the atom
+    /// ## Panics
+    /// It panics if `new_pos` is not finite (`f64.is_finite()`)
     pub fn set_y(&mut self, new_pos: f64) -> Result<(), String> {
         if new_pos.is_finite() {
             self.y = new_pos;
@@ -123,10 +134,15 @@ impl Atom {
         }
     }
 
+    /// Get the Z position of the atom
+    /// Returned in the units of the PDB file, which is defined to be orthogonal coordinate system in Å
     pub fn z(&self) -> f64 {
         self.z
     }
 
+    /// Set the Z position of the atom
+    /// ## Panics
+    /// It panics if `new_pos` is not finite (`f64.is_finite()`)
     pub fn set_z(&mut self, new_pos: f64) -> Result<(), String> {
         if new_pos.is_finite() {
             self.z = new_pos;
@@ -139,14 +155,20 @@ impl Atom {
         }
     }
 
+    /// Get the serial number of the atom
+    /// This number is defined to be unique in the containing model, which is not enforced
     pub fn serial_number(&self) -> usize {
         self.serial_number
     }
 
+    /// Set the serial number of the atom
+    /// This number is defined to be unique in the containing model, which is not enforced
     pub fn set_serial_number(&mut self, new_serial_number: usize) {
         self.serial_number = new_serial_number;
     }
 
+    /// Get the name of the atom
+    /// The name is max 4 characters and is trimmed
     pub fn name(&self) -> String {
         self.name
             .iter()
@@ -155,6 +177,11 @@ impl Atom {
             .collect::<String>()
     }
 
+    /// Set the name of the atom
+    /// If the name is invalid an error message is provided
+    /// ## Errors
+    /// The name should at max contain 4 characters (ASCII)
+    /// The name can only contain valid characters, the ASCII graphic characters (char.is_ascii_graphic() || char == ' ')
     pub fn set_name(&mut self, new_name: &str) -> Result<(), String> {
         let chars = new_name.to_ascii_uppercase().chars().collect::<Vec<char>>();
         if chars.len() < 5 {
@@ -175,10 +202,14 @@ impl Atom {
         }
     }
 
+    /// Get the occupancy of the atom
     pub fn occupancy(&self) -> f64 {
         self.occupancy
     }
 
+    /// Set the occupancy of the atom
+    /// ## Panics
+    /// It panics if `new_occupancy` is not finite (`f64.is_finite()`)
     pub fn set_occupancy(&mut self, new_occupancy: f64) -> Result<(), String> {
         if new_occupancy.is_finite() {
             self.occupancy = new_occupancy;
