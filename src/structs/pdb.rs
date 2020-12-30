@@ -217,21 +217,39 @@ impl PDB {
         self.models.iter_mut().map(|a| a.all_atoms_mut()).flatten()
     }
 
-    pub fn scale(&mut self) -> &mut Scale {
+    pub fn scale(&self) -> &Scale {
+        match &self.scale {
+            Some(s) => s,
+            None => panic!("Expected a Scale but it was not in place (it was None)."),
+        }
+    }
+
+    pub fn scale_mut(&mut self) -> &mut Scale {
         match &mut self.scale {
             Some(s) => s,
             None => panic!("Expected a Scale but it was not in place (it was None)."),
         }
     }
 
-    pub fn origx(&mut self) -> &mut OrigX {
+    pub fn origx(&self) -> &OrigX {
+        match &self.origx {
+            Some(o) => o,
+            None => panic!("Expected a OrigX but it was not in place (it was None)."),
+        }
+    }
+
+    pub fn origx_mut(&mut self) -> &mut OrigX {
         match &mut self.origx {
             Some(o) => o,
             None => panic!("Expected a OrigX but it was not in place (it was None)."),
         }
     }
 
-    pub fn mtrix(&mut self, index: usize) -> Option<&mut MtriX> {
+    pub fn mtrix(&self, index: usize) -> Option<&MtriX> {
+        self.mtrix.get(index)
+    }
+
+    pub fn mtrix_mut(&mut self, index: usize) -> Option<&mut MtriX> {
         self.mtrix.get_mut(index)
     }
 

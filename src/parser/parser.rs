@@ -94,13 +94,13 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                     if pdb.scale.is_none() {
                         pdb.scale = Some(Scale::new());
                     }
-                    pdb.scale().set_row(n, row);
+                    pdb.scale_mut().set_row(n, row);
                 }
                 LexItem::OrigX(n, row) => {
                     if pdb.origx.is_none() {
                         pdb.origx = Some(OrigX::new());
                     }
-                    pdb.origx().set_row(n, row);
+                    pdb.origx_mut().set_row(n, row);
                 }
                 LexItem::MtriX(n, ser, row, given) => {
                     let mut found = false;

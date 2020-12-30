@@ -7,10 +7,10 @@ pub fn validate(pdb: &PDB) -> bool {
         output = output && validate_models(pdb)
     }
     if pdb.scale.is_some() {
-        output = output && pdb.scale.as_ref().unwrap().valid();
+        output = output && pdb.scale().valid();
     }
     if pdb.origx.is_some() {
-        output = output && pdb.origx.as_ref().unwrap().valid();
+        output = output && pdb.origx().valid();
     }
     for m in &pdb.mtrix {
         output = output && m.valid();

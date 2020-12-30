@@ -3,22 +3,35 @@ use crate::structs::*;
 use crate::transformation::*;
 use std::fmt;
 
+/// A struct to represent a single Atom in a protein
 #[derive(Debug)]
 pub struct Atom {
+    /// The serial number of the Atom, should be unique within its model
     serial_number: usize,
+    /// The name of the Atom, can only be four chars, can only use the standard allowed characters
     name: [char; 4],
+    /// The X position of the Atom (Å)
     x: f64,
+    /// The Y position of the Atom (Å)
     y: f64,
+    /// The Z position of the Atom (Å)
     z: f64,
+    /// The occupancy of the Atom
     occupancy: f64,
+    /// The B-factor (or temperature factor) of the Atom
     b_factor: f64,
+    /// The element of the Atom, can only be two chars, can only use the standard allowed characters
     element: [char; 2],
+    /// The charge of the Atom, can only be two chars, can only use the standard allowed characters
     charge: [char; 2],
+    /// The parent residue, can only be safely used as a reference (not mutable)
     residue: Option<*mut Residue>,
+    /// The anisotropic temperature factors, if applicable
     atf: Option<[[f64; 3]; 2]>,
 }
 
 impl Atom {
+    /// Create a new Atom
     pub fn new(
         residue: Option<&mut Residue>,
         serial_number: usize,
@@ -56,10 +69,14 @@ impl Atom {
         }
     }
 
+    /// Get the position of the atom as a tuple of f64, in the following order: (x, y, z)
     pub fn pos(&self) -> (f64, f64, f64) {
         (self.x, self.y, self.z)
     }
 
+    /// Set the position of the atom as a tuple of f64, in the following order: (x, y, z)
+    /// # Panics
+    /// It panics if one or more of the numbers are not finite (`f64.is_finite()`)
     pub fn set_pos(&mut self, new_pos: (f64, f64, f64)) -> Result<(), String> {
         if new_pos.0.is_finite() && new_pos.1.is_finite() && new_pos.2.is_finite() {
             self.x = new_pos.0;
