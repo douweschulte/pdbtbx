@@ -8,6 +8,7 @@ fn run_pdbs() {
     let current_dir = env::current_dir().unwrap();
     let pdb_dir = current_dir.as_path().join(Path::new("example-pdbs"));
     let dump_dir = current_dir.as_path().join(Path::new("dump"));
+    let _ = fs::create_dir(dump_dir.clone());
     println!("{:?}", pdb_dir);
 
     for entry in fs::read_dir(pdb_dir).unwrap() {
