@@ -4,8 +4,13 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufWriter;
 
+/// Save the given PDB struct to the given file
+/// It does not validate or renumber the PDB, so if that is needed that needs to be done in preparation
 pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
-    let file = File::create(filename).expect("Could not open file");
+    let file = match File::create(filename) {
+        Ok(f) => f,
+        Err(e) => return Err(e.to_string()),
+    };
     let mut writer = BufWriter::new(file);
 
     // Remarks

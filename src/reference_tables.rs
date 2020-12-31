@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+/// Gets the index (into Int. Crys. Handbook Vol A 2016) for the given Herman Mauguin symbol
 pub fn get_index_for_symbol(symbol: &str) -> Option<usize> {
     let mut counter = 1;
     for item in HERMANN_MAUGUIN_SYMBOL {
@@ -11,6 +12,7 @@ pub fn get_index_for_symbol(symbol: &str) -> Option<usize> {
     None
 }
 
+/// Gets the Herman Mauguin symbol for the given index (into Int. Crys. Handbook Vol A 2016)
 pub fn get_symbol_for_index(index: usize) -> Option<&'static str> {
     match HERMANN_MAUGUIN_SYMBOL.get(index-1) {
         Some(n) => Some(*n),
@@ -18,6 +20,7 @@ pub fn get_symbol_for_index(index: usize) -> Option<&'static str> {
     }
 }
 
+/// Gets the transformations given an index (into Int. Crys. Handbook Vol A 2016) for the given space group
 pub fn get_transformation(index: usize) -> Option<&'static [(usize, &'static str)]> {
     match SYMBOL_TRANSFORMATION.get(index-1) {
         Some(n) => Some(*n),
@@ -25,6 +28,7 @@ pub fn get_transformation(index: usize) -> Option<&'static [(usize, &'static str
     }
 }
 
+/// Gets the atomic number for the given element
 pub fn get_atomic_number(element: &str) -> Option<usize> {
     let mut counter = 1;
     for item in ELEMENT_SYMBOLS {
@@ -36,6 +40,8 @@ pub fn get_atomic_number(element: &str) -> Option<usize> {
     None
 }
 
+/// Gets the atomic radius for the given atomic number (defined up until 'Cm')
+/// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96. Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: http://doi.wiley.com/10.1002/chem.201602949, doi:10.1002/chem.201602949.
 pub fn get_atomic_radius(atomic_number: usize) -> Option<f64> {
     match ELEMENT_RADII.get(atomic_number) {
         Some(n) => Some(*n),
@@ -43,6 +49,7 @@ pub fn get_atomic_radius(atomic_number: usize) -> Option<f64> {
     }
 }
 
+/// Gets the amino acid number into the table, effectively providing the recognition of it being an amino acid or not
 pub fn get_amino_acid_number(aa: &str) -> Option<usize> {
     let mut counter = 1;
     for item in AMINO_ACIDS {

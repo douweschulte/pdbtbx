@@ -1,5 +1,7 @@
 use crate::structs::*;
 
+/// Validate a given PDB file in terms of invariants that should be held up.
+/// It prints warning massages and returns a bool indicating success.
 pub fn validate(pdb: &PDB) -> bool {
     // Print warnings/errors and return a bool for success
     let mut output = true;
@@ -18,6 +20,8 @@ pub fn validate(pdb: &PDB) -> bool {
     return output;
 }
 
+/// Validate the models by enforcing that all models should contain the same atoms (with possibly different data).
+/// It checks this by matching all atoms (not hetatoms) for each model to see if they correspond (`Atom::correspond`).
 fn validate_models(pdb: &PDB) -> bool {
     let total_atoms = pdb.model(0).unwrap().amount_atoms();
     for model in pdb.models().skip(1) {

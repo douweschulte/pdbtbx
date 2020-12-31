@@ -6,6 +6,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 
+/// Parse the given filename into a PDB struct
+/// Returns an error message if it fails to parse it properly
 pub fn parse(filename: &str) -> Result<PDB, String> {
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
     let file = File::open(filename).expect("Could not open file");
@@ -17,6 +19,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
     let mut current_model = Model::new(None, Some(&mut pdb));
 
     for read_line in reader.lines() {
+        // Lex the line
         let line = &read_line.expect("Line not read");
         linenumber += 1;
         let lineresult = if line.len() > 6 {
@@ -53,6 +56,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
             }
         };
 
+        // Then immediately add this lines information to the final PDB struct
         if let Ok(result) = lineresult {
             match result {
                 LexItem::Remark(num, text) => pdb.remarks.push((num, text.to_string())),
@@ -137,6 +141,9 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
     }
 }
 
+/// Lex a REMARK
+/// ## Fails
+/// It fails on incorrect numbers for the remark-type-number
 fn lex_remark(linenumber: usize, line: &str) -> Result<LexItem, String> {
     Ok(LexItem::Remark(
         parse_number(linenumber, &line.chars().collect::<Vec<char>>()[7..10])?,
@@ -148,6 +155,9 @@ fn lex_remark(linenumber: usize, line: &str) -> Result<LexItem, String> {
     ))
 }
 
+/// Lex a MODEL
+/// ## Fails
+/// It fails on incorrect numbers for the serial number
 fn lex_model(linenumber: usize, line: &str) -> Result<LexItem, String> {
     Ok(LexItem::Model(parse_number(
         linenumber,
@@ -159,6 +169,9 @@ fn lex_model(linenumber: usize, line: &str) -> Result<LexItem, String> {
     )?))
 }
 
+/// Lex an ATOM
+/// ## Fails
+/// It fails on incorrect numbers in the line
 fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, String> {
     let chars: Vec<char> = line.chars().collect();
     let serial_number = parse_number(linenumber, &chars[7..11])?;
@@ -212,6 +225,9 @@ fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, Stri
     ))
 }
 
+/// Lex an ANISOU
+/// ## Fails
+/// It fails on incorrect numbers in the line
 fn lex_anisou(linenumber: usize, line: &str) -> Result<LexItem, String> {
     let chars: Vec<char> = line.chars().collect();
     let serial_number = parse_number(linenumber, &chars[7..11])?;
@@ -255,6 +271,9 @@ fn lex_anisou(linenumber: usize, line: &str) -> Result<LexItem, String> {
     ))
 }
 
+/// Lex a CRYST1
+/// ## Fails
+/// It fails on incorrect numbers in the line
 fn lex_cryst(linenumber: usize, line: &str) -> Result<LexItem, String> {
     let chars: Vec<char> = line.chars().collect();
     let a = parse_number(linenumber, &chars[6..15])?;
@@ -284,6 +303,9 @@ fn lex_cryst(linenumber: usize, line: &str) -> Result<LexItem, String> {
     ))
 }
 
+/// Lex an SCALEn (where `n` is given)
+/// ## Fails
+/// It fails on incorrect numbers in the line
 fn lex_scale(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String> {
     let chars: Vec<char> = line.chars().collect();
     let a = parse_number(linenumber, &chars[10..20])?;
@@ -294,6 +316,9 @@ fn lex_scale(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String>
     Ok(LexItem::Scale(n, [a, b, c, d]))
 }
 
+/// Lex an ORIGXn (where `n` is given)
+/// ## Fails
+/// It fails on incorrect numbers in the line
 fn lex_origx(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String> {
     let chars: Vec<char> = line.chars().collect();
     let a = parse_number(linenumber, &chars[10..20])?;
@@ -304,6 +329,9 @@ fn lex_origx(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String>
     Ok(LexItem::OrigX(n, [a, b, c, d]))
 }
 
+/// Lex an MTRIXn (where `n` is given)
+/// ## Fails
+/// It fails on incorrect numbers in the line
 fn lex_mtrix(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String> {
     let chars: Vec<char> = line.chars().collect();
     let ser = parse_number(linenumber, &chars[7..10])?;
@@ -319,6 +347,7 @@ fn lex_mtrix(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String>
     Ok(LexItem::MtriX(n, ser, [a, b, c, d], given))
 }
 
+/// Parse a number, generic for anything that can be parsed using FromStr
 fn parse_number<T: FromStr>(linenumber: usize, input: &[char]) -> Result<T, String> {
     let string = input
         .iter()
