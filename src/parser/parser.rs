@@ -188,8 +188,8 @@ fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, Stri
         element = [chars[76], chars[77]];
     }
     let mut charge = [' ', ' '];
-    if chars.len() == 80 {
-        charge = [chars[79], chars[80]];
+    if chars.len() >= 80 {
+        charge = [chars[78], chars[79]];
     }
 
     Ok(LexItem::Atom(

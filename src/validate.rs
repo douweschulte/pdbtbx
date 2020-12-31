@@ -19,18 +19,18 @@ pub fn validate(pdb: &PDB) -> bool {
 }
 
 fn validate_models(pdb: &PDB) -> bool {
-    let total_atoms = pdb.model(0).unwrap().total_amount_atoms();
+    let total_atoms = pdb.model(0).unwrap().amount_atoms();
     for model in pdb.models().skip(1) {
-        if model.total_amount_atoms() != total_atoms {
+        if model.amount_atoms() != total_atoms {
             println!(
                 "{} does not have the same amount of atoms as the first model ({} (this model) vs {} (first)).",
                 model,
-                model.total_amount_atoms(),
+                model.amount_atoms(),
                 total_atoms
             );
             return false;
         }
-        for index in 0..model.total_amount_atoms() {
+        for index in 0..model.amount_atoms() {
             let current_atom = model.atom(index).unwrap();
             let standard_atom = pdb.model(0).unwrap().atom(index).unwrap();
             if !standard_atom.corresponds(current_atom) {

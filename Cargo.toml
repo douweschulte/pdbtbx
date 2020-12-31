@@ -1,6 +1,6 @@
 [package]
-name = "rust-pdb"
-version = "0.1.0"
+name = "rust_pdb"
+version = "0.0.1"
 authors = ["Douwe Schulte <d.schulte@uu.nl>"]
 edition = "2018"
 
