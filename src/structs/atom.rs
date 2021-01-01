@@ -314,22 +314,31 @@ impl Atom {
         }
     }
 
+    /// Get the anisotropic temperature factors, if available
     pub fn anisotropic_temperature_factors(&self) -> Option<[[f64; 3]; 2]> {
         self.atf
     }
 
+    /// Set the anisotropic temperature factors
     pub fn set_anisotropic_temperature_factors(&mut self, factors: [[f64; 3]; 2]) {
         self.atf = Some(factors);
     }
 
+    /// Set the parent residue. This is used to link back to the parent to read its properties.
+    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
     pub fn set_residue(&mut self, new_residue: &mut Residue) {
         self.residue = Some(new_residue);
     }
 
+    /// Set the parent residue. This is used to link back to the parent to read its properties.
+    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
     pub fn set_residue_pointer(&mut self, new_residue: *mut Residue) {
         self.residue = Some(new_residue);
     }
 
+    /// Get the parent residue.
+    /// ## Panics
+    // It panics if there is no parent residue set.
     pub fn residue(&self) -> &Residue {
         if let Some(reference) = self.residue {
             unsafe { &*reference }
@@ -341,6 +350,7 @@ impl Atom {
         }
     }
 
+    /// Get the parent residue, but it does not panic.
     pub fn residue_safe(&self) -> Option<&Residue> {
         if let Some(reference) = self.residue {
             Some(unsafe { &*reference })
