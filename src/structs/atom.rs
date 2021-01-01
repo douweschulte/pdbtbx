@@ -222,10 +222,14 @@ impl Atom {
         }
     }
 
+    /// Get the b-factor or temperature factor of the atom
     pub fn b_factor(&self) -> f64 {
         self.b_factor
     }
 
+    /// Set the b-factor of the atom
+    /// ## Panics
+    /// It panics if `new_b_factor` is not finite (`f64.is_finite()`)
     pub fn set_b_factor(&mut self, new_b_factor: f64) -> Result<(), String> {
         if new_b_factor.is_finite() {
             self.b_factor = new_b_factor;
@@ -238,6 +242,7 @@ impl Atom {
         }
     }
 
+    /// Get the element of this atom
     pub fn element(&self) -> String {
         self.element
             .iter()
@@ -246,6 +251,10 @@ impl Atom {
             .collect::<String>()
     }
 
+    /// Set the element of this atom
+    /// ## Fails
+    /// It fails if the element contains invalid characters (only ASCII graphic and space is allowed).
+    /// It also fails if the string is too ling, the max length is 2 characters.
     pub fn set_element(&mut self, new_element: &str) -> Result<(), String> {
         let chars = new_element
             .to_ascii_uppercase()
@@ -269,6 +278,7 @@ impl Atom {
         }
     }
 
+    /// Get the charge of the atom
     pub fn charge(&self) -> String {
         self.charge
             .iter()
@@ -277,6 +287,10 @@ impl Atom {
             .collect::<String>()
     }
 
+    /// Set the charge of this atom
+    /// ## Fails
+    /// It fails if the charge contains invalid characters (only ASCII graphic and space is allowed).
+    /// It also fails if the string is too ling, the max length is 2 characters.
     pub fn set_charge(&mut self, new_charge: &str) -> Result<(), String> {
         let chars = new_charge
             .to_ascii_uppercase()
