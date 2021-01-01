@@ -359,6 +359,9 @@ impl Atom {
         }
     }
 
+    /// Get a mutable reference to the parent, pretty unsafe so you need to make sure yourself the use case is correct.
+    /// ## Panics
+    /// It panics when no parent is set.
     fn residue_mut(&self) -> &mut Residue {
         if let Some(reference) = self.residue {
             unsafe { &mut *reference }
@@ -370,6 +373,7 @@ impl Atom {
         }
     }
 
+    /// Get a mutable reference to the parent, pretty unsafe so you need to make sure yourself the use case is correct.
     fn residue_mut_safe(&self) -> Option<&mut Residue> {
         if let Some(reference) = self.residue {
             Some(unsafe { &mut *reference })
@@ -378,6 +382,7 @@ impl Atom {
         }
     }
 
+    /// Get if this atom is likely to be a part of the backbone of a protein
     pub fn backbone(&self) -> Option<bool> {
         let residue = self.residue_safe();
         if residue.is_some() {
@@ -392,15 +397,20 @@ impl Atom {
         }
     }
 
+    /// Remove this atom, this also removes it from its parent
     pub fn remove(&mut self) {
         self.residue_mut()
             .remove_atom_serial_number(self.serial_number());
     }
 
+    /// Apply a transformation to the position of this atom, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.set_pos(transformation.apply(self.pos())).unwrap();
     }
 
+    /// See if the `other` Atom corresponds with this Atom.
+    /// Which means that the Atoms are equal except for the position, occupancy, and b_factor.
+    /// Used to validate that multiple models contain the same atoms, but with different positional data.
     pub fn corresponds(&self, other: &Atom) -> bool {
         self.serial_number == other.serial_number
             && self.name() == other.name()
