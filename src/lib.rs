@@ -1,5 +1,5 @@
 mod parser;
-pub mod reference_tables;
+mod reference_tables;
 mod save;
 mod structs;
 mod transformation;

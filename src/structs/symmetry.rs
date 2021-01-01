@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 use crate::reference_tables;
+use crate::transformation::*;
 
 #[derive(Debug)]
-/// To save the Space group of a crystal
+/// A Space group of a crystal
 pub struct Symmetry {
     /// The fully qualified Herman Mauguin symbol for the space group
     symbol: String,
@@ -50,15 +51,16 @@ impl Symmetry {
         self.index
     }
 
-    /// Get the transformations as x,y,z strings
-    /// In the future this should return the transformations as TransformationMatrix
-    /// but for that the source table should be correct first.
-    pub fn transformations(&self) -> Vec<&str> {
-        reference_tables::get_transformation(self.index)
-            .unwrap()
-            .iter()
-            .map(|a| a.1)
-            .collect()
+    /// Get the transformations for this space group needed to fill the unit cell
+    /// The first transformation is always an identity transformation
+    pub fn transformations(&self) -> Vec<TransformationMatrix> {
+        let matrices = reference_tables::get_transformation(self.index).unwrap();
+        let mut output = Vec::with_capacity(matrices.len() + 1);
+        output.push(TransformationMatrix::identity());
+        for matrix in matrices {
+            output.push(TransformationMatrix::from_matrix(matrix.clone()));
+        }
+        output
     }
 }
 
