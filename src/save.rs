@@ -24,7 +24,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     if pdb.has_unit_cell() {
         let unit_cell = pdb.unit_cell();
         let sym = if let Some(symmetry) = &pdb.symmetry {
-            format!("{:10}{:3}", symmetry.space_group(), symmetry.z(),)
+            format!("{:10}{:3}", symmetry.symbol(), symmetry.z(),)
         } else {
             "P 1".to_string()
         };

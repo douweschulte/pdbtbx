@@ -124,9 +124,12 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                         pdb.mtrix.push(mtrix);
                     }
                 }
-                LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, z) => {
+                LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, _z) => {
                     pdb.set_unit_cell(UnitCell::new(a, b, c, alpha, beta, gamma));
-                    pdb.symmetry = Some(Symmetry::new(spacegroup, z).unwrap());
+                    pdb.symmetry = Some(
+                        Symmetry::new(&spacegroup)
+                            .expect(&format!("Invalid space group: \"{}\"", spacegroup)),
+                    );
                 }
                 _ => (),
             }
@@ -283,7 +286,9 @@ fn lex_cryst(linenumber: usize, line: &str) -> Result<LexItem, String> {
     let beta = parse_number(linenumber, &chars[40..47])?;
     let gamma = parse_number(linenumber, &chars[47..54])?;
     // TODO: make a fancy error message if a part of the space group is not numeric
-    let spacegroup = chars[55..66].iter().collect::<String>();
+    let spacegroup = chars[55..std::cmp::min(66, chars.len())]
+        .iter()
+        .collect::<String>();
     let mut z = 1;
     if chars.len() > 66 {
         z = parse_number(linenumber, &chars[66..])?;
