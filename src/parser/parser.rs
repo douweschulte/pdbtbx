@@ -124,9 +124,9 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                         pdb.mtrix.push(mtrix);
                     }
                 }
-                LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, symmetry) => {
+                LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, z) => {
                     pdb.set_unit_cell(UnitCell::new(a, b, c, alpha, beta, gamma));
-                    pdb.symmetry = Some(Symmetry::new(spacegroup, symmetry.to_vec()));
+                    pdb.symmetry = Some(Symmetry::new(spacegroup, z).unwrap());
                 }
                 _ => (),
             }
@@ -283,24 +283,13 @@ fn lex_cryst(linenumber: usize, line: &str) -> Result<LexItem, String> {
     let beta = parse_number(linenumber, &chars[40..47])?;
     let gamma = parse_number(linenumber, &chars[47..54])?;
     // TODO: make a fancy error message if a part of the space group is not numeric
-    let spacegroup = &chars[55];
-    let symmetry = &chars[56..]
-        .iter()
-        .collect::<String>()
-        .split_whitespace()
-        .map(|x| x.parse::<usize>().unwrap())
-        .collect::<Vec<usize>>();
+    let spacegroup = chars[55..66].iter().collect::<String>();
+    let mut z = 1;
+    if chars.len() > 66 {
+        z = parse_number(linenumber, &chars[66..])?;
+    }
 
-    Ok(LexItem::Crystal(
-        a,
-        b,
-        c,
-        alpha,
-        beta,
-        gamma,
-        *spacegroup,
-        symmetry.to_vec(),
-    ))
+    Ok(LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, z))
 }
 
 /// Lex an SCALEn (where `n` is given)

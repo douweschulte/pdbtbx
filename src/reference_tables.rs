@@ -61,6 +61,7 @@ pub fn get_amino_acid_number(aa: &str) -> Option<usize> {
     None
 }
 
+/// Reworked from the source code of CCTBX (Dec 2020)
 const SYMBOL_TRANSFORMATION: &[&[(usize,&str)]] = &[
     &[],
     &[ (1,"1/2,1/2,1/2"), (1,"0,1/2,1/2"), (1,"1/2,0,1/2"), (1,"1/2,1/2,0"), (1,"1/2,0,0"), (1,"0,1/2,0"), (1,"0,0,1/2"), (1,"0,0,0")],

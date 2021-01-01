@@ -73,7 +73,7 @@ pub enum LexItem {
     /// A MTRIXn line, as the row (1/2/3), serial number, data, and contained fields
     MtriX(usize, usize, [f64; 4], bool),
     /// A CRYST1 line, containing: a, b, c, alpha, beta, gamma, space group character, and space group symbols as numbers
-    Crystal(f64, f64, f64, f64, f64, f64, char, Vec<usize>),
+    Crystal(f64, f64, f64, f64, f64, f64, String, usize),
     /// A MODEL with its serial number
     Model(usize),
     /// ENDMODEL, end of the current model
