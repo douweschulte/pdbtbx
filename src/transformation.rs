@@ -133,6 +133,12 @@ impl TransformationMatrix {
         }
     }
 
+    pub fn multiply_translation(&mut self, factors: (f64, f64, f64)) {
+        self.matrix[0][3] = self.matrix[0][3] * factors.0;
+        self.matrix[1][3] = self.matrix[1][3] * factors.1;
+        self.matrix[2][3] = self.matrix[2][3] * factors.2;
+    }
+
     /// Apply this transformation to the given position.
     /// It returns the new position.
     /// ## Arguments
@@ -243,6 +249,12 @@ impl Clone for TransformationMatrix {
         orig.matrix = self.matrix.clone();
 
         orig
+    }
+}
+
+impl PartialEq for TransformationMatrix {
+    fn eq(&self, other: &TransformationMatrix) -> bool {
+        self.matrix == other.matrix
     }
 }
 
@@ -441,6 +453,31 @@ mod tests {
         let pos = (0.0, 1.0, 0.0);
         let new_pos = TransformationMatrix::magnify(2.5).apply(pos);
         assert!(close_tuple(new_pos, (0.0, 2.5, 0.0)));
+    }
+
+    #[test]
+    fn multiply_translation() {
+        let pos = (0.0, 0.0, 0.0);
+        let mut matrix = TransformationMatrix::translation(1.0, 2.0, -5.0);
+        matrix.multiply_translation((10.0, 5.0, -2.0));
+        let new_pos = matrix.apply(pos);
+        assert!(close_tuple(new_pos, (10.0, 10.0, 10.0)));
+        assert_eq!(
+            matrix.matrix(),
+            TransformationMatrix::translation(10.0, 10.0, 10.0).matrix()
+        );
+    }
+
+    #[test]
+    fn matrix() {
+        let normal = TransformationMatrix::rotation_x(45.0);
+        let raw = normal.matrix();
+        let from_matrix = TransformationMatrix::from_matrix(raw.clone());
+        let mut set = TransformationMatrix::identity();
+        set.set_matrix(raw);
+        assert_eq!(normal, from_matrix);
+        assert_eq!(from_matrix, set);
+        assert_eq!(normal, set);
     }
 
     fn close_tuple(a: (f64, f64, f64), b: (f64, f64, f64)) -> bool {

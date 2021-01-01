@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use super::unit_cell::*;
 use crate::reference_tables;
 use crate::transformation::*;
 
@@ -51,14 +52,30 @@ impl Symmetry {
         self.index
     }
 
-    /// Get the transformations for this space group needed to fill the unit cell
-    /// The first transformation is always an identity transformation
+    /// Get the transformations for this space group needed to fill the unit cell.
+    /// The first transformation is always an identity transformation.
+    /// The translation is fractional to the unit cell size.
     pub fn transformations(&self) -> Vec<TransformationMatrix> {
         let matrices = reference_tables::get_transformation(self.index).unwrap();
         let mut output = Vec::with_capacity(matrices.len() + 1);
         output.push(TransformationMatrix::identity());
         for matrix in matrices {
             output.push(TransformationMatrix::from_matrix(matrix.clone()));
+        }
+        output
+    }
+
+    /// Get the transformations for this space group needed to fill the unit cell.
+    /// The first transformation is always an identity transformation.
+    /// The translation is in Å.
+    pub fn transformations_absolute(&self, unit_cell: &UnitCell) -> Vec<TransformationMatrix> {
+        let matrices = reference_tables::get_transformation(self.index).unwrap();
+        let mut output = Vec::with_capacity(matrices.len() + 1);
+        output.push(TransformationMatrix::identity());
+        for matrix in matrices {
+            let mut ma = TransformationMatrix::from_matrix(matrix.clone());
+            ma.multiply_translation(unit_cell.size());
+            output.push(ma);
         }
         output
     }
