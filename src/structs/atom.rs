@@ -460,3 +460,16 @@ impl Clone for Atom {
         atom
     }
 }
+
+impl PartialEq for Atom {
+    fn eq(&self, other: &Self) -> bool {
+        self.serial_number == other.serial_number
+            && self.name() == other.name()
+            && self.element() == other.element()
+            && self.charge() == other.charge()
+            && self.atf == other.atf
+            && self.pos() == other.pos()
+            && self.occupancy == other.occupancy
+            && self.b_factor == other.b_factor
+    }
+}

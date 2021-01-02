@@ -45,6 +45,7 @@ impl Symmetry {
         reference_tables::get_transformation(self.index)
             .unwrap()
             .len()
+            + 1
     }
 
     /// Get the index of this space group in Int. Crys. Handbook Vol A 2016
@@ -103,9 +104,15 @@ mod tests {
 
     #[test]
     fn both_creations() {
-        let a = Symmetry::new("P 21 21 21");
-        let b = Symmetry::from_index(19);
+        let a = Symmetry::new("P 21 21 21").unwrap();
+        let b = Symmetry::from_index(19).unwrap();
         assert_eq!(a, b);
+        assert_eq!(a.z(), a.transformations().len());
+        assert_eq!(
+            4,
+            a.transformations_absolute(&crate::UnitCell::new(1.0, 1.0, 1.0, 90.0, 90.0, 90.0))
+                .len()
+        );
     }
 
     #[test]
