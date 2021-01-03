@@ -21,19 +21,13 @@ impl Model {
     /// ## Arguments
     /// * `serial_number` - the serial number
     /// * `pdb` - if available the parent of the Model
-    pub fn new(serial_number: usize, pdb: Option<&mut PDB>) -> Model {
-        let mut model = Model {
+    pub fn new(serial_number: usize, pdb: Option<*mut PDB>) -> Model {
+        Model {
             serial_number: serial_number,
             chains: Vec::new(),
             hetero_chains: Vec::new(),
-            pdb: None,
-        };
-
-        if let Some(p) = pdb {
-            model.pdb = Some(p);
+            pdb,
         }
-
-        model
     }
 
     /// The serial number of this Model
@@ -62,8 +56,7 @@ impl Model {
     /// Get the amount of Atoms making up this Model.
     /// This disregards all Hetero Atoms.
     pub fn atom_count(&self) -> usize {
-        self.chains()
-            .fold(0, |sum, chain| chain.atom_count() + sum)
+        self.chains().fold(0, |sum, chain| chain.atom_count() + sum)
     }
 
     /// Get the amount of Chains making up this Model.
