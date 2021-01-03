@@ -163,28 +163,28 @@ impl Model {
     /// This disregards all Hetero Residues.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.chains.iter().map(|a| a.residues()).flatten()
+        self.chains.iter().flat_map(|a| a.residues())
     }
 
     /// Get the list of Residues as mutable references making up this Model.
     /// This disregards all Hetero Residues.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
-        self.chains.iter_mut().map(|a| a.residues_mut()).flatten()
+        self.chains.iter_mut().flat_map(|a| a.residues_mut())
     }
 
     /// Get the list of Atoms making up this Model.
     /// This disregards all Hetero Atoms.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.chains.iter().map(|a| a.atoms()).flatten()
+        self.chains.iter().flat_map(|a| a.atoms())
     }
 
     /// Get the list of Atoms as mutable references making up this Model.
     /// This disregards all Hetero Atoms.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.chains.iter_mut().map(|a| a.atoms_mut()).flatten()
+        self.chains.iter_mut().flat_map(|a| a.atoms_mut())
     }
 
     /// Get the list of Chains making up this Model.
@@ -205,7 +205,7 @@ impl Model {
     /// This disregards all Normal Residues.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn hetero_residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.hetero_chains.iter().map(|a| a.residues()).flatten()
+        self.hetero_chains.iter().flat_map(|a| a.residues())
     }
 
     /// Get the list of Residues as mutable references making up this Model.
@@ -222,7 +222,7 @@ impl Model {
     /// This disregards all Normal Atoms.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn hetero_atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.hetero_chains.iter().map(|a| a.atoms()).flatten()
+        self.hetero_chains.iter().flat_map(|a| a.atoms())
     }
 
     /// Get the list of Atoms as mutable references making up this Model.
@@ -257,7 +257,7 @@ impl Model {
             .iter()
             .map(|a| a.residues())
             .flatten()
-            .chain(self.hetero_chains.iter().map(|a| a.residues()).flatten())
+            .chain(self.hetero_chains.iter().flat_map(|a| a.residues()))
     }
 
     /// Get the list of Residues as mutable references making up this Model.
@@ -266,14 +266,8 @@ impl Model {
     pub fn all_residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
         self.chains
             .iter_mut()
-            .map(|a| a.residues_mut())
-            .flatten()
-            .chain(
-                self.hetero_chains
-                    .iter_mut()
-                    .map(|a| a.residues_mut())
-                    .flatten(),
-            )
+            .flat_map(|a| a.residues_mut())
+            .chain(self.hetero_chains.iter_mut().flat_map(|a| a.residues_mut()))
     }
 
     /// Get the list of Atoms making up this Model.
@@ -282,9 +276,8 @@ impl Model {
     pub fn all_atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
         self.chains
             .iter()
-            .map(|a| a.atoms())
-            .flatten()
-            .chain(self.hetero_chains.iter().map(|a| a.atoms()).flatten())
+            .flat_map(|a| a.atoms())
+            .chain(self.hetero_chains.iter().flat_map(|a| a.atoms()))
     }
 
     /// Get the list of Atoms as mutable references making up this Model.
@@ -293,14 +286,8 @@ impl Model {
     pub fn all_atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.chains
             .iter_mut()
-            .map(|a| a.atoms_mut())
-            .flatten()
-            .chain(
-                self.hetero_chains
-                    .iter_mut()
-                    .map(|a| a.atoms_mut())
-                    .flatten(),
-            )
+            .flat_map(|a| a.atoms_mut())
+            .chain(self.hetero_chains.iter_mut().flat_map(|a| a.atoms_mut()))
     }
 
     /// Add a new Atom to this Model. It finds if there already is a Chain with the given `chain_id` if there is it will add this atom to that Chain, otherwise it will create a new Chain and add that to the list of Chains making up this Model. It does the same for the Residue, so it will create a new one if there does not yet exist a Residue with the given serial number.
