@@ -73,3 +73,9 @@ impl PartialEq for Scale {
         self.transformation == other.transformation
     }
 }
+
+impl Default for Scale {
+    fn default() -> Self {
+        Self::new()
+    }
+}

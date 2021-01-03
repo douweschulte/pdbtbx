@@ -31,7 +31,7 @@ impl TransformationMatrix {
 
     /// Create a matrix with the given matrix
     pub fn from_matrix(matrix: [[f64; 4]; 4]) -> Self {
-        TransformationMatrix { matrix: matrix }
+        TransformationMatrix { matrix }
     }
 
     /// Create a matrix defining a rotation around the X axis

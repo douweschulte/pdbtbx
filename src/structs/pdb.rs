@@ -246,7 +246,7 @@ impl PDB {
     /// Get the amount of Chains making up this PDB.
     /// Disregarding Hetero Chains.
     pub fn chain_count(&self) -> usize {
-        if self.models.len() > 0 {
+        if !self.models.is_empty() {
             self.models[0].chain_count()
         } else {
             0
@@ -256,7 +256,7 @@ impl PDB {
     /// Get the amount of Residues making up this PDB.
     /// Disregarding Hetero Residues.
     pub fn residue_count(&self) -> usize {
-        if self.models.len() > 0 {
+        if !self.models.is_empty() {
             self.models[0].residue_count()
         } else {
             0
@@ -266,7 +266,7 @@ impl PDB {
     /// Get the amount of Atoms making up this PDB.
     /// Disregarding Hetero Atoms.
     pub fn atom_count(&self) -> usize {
-        if self.models.len() > 0 {
+        if !self.models.is_empty() {
             self.models[0].atom_count()
         } else {
             0
@@ -639,5 +639,11 @@ impl PartialEq for PDB {
             && self.unit_cell == other.unit_cell
             && self.symmetry == other.symmetry
             && self.models == other.models
+    }
+}
+
+impl Default for PDB {
+    fn default() -> Self {
+        Self::new()
     }
 }

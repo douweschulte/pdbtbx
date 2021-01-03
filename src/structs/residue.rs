@@ -155,11 +155,7 @@ impl Residue {
 
     /// Returns if this Residue is an amino acid
     pub fn amino_acid(&self) -> bool {
-        if reference_tables::get_amino_acid_number(self.id().as_str()).is_some() {
-            true
-        } else {
-            false
-        }
+        reference_tables::get_amino_acid_number(self.id().as_str()).is_some()
     }
 
     /// Set the parent Chain. This is used to link back to the parent to read its properties.

@@ -73,3 +73,9 @@ impl PartialEq for OrigX {
         self.transformation == other.transformation
     }
 }
+
+impl Default for OrigX {
+    fn default() -> Self {
+        Self::new()
+    }
+}

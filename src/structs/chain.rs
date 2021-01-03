@@ -27,7 +27,7 @@ impl Chain {
             return None;
         }
         Some(Chain {
-            id: id,
+            id,
             residues: Vec::new(),
             model,
         })
@@ -206,6 +206,7 @@ impl Chain {
     /// Get the parent Model mutably, pretty unsafe so you need to make sure yourself the use case is correct.
     /// ## Panics
     /// It panics if there is no parent Model set.
+    #[allow(clippy::mut_from_ref)]
     fn model_mut(&self) -> &mut Model {
         if let Some(reference) = self.model {
             unsafe { &mut *reference }
@@ -242,7 +243,7 @@ impl Chain {
     where
         F: Fn(&Residue) -> bool,
     {
-        let residues = std::mem::replace(&mut self.residues, Vec::default());
+        let residues = std::mem::take(&mut self.residues);
         self.residues
             .extend(residues.into_iter().filter(|residue| !predicate(residue)));
     }

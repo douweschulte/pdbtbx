@@ -28,15 +28,14 @@ impl UnitCell {
     /// * `gamma` - gamma angle in degrees
     pub fn new(a: f64, b: f64, c: f64, alpha: f64, beta: f64, gamma: f64) -> UnitCell {
         UnitCell {
-            a: a,
-            b: b,
-            c: c,
-            alpha: alpha,
-            beta: beta,
-            gamma: gamma,
+            a,
+            b,
+            c,
+            alpha,
+            beta,
+            gamma,
         }
     }
-
     /// Get the a-axis dimension
     pub fn a(&self) -> f64 {
         self.a

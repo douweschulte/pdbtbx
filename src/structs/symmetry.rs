@@ -15,9 +15,9 @@ pub struct Symmetry {
 impl Symmetry {
     /// Create a new Symmetry based on a fully qualified Herman Mauguin symbol
     pub fn new(symbol: &str) -> Option<Self> {
-        reference_tables::get_index_for_symbol(symbol.trim()).map(|i| Symmetry {
+        reference_tables::get_index_for_symbol(symbol.trim()).map(|index| Symmetry {
             symbol: symbol.trim().to_string(),
-            index: i,
+            index,
         })
     }
 
@@ -25,7 +25,7 @@ impl Symmetry {
     pub fn from_index(index: usize) -> Option<Self> {
         reference_tables::get_symbol_for_index(index).map(|s| Symmetry {
             symbol: s.to_string(),
-            index: index,
+            index,
         })
     }
 
@@ -55,7 +55,7 @@ impl Symmetry {
         let mut output = Vec::with_capacity(matrices.len() + 1);
         output.push(TransformationMatrix::identity());
         for matrix in matrices {
-            output.push(TransformationMatrix::from_matrix(matrix.clone()));
+            output.push(TransformationMatrix::from_matrix(*matrix));
         }
         output
     }
@@ -68,7 +68,7 @@ impl Symmetry {
         let mut output = Vec::with_capacity(matrices.len() + 1);
         output.push(TransformationMatrix::identity());
         for matrix in matrices {
-            let mut ma = TransformationMatrix::from_matrix(matrix.clone());
+            let mut ma = TransformationMatrix::from_matrix(*matrix);
             ma.multiply_translation(unit_cell.size());
             output.push(ma);
         }

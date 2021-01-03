@@ -23,7 +23,7 @@ impl Model {
     /// * `pdb` - if available the parent of the Model
     pub fn new(serial_number: usize, pdb: Option<*mut PDB>) -> Model {
         Model {
-            serial_number: serial_number,
+            serial_number,
             chains: Vec::new(),
             hetero_chains: Vec::new(),
             pdb,
@@ -358,10 +358,8 @@ impl Model {
         residue_name: [char; 3],
     ) {
         let mut found = false;
-        let mut new_chain = Chain::new(chain_id, Some(self)).expect(&format!(
-            "Invalid characters in chain creation ({})",
-            chain_id
-        ));
+        let mut new_chain = Chain::new(chain_id, Some(self))
+            .unwrap_or_else(|| panic!("Invalid characters in chain creation ({})", chain_id));
         let mut current_chain = &mut new_chain;
         for chain in &mut self.hetero_chains {
             if chain.id() == chain_id {
@@ -430,6 +428,7 @@ impl Model {
     /// Get the parent PDB mutably, pretty unsafe so you need to make sure yourself the use case is correct.
     /// ## Panics
     /// It panics if there is no parent PDB set.
+    #[allow(clippy::mut_from_ref)]
     fn pdb_mut(&self) -> &mut PDB {
         if let Some(reference) = self.pdb {
             unsafe { &mut *reference }

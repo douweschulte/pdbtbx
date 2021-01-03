@@ -97,3 +97,9 @@ impl PartialEq for MtriX {
             && self.contained == other.contained
     }
 }
+
+impl Default for MtriX {
+    fn default() -> Self {
+        Self::new()
+    }
+}
