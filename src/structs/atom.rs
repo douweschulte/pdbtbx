@@ -33,7 +33,6 @@ pub struct Atom {
 impl Atom {
     /// Create a new Atom
     pub fn new(
-        residue: Option<*mut Residue>,
         serial_number: usize,
         atom_name: [char; 4],
         x: f64,
@@ -54,7 +53,7 @@ impl Atom {
             b_factor,
             element,
             charge,
-            residue,
+            residue: None,
             atf: None,
         };
 
@@ -438,7 +437,6 @@ impl fmt::Display for Atom {
 impl Clone for Atom {
     fn clone(&self) -> Self {
         let mut atom = Atom::new(
-            None,
             self.serial_number,
             self.name,
             self.x,
