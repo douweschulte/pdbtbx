@@ -244,9 +244,13 @@ impl Chain {
         }
     }
 
-    pub fn remove_residues_by<F>(&mut self, predicate: F) where F: Fn(&Residue) -> bool {
+    pub fn remove_residues_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Residue) -> bool,
+    {
         let residues = std::mem::replace(&mut self.residues, Vec::default());
-        self.residues.extend(residues.into_iter().filter(|residue|!predicate(residue)));
+        self.residues
+            .extend(residues.into_iter().filter(|residue| !predicate(residue)));
     }
 
     /// Remove the Residue specified.

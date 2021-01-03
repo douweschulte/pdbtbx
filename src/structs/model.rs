@@ -62,8 +62,7 @@ impl Model {
     /// Get the amount of Atoms making up this Model.
     /// This disregards all Hetero Atoms.
     pub fn atom_count(&self) -> usize {
-        self.chains()
-            .fold(0, |sum, chain| chain.atom_count() + sum)
+        self.chains().fold(0, |sum, chain| chain.atom_count() + sum)
     }
 
     /// Get the amount of Chains making up this Model.

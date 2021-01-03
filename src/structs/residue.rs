@@ -288,8 +288,7 @@ impl Residue {
     /// Remove this Residue from its parent Chain
     pub fn remove(&mut self) {
         let i = self.serial_number();
-        self.chain_mut()
-            .remove_residue_serial_number(i);
+        self.chain_mut().remove_residue_serial_number(i);
     }
 
     /// Apply a transformation to the position of all atoms making up this Residue, the new position is immediately set.
