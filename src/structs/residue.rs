@@ -107,7 +107,7 @@ impl Residue {
     }
 
     /// The amount of atoms making up this Residue
-    pub fn amount_atoms(&self) -> usize {
+    pub fn atom_count(&self) -> usize {
         self.atoms.len()
     }
 

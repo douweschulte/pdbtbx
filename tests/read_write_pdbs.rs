@@ -38,10 +38,10 @@ fn do_someting(file: &str, output: &str) {
 
     println!(
         "Found {} atoms, in {} residues, in {} chains, in {} models it all took {} ms",
-        pdb.total_amount_atoms(),
-        pdb.total_amount_residues(),
-        pdb.total_amount_chains(),
-        pdb.amount_models(),
+        pdb.total_atom_count(),
+        pdb.total_residue_count(),
+        pdb.total_chain_count(),
+        pdb.model_count(),
         time.as_millis()
     );
 

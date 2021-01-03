@@ -239,15 +239,15 @@ impl PDB {
     }
 
     /// Get the amount of Models making up this PDB
-    pub fn amount_models(&self) -> usize {
+    pub fn model_count(&self) -> usize {
         self.models.len()
     }
 
     /// Get the amount of Chains making up this PDB.
     /// Disregarding Hetero Chains.
-    pub fn amount_chains(&self) -> usize {
+    pub fn chain_count(&self) -> usize {
         if self.models.len() > 0 {
-            self.models[0].amount_chains()
+            self.models[0].chain_count()
         } else {
             0
         }
@@ -255,9 +255,9 @@ impl PDB {
 
     /// Get the amount of Residues making up this PDB.
     /// Disregarding Hetero Residues.
-    pub fn amount_residues(&self) -> usize {
+    pub fn residue_count(&self) -> usize {
         if self.models.len() > 0 {
-            self.models[0].amount_residues()
+            self.models[0].residue_count()
         } else {
             0
         }
@@ -265,9 +265,9 @@ impl PDB {
 
     /// Get the amount of Atoms making up this PDB.
     /// Disregarding Hetero Atoms.
-    pub fn amount_atoms(&self) -> usize {
+    pub fn atom_count(&self) -> usize {
         if self.models.len() > 0 {
-            self.models[0].amount_atoms()
+            self.models[0].atom_count()
         } else {
             0
         }
@@ -275,20 +275,20 @@ impl PDB {
 
     /// Get the amount of Chains making up this PDB.
     /// Including Hetero Chains.
-    pub fn total_amount_chains(&self) -> usize {
-        self.models.len() * self.amount_chains()
+    pub fn total_chain_count(&self) -> usize {
+        self.models.len() * self.chain_count()
     }
 
     /// Get the amount of Residues making up this PDB.
     /// Including Hetero Residues.
-    pub fn total_amount_residues(&self) -> usize {
-        self.models.len() * self.amount_residues()
+    pub fn total_residue_count(&self) -> usize {
+        self.models.len() * self.residue_count()
     }
 
     /// Get the amount of Atoms making up this PDB.
     /// Including Hetero Atoms.
-    pub fn total_amount_atoms(&self) -> usize {
-        self.models.len() * self.amount_atoms()
+    pub fn total_atom_count(&self) -> usize {
+        self.models.len() * self.atom_count()
     }
 
     /// Get a specific Model from list of Models making up this PDB.

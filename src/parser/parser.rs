@@ -88,7 +88,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                     }
                 }
                 LexItem::Model(number) => {
-                    if current_model.amount_atoms() > 0 {
+                    if current_model.atom_count() > 0 {
                         pdb.add_model(current_model)
                     }
 
