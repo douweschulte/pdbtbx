@@ -117,13 +117,13 @@ impl Chain {
     /// Get the list of Atoms making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.residues.iter().map(|a| a.atoms()).flatten()
+        self.residues.iter().flat_map(|a| a.atoms())
     }
 
     /// Get the list of Atoms as mutable references making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.residues.iter_mut().map(|a| a.atoms_mut()).flatten()
+        self.residues.iter_mut().flat_map(|a| a.atoms_mut())
     }
 
     /// Add a new Atom to this Chain. It finds if there already is a Residue with the given serial number if there is it will add this atom to that Residue, otherwise it will create a new Residue and add that to the list of Residues making up this Chain.
