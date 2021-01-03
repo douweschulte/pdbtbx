@@ -3,17 +3,17 @@
 /// A 3D affine transformation matrix
 #[derive(Debug)]
 pub struct TransformationMatrix {
-    matrix: [[f64; 4]; 4],
+    matrix: [[f64; 4]; 3],
 }
 
 impl TransformationMatrix {
     /// Get the raw matrix (row major order)
-    pub fn matrix(&self) -> [[f64; 4]; 4] {
+    pub fn matrix(&self) -> [[f64; 4]; 3] {
         self.matrix
     }
 
     /// Set the raw matrix (row major order), the user needs to make sure the matrix is valid
-    pub fn set_matrix(&mut self, new_matrix: [[f64; 4]; 4]) {
+    pub fn set_matrix(&mut self, new_matrix: [[f64; 4]; 3]) {
         self.matrix = new_matrix;
     }
 
@@ -24,13 +24,12 @@ impl TransformationMatrix {
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
                 [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
             ],
         }
     }
 
     /// Create a matrix with the given matrix
-    pub fn from_matrix(matrix: [[f64; 4]; 4]) -> Self {
+    pub fn from_matrix(matrix: [[f64; 4]; 3]) -> Self {
         TransformationMatrix { matrix: matrix }
     }
 
@@ -46,12 +45,7 @@ impl TransformationMatrix {
         let c = deg.to_radians().cos();
         let s = deg.to_radians().sin();
         TransformationMatrix {
-            matrix: [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, c, -s, 0.0],
-                [0.0, s, c, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
+            matrix: [[1.0, 0.0, 0.0, 0.0], [0.0, c, -s, 0.0], [0.0, s, c, 0.0]],
         }
     }
 
@@ -67,12 +61,7 @@ impl TransformationMatrix {
         let c = deg.to_radians().cos();
         let s = deg.to_radians().sin();
         TransformationMatrix {
-            matrix: [
-                [c, 0.0, s, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [-s, 0.0, c, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
+            matrix: [[c, 0.0, s, 0.0], [0.0, 1.0, 0.0, 0.0], [-s, 0.0, c, 0.0]],
         }
     }
 
@@ -88,12 +77,7 @@ impl TransformationMatrix {
         let c = deg.to_radians().cos();
         let s = deg.to_radians().sin();
         TransformationMatrix {
-            matrix: [
-                [c, -s, 0.0, 0.0],
-                [s, c, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
+            matrix: [[c, -s, 0.0, 0.0], [s, c, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0]],
         }
     }
 
@@ -105,12 +89,7 @@ impl TransformationMatrix {
             panic!("One or more of the arguments is not finite");
         }
         TransformationMatrix {
-            matrix: [
-                [1.0, 0.0, 0.0, x],
-                [0.0, 1.0, 0.0, y],
-                [0.0, 0.0, 1.0, z],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
+            matrix: [[1.0, 0.0, 0.0, x], [0.0, 1.0, 0.0, y], [0.0, 0.0, 1.0, z]],
         }
     }
 
@@ -124,12 +103,7 @@ impl TransformationMatrix {
             panic!("The amount of degrees is not finite");
         }
         TransformationMatrix {
-            matrix: [
-                [f, 0.0, 0.0, 0.0],
-                [0.0, f, 0.0, 0.0],
-                [0.0, 0.0, f, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
+            matrix: [[f, 0.0, 0.0, 0.0], [0.0, f, 0.0, 0.0], [0.0, 0.0, f, 0.0]],
         }
     }
 
@@ -168,74 +142,47 @@ impl TransformationMatrix {
                 [
                     other.matrix[0][0] * self.matrix[0][0]
                         + other.matrix[0][1] * self.matrix[1][0]
-                        + other.matrix[0][2] * self.matrix[2][0]
-                        + other.matrix[0][3] * self.matrix[3][0],
+                        + other.matrix[0][2] * self.matrix[2][0],
                     other.matrix[0][0] * self.matrix[0][1]
                         + other.matrix[0][1] * self.matrix[1][1]
-                        + other.matrix[0][2] * self.matrix[2][1]
-                        + other.matrix[0][3] * self.matrix[3][1],
+                        + other.matrix[0][2] * self.matrix[2][1],
                     other.matrix[0][0] * self.matrix[0][2]
                         + other.matrix[0][1] * self.matrix[1][2]
-                        + other.matrix[0][2] * self.matrix[2][2]
-                        + other.matrix[0][3] * self.matrix[3][2],
+                        + other.matrix[0][2] * self.matrix[2][2],
                     other.matrix[0][0] * self.matrix[0][3]
                         + other.matrix[0][1] * self.matrix[1][3]
                         + other.matrix[0][2] * self.matrix[2][3]
-                        + other.matrix[0][3] * self.matrix[3][3],
+                        + other.matrix[0][3],
                 ],
                 [
                     other.matrix[1][0] * self.matrix[0][0]
                         + other.matrix[1][1] * self.matrix[1][0]
-                        + other.matrix[1][2] * self.matrix[2][0]
-                        + other.matrix[1][3] * self.matrix[3][0],
+                        + other.matrix[1][2] * self.matrix[2][0],
                     other.matrix[1][0] * self.matrix[0][1]
                         + other.matrix[1][1] * self.matrix[1][1]
-                        + other.matrix[1][2] * self.matrix[2][1]
-                        + other.matrix[1][3] * self.matrix[3][1],
+                        + other.matrix[1][2] * self.matrix[2][1],
                     other.matrix[1][0] * self.matrix[0][2]
                         + other.matrix[1][1] * self.matrix[1][2]
-                        + other.matrix[1][2] * self.matrix[2][2]
-                        + other.matrix[1][3] * self.matrix[3][2],
+                        + other.matrix[1][2] * self.matrix[2][2],
                     other.matrix[1][0] * self.matrix[0][3]
                         + other.matrix[1][1] * self.matrix[1][3]
                         + other.matrix[1][2] * self.matrix[2][3]
-                        + other.matrix[1][3] * self.matrix[3][3],
+                        + other.matrix[1][3],
                 ],
                 [
                     other.matrix[2][0] * self.matrix[0][0]
                         + other.matrix[2][1] * self.matrix[1][0]
-                        + other.matrix[2][2] * self.matrix[2][0]
-                        + other.matrix[2][3] * self.matrix[3][0],
+                        + other.matrix[2][2] * self.matrix[2][0],
                     other.matrix[2][0] * self.matrix[0][1]
                         + other.matrix[2][1] * self.matrix[1][1]
-                        + other.matrix[2][2] * self.matrix[2][1]
-                        + other.matrix[2][3] * self.matrix[3][1],
+                        + other.matrix[2][2] * self.matrix[2][1],
                     other.matrix[2][0] * self.matrix[0][2]
                         + other.matrix[2][1] * self.matrix[1][2]
-                        + other.matrix[2][2] * self.matrix[2][2]
-                        + other.matrix[2][3] * self.matrix[3][2],
+                        + other.matrix[2][2] * self.matrix[2][2],
                     other.matrix[2][0] * self.matrix[0][3]
                         + other.matrix[2][1] * self.matrix[1][3]
                         + other.matrix[2][2] * self.matrix[2][3]
-                        + other.matrix[2][3] * self.matrix[3][3],
-                ],
-                [
-                    other.matrix[3][0] * self.matrix[0][0]
-                        + other.matrix[3][1] * self.matrix[1][0]
-                        + other.matrix[3][2] * self.matrix[2][0]
-                        + other.matrix[3][3] * self.matrix[3][0],
-                    other.matrix[3][0] * self.matrix[0][1]
-                        + other.matrix[3][1] * self.matrix[1][1]
-                        + other.matrix[3][2] * self.matrix[2][1]
-                        + other.matrix[3][3] * self.matrix[3][1],
-                    other.matrix[3][0] * self.matrix[0][2]
-                        + other.matrix[3][1] * self.matrix[1][2]
-                        + other.matrix[3][2] * self.matrix[2][2]
-                        + other.matrix[3][3] * self.matrix[3][2],
-                    other.matrix[3][0] * self.matrix[0][3]
-                        + other.matrix[3][1] * self.matrix[1][3]
-                        + other.matrix[3][2] * self.matrix[2][3]
-                        + other.matrix[3][3] * self.matrix[3][3],
+                        + other.matrix[2][3],
                 ],
             ],
         }
