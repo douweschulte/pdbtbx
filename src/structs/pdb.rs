@@ -532,7 +532,7 @@ impl PDB {
     pub fn fix_pointers_of_children(&mut self) {
         let reference: *mut PDB = self;
         for model in &mut self.models {
-            model.set_pdb_pointer(reference);
+            model.set_pdb(reference);
             model.fix_pointers_of_children();
         }
     }

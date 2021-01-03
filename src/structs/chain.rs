@@ -168,13 +168,7 @@ impl Chain {
 
     /// Set the parent Model. This is used to link back to the parent to read its properties.
     /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_model(&mut self, new_model: &mut Model) {
-        self.model = Some(new_model);
-    }
-
-    /// Set the parent Model. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_model_pointer(&mut self, new_model: *mut Model) {
+    pub fn set_model(&mut self, new_model: *mut Model) {
         self.model = Some(new_model);
     }
 
@@ -233,7 +227,7 @@ impl Chain {
     pub fn fix_pointers_of_children(&mut self) {
         let reference: *mut Chain = self;
         for res in &mut self.residues {
-            res.set_chain_pointer(reference);
+            res.set_chain(reference);
             res.fix_pointers_of_children();
         }
     }

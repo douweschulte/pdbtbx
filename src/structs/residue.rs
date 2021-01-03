@@ -164,13 +164,7 @@ impl Residue {
 
     /// Set the parent Chain. This is used to link back to the parent to read its properties.
     /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_chain(&mut self, new_chain: &mut Chain) {
-        self.chain = Some(new_chain);
-    }
-
-    /// Set the parent Chain. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_chain_pointer(&mut self, new_chain: *mut Chain) {
+    pub fn set_chain(&mut self, new_chain: *mut Chain) {
         self.chain = Some(new_chain);
     }
 
@@ -229,7 +223,7 @@ impl Residue {
     pub fn fix_pointers_of_children(&mut self) {
         let reference: *mut Residue = self;
         for atom in &mut self.atoms {
-            atom.set_residue_pointer(reference);
+            atom.set_residue(reference);
         }
     }
 

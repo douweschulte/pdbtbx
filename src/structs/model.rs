@@ -392,13 +392,7 @@ impl Model {
 
     /// Set the parent PDB. This is used to link back to the parent to read its properties.
     /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_pdb(&mut self, new_pdb: &mut PDB) {
-        self.pdb = Some(new_pdb);
-    }
-
-    /// Set the parent PDB. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_pdb_pointer(&mut self, new_pdb: *mut PDB) {
+    pub fn set_pdb(&mut self, new_pdb: *mut PDB) {
         self.pdb = Some(new_pdb);
     }
 
@@ -457,11 +451,11 @@ impl Model {
     pub fn fix_pointers_of_children(&mut self) {
         let reference: *mut Model = self;
         for chain in &mut self.chains {
-            chain.set_model_pointer(reference);
+            chain.set_model(reference);
             chain.fix_pointers_of_children();
         }
         for chain in &mut self.hetero_chains {
-            chain.set_model_pointer(reference);
+            chain.set_model(reference);
             chain.fix_pointers_of_children();
         }
     }

@@ -322,13 +322,7 @@ impl Atom {
 
     /// Set the parent residue. This is used to link back to the parent to read its properties.
     /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_residue(&mut self, new_residue: &mut Residue) {
-        self.residue = Some(new_residue);
-    }
-
-    /// Set the parent residue. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_residue_pointer(&mut self, new_residue: *mut Residue) {
+    pub fn set_residue(&mut self, new_residue: *mut Residue) {
         self.residue = Some(new_residue);
     }
 
