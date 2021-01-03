@@ -3,7 +3,7 @@ use super::unit_cell::*;
 use crate::reference_tables;
 use crate::transformation::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A Space group of a crystal
 pub struct Symmetry {
     /// The fully qualified Herman Mauguin symbol for the space group
@@ -15,21 +15,17 @@ pub struct Symmetry {
 impl Symmetry {
     /// Create a new Symmetry based on a fully qualified Herman Mauguin symbol
     pub fn new(symbol: &str) -> Option<Self> {
-        reference_tables::get_index_for_symbol(symbol.trim()).map(|i| {
-            Symmetry {
-                symbol: symbol.trim().to_string(),
-                index: i,
-            }
+        reference_tables::get_index_for_symbol(symbol.trim()).map(|index| Symmetry {
+            symbol: symbol.trim().to_string(),
+            index,
         })
     }
 
     /// Create a new Symmetry based on the index of a symbol in Int. Crys. Handbook Vol A 2016
     pub fn from_index(index: usize) -> Option<Self> {
-        reference_tables::get_symbol_for_index(index).map(|s| {
-             Symmetry {
-                symbol: s.to_string(),
-                index: index,
-            }
+        reference_tables::get_symbol_for_index(index).map(|s| Symmetry {
+            symbol: s.to_string(),
+            index,
         })
     }
 
@@ -59,7 +55,7 @@ impl Symmetry {
         let mut output = Vec::with_capacity(matrices.len() + 1);
         output.push(TransformationMatrix::identity());
         for matrix in matrices {
-            output.push(TransformationMatrix::from_matrix(matrix.clone()));
+            output.push(TransformationMatrix::from_matrix(*matrix));
         }
         output
     }
@@ -72,20 +68,11 @@ impl Symmetry {
         let mut output = Vec::with_capacity(matrices.len() + 1);
         output.push(TransformationMatrix::identity());
         for matrix in matrices {
-            let mut ma = TransformationMatrix::from_matrix(matrix.clone());
+            let mut ma = TransformationMatrix::from_matrix(*matrix);
             ma.multiply_translation(unit_cell.size());
             output.push(ma);
         }
         output
-    }
-}
-
-impl Clone for Symmetry {
-    fn clone(&self) -> Self {
-        Symmetry {
-            symbol: self.symbol.clone(),
-            index: self.index,
-        }
     }
 }
 
@@ -94,6 +81,7 @@ impl PartialEq for Symmetry {
         self.index == other.index
     }
 }
+
 impl Eq for Symmetry {}
 
 #[cfg(test)]

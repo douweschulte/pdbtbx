@@ -24,7 +24,7 @@ pub fn validate(pdb: &PDB) -> bool {
     for m in pdb.mtrix() {
         output = output && m.valid();
     }
-    return output;
+    output
 }
 
 /// Validate the models by enforcing that all models should contain the same atoms (with possibly different data).

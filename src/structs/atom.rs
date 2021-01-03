@@ -32,6 +32,7 @@ pub struct Atom {
 
 impl Atom {
     /// Create a new Atom
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         residue: Option<*mut Residue>,
         serial_number: usize,
@@ -358,6 +359,7 @@ impl Atom {
     /// Get a mutable reference to the parent, pretty unsafe so you need to make sure yourself the use case is correct.
     /// ## Panics
     /// It panics when no parent is set.
+    #[allow(clippy::mut_from_ref)]
     fn residue_mut(&self) -> &mut Residue {
         if let Some(reference) = self.residue {
             unsafe { &mut *reference }
@@ -381,9 +383,9 @@ impl Atom {
     /// Get if this atom is likely to be a part of the backbone of a protein
     pub fn backbone(&self) -> Option<bool> {
         let residue = self.residue_safe();
-        if residue.is_some() {
+        if let Some(res) = residue {
             let backbone_names = vec!["N", "CA", "C", "O"];
-            if residue.unwrap().amino_acid() && backbone_names.contains(&self.name().as_str()) {
+            if res.amino_acid() && backbone_names.contains(&self.name().as_str()) {
                 Some(true)
             } else {
                 Some(false)

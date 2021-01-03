@@ -1,11 +1,11 @@
-mod parser;
+mod read;
 mod reference_tables;
 mod save;
 mod structs;
 mod transformation;
 mod validate;
 
-pub use parser::parse;
+pub use read::parse;
 pub use save::save;
 pub use structs::*;
 pub use transformation::*;

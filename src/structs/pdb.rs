@@ -246,7 +246,7 @@ impl PDB {
     /// Get the amount of Chains making up this PDB.
     /// Disregarding Hetero Chains.
     pub fn chain_count(&self) -> usize {
-        if self.models.len() > 0 {
+        if !self.models.is_empty() {
             self.models[0].chain_count()
         } else {
             0
@@ -256,7 +256,7 @@ impl PDB {
     /// Get the amount of Residues making up this PDB.
     /// Disregarding Hetero Residues.
     pub fn residue_count(&self) -> usize {
-        if self.models.len() > 0 {
+        if !self.models.is_empty() {
             self.models[0].residue_count()
         } else {
             0
@@ -266,7 +266,7 @@ impl PDB {
     /// Get the amount of Atoms making up this PDB.
     /// Disregarding Hetero Atoms.
     pub fn atom_count(&self) -> usize {
-        if self.models.len() > 0 {
+        if !self.models.is_empty() {
             self.models[0].atom_count()
         } else {
             0
@@ -393,49 +393,49 @@ impl PDB {
     /// This disregards all Hetero Chains.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
-        self.models.iter().map(|a| a.chains()).flatten()
+        self.models.iter().flat_map(|a| a.chains())
     }
 
     /// Get the list of Chains as mutable references making up this PDB.
     /// This disregards all Hetero Chains.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
-        self.models.iter_mut().map(|a| a.chains_mut()).flatten()
+        self.models.iter_mut().flat_map(|a| a.chains_mut())
     }
 
     /// Get the list of Residue making up this PDB.
     /// This disregards all Hetero Residue.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.models.iter().map(|a| a.residues()).flatten()
+        self.models.iter().flat_map(|a| a.residues())
     }
 
     /// Get the list of Residue as mutable references making up this PDB.
     /// This disregards all Hetero Residue.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
-        self.models.iter_mut().map(|a| a.residues_mut()).flatten()
+        self.models.iter_mut().flat_map(|a| a.residues_mut())
     }
 
     /// Get the list of Atom making up this PDB.
     /// This disregards all Hetero Atom.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.models.iter().map(|a| a.atoms()).flatten()
+        self.models.iter().flat_map(|a| a.atoms())
     }
 
     /// Get the list of Atom as mutable references making up this PDB.
     /// This disregards all Hetero Atom.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.models.iter_mut().map(|a| a.atoms_mut()).flatten()
+        self.models.iter_mut().flat_map(|a| a.atoms_mut())
     }
 
     /// Get the list of Chains making up this Model.
     /// This disregards all Normal Chains.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn hetero_chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
-        self.models.iter().map(|a| a.hetero_chains()).flatten()
+        self.models.iter().flat_map(|a| a.hetero_chains())
     }
 
     /// Get the list of Chains as mutable references making up this Model.
@@ -452,7 +452,7 @@ impl PDB {
     /// This disregards all Normal Residues.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn hetero_residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.models.iter().map(|a| a.hetero_residues()).flatten()
+        self.models.iter().flat_map(|a| a.hetero_residues())
     }
 
     /// Get the list of Residues as mutable references making up this Model.
@@ -469,7 +469,7 @@ impl PDB {
     /// This disregards all Normal Atoms.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn hetero_atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.models.iter().map(|a| a.hetero_atoms()).flatten()
+        self.models.iter().flat_map(|a| a.hetero_atoms())
     }
 
     /// Get the list of Atoms as mutable references making up this Model.
@@ -486,21 +486,21 @@ impl PDB {
     /// This includes all Normal and Hetero Chains.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn all_chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
-        self.models.iter().map(|a| a.all_chains()).flatten()
+        self.models.iter().flat_map(|a| a.all_chains())
     }
 
     /// Get the list of Chains as mutable references making up this Model.
     /// This includes all Normal and Hetero Chains.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn all_chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
-        self.models.iter_mut().map(|a| a.all_chains_mut()).flatten()
+        self.models.iter_mut().flat_map(|a| a.all_chains_mut())
     }
 
     /// Get the list of Residues making up this Model.
     /// This includes all Normal and Hetero Residues.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn all_residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.models.iter().map(|a| a.all_residues()).flatten()
+        self.models.iter().flat_map(|a| a.all_residues())
     }
 
     /// Get the list of Residues as mutable references making up this Model.
@@ -517,14 +517,14 @@ impl PDB {
     /// This includes all Normal and Hetero Atoms.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn all_atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.models.iter().map(|a| a.all_atoms()).flatten()
+        self.models.iter().flat_map(|a| a.all_atoms())
     }
 
     /// Get the list of Atoms as mutable references making up this Model.
     /// This includes all Normal and Hetero Atoms.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn all_atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.models.iter_mut().map(|a| a.all_atoms_mut()).flatten()
+        self.models.iter_mut().flat_map(|a| a.all_atoms_mut())
     }
 
     /// This sets the parent of all structs contained by this PDB.
@@ -639,5 +639,11 @@ impl PartialEq for PDB {
             && self.unit_cell == other.unit_cell
             && self.symmetry == other.symmetry
             && self.models == other.models
+    }
+}
+
+impl Default for PDB {
+    fn default() -> Self {
+        Self::new()
     }
 }

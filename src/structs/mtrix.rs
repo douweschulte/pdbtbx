@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::transformation::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A transformation expressing non-crystallographic symmetry, used when transformations are required to generate the whole asymmetric subunit
 pub struct MtriX {
     /// The serial number of this transformation
@@ -90,23 +90,16 @@ impl MtriX {
     }
 }
 
-impl Clone for MtriX {
-    fn clone(&self) -> Self {
-        let mut mtrix = MtriX::new();
-
-        mtrix.transformation = self.transformation.clone();
-        mtrix.serial_number = self.serial_number;
-        mtrix.contained = self.contained;
-        mtrix.rows_set = self.rows_set.clone();
-
-        mtrix
-    }
-}
-
 impl PartialEq for MtriX {
     fn eq(&self, other: &Self) -> bool {
         self.transformation == other.transformation
             && self.serial_number == other.serial_number
             && self.contained == other.contained
+    }
+}
+
+impl Default for MtriX {
+    fn default() -> Self {
+        Self::new()
     }
 }

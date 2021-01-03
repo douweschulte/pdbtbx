@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A unit cell of a crystal, containing its dimensions and angles
 pub struct UnitCell {
     /// a-axis dimension
@@ -28,15 +28,14 @@ impl UnitCell {
     /// * `gamma` - gamma angle in degrees
     pub fn new(a: f64, b: f64, c: f64, alpha: f64, beta: f64, gamma: f64) -> UnitCell {
         UnitCell {
-            a: a,
-            b: b,
-            c: c,
-            alpha: alpha,
-            beta: beta,
-            gamma: gamma,
+            a,
+            b,
+            c,
+            alpha,
+            beta,
+            gamma,
         }
     }
-
     /// Get the a-axis dimension
     pub fn a(&self) -> f64 {
         self.a
@@ -64,12 +63,6 @@ impl UnitCell {
     /// Get the dimensions in a tuple (a, b, c)
     pub fn size(&self) -> (f64, f64, f64) {
         (self.a, self.b, self.c)
-    }
-}
-
-impl Clone for UnitCell {
-    fn clone(&self) -> Self {
-        UnitCell::new(self.a, self.b, self.c, self.alpha, self.beta, self.gamma)
     }
 }
 

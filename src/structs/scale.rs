@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::transformation::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A scale transformation of a crystal, to get from standard orthogonal coordinates to fractional coordinates
 pub struct Scale {
     /// The transformation from standard orthogonal coordinates to fractional coordinates
@@ -68,19 +68,14 @@ impl Scale {
     }
 }
 
-impl Clone for Scale {
-    fn clone(&self) -> Self {
-        let mut scale = Scale::new();
-
-        scale.transformation = self.transformation.clone();
-        scale.rows_set = self.rows_set.clone();
-
-        scale
-    }
-}
-
 impl PartialEq for Scale {
     fn eq(&self, other: &Self) -> bool {
         self.transformation == other.transformation
+    }
+}
+
+impl Default for Scale {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -13,15 +13,12 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
     let file = File::open(filename).expect("Could not open file");
     let reader = BufReader::new(file);
 
-    let mut linenumber = 0;
-
     let mut pdb = PDB::new();
     let mut current_model = Model::new(0, Some(&mut pdb));
 
-    for read_line in reader.lines() {
+    for (linenumber, read_line) in reader.lines().enumerate() {
         // Lex the line
         let line = &read_line.expect("Line not read");
-        linenumber += 1;
         let lineresult = if line.len() > 6 {
             match &line[..6] {
                 "REMARK" => lex_remark(linenumber, line),
@@ -42,32 +39,53 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                 "ENDMDL" => Ok(LexItem::EndModel()),
                 _ => Err("Unknown option".to_string()),
             }
-        } else {
-            if line.len() > 2 {
-                match &line[..3] {
-                    "TER" => Ok(LexItem::TER()),
-                    "END" => Ok(LexItem::End()),
-                    _ => Err(format!("Unknown short line: {}", line)),
-                }
-            } else if line != "" {
-                Err(format!("Short line: \"{}\" {}", line, line.len()))
-            } else {
-                Ok(LexItem::Empty())
+        } else if line.len() > 2 {
+            match &line[..3] {
+                "TER" => Ok(LexItem::TER()),
+                "END" => Ok(LexItem::End()),
+                _ => Err(format!("Unknown short line: {}", line)),
             }
+        } else if !line.is_empty() {
+            Err(format!("Short line: \"{}\" {}", line, line.len()))
+        } else {
+            Ok(LexItem::Empty())
         };
 
         // Then immediately add this lines information to the final PDB struct
         if let Ok(result) = lineresult {
             match result {
                 LexItem::Remark(num, text) => pdb.add_remark(num, text.to_string()),
-                LexItem::Atom(hetero, s, n, _, r, c, rs, _, x, y, z, o, b, _, e, ch) => {
-                    let atom = Atom::new(None, s, n, x, y, z, o, b, e, ch)
-                        .expect("Invalid characters in atom creation");
+                LexItem::Atom(
+                    hetero,
+                    serial_number,
+                    name,
+                    _,
+                    residue_name,
+                    chain_id,
+                    residue_serial_number,
+                    _,
+                    x,
+                    y,
+                    z,
+                    occ,
+                    b,
+                    _,
+                    element,
+                    charge,
+                ) => {
+                    let atom =
+                        Atom::new(None, serial_number, name, x, y, z, occ, b, element, charge)
+                            .expect("Invalid characters in atom creation");
 
                     if hetero {
-                        current_model.add_hetero_atom(atom, c, rs, r);
+                        current_model.add_hetero_atom(
+                            atom,
+                            chain_id,
+                            residue_serial_number,
+                            residue_name,
+                        );
                     } else {
-                        current_model.add_atom(atom, c, rs, r);
+                        current_model.add_atom(atom, chain_id, residue_serial_number, residue_name);
                     }
                 }
                 LexItem::Anisou(s, n, _, _r, _c, _rs, _, factors, _, _e, _ch) => {
@@ -128,7 +146,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                     pdb.set_unit_cell(UnitCell::new(a, b, c, alpha, beta, gamma));
                     pdb.set_symmetry(
                         Symmetry::new(&spacegroup)
-                            .expect(&format!("Invalid space group: \"{}\"", spacegroup)),
+                            .unwrap_or_else(|| panic!("Invalid space group: \"{}\"", spacegroup)),
                     );
                 }
                 _ => (),
@@ -245,12 +263,18 @@ fn lex_anisou(linenumber: usize, line: &str) -> Result<LexItem, String> {
     let di: isize = parse_number(linenumber, &chars[49..56])?;
     let ei: isize = parse_number(linenumber, &chars[56..63])?;
     let fi: isize = parse_number(linenumber, &chars[63..70])?;
-    let a = (ai as f64) / 10000.0;
-    let b = (bi as f64) / 10000.0;
-    let c = (ci as f64) / 10000.0;
-    let d = (di as f64) / 10000.0;
-    let e = (ei as f64) / 10000.0;
-    let f = (fi as f64) / 10000.0;
+    let factors = [
+        [
+            (ai as f64) / 10000.0,
+            (bi as f64) / 10000.0,
+            (ci as f64) / 10000.0,
+        ],
+        [
+            (di as f64) / 10000.0,
+            (ei as f64) / 10000.0,
+            (fi as f64) / 10000.0,
+        ],
+    ];
     let segment_id = [chars[72], chars[73], chars[74], chars[75]];
     let element = [chars[76], chars[77]];
     let mut charge = [' ', ' '];
@@ -266,7 +290,7 @@ fn lex_anisou(linenumber: usize, line: &str) -> Result<LexItem, String> {
         chain_id,
         residue_serial_number,
         insertion,
-        [[a, b, c], [d, e, f]],
+        factors,
         segment_id,
         element,
         charge,
@@ -299,33 +323,33 @@ fn lex_cryst(linenumber: usize, line: &str) -> Result<LexItem, String> {
 /// Lex an SCALEn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_scale(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String> {
+fn lex_scale(linenumber: usize, line: &str, row: usize) -> Result<LexItem, String> {
     let chars: Vec<char> = line.chars().collect();
     let a = parse_number(linenumber, &chars[10..20])?;
     let b = parse_number(linenumber, &chars[20..30])?;
     let c = parse_number(linenumber, &chars[30..40])?;
     let d = parse_number(linenumber, &chars[45..55])?;
 
-    Ok(LexItem::Scale(n, [a, b, c, d]))
+    Ok(LexItem::Scale(row, [a, b, c, d]))
 }
 
 /// Lex an ORIGXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_origx(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String> {
+fn lex_origx(linenumber: usize, line: &str, row: usize) -> Result<LexItem, String> {
     let chars: Vec<char> = line.chars().collect();
     let a = parse_number(linenumber, &chars[10..20])?;
     let b = parse_number(linenumber, &chars[20..30])?;
     let c = parse_number(linenumber, &chars[30..40])?;
     let d = parse_number(linenumber, &chars[45..55])?;
 
-    Ok(LexItem::OrigX(n, [a, b, c, d]))
+    Ok(LexItem::OrigX(row, [a, b, c, d]))
 }
 
 /// Lex an MTRIXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_mtrix(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String> {
+fn lex_mtrix(linenumber: usize, line: &str, row: usize) -> Result<LexItem, String> {
     let chars: Vec<char> = line.chars().collect();
     let ser = parse_number(linenumber, &chars[7..10])?;
     let a = parse_number(linenumber, &chars[10..20])?;
@@ -337,7 +361,7 @@ fn lex_mtrix(linenumber: usize, line: &str, n: usize) -> Result<LexItem, String>
         given = chars[59] == '1';
     }
 
-    Ok(LexItem::MtriX(n, ser, [a, b, c, d], given))
+    Ok(LexItem::MtriX(row, ser, [a, b, c, d], given))
 }
 
 /// Parse a number, generic for anything that can be parsed using FromStr

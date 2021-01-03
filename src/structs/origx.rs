@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::transformation::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A transformation of the orthogonal coordinates to submitted
 pub struct OrigX {
     /// The transformation from orthogonal to submitted coordinates
@@ -68,19 +68,14 @@ impl OrigX {
     }
 }
 
-impl Clone for OrigX {
-    fn clone(&self) -> Self {
-        let mut orig = OrigX::new();
-
-        orig.transformation = self.transformation.clone();
-        orig.rows_set = self.rows_set.clone();
-
-        orig
-    }
-}
-
 impl PartialEq for OrigX {
     fn eq(&self, other: &Self) -> bool {
         self.transformation == other.transformation
+    }
+}
+
+impl Default for OrigX {
+    fn default() -> Self {
+        Self::new()
     }
 }
