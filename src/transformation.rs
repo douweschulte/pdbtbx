@@ -40,11 +40,8 @@ impl TransformationMatrix {
     /// ## Panics
     /// It panics if `deg` is not finite (`f64.is_finite()`)
     pub fn rotation_x(deg: f64) -> Self {
-        if !deg.is_finite() {
-            panic!("The amount of degrees is not finite");
-        }
-        let c = deg.to_radians().cos();
-        let s = deg.to_radians().sin();
+        assert!(deg.is_finite(), "The amount of degrees is not finite");
+        let (s, c) = deg.to_radians().sin_cos();
         TransformationMatrix {
             matrix: [
                 [1.0, 0.0, 0.0, 0.0],
@@ -61,11 +58,8 @@ impl TransformationMatrix {
     /// ## Panics
     /// It panics if `deg` is not finite (`f64.is_finite()`)
     pub fn rotation_y(deg: f64) -> Self {
-        if !deg.is_finite() {
-            panic!("The amount of degrees is not finite");
-        }
-        let c = deg.to_radians().cos();
-        let s = deg.to_radians().sin();
+        assert!(deg.is_finite(), "The amount of degrees is not finite");
+        let (s, c) = deg.to_radians().sin_cos();
         TransformationMatrix {
             matrix: [
                 [c, 0.0, s, 0.0],
@@ -82,9 +76,7 @@ impl TransformationMatrix {
     /// ## Panics
     /// It panics if `deg` is not finite (`f64.is_finite()`)
     pub fn rotation_z(deg: f64) -> Self {
-        if !deg.is_finite() {
-            panic!("The amount of degrees is not finite");
-        }
+        assert!(deg.is_finite(), "The amount of degrees is not finite");
         let c = deg.to_radians().cos();
         let s = deg.to_radians().sin();
         TransformationMatrix {
@@ -101,9 +93,10 @@ impl TransformationMatrix {
     /// ## Panics
     /// It panics if any of the arguments is not finite (`f64.is_finite()`)
     pub fn translation(x: f64, y: f64, z: f64) -> Self {
-        if !x.is_finite() || !y.is_finite() || !z.is_finite() {
-            panic!("One or more of the arguments is not finite");
-        }
+        assert!(
+            x.is_finite() && y.is_finite() && z.is_finite(),
+            "One or more of the arguments is not finite"
+        );
         TransformationMatrix {
             matrix: [
                 [1.0, 0.0, 0.0, x],
@@ -120,9 +113,7 @@ impl TransformationMatrix {
     /// ## Panics
     /// It panics if `f` is not finite (`f64.is_finite()`)
     pub fn magnify(f: f64) -> Self {
-        if !f.is_finite() {
-            panic!("The amount of degrees is not finite");
-        }
+        assert!(f.is_finite(), "The factor is not finite");
         TransformationMatrix {
             matrix: [
                 [f, 0.0, 0.0, 0.0],
