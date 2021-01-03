@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 /// A 3D affine transformation matrix
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TransformationMatrix {
     matrix: [[f64; 4]; 4],
 }
@@ -239,22 +239,6 @@ impl TransformationMatrix {
                 ],
             ],
         }
-    }
-}
-
-impl Clone for TransformationMatrix {
-    fn clone(&self) -> Self {
-        let mut orig = TransformationMatrix::identity();
-
-        orig.matrix = self.matrix.clone();
-
-        orig
-    }
-}
-
-impl PartialEq for TransformationMatrix {
-    fn eq(&self, other: &TransformationMatrix) -> bool {
-        self.matrix == other.matrix
     }
 }
 

@@ -3,7 +3,7 @@ use super::unit_cell::*;
 use crate::reference_tables;
 use crate::transformation::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A Space group of a crystal
 pub struct Symmetry {
     /// The fully qualified Herman Mauguin symbol for the space group
@@ -80,20 +80,12 @@ impl Symmetry {
     }
 }
 
-impl Clone for Symmetry {
-    fn clone(&self) -> Self {
-        Symmetry {
-            symbol: self.symbol.clone(),
-            index: self.index,
-        }
-    }
-}
-
 impl PartialEq for Symmetry {
     fn eq(&self, other: &Self) -> bool {
         self.index == other.index
     }
 }
+
 impl Eq for Symmetry {}
 
 #[cfg(test)]

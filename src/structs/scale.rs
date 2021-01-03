@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::transformation::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A scale transformation of a crystal, to get from standard orthogonal coordinates to fractional coordinates
 pub struct Scale {
     /// The transformation from standard orthogonal coordinates to fractional coordinates
@@ -65,17 +65,6 @@ impl Scale {
     /// Mainly used to validate a structure after parsing.
     pub fn valid(&self) -> bool {
         self.rows_set == [true, true, true]
-    }
-}
-
-impl Clone for Scale {
-    fn clone(&self) -> Self {
-        let mut scale = Scale::new();
-
-        scale.transformation = self.transformation.clone();
-        scale.rows_set = self.rows_set.clone();
-
-        scale
     }
 }
 
