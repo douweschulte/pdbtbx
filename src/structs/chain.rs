@@ -304,17 +304,22 @@ impl Chain {
 
     /// Join this Chain with another Chain, this moves all atoms from the other Chain
     /// to this Chain. All other (meta) data of this Chain will stay the same.
-    pub fn join(&mut self, other: Chain) {
-        for atom in other.atoms() {
-            self.add_atom(
-                atom.clone(),
-                atom.residue().serial_number(),
-                atom.residue().id_array(),
-            )
+    pub fn extend<T>(&mut self, other: T) where T: IntoIterator<Item = Residue> {
+        for residue in other.into_iter() {
+            self.add_residue(residue);
         }
-        self.fix_pointers_of_children();
     }
 }
+
+impl IntoIterator for Chain {
+    type Item = Residue;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.residues.into_iter()
+    }
+}
+
+
 
 use std::fmt;
 impl fmt::Display for Chain {
