@@ -7,10 +7,7 @@ use std::io::BufWriter;
 /// Save the given PDB struct to the given file
 /// It does not validate or renumber the PDB, so if that is needed that needs to be done in preparation
 pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
-    let file = match File::create(filename) {
-        Ok(f) => f,
-        Err(e) => return Err(e.to_string()),
-    };
+    let file = File::create(filename).map_err(|e| e.to_string())?;
     let mut writer = BufWriter::new(file);
 
     // Remarks
@@ -21,8 +18,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     }
 
     // Cryst
-    if pdb.has_unit_cell() {
-        let unit_cell = pdb.unit_cell();
+    if let Some(unit_cell) = &pdb.unit_cell {
         let sym = if pdb.has_symmetry() {
             format!("{:10}{:3}", pdb.symmetry().symbol(), pdb.symmetry().z(),)
         } else {
@@ -43,8 +39,8 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     }
 
     // Scale
-    if pdb.has_scale() {
-        let m = pdb.scale().transformation().matrix();
+    if let Some(scale) = &pdb.scale {
+        let m = scale.transformation().matrix();
         writer.write_fmt(format_args!(
             "SCALE1    {:10.6}{:10.6}{:10.6}     {:10.5}\nSCALE2    {:10.6}{:10.6}{:10.6}     {:10.5}\nSCALE3    {:10.6}{:10.6}{:10.6}     {:10.5}\n",
             m[0][0],
@@ -63,8 +59,8 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     }
 
     // OrigX
-    if pdb.has_origx() {
-        let m = pdb.origx().transformation().matrix();
+    if let Some(origx) = &pdb.origx {
+        let m = origx.transformation().matrix();
         writer.write_fmt(format_args!(
             "ORIGX1    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX2    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX3    {:10.6}{:10.6}{:10.6}     {:10.5}\n",
             m[0][0],

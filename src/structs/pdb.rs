@@ -7,19 +7,19 @@ use crate::transformation::*;
 /// 3D structure of a protein, but it can also be used for other molecules.
 pub struct PDB {
     /// The remarks above the PDB file, containing the remark-type-number and a line of free text
-    remarks: Vec<(usize, String)>,
+    pub(crate) remarks: Vec<(usize, String)>,
     /// The Scale needed to transform orthogonal coordinates to fractional coordinates, if available
-    scale: Option<Scale>,
+    pub(crate) scale: Option<Scale>,
     /// The OrigX needed to transform orthogonal coordinates to submitted coordinates, if available
-    origx: Option<OrigX>,
+    pub(crate) origx: Option<OrigX>,
     /// The MtriXs needed to transform the Models to the full assymetric subunit, if needed to contain the non-crystallographic symmetry
-    mtrix: Vec<MtriX>,
+    pub(crate) mtrix: Vec<MtriX>,
     /// The unit cell of the crystal, containing its size and shape, if available
-    unit_cell: Option<UnitCell>,
+    pub(crate) unit_cell: Option<UnitCell>,
     /// The Symmetry or space group of the crystal, if available
-    symmetry: Option<Symmetry>,
+    pub(crate) symmetry: Option<Symmetry>,
     /// The Models making up this PDB
-    models: Vec<Model>,
+    pub(crate) models: Vec<Model>,
 }
 
 impl PDB {
