@@ -45,15 +45,15 @@ impl Atom {
         charge: [char; 2],
     ) -> Option<Atom> {
         let mut atom = Atom {
-            serial_number: serial_number,
+            serial_number,
             name: atom_name,
-            x: x,
-            y: y,
-            z: z,
-            occupancy: occupancy,
-            b_factor: b_factor,
-            element: element,
-            charge: charge,
+            x,
+            y,
+            z,
+            occupancy,
+            b_factor,
+            element,
+            charge,
             residue: None,
             atf: None,
         };
