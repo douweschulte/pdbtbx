@@ -15,21 +15,17 @@ pub struct Symmetry {
 impl Symmetry {
     /// Create a new Symmetry based on a fully qualified Herman Mauguin symbol
     pub fn new(symbol: &str) -> Option<Self> {
-        reference_tables::get_index_for_symbol(symbol.trim()).map(|i| {
-            Symmetry {
-                symbol: symbol.trim().to_string(),
-                index: i,
-            }
+        reference_tables::get_index_for_symbol(symbol.trim()).map(|i| Symmetry {
+            symbol: symbol.trim().to_string(),
+            index: i,
         })
     }
 
     /// Create a new Symmetry based on the index of a symbol in Int. Crys. Handbook Vol A 2016
     pub fn from_index(index: usize) -> Option<Self> {
-        reference_tables::get_symbol_for_index(index).map(|s| {
-             Symmetry {
-                symbol: s.to_string(),
-                index: index,
-            }
+        reference_tables::get_symbol_for_index(index).map(|s| Symmetry {
+            symbol: s.to_string(),
+            index: index,
         })
     }
 
