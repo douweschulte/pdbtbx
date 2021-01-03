@@ -48,42 +48,42 @@ impl Model {
 
     /// Get the amount of Chains making up this Model.
     /// This disregards all Hetero Chains.
-    pub fn amount_chains(&self) -> usize {
+    pub fn chain_count(&self) -> usize {
         self.chains.len()
     }
 
     /// Get the amount of Residues making up this Model.
     /// This disregards all Hetero Residues.
-    pub fn amount_residues(&self) -> usize {
+    pub fn residue_count(&self) -> usize {
         self.chains()
-            .fold(0, |sum, chain| chain.amount_residues() + sum)
+            .fold(0, |sum, chain| chain.residue_count() + sum)
     }
 
     /// Get the amount of Atoms making up this Model.
     /// This disregards all Hetero Atoms.
-    pub fn amount_atoms(&self) -> usize {
+    pub fn atom_count(&self) -> usize {
         self.chains()
-            .fold(0, |sum, chain| chain.amount_atoms() + sum)
+            .fold(0, |sum, chain| chain.atom_count() + sum)
     }
 
     /// Get the amount of Chains making up this Model.
     /// This includes all Hetero Chains.
-    pub fn total_amount_chains(&self) -> usize {
+    pub fn total_chain_count(&self) -> usize {
         self.chains.len() + self.hetero_chains.len()
     }
 
     /// Get the amount of Residues making up this Model.
     /// This includes all Hetero Residues.
-    pub fn total_amount_residues(&self) -> usize {
+    pub fn total_residue_count(&self) -> usize {
         self.all_chains()
-            .fold(0, |sum, chain| chain.amount_residues() + sum)
+            .fold(0, |sum, chain| chain.residue_count() + sum)
     }
 
     /// Get the amount of Atoms making up this Model.
     /// This includes all Hetero Atoms.
-    pub fn total_amount_atoms(&self) -> usize {
+    pub fn total_atom_count(&self) -> usize {
         self.all_chains()
-            .fold(0, |sum, chain| chain.amount_atoms() + sum)
+            .fold(0, |sum, chain| chain.atom_count() + sum)
     }
 
     /// Get a specific Chain from list of Chains making up this Model.

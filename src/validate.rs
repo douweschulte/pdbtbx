@@ -12,7 +12,7 @@ use crate::structs::*;
 pub fn validate(pdb: &PDB) -> bool {
     // Print warnings/errors and return a bool for success
     let mut output = true;
-    if pdb.amount_models() > 1 {
+    if pdb.model_count() > 1 {
         output = output && validate_models(pdb)
     }
     if pdb.has_scale() {
@@ -30,18 +30,18 @@ pub fn validate(pdb: &PDB) -> bool {
 /// Validate the models by enforcing that all models should contain the same atoms (with possibly different data).
 /// It checks this by matching all atoms (not hetatoms) for each model to see if they correspond (`Atom::correspond`).
 fn validate_models(pdb: &PDB) -> bool {
-    let total_atoms = pdb.model(0).unwrap().amount_atoms();
+    let total_atoms = pdb.model(0).unwrap().atom_count();
     for model in pdb.models().skip(1) {
-        if model.amount_atoms() != total_atoms {
+        if model.atom_count() != total_atoms {
             println!(
                 "{} does not have the same amount of atoms as the first model ({} (this model) vs {} (first)).",
                 model,
-                model.amount_atoms(),
+                model.atom_count(),
                 total_atoms
             );
             return false;
         }
-        for index in 0..model.amount_atoms() {
+        for index in 0..model.atom_count() {
             let current_atom = model.atom(index).unwrap();
             let standard_atom = pdb.model(0).unwrap().atom(index).unwrap();
             if !standard_atom.corresponds(current_atom) {

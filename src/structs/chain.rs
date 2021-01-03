@@ -55,13 +55,13 @@ impl Chain {
     }
 
     /// Get the amount of Residues making up this Chain
-    pub fn amount_residues(&self) -> usize {
+    pub fn residue_count(&self) -> usize {
         self.residues.len()
     }
 
     /// Get the amount of Atoms making up this Chain
-    pub fn amount_atoms(&self) -> usize {
-        self.residues().fold(0, |sum, res| res.amount_atoms() + sum)
+    pub fn atom_count(&self) -> usize {
+        self.residues().fold(0, |sum, res| res.atom_count() + sum)
     }
 
     /// Get a specific Residue from list of Residues making up this Chain.
