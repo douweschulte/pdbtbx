@@ -134,9 +134,9 @@ impl TransformationMatrix {
     }
 
     pub fn multiply_translation(&mut self, factors: (f64, f64, f64)) {
-        self.matrix[0][3] = self.matrix[0][3] * factors.0;
-        self.matrix[1][3] = self.matrix[1][3] * factors.1;
-        self.matrix[2][3] = self.matrix[2][3] * factors.2;
+        self.matrix[0][3] *= factors.0;
+        self.matrix[1][3] *= factors.1;
+        self.matrix[2][3] *= factors.2;
     }
 
     /// Apply this transformation to the given position.

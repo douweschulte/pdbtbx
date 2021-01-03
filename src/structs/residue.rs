@@ -202,7 +202,7 @@ impl Residue {
     /// Get the parent Chain mutably, pretty unsafe so you need to make sure yourself the use case is correct.
     /// ## Panics
     /// It panics if there is no parent Chain set.
-    fn chain_mut(&self) -> &mut Chain {
+    fn chain_mut(&mut self) -> &mut Chain {
         if let Some(reference) = self.chain {
             unsafe { &mut *reference }
         } else {
@@ -287,8 +287,9 @@ impl Residue {
 
     /// Remove this Residue from its parent Chain
     pub fn remove(&mut self) {
+        let i = self.serial_number();
         self.chain_mut()
-            .remove_residue_serial_number(self.serial_number());
+            .remove_residue_serial_number(i);
     }
 
     /// Apply a transformation to the position of all atoms making up this Residue, the new position is immediately set.
