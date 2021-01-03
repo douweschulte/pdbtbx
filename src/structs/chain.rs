@@ -244,6 +244,11 @@ impl Chain {
         }
     }
 
+    pub fn remove_residues_by<F>(&mut self, predicate: F) where F: Fn(&Residue) -> bool {
+        let residues = std::mem::replace(&mut self.residues, Vec::default());
+        self.residues.extend(residues.into_iter().filter(|residue|!predicate(residue)));
+    }
+
     /// Remove the Residue specified.
     ///
     /// ## Arguments
@@ -251,7 +256,7 @@ impl Chain {
     ///
     /// ## Panics
     /// It panics when the index is outside bounds.
-    pub fn remove_residue(&mut self, index: usize) {
+    pub fn remove_residue_by_id(&mut self, index: usize) {
         self.residues.remove(index);
     }
 
@@ -267,7 +272,7 @@ impl Chain {
             .position(|a| a.serial_number() == serial_number);
 
         if let Some(i) = index {
-            self.remove_residue(i);
+            self.remove_residue_by_id(i);
             true
         } else {
             false
@@ -283,7 +288,7 @@ impl Chain {
         let index = self.residues.iter().position(|a| a.id() == id);
 
         if let Some(i) = index {
-            self.remove_residue(i);
+            self.remove_residue_by_id(i);
             true
         } else {
             false
