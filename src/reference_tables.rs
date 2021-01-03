@@ -2,63 +2,33 @@
 
 /// Gets the index (into Int. Crys. Handbook Vol A 2016) for the given Herman Mauguin symbol
 pub fn get_index_for_symbol(symbol: &str) -> Option<usize> {
-    let mut counter = 1;
-    for item in HERMANN_MAUGUIN_SYMBOL {
-        if *item == symbol {
-            return Some(counter);
-        }
-        counter += 1;
-    }
-    None
+    HERMANN_MAUGUIN_SYMBOL.iter().position(|sym| *sym == symbol).map(|i| i + 1)
 }
 
 /// Gets the Herman Mauguin symbol for the given index (into Int. Crys. Handbook Vol A 2016)
 pub fn get_symbol_for_index(index: usize) -> Option<&'static str> {
-    match HERMANN_MAUGUIN_SYMBOL.get(index-1) {
-        Some(n) => Some(*n),
-        None => None,
-    }
+    HERMANN_MAUGUIN_SYMBOL.get(index - 1).map(|s|*s)
 }
 
 /// Gets the transformations given an index (into Int. Crys. Handbook Vol A 2016) for the given space group
 pub fn get_transformation(index: usize) -> Option<&'static [[[f64; 4]; 4]]> {
-    match SYMBOL_TRANSFORMATION.get(index-1) {
-        Some(n) => Some(*n),
-        None => None,
-    }
+    SYMBOL_TRANSFORMATION.get(index - 1).map(|t|*t)
 }
 
 /// Gets the atomic number for the given element
 pub fn get_atomic_number(element: &str) -> Option<usize> {
-    let mut counter = 1;
-    for item in ELEMENT_SYMBOLS {
-        if *item == element {
-            return Some(counter);
-        }
-        counter += 1;
-    }
-    None
+    ELEMENT_SYMBOLS.iter().position(|e|*e == element).map(|i| i + 1)
 }
 
 /// Gets the atomic radius for the given atomic number (defined up until 'Cm')
 /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96. Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: http://doi.wiley.com/10.1002/chem.201602949, doi:10.1002/chem.201602949.
 pub fn get_atomic_radius(atomic_number: usize) -> Option<f64> {
-    match ELEMENT_RADII.get(atomic_number) {
-        Some(n) => Some(*n),
-        None => None,
-    }
+    ELEMENT_RADII.get(atomic_number).map(|r|*r)
 }
 
 /// Gets the amino acid number into the table, effectively providing the recognition of it being an amino acid or not
 pub fn get_amino_acid_number(aa: &str) -> Option<usize> {
-    let mut counter = 1;
-    for item in AMINO_ACIDS {
-        if *item == aa {
-            return Some(counter);
-        }
-        counter += 1;
-    }
-    None
+    AMINO_ACIDS.iter().position(|item|*item == aa).map(|i| i + 1)
 }
 
 /// Reworked from CCTBX output (Jan 2021)
