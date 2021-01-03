@@ -45,7 +45,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                 "END" => Ok(LexItem::End()),
                 _ => Err(format!("Unknown short line: {}", line)),
             }
-        } else if line != "" {
+        } else if !line.is_empty() {
             Err(format!("Short line: \"{}\" {}", line, line.len()))
         } else {
             Ok(LexItem::Empty())
