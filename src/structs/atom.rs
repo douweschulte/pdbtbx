@@ -33,7 +33,7 @@ pub struct Atom {
 impl Atom {
     /// Create a new Atom
     pub fn new(
-        residue: Option<&mut Residue>,
+        residue: Option<*mut Residue>,
         serial_number: usize,
         atom_name: [char; 4],
         x: f64,
@@ -44,7 +44,7 @@ impl Atom {
         element: [char; 2],
         charge: [char; 2],
     ) -> Option<Atom> {
-        let mut atom = Atom {
+        let atom = Atom {
             serial_number,
             name: atom_name,
             x,
@@ -54,13 +54,9 @@ impl Atom {
             b_factor,
             element,
             charge,
-            residue: None,
+            residue,
             atf: None,
         };
-
-        if let Some(reference) = residue {
-            atom.residue = Some(reference);
-        }
 
         if !check_char4(atom_name) || !check_char2(element) || !check_char2(charge) {
             None

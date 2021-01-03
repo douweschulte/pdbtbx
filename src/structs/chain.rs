@@ -22,21 +22,15 @@ impl Chain {
     ///
     /// ## Fails
     /// It fails if the identifier is an invalid character.
-    pub fn new(id: char, model: Option<&mut Model>) -> Option<Chain> {
+    pub fn new(id: char, model: Option<*mut Model>) -> Option<Chain> {
         if !check_char(id) {
             return None;
         }
-        let mut c = Chain {
+        Some(Chain {
             id: id,
             residues: Vec::new(),
-            model: None,
-        };
-
-        if let Some(m) = model {
-            c.model = Some(m);
-        }
-
-        Some(c)
+            model,
+        })
     }
 
     /// The ID of the Chain
@@ -244,9 +238,13 @@ impl Chain {
         }
     }
 
-    pub fn remove_residues_by<F>(&mut self, predicate: F) where F: Fn(&Residue) -> bool {
+    pub fn remove_residues_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Residue) -> bool,
+    {
         let residues = std::mem::replace(&mut self.residues, Vec::default());
-        self.residues.extend(residues.into_iter().filter(|residue|!predicate(residue)));
+        self.residues
+            .extend(residues.into_iter().filter(|residue| !predicate(residue)));
     }
 
     /// Remove the Residue specified.
