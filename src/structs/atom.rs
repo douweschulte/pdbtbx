@@ -338,7 +338,7 @@ impl Atom {
 
     /// Get the parent residue.
     /// ## Panics
-    // It panics if there is no parent residue set.
+    /// It panics if there is no parent residue set.
     pub fn residue(&self) -> &Residue {
         if let Some(reference) = self.residue {
             unsafe { &*reference }
@@ -397,7 +397,7 @@ impl Atom {
         }
     }
 
-    /// Remove this atom, this also removes it from its parent
+    /// Remove this Atom from its parent Residue
     pub fn remove(&mut self) {
         self.residue_mut()
             .remove_atom_serial_number(self.serial_number());

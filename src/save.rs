@@ -14,7 +14,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     let mut writer = BufWriter::new(file);
 
     // Remarks
-    for line in &pdb.remarks {
+    for line in pdb.remarks() {
         writer
             .write_fmt(format_args!("REMARK {:3} {}\n", line.0, line.1))
             .unwrap();
@@ -23,8 +23,8 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     // Cryst
     if pdb.has_unit_cell() {
         let unit_cell = pdb.unit_cell();
-        let sym = if let Some(symmetry) = &pdb.symmetry {
-            format!("{:10}{:3}", symmetry.symbol(), symmetry.z(),)
+        let sym = if pdb.has_symmetry() {
+            format!("{:10}{:3}", pdb.symmetry().symbol(), pdb.symmetry().z(),)
         } else {
             "P 1".to_string()
         };
@@ -43,8 +43,8 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     }
 
     // Scale
-    if let Some(scale) = &pdb.scale {
-        let m = scale.transformation().matrix();
+    if pdb.has_scale() {
+        let m = pdb.scale().transformation().matrix();
         writer.write_fmt(format_args!(
             "SCALE1    {:10.6}{:10.6}{:10.6}     {:10.5}\nSCALE2    {:10.6}{:10.6}{:10.6}     {:10.5}\nSCALE3    {:10.6}{:10.6}{:10.6}     {:10.5}\n",
             m[0][0],
@@ -63,8 +63,8 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     }
 
     // OrigX
-    if let Some(origx) = &pdb.origx {
-        let m = origx.transformation().matrix();
+    if pdb.has_origx() {
+        let m = pdb.origx().transformation().matrix();
         writer.write_fmt(format_args!(
             "ORIGX1    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX2    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX3    {:10.6}{:10.6}{:10.6}     {:10.5}\n",
             m[0][0],
@@ -83,7 +83,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     }
 
     // MtriX
-    for mtrix in &pdb.mtrix {
+    for mtrix in pdb.mtrix() {
         let m = mtrix.transformation().matrix();
         writer.write_fmt(format_args!(
             "MTRIX1 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\nMTRIX2 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\nMTRIX3 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\n",

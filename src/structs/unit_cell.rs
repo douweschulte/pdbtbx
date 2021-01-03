@@ -72,3 +72,12 @@ impl Clone for UnitCell {
         UnitCell::new(self.a, self.b, self.c, self.alpha, self.beta, self.gamma)
     }
 }
+
+impl PartialEq for UnitCell {
+    fn eq(&self, other: &Self) -> bool {
+        self.size() == other.size()
+            && self.alpha == other.alpha
+            && self.beta == other.beta
+            && self.gamma == other.gamma
+    }
+}

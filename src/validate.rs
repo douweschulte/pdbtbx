@@ -2,19 +2,26 @@ use crate::structs::*;
 
 /// Validate a given PDB file in terms of invariants that should be held up.
 /// It prints warning massages and returns a bool indicating success.
+///
+/// ## Invariants Tested
+/// * With multiple models the models should all contain atoms that correspond.
+/// * All matrix type PDB records (SCALEn, ORIGXn, MTRIXn) have to be fully specified, so all rows set.
+///
+/// ## Invariants Not Tested
+/// * Numbering of all structs, serial numbers should be unique. To enforce this the `renumber()` function should be called on the PDB struct.
 pub fn validate(pdb: &PDB) -> bool {
     // Print warnings/errors and return a bool for success
     let mut output = true;
     if pdb.amount_models() > 1 {
         output = output && validate_models(pdb)
     }
-    if pdb.scale.is_some() {
+    if pdb.has_scale() {
         output = output && pdb.scale().valid();
     }
-    if pdb.origx.is_some() {
+    if pdb.has_origx() {
         output = output && pdb.origx().valid();
     }
-    for m in &pdb.mtrix {
+    for m in pdb.mtrix() {
         output = output && m.valid();
     }
     return output;

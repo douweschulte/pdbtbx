@@ -102,3 +102,11 @@ impl Clone for MtriX {
         mtrix
     }
 }
+
+impl PartialEq for MtriX {
+    fn eq(&self, other: &Self) -> bool {
+        self.transformation == other.transformation
+            && self.serial_number == other.serial_number
+            && self.contained == other.contained
+    }
+}

@@ -16,7 +16,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
     let mut linenumber = 0;
 
     let mut pdb = PDB::new();
-    let mut current_model = Model::new(None, Some(&mut pdb));
+    let mut current_model = Model::new(0, Some(&mut pdb));
 
     for read_line in reader.lines() {
         // Lex the line
@@ -59,7 +59,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
         // Then immediately add this lines information to the final PDB struct
         if let Ok(result) = lineresult {
             match result {
-                LexItem::Remark(num, text) => pdb.remarks.push((num, text.to_string())),
+                LexItem::Remark(num, text) => pdb.add_remark(num, text.to_string()),
                 LexItem::Atom(hetero, s, n, _, r, c, rs, _, x, y, z, o, b, _, e, ch) => {
                     let atom = Atom::new(None, s, n, x, y, z, o, b, e, ch)
                         .expect("Invalid characters in atom creation");
@@ -92,23 +92,23 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                         pdb.add_model(current_model)
                     }
 
-                    current_model = Model::new(Some(number), Some(&mut pdb));
+                    current_model = Model::new(number, Some(&mut pdb));
                 }
                 LexItem::Scale(n, row) => {
-                    if pdb.scale.is_none() {
-                        pdb.scale = Some(Scale::new());
+                    if !pdb.has_scale() {
+                        pdb.set_scale(Scale::new());
                     }
                     pdb.scale_mut().set_row(n, row);
                 }
                 LexItem::OrigX(n, row) => {
-                    if pdb.origx.is_none() {
-                        pdb.origx = Some(OrigX::new());
+                    if !pdb.has_origx() {
+                        pdb.set_origx(OrigX::new());
                     }
                     pdb.origx_mut().set_row(n, row);
                 }
                 LexItem::MtriX(n, ser, row, given) => {
                     let mut found = false;
-                    for mtrix in &mut pdb.mtrix {
+                    for mtrix in pdb.mtrix_mut() {
                         if mtrix.serial_number == ser {
                             mtrix.set_row(n, row);
                             mtrix.contained = given;
@@ -121,12 +121,12 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                         mtrix.serial_number = ser;
                         mtrix.set_row(n, row);
                         mtrix.contained = given;
-                        pdb.mtrix.push(mtrix);
+                        pdb.add_mtrix(mtrix);
                     }
                 }
                 LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, _z) => {
                     pdb.set_unit_cell(UnitCell::new(a, b, c, alpha, beta, gamma));
-                    pdb.symmetry = Some(
+                    pdb.set_symmetry(
                         Symmetry::new(&spacegroup)
                             .expect(&format!("Invalid space group: \"{}\"", spacegroup)),
                     );
@@ -136,7 +136,6 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
         }
     }
     pdb.add_model(current_model);
-    pdb.fix_pointers_of_children();
     if validate(&pdb) {
         Ok(pdb)
     } else {

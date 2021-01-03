@@ -78,3 +78,9 @@ impl Clone for OrigX {
         orig
     }
 }
+
+impl PartialEq for OrigX {
+    fn eq(&self, other: &Self) -> bool {
+        self.transformation == other.transformation
+    }
+}

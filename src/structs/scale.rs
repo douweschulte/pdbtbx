@@ -78,3 +78,9 @@ impl Clone for Scale {
         scale
     }
 }
+
+impl PartialEq for Scale {
+    fn eq(&self, other: &Self) -> bool {
+        self.transformation == other.transformation
+    }
+}

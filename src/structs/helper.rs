@@ -1,25 +1,30 @@
 /// Checks if a char is allowed in an identifier in a PDB file.
 /// The char has to be ASCII graphic or a space.
+/// Returns `true` if the chars is valid.
 pub fn check_char(c: char) -> bool {
     (c as u32) < 127 && c as u32 > 31
 }
 
 /// Checks an array of two chars using `check_char`.
+/// Returns `true` if the text is valid.
 pub fn check_char2(c: [char; 2]) -> bool {
     check_char(c[0]) && check_char(c[1])
 }
 
 /// Checks an array of three chars using `check_char`.
+/// Returns `true` if the text is valid.
 pub fn check_char3(c: [char; 3]) -> bool {
     check_char(c[0]) && check_char(c[1]) && check_char(c[2])
 }
 
 /// Checks an array of four chars using `check_char`.
+/// Returns `true` if the text is valid.
 pub fn check_char4(c: [char; 4]) -> bool {
     check_char(c[0]) && check_char(c[1]) && check_char(c[2]) && check_char(c[3])
 }
 
 /// Checks a string using `check_char`.
+/// Returns `true` if the text is valid.
 pub fn check_chars(text: String) -> bool {
     for c in text.chars() {
         if !check_char(c) {
