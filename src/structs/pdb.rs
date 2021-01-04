@@ -60,15 +60,15 @@ impl PDB {
             300, 350, 375, 450, 465, 470, 475, 480, 500, 525, 600, 610, 615, 620, 630, 650, 700,
             800, 900, 999,
         ];
-        if !REMARK_TYPES.contains(&remark_type) {
-            panic!(format!("The given remark-type-number is not valid: {}, see wwPDB v3.30 for valid remark-type-numbers", remark_type));
-        }
-        if !check_chars(remark_text.clone()) {
-            panic!("The given remark text contains invalid characters.");
-        }
+        assert!(REMARK_TYPES.contains(&remark_type),
+            format!("The given remark-type-number is not valid: {}, see wwPDB v3.30 for valid remark-type-numbers", remark_type));
+        assert!(
+            check_chars(remark_text.clone()),
+            "The given remark text contains invalid characters."
+        );
         // As the text can only contain ASCII len() on strings is fine (it returns the length in bytes)
         if remark_text.len() > 68 {
-            println!("WARNING: The given remark text is too long, the maximal length is 68 characters, the given string is {} characters.", remark_text.len());
+            eprintln!("WARNING: The given remark text is too long, the maximal length is 68 characters, the given string is {} characters.", remark_text.len());
         }
 
         self.remarks.push((remark_type, remark_text));

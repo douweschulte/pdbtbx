@@ -47,12 +47,10 @@ impl OrigX {
     /// assert!(example.valid());
     /// ```
     pub fn set_row(&mut self, row: usize, data: [f64; 4]) {
-        if row > 2 {
-            panic!(format!(
-                "Row in OrigX.set_row is too big (max 2, value: {})",
-                row
-            ));
-        }
+        assert!(
+            row <= 2,
+            format!("Row in OrigX.set_row is too big (max 2, value: {})", row)
+        );
         let mut matrix = self.transformation.matrix();
         matrix[row] = data;
         self.transformation.set_matrix(matrix);
