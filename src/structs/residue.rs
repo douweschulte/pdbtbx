@@ -8,7 +8,7 @@ use std::fmt;
 /// A Residue containing multiple atoms
 pub struct Residue {
     /// The identifier or name of Residue
-    id: [char; 3],
+    id: [u8; 3],
     /// The serial number of this Residue
     serial_number: usize,
     /// The list of atoms making up this Residue
@@ -30,11 +30,11 @@ impl Residue {
     /// It fails if any of the characters making up the name are invalid.
     pub fn new(
         number: usize,
-        name: [char; 3],
+        name: [u8; 3],
         atom: Option<Atom>,
         chain: Option<*mut Chain>,
     ) -> Option<Residue> {
-        if !check_char3(name) {
+        if !check_chars(&name) {
             return None;
         }
 
@@ -58,16 +58,15 @@ impl Residue {
 
     /// The ID or name of the Residue
     pub fn id(&self) -> String {
-        let str_id = self.id.iter().collect::<String>();
-        if str_id != "   " {
-            str_id.split_whitespace().collect::<String>()
+        if &self.id != b"   " {
+            std::str::from_utf8(&self.id).unwrap().to_owned()
         } else {
             " ".to_string()
         }
     }
 
     /// The ID or name of the Residue, as a char array
-    pub fn id_array(&self) -> [char; 3] {
+    pub fn id_array(&self) -> [u8; 3] {
         self.id
     }
 
@@ -77,10 +76,10 @@ impl Residue {
     /// It fails if any of the characters of the new name are invalid. It also fails if the new name is longer than allowed,
     /// the max length is 3 characters.
     pub fn set_id(&mut self, new_id: &str) -> Result<(), String> {
-        let chars = new_id.to_ascii_uppercase().chars().collect::<Vec<char>>();
-        if chars.len() <= 3 {
-            if !check_chars(new_id.to_string()) {
-                self.id = [chars[0], chars[1], chars[2]];
+        let bytes = new_id.as_bytes();
+        if bytes.len() <= 3 {
+            if !check_chars(&bytes) {
+                self.id = [bytes[0], bytes[1], bytes[2]];
                 Ok(())
             } else {
                 Err(format!(

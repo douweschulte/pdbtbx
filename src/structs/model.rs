@@ -305,7 +305,7 @@ impl Model {
         new_atom: Atom,
         chain_id: char,
         residue_serial_number: usize,
-        residue_name: [char; 3],
+        residue_name: [u8; 3],
     ) {
         let mut found = false;
         let mut new_chain =
@@ -342,7 +342,7 @@ impl Model {
         new_atom: Atom,
         chain_id: char,
         residue_serial_number: usize,
-        residue_name: [char; 3],
+        residue_name: [u8; 3],
     ) {
         let mut found = false;
         let mut new_chain = Chain::new(chain_id, Some(self))

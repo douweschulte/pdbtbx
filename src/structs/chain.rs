@@ -23,7 +23,7 @@ impl Chain {
     /// ## Fails
     /// It fails if the identifier is an invalid character.
     pub fn new(id: char, model: Option<*mut Model>) -> Option<Chain> {
-        if !check_char(id) {
+        if !check_char(id as u8) {
             return None;
         }
         Some(Chain {
@@ -35,12 +35,12 @@ impl Chain {
 
     /// The ID of the Chain
     pub fn id(&self) -> char {
-        self.id
+        self.id as char
     }
 
     /// Set the ID of the Chain, returns `false` if the new id is an invalid character.
     pub fn set_id(&mut self, new_id: char) -> bool {
-        if check_char(new_id) {
+        if check_char(new_id as u8) {
             self.id = new_id;
             true
         } else {
@@ -139,7 +139,7 @@ impl Chain {
         &mut self,
         new_atom: Atom,
         residue_serial_number: usize,
-        residue_name: [char; 3],
+        residue_name: [u8; 3],
     ) {
         let mut found = false;
         let mut new_residue = Residue::new(residue_serial_number, residue_name, None, Some(self))

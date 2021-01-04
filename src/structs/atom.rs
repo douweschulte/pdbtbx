@@ -9,7 +9,7 @@ pub struct Atom {
     /// The serial number of the Atom, should be unique within its model
     serial_number: usize,
     /// The name of the Atom, can only be four chars, can only use the standard allowed characters
-    name: [char; 4],
+    name: [u8; 4],
     /// The X position of the Atom (Å)
     x: f64,
     /// The Y position of the Atom (Å)
@@ -21,9 +21,9 @@ pub struct Atom {
     /// The B-factor (or temperature factor) of the Atom
     b_factor: f64,
     /// The element of the Atom, can only be two chars, can only use the standard allowed characters
-    element: [char; 2],
+    element: [u8; 2],
     /// The charge of the Atom, can only be two chars, can only use the standard allowed characters
-    charge: [char; 2],
+    charge: [u8; 2],
     /// The parent residue, can only be safely used as a reference (not mutable)
     residue: Option<*mut Residue>,
     /// The anisotropic temperature factors, if applicable
@@ -36,14 +36,14 @@ impl Atom {
     pub fn new(
         residue: Option<*mut Residue>,
         serial_number: usize,
-        atom_name: [char; 4],
+        atom_name: [u8; 4],
         x: f64,
         y: f64,
         z: f64,
         occupancy: f64,
         b_factor: f64,
-        element: [char; 2],
-        charge: [char; 2],
+        element: [u8; 2],
+        charge: [u8; 2],
     ) -> Option<Atom> {
         let atom = Atom {
             serial_number,
@@ -59,7 +59,7 @@ impl Atom {
             atf: None,
         };
 
-        if !check_char4(atom_name) || !check_char2(element) || !check_char2(charge) {
+        if !check_chars(&atom_name) || !check_chars(&element) || !check_chars(&charge) {
             None
         } else {
             Some(atom)
@@ -167,11 +167,19 @@ impl Atom {
     /// Get the name of the atom
     /// The name is max 4 characters and is trimmed
     pub fn name(&self) -> String {
-        self.name
-            .iter()
-            .collect::<String>()
-            .split_whitespace()
-            .collect::<String>()
+        String::from_utf8(
+            self.name
+                .iter()
+                .filter_map(|c| {
+                    if !c.is_ascii_whitespace() {
+                        Some(*c)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<u8>>(),
+        )
+        .unwrap()
     }
 
     /// Set the name of the atom
@@ -180,10 +188,11 @@ impl Atom {
     /// The name should at max contain 4 characters (ASCII)
     /// The name can only contain valid characters, the ASCII graphic characters (char.is_ascii_graphic() || char == ' ')
     pub fn set_name(&mut self, new_name: &str) -> Result<(), String> {
-        let chars = new_name.to_ascii_uppercase().chars().collect::<Vec<char>>();
-        if chars.len() < 5 {
-            if !check_chars(new_name.to_string()) {
-                self.name = [chars[0], chars[1], chars[2], chars[3]];
+        let new_name = new_name.to_uppercase();
+        let bytes = new_name.as_bytes();
+        if bytes.len() < 5 {
+            if !check_chars(bytes) {
+                self.name = [bytes[0], bytes[1], bytes[2], bytes[3]];
                 Ok(())
             } else {
                 Err(format!(
@@ -241,11 +250,19 @@ impl Atom {
 
     /// Get the element of this atom
     pub fn element(&self) -> String {
-        self.element
-            .iter()
-            .collect::<String>()
-            .split_whitespace()
-            .collect::<String>()
+        String::from_utf8(
+            self.element
+                .iter()
+                .filter_map(|c| {
+                    if !c.is_ascii_whitespace() {
+                        Some(*c)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<u8>>(),
+        )
+        .unwrap()
     }
 
     /// Set the element of this atom
@@ -253,13 +270,11 @@ impl Atom {
     /// It fails if the element contains invalid characters (only ASCII graphic and space is allowed).
     /// It also fails if the string is too ling, the max length is 2 characters.
     pub fn set_element(&mut self, new_element: &str) -> Result<(), String> {
-        let chars = new_element
-            .to_ascii_uppercase()
-            .chars()
-            .collect::<Vec<char>>();
-        if chars.len() <= 2 {
-            if !check_chars(new_element.to_string()) {
-                self.element = [chars[0], chars[1]];
+        let new_element = new_element.to_uppercase();
+        let bytes = new_element.as_bytes();
+        if bytes.len() <= 2 {
+            if !check_chars(&bytes) {
+                self.element = [bytes[0], bytes[1]];
                 Ok(())
             } else {
                 Err(format!(
@@ -277,11 +292,20 @@ impl Atom {
 
     /// Get the charge of the atom
     pub fn charge(&self) -> String {
-        self.charge
-            .iter()
-            .collect::<String>()
-            .split_whitespace()
-            .collect::<String>()
+        // TODO: charge should be i8?
+        String::from_utf8(
+            self.charge
+                .iter()
+                .filter_map(|c| {
+                    if !c.is_ascii_whitespace() {
+                        Some(*c)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<u8>>(),
+        )
+        .unwrap()
     }
 
     /// Set the charge of this atom
@@ -289,13 +313,11 @@ impl Atom {
     /// It fails if the charge contains invalid characters (only ASCII graphic and space is allowed).
     /// It also fails if the string is too ling, the max length is 2 characters.
     pub fn set_charge(&mut self, new_charge: &str) -> Result<(), String> {
-        let chars = new_charge
-            .to_ascii_uppercase()
-            .chars()
-            .collect::<Vec<char>>();
-        if chars.len() <= 2 {
-            if !check_chars(new_charge.to_string()) {
-                self.charge = [chars[0], chars[1]];
+        let new_charge = new_charge.to_uppercase();
+        let bytes = new_charge.as_bytes();
+        if bytes.len() <= 2 {
+            if !check_chars(bytes) {
+                self.charge = [bytes[0], bytes[1]];
                 Ok(())
             } else {
                 Err(format!(

@@ -25,9 +25,9 @@ pub enum LexItem {
     Atom(
         bool,
         usize,
-        [char; 4],
+        [u8; 4],
         char,
-        [char; 3],
+        [u8; 3],
         char,
         usize,
         char,
@@ -36,9 +36,9 @@ pub enum LexItem {
         f64,
         f64,
         f64,
-        [char; 4],
-        [char; 2],
-        [char; 2],
+        [u8; 4],
+        [u8; 2],
+        [u8; 2],
     ),
     /// An Anisou record with all its information, including the deprecated and rarely used fields.
     /// * hetatom (true) or atom (false)
@@ -55,16 +55,16 @@ pub enum LexItem {
     /// * charge
     Anisou(
         usize,
-        [char; 4],
+        [u8; 4],
         char,
-        [char; 3],
+        [u8; 3],
         char,
         usize,
         char,
         [[f64; 3]; 2],
-        [char; 4],
-        [char; 2],
-        [char; 2],
+        [u8; 4],
+        [u8; 2],
+        [u8; 2],
     ),
     /// A SCALEn line, as the row (1/2/3) and data
     Scale(usize, [f64; 4]),

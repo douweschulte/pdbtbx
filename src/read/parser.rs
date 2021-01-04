@@ -18,35 +18,43 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
 
     for (linenumber, read_line) in reader.lines().enumerate() {
         // Lex the line
-        let line = &read_line.expect("Line not read");
-        let lineresult = if line.len() > 6 {
+        let line = read_line.expect("Line not read").into_bytes(); // TODO: make the iterator directly produce bytes
+        let len = line.len();
+        let lineresult = if len > 6 {
             match &line[..6] {
-                "REMARK" => lex_remark(linenumber, line),
-                "ATOM  " => lex_atom(linenumber, line, false),
-                "ANISOU" => lex_anisou(linenumber, line),
-                "HETATM" => lex_atom(linenumber, line, true),
-                "CRYST1" => lex_cryst(linenumber, line),
-                "SCALE1" => lex_scale(linenumber, line, 0),
-                "SCALE2" => lex_scale(linenumber, line, 1),
-                "SCALE3" => lex_scale(linenumber, line, 2),
-                "ORIGX1" => lex_origx(linenumber, line, 0),
-                "ORIGX2" => lex_origx(linenumber, line, 1),
-                "ORIGX3" => lex_origx(linenumber, line, 2),
-                "MTRIX1" => lex_mtrix(linenumber, line, 0),
-                "MTRIX2" => lex_mtrix(linenumber, line, 1),
-                "MTRIX3" => lex_mtrix(linenumber, line, 2),
-                "MODEL " => lex_model(linenumber, line),
-                "ENDMDL" => Ok(LexItem::EndModel()),
+                b"REMARK" => lex_remark(linenumber, line),
+                b"ATOM  " => lex_atom(linenumber, line, false),
+                b"ANISOU" => lex_anisou(linenumber, line),
+                b"HETATM" => lex_atom(linenumber, line, true),
+                b"CRYST1" => lex_cryst(linenumber, line),
+                b"SCALE1" => lex_scale(linenumber, line, 0),
+                b"SCALE2" => lex_scale(linenumber, line, 1),
+                b"SCALE3" => lex_scale(linenumber, line, 2),
+                b"ORIGX1" => lex_origx(linenumber, line, 0),
+                b"ORIGX2" => lex_origx(linenumber, line, 1),
+                b"ORIGX3" => lex_origx(linenumber, line, 2),
+                b"MTRIX1" => lex_mtrix(linenumber, line, 0),
+                b"MTRIX2" => lex_mtrix(linenumber, line, 1),
+                b"MTRIX3" => lex_mtrix(linenumber, line, 2),
+                b"MODEL " => lex_model(linenumber, line),
+                b"ENDMDL" => Ok(LexItem::EndModel()),
                 _ => Err("Unknown option".to_string()),
             }
-        } else if line.len() > 2 {
+        } else if len > 2 {
             match &line[..3] {
-                "TER" => Ok(LexItem::TER()),
-                "END" => Ok(LexItem::End()),
-                _ => Err(format!("Unknown short line: {}", line)),
+                b"TER" => Ok(LexItem::TER()),
+                b"END" => Ok(LexItem::End()),
+                _ => Err(format!(
+                    "Unknown short line: {}",
+                    String::from_utf8(line).unwrap()
+                )),
             }
-        } else if !line.is_empty() {
-            Err(format!("Short line: \"{}\" {}", line, line.len()))
+        } else if len != 0 {
+            Err(format!(
+                "Short line: \"{}\" {}",
+                String::from_utf8(line).unwrap(),
+                len
+            ))
         } else {
             Ok(LexItem::Empty())
         };
@@ -101,7 +109,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                         println!(
                             "Could not find atom for temperature factors, coupled to atom {} {}",
                             s,
-                            n.iter().collect::<String>()
+                            std::str::from_utf8(&n).unwrap().to_owned()
                         )
                     }
                 }
@@ -164,11 +172,11 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
 /// Lex a REMARK
 /// ## Fails
 /// It fails on incorrect numbers for the remark-type-number
-fn lex_remark(linenumber: usize, line: &str) -> Result<LexItem, String> {
+fn lex_remark(linenumber: usize, line: Vec<u8>) -> Result<LexItem, String> {
     Ok(LexItem::Remark(
-        parse_number(linenumber, &line.chars().collect::<Vec<char>>()[7..10])?,
+        parse_number(linenumber, &line[7..10])?,
         if line.len() > 11 {
-            line[11..].to_string()
+            std::str::from_utf8(&line[11..]).unwrap().to_owned()
         } else {
             "".to_string()
         },
@@ -178,62 +186,54 @@ fn lex_remark(linenumber: usize, line: &str) -> Result<LexItem, String> {
 /// Lex a MODEL
 /// ## Fails
 /// It fails on incorrect numbers for the serial number
-fn lex_model(linenumber: usize, line: &str) -> Result<LexItem, String> {
-    Ok(LexItem::Model(parse_number(
-        linenumber,
-        &line[6..]
-            .split_whitespace()
-            .collect::<String>()
-            .chars()
-            .collect::<Vec<char>>()[..],
-    )?))
+fn lex_model(linenumber: usize, line: Vec<u8>) -> Result<LexItem, String> {
+    Ok(LexItem::Model(parse_number(linenumber, &line[6..])?))
 }
 
 /// Lex an ATOM
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, String> {
-    let chars: Vec<char> = line.chars().collect();
-    let serial_number = parse_number(linenumber, &chars[7..11])?;
-    let atom_name = [chars[12], chars[13], chars[14], chars[15]];
-    let alternate_location = chars[16];
-    let residue_name = [chars[17], chars[18], chars[19]];
-    let chain_id = chars[21];
-    let residue_serial_number = parse_number(linenumber, &chars[22..26])?;
-    let insertion = chars[26];
-    let x = parse_number(linenumber, &chars[30..38])?;
-    let y = parse_number(linenumber, &chars[38..46])?;
-    let z = parse_number(linenumber, &chars[46..54])?;
+fn lex_atom(linenumber: usize, line: Vec<u8>, hetero: bool) -> Result<LexItem, String> {
+    let serial_number = parse_number(linenumber, &line[7..11])?;
+    let atom_name = [line[12], line[13], line[14], line[15]];
+    let alternate_location = line[16];
+    let residue_name = [line[17], line[18], line[19]];
+    let chain_id = line[21];
+    let residue_serial_number = parse_number(linenumber, &line[22..26])?;
+    let insertion = line[26];
+    let x = parse_number(linenumber, &line[30..38])?;
+    let y = parse_number(linenumber, &line[38..46])?;
+    let z = parse_number(linenumber, &line[46..54])?;
     let mut occupancy = 1.0;
-    if chars.len() >= 60 {
-        occupancy = parse_number(linenumber, &chars[54..60])?;
+    if line.len() >= 60 {
+        occupancy = parse_number(linenumber, &line[54..60])?;
     }
     let mut b_factor = 0.0;
-    if chars.len() >= 66 {
-        b_factor = parse_number(linenumber, &chars[60..66])?;
+    if line.len() >= 66 {
+        b_factor = parse_number(linenumber, &line[60..66])?;
     }
-    let mut segment_id = [' ', ' ', ' ', ' '];
-    if chars.len() >= 75 {
-        segment_id = [chars[72], chars[73], chars[74], chars[75]];
+    let mut segment_id = *b"    ";
+    if line.len() >= 75 {
+        segment_id = [line[72], line[73], line[74], line[75]];
     }
-    let mut element = [' ', ' '];
-    if chars.len() >= 77 {
-        element = [chars[76], chars[77]];
+    let mut element = *b"  ";
+    if line.len() >= 77 {
+        element = [line[76], line[77]];
     }
-    let mut charge = [' ', ' '];
-    if chars.len() >= 80 {
-        charge = [chars[78], chars[79]];
+    let mut charge = *b"  ";
+    if line.len() >= 80 {
+        charge = [line[78], line[79]];
     }
 
     Ok(LexItem::Atom(
         hetero,
         serial_number,
         atom_name,
-        alternate_location,
+        alternate_location as char,
         residue_name,
-        chain_id,
+        chain_id as char,
         residue_serial_number,
-        insertion,
+        insertion as char,
         x,
         y,
         z,
@@ -248,21 +248,20 @@ fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, Stri
 /// Lex an ANISOU
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_anisou(linenumber: usize, line: &str) -> Result<LexItem, String> {
-    let chars: Vec<char> = line.chars().collect();
-    let serial_number = parse_number(linenumber, &chars[7..11])?;
-    let atom_name = [chars[12], chars[13], chars[14], chars[15]];
-    let alternate_location = chars[16];
-    let residue_name = [chars[17], chars[18], chars[19]];
-    let chain_id = chars[21];
-    let residue_serial_number = parse_number(linenumber, &chars[22..26])?;
-    let insertion = chars[26];
-    let ai: isize = parse_number(linenumber, &chars[28..35])?;
-    let bi: isize = parse_number(linenumber, &chars[35..42])?;
-    let ci: isize = parse_number(linenumber, &chars[42..49])?;
-    let di: isize = parse_number(linenumber, &chars[49..56])?;
-    let ei: isize = parse_number(linenumber, &chars[56..63])?;
-    let fi: isize = parse_number(linenumber, &chars[63..70])?;
+fn lex_anisou(linenumber: usize, line: Vec<u8>) -> Result<LexItem, String> {
+    let serial_number = parse_number(linenumber, &line[7..11])?;
+    let atom_name = [line[12], line[13], line[14], line[15]];
+    let alternate_location = line[16];
+    let residue_name = [line[17], line[18], line[19]];
+    let chain_id = line[21];
+    let residue_serial_number = parse_number(linenumber, &line[22..26])?;
+    let insertion = line[26];
+    let ai: isize = parse_number(linenumber, &line[28..35])?;
+    let bi: isize = parse_number(linenumber, &line[35..42])?;
+    let ci: isize = parse_number(linenumber, &line[42..49])?;
+    let di: isize = parse_number(linenumber, &line[49..56])?;
+    let ei: isize = parse_number(linenumber, &line[56..63])?;
+    let fi: isize = parse_number(linenumber, &line[63..70])?;
     let factors = [
         [
             (ai as f64) / 10000.0,
@@ -275,21 +274,21 @@ fn lex_anisou(linenumber: usize, line: &str) -> Result<LexItem, String> {
             (fi as f64) / 10000.0,
         ],
     ];
-    let segment_id = [chars[72], chars[73], chars[74], chars[75]];
-    let element = [chars[76], chars[77]];
-    let mut charge = [' ', ' '];
-    if chars.len() == 80 {
-        charge = [chars[79], chars[80]];
+    let segment_id = [line[72], line[73], line[74], line[75]];
+    let element = [line[76], line[77]];
+    let mut charge = *b"  ";
+    if line.len() == 80 {
+        charge = [line[79], line[80]];
     }
 
     Ok(LexItem::Anisou(
         serial_number,
         atom_name,
-        alternate_location,
+        alternate_location as char,
         residue_name,
-        chain_id,
+        chain_id as char,
         residue_serial_number,
-        insertion,
+        insertion as char,
         factors,
         segment_id,
         element,
@@ -300,21 +299,20 @@ fn lex_anisou(linenumber: usize, line: &str) -> Result<LexItem, String> {
 /// Lex a CRYST1
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_cryst(linenumber: usize, line: &str) -> Result<LexItem, String> {
-    let chars: Vec<char> = line.chars().collect();
-    let a = parse_number(linenumber, &chars[6..15])?;
-    let b = parse_number(linenumber, &chars[15..24])?;
-    let c = parse_number(linenumber, &chars[24..33])?;
-    let alpha = parse_number(linenumber, &chars[33..40])?;
-    let beta = parse_number(linenumber, &chars[40..47])?;
-    let gamma = parse_number(linenumber, &chars[47..54])?;
+fn lex_cryst(linenumber: usize, line: Vec<u8>) -> Result<LexItem, String> {
+    let a = parse_number(linenumber, &line[6..15])?;
+    let b = parse_number(linenumber, &line[15..24])?;
+    let c = parse_number(linenumber, &line[24..33])?;
+    let alpha = parse_number(linenumber, &line[33..40])?;
+    let beta = parse_number(linenumber, &line[40..47])?;
+    let gamma = parse_number(linenumber, &line[47..54])?;
     // TODO: make a fancy error message if a part of the space group is not numeric
-    let spacegroup = chars[55..std::cmp::min(66, chars.len())]
-        .iter()
-        .collect::<String>();
+    let spacegroup = std::str::from_utf8(&line[55..std::cmp::min(66, line.len())])
+        .unwrap()
+        .to_owned();
     let mut z = 1;
-    if chars.len() > 66 {
-        z = parse_number(linenumber, &chars[66..])?;
+    if line.len() > 66 {
+        z = parse_number(linenumber, &line[66..])?;
     }
 
     Ok(LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, z))
@@ -323,12 +321,11 @@ fn lex_cryst(linenumber: usize, line: &str) -> Result<LexItem, String> {
 /// Lex an SCALEn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_scale(linenumber: usize, line: &str, row: usize) -> Result<LexItem, String> {
-    let chars: Vec<char> = line.chars().collect();
-    let a = parse_number(linenumber, &chars[10..20])?;
-    let b = parse_number(linenumber, &chars[20..30])?;
-    let c = parse_number(linenumber, &chars[30..40])?;
-    let d = parse_number(linenumber, &chars[45..55])?;
+fn lex_scale(linenumber: usize, line: Vec<u8>, row: usize) -> Result<LexItem, String> {
+    let a = parse_number(linenumber, &line[10..20])?;
+    let b = parse_number(linenumber, &line[20..30])?;
+    let c = parse_number(linenumber, &line[30..40])?;
+    let d = parse_number(linenumber, &line[45..55])?;
 
     Ok(LexItem::Scale(row, [a, b, c, d]))
 }
@@ -336,12 +333,11 @@ fn lex_scale(linenumber: usize, line: &str, row: usize) -> Result<LexItem, Strin
 /// Lex an ORIGXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_origx(linenumber: usize, line: &str, row: usize) -> Result<LexItem, String> {
-    let chars: Vec<char> = line.chars().collect();
-    let a = parse_number(linenumber, &chars[10..20])?;
-    let b = parse_number(linenumber, &chars[20..30])?;
-    let c = parse_number(linenumber, &chars[30..40])?;
-    let d = parse_number(linenumber, &chars[45..55])?;
+fn lex_origx(linenumber: usize, line: Vec<u8>, row: usize) -> Result<LexItem, String> {
+    let a = parse_number(linenumber, &line[10..20])?;
+    let b = parse_number(linenumber, &line[20..30])?;
+    let c = parse_number(linenumber, &line[30..40])?;
+    let d = parse_number(linenumber, &line[45..55])?;
 
     Ok(LexItem::OrigX(row, [a, b, c, d]))
 }
@@ -349,28 +345,36 @@ fn lex_origx(linenumber: usize, line: &str, row: usize) -> Result<LexItem, Strin
 /// Lex an MTRIXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_mtrix(linenumber: usize, line: &str, row: usize) -> Result<LexItem, String> {
-    let chars: Vec<char> = line.chars().collect();
-    let ser = parse_number(linenumber, &chars[7..10])?;
-    let a = parse_number(linenumber, &chars[10..20])?;
-    let b = parse_number(linenumber, &chars[20..30])?;
-    let c = parse_number(linenumber, &chars[30..40])?;
-    let d = parse_number(linenumber, &chars[45..55])?;
+fn lex_mtrix(linenumber: usize, line: Vec<u8>, row: usize) -> Result<LexItem, String> {
+    let ser = parse_number(linenumber, &line[7..10])?;
+    let a = parse_number(linenumber, &line[10..20])?;
+    let b = parse_number(linenumber, &line[20..30])?;
+    let c = parse_number(linenumber, &line[30..40])?;
+    let d = parse_number(linenumber, &line[45..55])?;
     let mut given = false;
-    if chars.len() >= 60 {
-        given = chars[59] == '1';
+    if line.len() >= 60 {
+        given = line[59] == b'1';
     }
 
     Ok(LexItem::MtriX(row, ser, [a, b, c, d], given))
 }
 
 /// Parse a number, generic for anything that can be parsed using FromStr
-fn parse_number<T: FromStr>(linenumber: usize, input: &[char]) -> Result<T, String> {
-    let string = input
-        .iter()
-        .collect::<String>()
-        .split_whitespace()
-        .collect::<String>();
+fn parse_number<T: FromStr>(linenumber: usize, input: &[u8]) -> Result<T, String> {
+    // TODO: parse directly from bytes
+    let string = String::from_utf8(
+        input
+            .iter()
+            .filter_map(|c| {
+                if !c.is_ascii_whitespace() {
+                    Some(*c)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<u8>>(),
+    )
+    .unwrap();
     match string.parse::<T>() {
         Ok(v) => Ok(v),
         Err(_) => Err(format!(
