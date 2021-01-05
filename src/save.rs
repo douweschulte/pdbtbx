@@ -117,15 +117,17 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                 .unwrap();
         }
 
-        for atom in model.atoms() {
-            writer
+        for chain in model.chains() {
+            for residue in chain.residues() {
+                for atom in residue.atoms() {
+                    writer
                 .write_fmt(format_args!(
                     "ATOM  {:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{:>2}\n",
                     atom.serial_number(),
                     atom.name(),
-                    atom.residue().id(),
-                    atom.residue().chain().id(),
-                    atom.residue().serial_number(),
+                    residue.id(),
+                    chain.id(),
+                    residue.serial_number(),
                     atom.pos().0,
                     atom.pos().1,
                     atom.pos().2,
@@ -135,15 +137,15 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                     atom.charge(),
                 ))
                 .unwrap();
-            if atom.anisotropic_temperature_factors().is_some() {
-                writer
-                    .write_fmt(format_args!(
+                    if atom.anisotropic_temperature_factors().is_some() {
+                        writer
+                            .write_fmt(format_args!(
                         "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{:>2}\n",
                         atom.serial_number(),
                         atom.name(),
-                        atom.residue().id(),
-                        atom.residue().chain().id(),
-                        atom.residue().serial_number(),
+                        residue.id(),
+                        chain.id(),
+                        residue.serial_number(),
                         (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0) as isize,
                         (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0) as isize,
                         (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0) as isize,
@@ -153,19 +155,23 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                         atom.element(),
                         atom.charge(),
                     ))
-                    .unwrap();
+                            .unwrap();
+                    }
+                }
             }
         }
         writer.write_fmt(format_args!("TER\n")).unwrap();
-        for atom in model.hetero_atoms() {
-            writer
+        for chain in model.hetero_chains() {
+            for residue in chain.residues() {
+                for atom in residue.atoms() {
+                    writer
                 .write_fmt(format_args!(
                     "HETATM{:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{:>2}\n",
                     atom.serial_number(),
                     atom.name(),
-                    atom.residue().id(),
-                    atom.residue().chain().id(),
-                    atom.residue().serial_number(),
+                    residue.id(),
+                    chain.id(),
+                    residue.serial_number(),
                     atom.pos().0,
                     atom.pos().1,
                     atom.pos().2,
@@ -175,15 +181,15 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                     atom.charge(),
                 ))
                 .unwrap();
-            if atom.anisotropic_temperature_factors().is_some() {
-                writer
-                    .write_fmt(format_args!(
+                    if atom.anisotropic_temperature_factors().is_some() {
+                        writer
+                            .write_fmt(format_args!(
                         "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{:>2}\n",
                         atom.serial_number(),
                         atom.name(),
-                        atom.residue().id(),
-                        atom.residue().chain().id(),
-                        atom.residue().serial_number(),
+                        residue.id(),
+                        chain.id(),
+                        residue.serial_number(),
                         (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0) as isize,
                         (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0) as isize,
                         (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0) as isize,
@@ -193,7 +199,9 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                         atom.element(),
                         atom.charge(),
                     ))
-                    .unwrap();
+                            .unwrap();
+                    }
+                }
             }
         }
     }

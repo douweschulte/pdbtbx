@@ -11,8 +11,6 @@ pub struct Model {
     chains: Vec<Chain>,
     /// The Chains with Hetero Atoms making up this model
     hetero_chains: Vec<Chain>,
-    /// The parent PDB of this Model, if available
-    pdb: Option<*mut PDB>,
 }
 
 impl Model {
@@ -20,13 +18,11 @@ impl Model {
     ///
     /// ## Arguments
     /// * `serial_number` - the serial number
-    /// * `pdb` - if available the parent of the Model
-    pub fn new(serial_number: usize, pdb: Option<*mut PDB>) -> Model {
+    pub fn new(serial_number: usize) -> Model {
         Model {
             serial_number,
             chains: Vec::new(),
             hetero_chains: Vec::new(),
-            pdb,
         }
     }
 
@@ -308,8 +304,7 @@ impl Model {
         residue_name: [char; 3],
     ) {
         let mut found = false;
-        let mut new_chain =
-            Chain::new(chain_id, Some(self)).expect("Invalid characters in chain creation");
+        let mut new_chain = Chain::new(chain_id).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
         for chain in &mut self.chains {
             if chain.id() == chain_id {
@@ -345,7 +340,7 @@ impl Model {
         residue_name: [char; 3],
     ) {
         let mut found = false;
-        let mut new_chain = Chain::new(chain_id, Some(self))
+        let mut new_chain = Chain::new(chain_id)
             .unwrap_or_else(|| panic!("Invalid characters in chain creation ({})", chain_id));
         let mut current_chain = &mut new_chain;
         for chain in &mut self.hetero_chains {
@@ -364,92 +359,49 @@ impl Model {
     }
 
     /// Add a Chain to the list of Chains making up this Model. This does not detect any duplicates of names or serial numbers in the list of Chains.
-    fn add_chain(&mut self, mut chain: Chain) {
-        chain.set_model(self);
+    fn add_chain(&mut self, chain: Chain) {
         self.chains.push(chain);
     }
 
     /// Add a Chain to the list of Hetero Chains making up this Model. This does not detect any duplicates of names or serial numbers in the list of Chains.
-    fn add_hetero_chain(&mut self, mut chain: Chain) {
-        chain.set_model(self);
+    fn add_hetero_chain(&mut self, chain: Chain) {
         self.hetero_chains.push(chain);
     }
 
-    /// Set the parent PDB. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_pdb(&mut self, new_pdb: &mut PDB) {
-        self.pdb = Some(new_pdb);
-    }
-
-    /// Set the parent PDB. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_pdb_pointer(&mut self, new_pdb: *mut PDB) {
-        self.pdb = Some(new_pdb);
-    }
-
-    /// Get the parent PDB.
-    /// ## Panics
-    /// It panics if there is no parent PDB set.
-    pub fn pdb(&self) -> &PDB {
-        if let Some(reference) = self.pdb {
-            unsafe { &*reference }
-        } else {
-            panic!(format!(
-                "No value for PDB parent for the current model {}",
-                self.serial_number
-            ))
+    /// Remove all Atoms matching the given predicate. The predicate will be run on all Atoms (Normal and Hetero).
+    /// As this is done in place this is the fastest way to remove Atoms from this Model.
+    pub fn remove_atoms_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Atom) -> bool,
+    {
+        for residue in self.all_residues_mut() {
+            residue.remove_atoms_by(&predicate);
         }
     }
 
-    /// Get the parent PDB.
-    /// ## Fails
-    /// It fails if there is no parent PDB set.
-    pub fn pdb_safe(&self) -> Option<&PDB> {
-        if let Some(reference) = self.pdb {
-            Some(unsafe { &*reference })
-        } else {
-            None
+    /// Remove all Residues matching the given predicate. The predicate will be run on all Residues (Normal and Hetero).
+    /// As this is done in place this is the fastest way to remove Residues from this Model.
+    pub fn remove_residues_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Residue) -> bool,
+    {
+        for chain in self.all_chains_mut() {
+            chain.remove_residues_by(&predicate);
         }
     }
 
-    /// Get the parent PDB mutably, pretty unsafe so you need to make sure yourself the use case is correct.
-    /// ## Panics
-    /// It panics if there is no parent PDB set.
-    #[allow(clippy::mut_from_ref)]
-    fn pdb_mut(&self) -> &mut PDB {
-        if let Some(reference) = self.pdb {
-            unsafe { &mut *reference }
-        } else {
-            panic!(format!(
-                "No value for PDB parent for the current model {}",
-                self.serial_number
-            ))
-        }
-    }
-
-    /// Get the parent PDB mutably, pretty unsafe so you need to make sure yourself the use case is correct.
-    /// ## Fails
-    /// It fails if there is no parent PDB set.
-    fn pdb_mut_safe(&self) -> Option<&mut PDB> {
-        if let Some(reference) = self.pdb {
-            Some(unsafe { &mut *reference })
-        } else {
-            None
-        }
-    }
-
-    /// This sets the parent of all structs contained by this Model.
-    /// This should not be needed to run as a user of the library.
-    pub fn fix_pointers_of_children(&mut self) {
-        let reference: *mut Model = self;
-        for chain in &mut self.chains {
-            chain.set_model_pointer(reference);
-            chain.fix_pointers_of_children();
-        }
-        for chain in &mut self.hetero_chains {
-            chain.set_model_pointer(reference);
-            chain.fix_pointers_of_children();
-        }
+    /// Remove all Chains matching the given predicate. The predicate will be run on all Chains (Normal and Hetero).
+    /// As this is done in place this is the fastest way to remove Chains from this Model.
+    pub fn remove_chains_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Chain) -> bool,
+    {
+        let chains = std::mem::take(&mut self.chains);
+        self.chains
+            .extend(chains.into_iter().filter(|chain| !predicate(chain)));
+        let hetero_chains = std::mem::take(&mut self.hetero_chains);
+        self.hetero_chains
+            .extend(hetero_chains.into_iter().filter(|chain| !predicate(chain)));
     }
 
     /// Remove the Chain specified.
@@ -479,12 +431,6 @@ impl Model {
         }
     }
 
-    /// Remove this Model from its parent PDB
-    pub fn remove(&mut self) {
-        self.pdb_mut()
-            .remove_model_serial_number(self.serial_number());
-    }
-
     /// Apply a transformation to the position of all atoms (Normal and Hetero) making up this Model, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
         for atom in self.all_atoms_mut() {
@@ -495,23 +441,30 @@ impl Model {
     /// Join this Model with another Model, this moves all atoms from the other Model
     /// to this Model. All other (meta) data of this Model will stay the same.
     pub fn join(&mut self, other: Model) {
-        for atom in other.atoms() {
-            self.add_atom(
-                atom.clone(),
-                atom.residue().chain().id(),
-                atom.residue().serial_number(),
-                atom.residue().id_array(),
-            )
+        for chain in other.chains() {
+            for residue in chain.residues() {
+                for atom in residue.atoms() {
+                    self.add_atom(
+                        atom.clone(),
+                        chain.id(),
+                        residue.serial_number(),
+                        residue.id_array(),
+                    )
+                }
+            }
         }
-        for atom in other.hetero_atoms() {
-            self.add_hetero_atom(
-                atom.clone(),
-                atom.residue().chain().id(),
-                atom.residue().serial_number(),
-                atom.residue().id_array(),
-            )
+        for chain in other.hetero_chains() {
+            for residue in chain.residues() {
+                for atom in residue.atoms() {
+                    self.add_hetero_atom(
+                        atom.clone(),
+                        chain.id(),
+                        residue.serial_number(),
+                        residue.id_array(),
+                    )
+                }
+            }
         }
-        self.fix_pointers_of_children();
     }
 }
 
@@ -529,16 +482,9 @@ impl fmt::Display for Model {
 
 impl Clone for Model {
     fn clone(&self) -> Self {
-        let mut model = Model::new(self.serial_number, None);
-
-        for chain in self.chains() {
-            model.add_chain(chain.clone());
-        }
-
-        for chain in self.hetero_chains() {
-            model.add_hetero_chain(chain.clone());
-        }
-        model.fix_pointers_of_children();
+        let mut model = Model::new(self.serial_number);
+        model.chains = self.chains.clone();
+        model.hetero_chains = self.hetero_chains.clone();
         model
     }
 }

@@ -13,8 +13,6 @@ pub struct Residue {
     serial_number: usize,
     /// The list of atoms making up this Residue
     atoms: Vec<Atom>,
-    /// The parent chain of this Residue if available
-    chain: Option<*mut Chain>,
 }
 
 impl Residue {
@@ -24,16 +22,10 @@ impl Residue {
     /// * `number` - the serial number
     /// * `name` - the name or id
     /// * `atom` - if available it can already add an atom
-    /// * `chain` - if available the parent of the Residue
     ///
     /// ## Fails
     /// It fails if any of the characters making up the name are invalid.
-    pub fn new(
-        number: usize,
-        name: [char; 3],
-        atom: Option<Atom>,
-        chain: Option<*mut Chain>,
-    ) -> Option<Residue> {
+    pub fn new(number: usize, name: [char; 3], atom: Option<Atom>) -> Option<Residue> {
         if !check_char3(name) {
             return None;
         }
@@ -42,17 +34,12 @@ impl Residue {
             id: name,
             serial_number: number,
             atoms: Vec::new(),
-            chain: None,
         };
 
-        if let Some(mut a) = atom {
-            a.set_residue(&mut res);
+        if let Some(a) = atom {
             res.atoms.push(a);
         }
 
-        if let Some(c) = chain {
-            res.chain = Some(c);
-        }
         Some(res)
     }
 
@@ -148,8 +135,7 @@ impl Residue {
     /// Add a new atom to the list of atoms making up this Residue.
     /// ## Arguments
     /// * `new_atom` - the new Atom to add
-    pub fn add_atom(&mut self, mut new_atom: Atom) {
-        new_atom.set_residue(self);
+    pub fn add_atom(&mut self, new_atom: Atom) {
         self.atoms.push(new_atom);
     }
 
@@ -158,75 +144,14 @@ impl Residue {
         reference_tables::get_amino_acid_number(self.id().as_str()).is_some()
     }
 
-    /// Set the parent Chain. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_chain(&mut self, new_chain: &mut Chain) {
-        self.chain = Some(new_chain);
-    }
-
-    /// Set the parent Chain. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_chain_pointer(&mut self, new_chain: *mut Chain) {
-        self.chain = Some(new_chain);
-    }
-
-    /// Get the parent Chain.
-    /// ## Panics
-    /// It panics if there is no parent Chain set.
-    pub fn chain(&self) -> &Chain {
-        if let Some(reference) = self.chain {
-            unsafe { &*reference }
-        } else {
-            panic!(format!(
-                "No value for chain parent for the current residue {}",
-                self.serial_number
-            ))
-        }
-    }
-
-    /// Get the parent Chain.
-    /// ## Fails
-    /// It fails if there is no parent Chain set.
-    pub fn chain_safe(&self) -> Option<&Chain> {
-        if let Some(reference) = self.chain {
-            Some(unsafe { &*reference })
-        } else {
-            None
-        }
-    }
-
-    /// Get the parent Chain mutably, pretty unsafe so you need to make sure yourself the use case is correct.
-    /// ## Panics
-    /// It panics if there is no parent Chain set.
-    fn chain_mut(&mut self) -> &mut Chain {
-        if let Some(reference) = self.chain {
-            unsafe { &mut *reference }
-        } else {
-            panic!(format!(
-                "No value for chain parent for the current residue {}",
-                self.serial_number
-            ))
-        }
-    }
-
-    /// Get the parent Chain mutably, pretty unsafe so you need to make sure yourself the use case is correct.
-    /// ## Fails
-    /// It fails if there is no parent Chain set.
-    fn chain_mut_safe(&self) -> Option<&mut Chain> {
-        if let Some(reference) = self.chain {
-            Some(unsafe { &mut *reference })
-        } else {
-            None
-        }
-    }
-
-    /// This sets the parent Residue of the atoms making up this Residue to this Residue.
-    /// This should not be needed to run as a user of the library.
-    pub fn fix_pointers_of_children(&mut self) {
-        let reference: *mut Residue = self;
-        for atom in &mut self.atoms {
-            atom.set_residue_pointer(reference);
-        }
+    /// Remove all Atoms matching the given predicate. As this is done in place this is the fastest way to remove Atoms from this Residue.
+    pub fn remove_atoms_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Atom) -> bool,
+    {
+        let atoms = std::mem::take(&mut self.atoms);
+        self.atoms
+            .extend(atoms.into_iter().filter(|atom| !predicate(atom)));
     }
 
     /// Remove the Atom specified.
@@ -281,12 +206,6 @@ impl Residue {
         }
     }
 
-    /// Remove this Residue from its parent Chain
-    pub fn remove(&mut self) {
-        let i = self.serial_number();
-        self.chain_mut().remove_residue_serial_number(i);
-    }
-
     /// Apply a transformation to the position of all atoms making up this Residue, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
         for atom in self.atoms_mut() {
@@ -300,7 +219,6 @@ impl Residue {
         for atom in other.atoms {
             self.add_atom(atom)
         }
-        self.fix_pointers_of_children();
     }
 }
 
@@ -318,12 +236,8 @@ impl fmt::Display for Residue {
 
 impl Clone for Residue {
     fn clone(&self) -> Self {
-        let mut res = Residue::new(self.serial_number, self.id, None, None).unwrap();
-
-        for atom in self.atoms() {
-            res.add_atom(atom.clone());
-        }
-        res.fix_pointers_of_children();
+        let mut res = Residue::new(self.serial_number, self.id, None).unwrap();
+        res.atoms = self.atoms.clone();
         res
     }
 }

@@ -9,8 +9,6 @@ pub struct Chain {
     id: char,
     /// The Residues making up this Chain
     residues: Vec<Residue>,
-    /// The parent Model of this Chain, if available
-    model: Option<*mut Model>,
 }
 
 impl Chain {
@@ -18,18 +16,16 @@ impl Chain {
     ///
     /// ## Arguments
     /// * `id` - the identifier
-    /// * `model` - if available the parent of the Chain
     ///
     /// ## Fails
     /// It fails if the identifier is an invalid character.
-    pub fn new(id: char, model: Option<*mut Model>) -> Option<Chain> {
+    pub fn new(id: char) -> Option<Chain> {
         if !check_char(id) {
             return None;
         }
         Some(Chain {
             id,
             residues: Vec::new(),
-            model,
         })
     }
 
@@ -142,7 +138,7 @@ impl Chain {
         residue_name: [char; 3],
     ) {
         let mut found = false;
-        let mut new_residue = Residue::new(residue_serial_number, residue_name, None, Some(self))
+        let mut new_residue = Residue::new(residue_serial_number, residue_name, None)
             .expect("Invalid chars in Residue creation");
         let mut current_residue = &mut new_residue;
         for residue in &mut self.residues {
@@ -161,84 +157,21 @@ impl Chain {
     }
 
     /// Add a Residue to the list of Residues making up this Chain. This does not detect any duplicates of names or serial numbers in the list of Residues.
-    fn add_residue(&mut self, mut residue: Residue) {
-        residue.set_chain(self);
+    fn add_residue(&mut self, residue: Residue) {
         self.residues.push(residue);
     }
 
-    /// Set the parent Model. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_model(&mut self, new_model: &mut Model) {
-        self.model = Some(new_model);
-    }
-
-    /// Set the parent Model. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_model_pointer(&mut self, new_model: *mut Model) {
-        self.model = Some(new_model);
-    }
-
-    /// Get the parent Model.
-    /// ## Panics
-    /// It panics if there is no parent Model set.
-    pub fn model(&self) -> &Model {
-        if let Some(reference) = self.model {
-            unsafe { &*reference }
-        } else {
-            panic!(format!(
-                "No value for model parent for the current chain {}",
-                self.id
-            ))
+    /// Remove all Atoms matching the given predicate. As this is done in place this is the fastest way to remove Atoms from this Chain.
+    pub fn remove_atoms_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Atom) -> bool,
+    {
+        for residue in self.residues_mut() {
+            residue.remove_atoms_by(&predicate);
         }
     }
 
-    /// Get the parent Model.
-    /// ## Fails
-    /// It fails if there is no parent Model set.
-    pub fn model_safe(&self) -> Option<&Model> {
-        if let Some(reference) = self.model {
-            Some(unsafe { &*reference })
-        } else {
-            None
-        }
-    }
-
-    /// Get the parent Model mutably, pretty unsafe so you need to make sure yourself the use case is correct.
-    /// ## Panics
-    /// It panics if there is no parent Model set.
-    #[allow(clippy::mut_from_ref)]
-    fn model_mut(&self) -> &mut Model {
-        if let Some(reference) = self.model {
-            unsafe { &mut *reference }
-        } else {
-            panic!(format!(
-                "No value for model parent for the current chain {}",
-                self.id
-            ))
-        }
-    }
-
-    /// Get the parent Model mutably, pretty unsafe so you need to make sure yourself the use case is correct.
-    /// ## Fails
-    /// It fails if there is no parent Model set.
-    fn model_mut_safe(&self) -> Option<&mut Model> {
-        if let Some(reference) = self.model {
-            Some(unsafe { &mut *reference })
-        } else {
-            None
-        }
-    }
-
-    /// This sets the parent of all structs contained by this Chain.
-    /// This should not be needed to run as a user of the library.
-    pub fn fix_pointers_of_children(&mut self) {
-        let reference: *mut Chain = self;
-        for res in &mut self.residues {
-            res.set_chain_pointer(reference);
-            res.fix_pointers_of_children();
-        }
-    }
-
+    /// Remove all residues matching the given predicate. As this is done in place this is the fastest way to remove Residues from this Chain.
     pub fn remove_residues_by<F>(&mut self, predicate: F)
     where
         F: Fn(&Residue) -> bool,
@@ -294,11 +227,6 @@ impl Chain {
         }
     }
 
-    /// Remove this Chain from its parent Model
-    pub fn remove(&mut self) {
-        self.model_mut().remove_chain_id(self.id());
-    }
-
     /// Apply a transformation to the position of all atoms making up this Chain, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
         for atom in self.atoms_mut() {
@@ -309,14 +237,11 @@ impl Chain {
     /// Join this Chain with another Chain, this moves all atoms from the other Chain
     /// to this Chain. All other (meta) data of this Chain will stay the same.
     pub fn join(&mut self, other: Chain) {
-        for atom in other.atoms() {
-            self.add_atom(
-                atom.clone(),
-                atom.residue().serial_number(),
-                atom.residue().id_array(),
-            )
+        for residue in other.residues() {
+            for atom in residue.atoms() {
+                self.add_atom(atom.clone(), residue.serial_number(), residue.id_array())
+            }
         }
-        self.fix_pointers_of_children();
     }
 }
 
@@ -334,12 +259,9 @@ impl fmt::Display for Chain {
 
 impl Clone for Chain {
     fn clone(&self) -> Self {
-        let mut chain = Chain::new(self.id, None).unwrap();
+        let mut chain = Chain::new(self.id).unwrap();
 
-        for residue in self.residues() {
-            chain.add_residue(residue.clone());
-        }
-        chain.fix_pointers_of_children();
+        chain.residues = self.residues.clone();
         chain
     }
 }

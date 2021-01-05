@@ -35,17 +35,14 @@ fn create_waterbox(size: (f64, f64, f64)) -> PDB {
         }
     }
 
-    for atom in liquid.atoms_mut() {
-        if atom.x() < 0.0
+    liquid.remove_atoms_by(|atom| {
+        atom.x() < 0.0
             || atom.x() > size.0
             || atom.y() < 0.0
             || atom.y() > size.1
             || atom.z() < 0.0
             || atom.z() > size.2
-        {
-            atom.remove();
-        }
-    }
+    });
 
     liquid.renumber();
 

@@ -232,10 +232,8 @@ impl PDB {
     }
 
     /// Adds a Model to this PDB
-    pub fn add_model(&mut self, mut new_model: Model) {
-        new_model.set_pdb(self);
+    pub fn add_model(&mut self, new_model: Model) {
         self.models.push(new_model);
-        self.models.last_mut().unwrap().fix_pointers_of_children();
     }
 
     /// Get the amount of Models making up this PDB
@@ -527,14 +525,48 @@ impl PDB {
         self.models.iter_mut().flat_map(|a| a.all_atoms_mut())
     }
 
-    /// This sets the parent of all structs contained by this PDB.
-    /// This should not be needed to run as a user of the library.
-    pub fn fix_pointers_of_children(&mut self) {
-        let reference: *mut PDB = self;
-        for model in &mut self.models {
-            model.set_pdb_pointer(reference);
-            model.fix_pointers_of_children();
+    /// Remove all Atoms matching the given predicate. The predicate will be run on all Atoms (Normal and Hetero).
+    /// As this is done in place this is the fastest way to remove Atoms from this Model.
+    pub fn remove_atoms_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Atom) -> bool,
+    {
+        for residue in self.all_residues_mut() {
+            residue.remove_atoms_by(&predicate);
         }
+    }
+
+    /// Remove all Residues matching the given predicate. The predicate will be run on all Residues (Normal and Hetero).
+    /// As this is done in place this is the fastest way to remove Residues from this Model.
+    pub fn remove_residues_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Residue) -> bool,
+    {
+        for chain in self.all_chains_mut() {
+            chain.remove_residues_by(&predicate);
+        }
+    }
+
+    /// Remove all Residues matching the given predicate. The predicate will be run on all Residues (Normal and Hetero).
+    /// As this is done in place this is the fastest way to remove Residues from this Model.
+    pub fn remove_chains_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Chain) -> bool,
+    {
+        for model in self.models_mut() {
+            model.remove_chains_by(&predicate);
+        }
+    }
+
+    /// Remove all Chains matching the given predicate. The predicate will be run on all Chains (Normal and Hetero).
+    /// As this is done in place this is the fastest way to remove Chains from this Model.
+    pub fn remove_models_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Model) -> bool,
+    {
+        let models = std::mem::take(&mut self.models);
+        self.models
+            .extend(models.into_iter().filter(|model| !predicate(model)));
     }
 
     /// Remove the Model specified.
@@ -622,11 +654,7 @@ impl Clone for PDB {
         pdb.mtrix = self.mtrix.clone();
         pdb.symmetry = self.symmetry.clone();
         pdb.unit_cell = self.unit_cell.clone();
-
-        for model in self.models() {
-            pdb.add_model(model.clone());
-        }
-        pdb.fix_pointers_of_children();
+        pdb.models = self.models.clone();
         pdb
     }
 }

@@ -14,7 +14,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
     let reader = BufReader::new(file);
 
     let mut pdb = PDB::new();
-    let mut current_model = Model::new(0, Some(&mut pdb));
+    let mut current_model = Model::new(0);
 
     for (linenumber, read_line) in reader.lines().enumerate() {
         // Lex the line
@@ -73,9 +73,8 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                     element,
                     charge,
                 ) => {
-                    let atom =
-                        Atom::new(None, serial_number, name, x, y, z, occ, b, element, charge)
-                            .expect("Invalid characters in atom creation");
+                    let atom = Atom::new(serial_number, name, x, y, z, occ, b, element, charge)
+                        .expect("Invalid characters in atom creation");
 
                     if hetero {
                         current_model.add_hetero_atom(
@@ -110,7 +109,7 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                         pdb.add_model(current_model)
                     }
 
-                    current_model = Model::new(number, Some(&mut pdb));
+                    current_model = Model::new(number);
                 }
                 LexItem::Scale(n, row) => {
                     if !pdb.has_scale() {

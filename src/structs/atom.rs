@@ -24,8 +24,6 @@ pub struct Atom {
     element: [char; 2],
     /// The charge of the Atom, can only be two chars, can only use the standard allowed characters
     charge: [char; 2],
-    /// The parent residue, can only be safely used as a reference (not mutable)
-    residue: Option<*mut Residue>,
     /// The anisotropic temperature factors, if applicable
     atf: Option<[[f64; 3]; 2]>,
 }
@@ -34,7 +32,6 @@ impl Atom {
     /// Create a new Atom
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        residue: Option<*mut Residue>,
         serial_number: usize,
         atom_name: [char; 4],
         x: f64,
@@ -55,7 +52,6 @@ impl Atom {
             b_factor,
             element,
             charge,
-            residue,
             atf: None,
         };
 
@@ -321,84 +317,10 @@ impl Atom {
         self.atf = Some(factors);
     }
 
-    /// Set the parent residue. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_residue(&mut self, new_residue: &mut Residue) {
-        self.residue = Some(new_residue);
-    }
-
-    /// Set the parent residue. This is used to link back to the parent to read its properties.
-    /// This function should only be used when you are sure what you do, in normal cases it is not needed.
-    pub fn set_residue_pointer(&mut self, new_residue: *mut Residue) {
-        self.residue = Some(new_residue);
-    }
-
-    /// Get the parent residue.
-    /// ## Panics
-    /// It panics if there is no parent residue set.
-    pub fn residue(&self) -> &Residue {
-        if let Some(reference) = self.residue {
-            unsafe { &*reference }
-        } else {
-            panic!(format!(
-                "No value for residue parent for the current atom {}",
-                self.serial_number
-            ))
-        }
-    }
-
-    /// Get the parent residue, but it does not panic.
-    pub fn residue_safe(&self) -> Option<&Residue> {
-        if let Some(reference) = self.residue {
-            Some(unsafe { &*reference })
-        } else {
-            None
-        }
-    }
-
-    /// Get a mutable reference to the parent, pretty unsafe so you need to make sure yourself the use case is correct.
-    /// ## Panics
-    /// It panics when no parent is set.
-    #[allow(clippy::mut_from_ref)]
-    fn residue_mut(&self) -> &mut Residue {
-        if let Some(reference) = self.residue {
-            unsafe { &mut *reference }
-        } else {
-            panic!(format!(
-                "No value for residue parent for the current atom {}",
-                self.serial_number
-            ))
-        }
-    }
-
-    /// Get a mutable reference to the parent, pretty unsafe so you need to make sure yourself the use case is correct.
-    fn residue_mut_safe(&self) -> Option<&mut Residue> {
-        if let Some(reference) = self.residue {
-            Some(unsafe { &mut *reference })
-        } else {
-            None
-        }
-    }
-
     /// Get if this atom is likely to be a part of the backbone of a protein
-    pub fn backbone(&self) -> Option<bool> {
-        let residue = self.residue_safe();
-        if let Some(res) = residue {
-            let backbone_names = vec!["N", "CA", "C", "O"];
-            if res.amino_acid() && backbone_names.contains(&self.name().as_str()) {
-                Some(true)
-            } else {
-                Some(false)
-            }
-        } else {
-            None
-        }
-    }
-
-    /// Remove this Atom from its parent Residue
-    pub fn remove(&mut self) {
-        self.residue_mut()
-            .remove_atom_serial_number(self.serial_number());
+    pub fn backbone(&self) -> bool {
+        let backbone_names = vec!["N", "CA", "C", "O"];
+        backbone_names.contains(&self.name().as_str())
     }
 
     /// Apply a transformation to the position of this atom, the new position is immediately set.
@@ -440,7 +362,6 @@ impl fmt::Display for Atom {
 impl Clone for Atom {
     fn clone(&self) -> Self {
         let mut atom = Atom::new(
-            None,
             self.serial_number,
             self.name,
             self.x,
