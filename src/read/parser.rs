@@ -1,4 +1,6 @@
 use super::lexitem::*;
+use crate::error::*;
+use crate::reference_tables;
 use crate::structs::*;
 use crate::validate::*;
 
@@ -8,17 +10,35 @@ use std::str::FromStr;
 
 /// Parse the given filename into a PDB struct
 /// Returns an error message if it fails to parse it properly
-pub fn parse(filename: &str) -> Result<PDB, String> {
+pub fn parse(filename: &str) -> Result<(PDB, Vec<PDBError>), PDBError> {
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
-    let file = File::open(filename).expect("Could not open file");
+    let mut errors = Vec::new();
+    let file = if let Ok(f) = File::open(filename) {
+        f
+    } else {
+        return Err(PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename)));
+    };
     let reader = BufReader::new(file);
 
     let mut pdb = PDB::new();
     let mut current_model = Model::new(0);
 
-    for (linenumber, read_line) in reader.lines().enumerate() {
-        // Lex the line
-        let line = &read_line.expect("Line not read");
+    for (mut linenumber, read_line) in reader.lines().enumerate() {
+        linenumber += 1; // 1 based indexing in files
+
+        let line = if let Ok(l) = read_line {
+            l
+        } else {
+            return Err(PDBError::new(
+                ErrorLevel::BreakingError,
+                "Could read line",
+                &format!(
+                    "Could not read line {} while parsing the input file.",
+                    linenumber
+                ),
+                Context::show(filename),
+            ));
+        };
         let lineresult = if line.len() > 6 {
             match &line[..6] {
                 "REMARK" => lex_remark(linenumber, line),
@@ -37,16 +57,16 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                 "MTRIX3" => lex_mtrix(linenumber, line, 2),
                 "MODEL " => lex_model(linenumber, line),
                 "ENDMDL" => Ok(LexItem::EndModel()),
-                _ => Err("Unknown option".to_string()),
+                _ => Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line))),
             }
         } else if line.len() > 2 {
             match &line[..3] {
                 "TER" => Ok(LexItem::TER()),
                 "END" => Ok(LexItem::End()),
-                _ => Err(format!("Unknown short line: {}", line)),
+                _ => Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line))),
             }
         } else if !line.is_empty() {
-            Err(format!("Short line: \"{}\" {}", line, line.len()))
+            Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line)))
         } else {
             Ok(LexItem::Empty())
         };
@@ -150,23 +170,43 @@ pub fn parse(filename: &str) -> Result<PDB, String> {
                 }
                 _ => (),
             }
+        } else {
+            errors.push(lineresult.unwrap_err())
         }
     }
     pdb.add_model(current_model);
-    if validate(&pdb) {
-        Ok(pdb)
-    } else {
-        Err("Not a valid PDB resulting model".to_string())
-    }
+    errors.extend(validate(&pdb));
+
+    Ok((pdb, errors))
 }
 
 /// Lex a REMARK
 /// ## Fails
 /// It fails on incorrect numbers for the remark-type-number
-fn lex_remark(linenumber: usize, line: &str) -> Result<LexItem, String> {
+fn lex_remark(linenumber: usize, line: String) -> Result<LexItem, PDBError> {
+    let number = parse_number(
+        Context::line(linenumber, &line, 7, 3),
+        &line.chars().collect::<Vec<char>>()[7..10],
+    )?;
+    if !reference_tables::valid_remark_type_number(number) {
+        return Err(PDBError::new(
+            ErrorLevel::StrictWarning,
+            "Remark type number invalid",
+            "The remark-type-number is not valid, see wwPDB v3.30 for all valid numbers.",
+            Context::line(linenumber, &line, 7, 3),
+        ));
+    }
     Ok(LexItem::Remark(
-        parse_number(linenumber, &line.chars().collect::<Vec<char>>()[7..10])?,
+        number,
         if line.len() > 11 {
+            if line.len() - 11 > 68 {
+                return Err(PDBError::new(
+                    ErrorLevel::LooseWarning,
+                    "Remark too long",
+                    "The REMARK is too long, the max is 68 characters.",
+                    Context::line(linenumber, &line, 11, line.len() - 11),
+                ));
+            }
             line[11..].to_string()
         } else {
             "".to_string()
@@ -177,9 +217,9 @@ fn lex_remark(linenumber: usize, line: &str) -> Result<LexItem, String> {
 /// Lex a MODEL
 /// ## Fails
 /// It fails on incorrect numbers for the serial number
-fn lex_model(linenumber: usize, line: &str) -> Result<LexItem, String> {
+fn lex_model(linenumber: usize, line: String) -> Result<LexItem, PDBError> {
     Ok(LexItem::Model(parse_number(
-        linenumber,
+        Context::line(linenumber, &line, 6, line.len() - 6),
         &line[6..]
             .split_whitespace()
             .collect::<String>()
@@ -191,25 +231,26 @@ fn lex_model(linenumber: usize, line: &str) -> Result<LexItem, String> {
 /// Lex an ATOM
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, String> {
+fn lex_atom(linenumber: usize, line: String, hetero: bool) -> Result<LexItem, PDBError> {
     let chars: Vec<char> = line.chars().collect();
-    let serial_number = parse_number(linenumber, &chars[7..11])?;
+    let serial_number = parse_number(Context::line(linenumber, &line, 7, 4), &chars[7..11])?;
     let atom_name = [chars[12], chars[13], chars[14], chars[15]];
     let alternate_location = chars[16];
     let residue_name = [chars[17], chars[18], chars[19]];
     let chain_id = chars[21];
-    let residue_serial_number = parse_number(linenumber, &chars[22..26])?;
+    let residue_serial_number =
+        parse_number(Context::line(linenumber, &line, 22, 4), &chars[22..26])?;
     let insertion = chars[26];
-    let x = parse_number(linenumber, &chars[30..38])?;
-    let y = parse_number(linenumber, &chars[38..46])?;
-    let z = parse_number(linenumber, &chars[46..54])?;
+    let x = parse_number(Context::line(linenumber, &line, 30, 8), &chars[30..38])?;
+    let y = parse_number(Context::line(linenumber, &line, 38, 8), &chars[38..46])?;
+    let z = parse_number(Context::line(linenumber, &line, 46, 8), &chars[46..54])?;
     let mut occupancy = 1.0;
     if chars.len() >= 60 {
-        occupancy = parse_number(linenumber, &chars[54..60])?;
+        occupancy = parse_number(Context::line(linenumber, &line, 54, 6), &chars[54..60])?;
     }
     let mut b_factor = 0.0;
     if chars.len() >= 66 {
-        b_factor = parse_number(linenumber, &chars[60..66])?;
+        b_factor = parse_number(Context::line(linenumber, &line, 60, 6), &chars[60..66])?;
     }
     let mut segment_id = [' ', ' ', ' ', ' '];
     if chars.len() >= 75 {
@@ -247,21 +288,22 @@ fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> Result<LexItem, Stri
 /// Lex an ANISOU
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_anisou(linenumber: usize, line: &str) -> Result<LexItem, String> {
+fn lex_anisou(linenumber: usize, line: String) -> Result<LexItem, PDBError> {
     let chars: Vec<char> = line.chars().collect();
-    let serial_number = parse_number(linenumber, &chars[7..11])?;
+    let serial_number = parse_number(Context::line(linenumber, &line, 7, 4), &chars[7..11])?;
     let atom_name = [chars[12], chars[13], chars[14], chars[15]];
     let alternate_location = chars[16];
     let residue_name = [chars[17], chars[18], chars[19]];
     let chain_id = chars[21];
-    let residue_serial_number = parse_number(linenumber, &chars[22..26])?;
+    let residue_serial_number =
+        parse_number(Context::line(linenumber, &line, 10, 10), &chars[22..26])?;
     let insertion = chars[26];
-    let ai: isize = parse_number(linenumber, &chars[28..35])?;
-    let bi: isize = parse_number(linenumber, &chars[35..42])?;
-    let ci: isize = parse_number(linenumber, &chars[42..49])?;
-    let di: isize = parse_number(linenumber, &chars[49..56])?;
-    let ei: isize = parse_number(linenumber, &chars[56..63])?;
-    let fi: isize = parse_number(linenumber, &chars[63..70])?;
+    let ai: isize = parse_number(Context::line(linenumber, &line, 28, 7), &chars[28..35])?;
+    let bi: isize = parse_number(Context::line(linenumber, &line, 35, 7), &chars[35..42])?;
+    let ci: isize = parse_number(Context::line(linenumber, &line, 42, 7), &chars[42..49])?;
+    let di: isize = parse_number(Context::line(linenumber, &line, 49, 7), &chars[49..56])?;
+    let ei: isize = parse_number(Context::line(linenumber, &line, 56, 7), &chars[56..63])?;
+    let fi: isize = parse_number(Context::line(linenumber, &line, 63, 7), &chars[63..70])?;
     let factors = [
         [
             (ai as f64) / 10000.0,
@@ -299,21 +341,23 @@ fn lex_anisou(linenumber: usize, line: &str) -> Result<LexItem, String> {
 /// Lex a CRYST1
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_cryst(linenumber: usize, line: &str) -> Result<LexItem, String> {
+fn lex_cryst(linenumber: usize, line: String) -> Result<LexItem, PDBError> {
     let chars: Vec<char> = line.chars().collect();
-    let a = parse_number(linenumber, &chars[6..15])?;
-    let b = parse_number(linenumber, &chars[15..24])?;
-    let c = parse_number(linenumber, &chars[24..33])?;
-    let alpha = parse_number(linenumber, &chars[33..40])?;
-    let beta = parse_number(linenumber, &chars[40..47])?;
-    let gamma = parse_number(linenumber, &chars[47..54])?;
-    // TODO: make a fancy error message if a part of the space group is not numeric
+    let a = parse_number(Context::line(linenumber, &line, 6, 9), &chars[6..15])?;
+    let b = parse_number(Context::line(linenumber, &line, 15, 9), &chars[15..24])?;
+    let c = parse_number(Context::line(linenumber, &line, 24, 9), &chars[24..33])?;
+    let alpha = parse_number(Context::line(linenumber, &line, 33, 7), &chars[33..40])?;
+    let beta = parse_number(Context::line(linenumber, &line, 40, 7), &chars[40..47])?;
+    let gamma = parse_number(Context::line(linenumber, &line, 47, 7), &chars[47..54])?;
     let spacegroup = chars[55..std::cmp::min(66, chars.len())]
         .iter()
         .collect::<String>();
     let mut z = 1;
     if chars.len() > 66 {
-        z = parse_number(linenumber, &chars[66..])?;
+        z = parse_number(
+            Context::line(linenumber, &line, 66, line.len() - 66),
+            &chars[66..],
+        )?;
     }
 
     Ok(LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, z))
@@ -322,12 +366,12 @@ fn lex_cryst(linenumber: usize, line: &str) -> Result<LexItem, String> {
 /// Lex an SCALEn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_scale(linenumber: usize, line: &str, row: usize) -> Result<LexItem, String> {
+fn lex_scale(linenumber: usize, line: String, row: usize) -> Result<LexItem, PDBError> {
     let chars: Vec<char> = line.chars().collect();
-    let a = parse_number(linenumber, &chars[10..20])?;
-    let b = parse_number(linenumber, &chars[20..30])?;
-    let c = parse_number(linenumber, &chars[30..40])?;
-    let d = parse_number(linenumber, &chars[45..55])?;
+    let a = parse_number(Context::line(linenumber, &line, 10, 10), &chars[10..20])?;
+    let b = parse_number(Context::line(linenumber, &line, 20, 10), &chars[20..30])?;
+    let c = parse_number(Context::line(linenumber, &line, 30, 10), &chars[30..40])?;
+    let d = parse_number(Context::line(linenumber, &line, 45, 10), &chars[45..55])?;
 
     Ok(LexItem::Scale(row, [a, b, c, d]))
 }
@@ -335,12 +379,12 @@ fn lex_scale(linenumber: usize, line: &str, row: usize) -> Result<LexItem, Strin
 /// Lex an ORIGXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_origx(linenumber: usize, line: &str, row: usize) -> Result<LexItem, String> {
+fn lex_origx(linenumber: usize, line: String, row: usize) -> Result<LexItem, PDBError> {
     let chars: Vec<char> = line.chars().collect();
-    let a = parse_number(linenumber, &chars[10..20])?;
-    let b = parse_number(linenumber, &chars[20..30])?;
-    let c = parse_number(linenumber, &chars[30..40])?;
-    let d = parse_number(linenumber, &chars[45..55])?;
+    let a = parse_number(Context::line(linenumber, &line, 10, 10), &chars[10..20])?;
+    let b = parse_number(Context::line(linenumber, &line, 20, 10), &chars[20..30])?;
+    let c = parse_number(Context::line(linenumber, &line, 30, 10), &chars[30..40])?;
+    let d = parse_number(Context::line(linenumber, &line, 45, 10), &chars[45..55])?;
 
     Ok(LexItem::OrigX(row, [a, b, c, d]))
 }
@@ -348,13 +392,13 @@ fn lex_origx(linenumber: usize, line: &str, row: usize) -> Result<LexItem, Strin
 /// Lex an MTRIXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_mtrix(linenumber: usize, line: &str, row: usize) -> Result<LexItem, String> {
+fn lex_mtrix(linenumber: usize, line: String, row: usize) -> Result<LexItem, PDBError> {
     let chars: Vec<char> = line.chars().collect();
-    let ser = parse_number(linenumber, &chars[7..10])?;
-    let a = parse_number(linenumber, &chars[10..20])?;
-    let b = parse_number(linenumber, &chars[20..30])?;
-    let c = parse_number(linenumber, &chars[30..40])?;
-    let d = parse_number(linenumber, &chars[45..55])?;
+    let ser = parse_number(Context::line(linenumber, &line, 7, 4), &chars[7..10])?;
+    let a = parse_number(Context::line(linenumber, &line, 10, 10), &chars[10..20])?;
+    let b = parse_number(Context::line(linenumber, &line, 20, 10), &chars[20..30])?;
+    let c = parse_number(Context::line(linenumber, &line, 30, 10), &chars[30..40])?;
+    let d = parse_number(Context::line(linenumber, &line, 45, 10), &chars[45..55])?;
     let mut given = false;
     if chars.len() >= 60 {
         given = chars[59] == '1';
@@ -364,7 +408,7 @@ fn lex_mtrix(linenumber: usize, line: &str, row: usize) -> Result<LexItem, Strin
 }
 
 /// Parse a number, generic for anything that can be parsed using FromStr
-fn parse_number<T: FromStr>(linenumber: usize, input: &[char]) -> Result<T, String> {
+fn parse_number<T: FromStr>(context: Context, input: &[char]) -> Result<T, PDBError> {
     let string = input
         .iter()
         .collect::<String>()
@@ -372,9 +416,11 @@ fn parse_number<T: FromStr>(linenumber: usize, input: &[char]) -> Result<T, Stri
         .collect::<String>();
     match string.parse::<T>() {
         Ok(v) => Ok(v),
-        Err(_) => Err(format!(
-            "\"{}\" is not a valid number (line: {})",
-            string, linenumber
+        Err(_) => Err(PDBError::new(
+            ErrorLevel::BreakingError,
+            "Not a number",
+            "The text presented is not a number of the right kind.",
+            context,
         )),
     }
 }

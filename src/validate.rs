@@ -1,3 +1,4 @@
+use crate::error::*;
 use crate::structs::*;
 
 /// Validate a given PDB file in terms of invariants that should be held up.
@@ -9,46 +10,78 @@ use crate::structs::*;
 ///
 /// ## Invariants Not Tested
 /// * Numbering of all structs, serial numbers should be unique. To enforce this the `renumber()` function should be called on the PDB struct.
-pub fn validate(pdb: &PDB) -> bool {
+pub fn validate(pdb: &PDB) -> Vec<PDBError> {
     // Print warnings/errors and return a bool for success
-    let mut output = true;
+    let mut errors = Vec::new();
     if pdb.model_count() > 1 {
-        output = output && validate_models(pdb)
+        errors.append(&mut validate_models(pdb));
     }
-    if pdb.has_scale() {
-        output = output && pdb.scale().valid();
+    if pdb.has_scale() && !pdb.scale().valid() {
+        errors.push(PDBError::new(
+            ErrorLevel::InvalidatingError,
+            "Row not set",
+            "A row was not set for SCALEn in the PDB.",
+            Context::None,
+        ));
     }
-    if pdb.has_origx() {
-        output = output && pdb.origx().valid();
+    if pdb.has_origx() && !pdb.origx().valid() {
+        errors.push(PDBError::new(
+            ErrorLevel::InvalidatingError,
+            "Row not set",
+            "A row was not set for ORIGXn in the PDB.",
+            Context::None,
+        ));
     }
     for m in pdb.mtrix() {
-        output = output && m.valid();
+        if !m.valid() {
+            errors.push(PDBError::new(
+                ErrorLevel::InvalidatingError,
+                "Row not set",
+                &format!(
+                    "A row was not set for MTRIXn Serial number {} in the PDB.",
+                    m.serial_number()
+                ),
+                Context::None,
+            ));
+        }
     }
-    output
+    errors
 }
 
 /// Validate the models by enforcing that all models should contain the same atoms (with possibly different data).
 /// It checks this by matching all atoms (not hetatoms) for each model to see if they correspond (`Atom::correspond`).
-fn validate_models(pdb: &PDB) -> bool {
+fn validate_models(pdb: &PDB) -> Vec<PDBError> {
+    let mut errors = Vec::new();
     let total_atoms = pdb.model(0).unwrap().atom_count();
     for model in pdb.models().skip(1) {
         if model.atom_count() != total_atoms {
-            println!(
-                "{} does not have the same amount of atoms as the first model ({} (this model) vs {} (first)).",
-                model,
-                model.atom_count(),
-                total_atoms
-            );
-            return false;
+            errors.push(PDBError::new(
+                ErrorLevel::StrictWarning,
+                "Invalid Model",
+                &format!(
+                    "Model {} does not have the same amount of atoms as the first model.",
+                    model.serial_number()
+                ),
+                Context::None,
+            ));
+            continue;
         }
         for index in 0..model.atom_count() {
             let current_atom = model.atom(index).unwrap();
             let standard_atom = pdb.model(0).unwrap().atom(index).unwrap();
             if !standard_atom.corresponds(current_atom) {
-                println!("Atom (index {}) in {} is not corresponding to the atom in the first model.\n    First model: {}\n    This model:  {}\n", index, model, standard_atom, current_atom);
-                return false;
+                errors.push(PDBError::new(
+                    ErrorLevel::StrictWarning,
+                    "Atoms in Models not corresponding",
+                    &format!(
+                        "Atom {} in Model {} does not correspond to the respective Atom in the first model.",
+                        current_atom.serial_number(),
+                        model.serial_number()
+                    ),
+                    Context::None,
+                ));
             }
         }
     }
-    true
+    errors
 }

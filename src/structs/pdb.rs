@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
 
@@ -55,12 +56,7 @@ impl PDB {
     /// ## Panics
     /// It panics if the text if too long, the text contains invalid characters or the remark-type-number is not valid (wwPDB v3.30).
     pub fn add_remark(&mut self, remark_type: usize, remark_text: String) {
-        const REMARK_TYPES: [usize; 40] = [
-            0, 1, 2, 3, 4, 5, 100, 205, 210, 215, 217, 230, 240, 245, 247, 250, 265, 280, 285, 290,
-            300, 350, 375, 450, 465, 470, 475, 480, 500, 525, 600, 610, 615, 620, 630, 650, 700,
-            800, 900, 999,
-        ];
-        if !REMARK_TYPES.contains(&remark_type) {
+        if !reference_tables::valid_remark_type_number(remark_type) {
             panic!(format!("The given remark-type-number is not valid: {}, see wwPDB v3.30 for valid remark-type-numbers", remark_type));
         }
         if !check_chars(remark_text.clone()) {

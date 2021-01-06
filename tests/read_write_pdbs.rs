@@ -32,9 +32,22 @@ fn do_someting(file: &str, output: &str) {
     println!("Working on file: {}", file);
     let now = Instant::now();
 
-    let mut pdb = parse(file).unwrap();
+    let (mut pdb, errors) = parse(file).unwrap();
 
     let time = now.elapsed();
+
+    let mut stop = false;
+
+    for error in errors {
+        println!("{}", error);
+        if error.level() == ErrorLevel::BreakingError {
+            stop = true;
+        }
+    }
+
+    if stop {
+        panic!("Stopped execution because of previous error message(s).")
+    }
 
     println!(
         "Found {} atoms, in {} residues, in {} chains, in {} models it all took {} ms",

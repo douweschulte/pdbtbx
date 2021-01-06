@@ -2,6 +2,7 @@
 /// with all properties saved as primitive data types.
 ///
 /// See wwPDB v3.30 for detailed explanation of the meaning of all fields
+#[derive(Debug)]
 pub enum LexItem {
     /// A REMARK saved as the remark-type-number and the remark line itself
     Remark(usize, String),
