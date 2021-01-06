@@ -39,7 +39,7 @@ pub enum LexItem {
         f64,
         [char; 4],
         [char; 2],
-        [char; 2],
+        isize,
     ),
     /// An Anisou record with all its information, including the deprecated and rarely used fields.
     /// * hetatom (true) or atom (false)

@@ -122,7 +122,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                 for atom in residue.atoms() {
                     writer
                 .write_fmt(format_args!(
-                    "ATOM  {:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{:>2}\n",
+                    "ATOM  {:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}\n",
                     atom.serial_number(),
                     atom.name(),
                     residue.id(),
@@ -134,13 +134,13 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                     atom.occupancy(),
                     atom.b_factor(),
                     atom.element(),
-                    atom.charge(),
+                    atom.pdb_charge(),
                 ))
                 .unwrap();
                     if atom.anisotropic_temperature_factors().is_some() {
                         writer
                             .write_fmt(format_args!(
-                        "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{:>2}\n",
+                        "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}\n",
                         atom.serial_number(),
                         atom.name(),
                         residue.id(),
@@ -153,7 +153,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                         (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0) as isize,
                         (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0) as isize,
                         atom.element(),
-                        atom.charge(),
+                        atom.pdb_charge(),
                     ))
                             .unwrap();
                     }
@@ -166,7 +166,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                 for atom in residue.atoms() {
                     writer
                 .write_fmt(format_args!(
-                    "HETATM{:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{:>2}\n",
+                    "HETATM{:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}\n",
                     atom.serial_number(),
                     atom.name(),
                     residue.id(),
@@ -178,13 +178,13 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                     atom.occupancy(),
                     atom.b_factor(),
                     atom.element(),
-                    atom.charge(),
+                    atom.pdb_charge()
                 ))
                 .unwrap();
                     if atom.anisotropic_temperature_factors().is_some() {
                         writer
                             .write_fmt(format_args!(
-                        "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{:>2}\n",
+                        "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}\n",
                         atom.serial_number(),
                         atom.name(),
                         residue.id(),
@@ -197,7 +197,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                         (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0) as isize,
                         (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0) as isize,
                         atom.element(),
-                        atom.charge(),
+                        atom.pdb_charge()
                     ))
                             .unwrap();
                     }

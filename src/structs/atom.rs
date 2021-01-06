@@ -22,8 +22,8 @@ pub struct Atom {
     b_factor: f64,
     /// The element of the Atom, can only be two chars, can only use the standard allowed characters
     element: [char; 2],
-    /// The charge of the Atom, can only be two chars, can only use the standard allowed characters
-    charge: [char; 2],
+    /// The charge of the Atom
+    charge: isize,
     /// The anisotropic temperature factors, if applicable
     atf: Option<[[f64; 3]; 2]>,
 }
@@ -40,7 +40,7 @@ impl Atom {
         occupancy: f64,
         b_factor: f64,
         element: [char; 2],
-        charge: [char; 2],
+        charge: isize,
     ) -> Option<Atom> {
         let atom = Atom {
             serial_number,
@@ -55,7 +55,7 @@ impl Atom {
             atf: None,
         };
 
-        if !check_char4(atom_name) || !check_char2(element) || !check_char2(charge) {
+        if !check_char4(atom_name) || !check_char2(element) {
             None
         } else {
             Some(atom)
@@ -272,38 +272,40 @@ impl Atom {
     }
 
     /// Get the charge of the atom
-    pub fn charge(&self) -> String {
+    pub fn charge(&self) -> isize {
         self.charge
-            .iter()
-            .collect::<String>()
-            .split_whitespace()
-            .collect::<String>()
+    }
+
+    /// Get the charge in the PDB format [0-9][-+]
+    pub fn pdb_charge(&self) -> String {
+        if self.charge == 0 {
+            String::new()
+        } else {
+            let mut sign = '+';
+            let charge = (48 + self.charge.abs() as u8) as char;
+            if self.charge < 0 {
+                sign = '-';
+            }
+            let mut output = String::new();
+            output.push(charge);
+            output.push(sign);
+            output
+        }
     }
 
     /// Set the charge of this atom
     /// ## Fails
     /// It fails if the charge contains invalid characters (only ASCII graphic and space is allowed).
     /// It also fails if the string is too ling, the max length is 2 characters.
-    pub fn set_charge(&mut self, new_charge: &str) -> Result<(), String> {
-        let chars = new_charge
-            .to_ascii_uppercase()
-            .chars()
-            .collect::<Vec<char>>();
-        if chars.len() <= 2 {
-            if !check_chars(new_charge.to_string()) {
-                self.charge = [chars[0], chars[1]];
-                Ok(())
-            } else {
-                Err(format!(
-                    "New charge has invalid characters for atom {} name {}",
-                    self.serial_number, new_charge
-                ))
-            }
-        } else {
+    pub fn set_charge(&mut self, new_charge: isize) -> Result<(), String> {
+        if new_charge < -9 || new_charge > 9 {
             Err(format!(
-                "New charge is too long (max 2 chars) for atom {} name {}",
+                "New charge is out of bounds, for Atom {}, with new charge {}",
                 self.serial_number, new_charge
             ))
+        } else {
+            self.charge = new_charge;
+            Ok(())
         }
     }
 

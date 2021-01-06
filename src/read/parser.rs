@@ -57,6 +57,7 @@ pub fn parse(filename: &str) -> Result<(PDB, Vec<PDBError>), PDBError> {
                 "MTRIX3" => lex_mtrix(linenumber, line, 2),
                 "MODEL " => lex_model(linenumber, line),
                 "ENDMDL" => Ok(LexItem::EndModel()),
+                "CONECT" => Ok(LexItem::Empty()),
                 _ => Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line))),
             }
         } else if line.len() > 2 {
@@ -233,6 +234,14 @@ fn lex_model(linenumber: usize, line: String) -> Result<LexItem, PDBError> {
 /// It fails on incorrect numbers in the line
 fn lex_atom(linenumber: usize, line: String, hetero: bool) -> Result<LexItem, PDBError> {
     let chars: Vec<char> = line.chars().collect();
+    if chars.len() < 54 {
+        return Err(PDBError::new(
+            ErrorLevel::BreakingError,
+            "Atom line too short",
+            "This line is too short to contain all necessary elements (up to `z` at least).",
+            Context::full_line(linenumber, &line),
+        ));
+    }
     let serial_number = parse_number(Context::line(linenumber, &line, 7, 4), &chars[7..11])?;
     let atom_name = [chars[12], chars[13], chars[14], chars[15]];
     let alternate_location = chars[16];
@@ -260,9 +269,28 @@ fn lex_atom(linenumber: usize, line: String, hetero: bool) -> Result<LexItem, PD
     if chars.len() >= 77 {
         element = [chars[76], chars[77]];
     }
-    let mut charge = [' ', ' '];
-    if chars.len() >= 80 {
-        charge = [chars[78], chars[79]];
+    let mut charge = 0;
+    if chars.len() >= 79 {
+        if !chars[78].is_ascii_digit() {
+            return Err(PDBError::new(
+                ErrorLevel::BreakingError,
+                "Atom charge is not correct",
+                "The charge is not numeric, it is defined to be [0-9][+-], so two characters in total.",
+                Context::line(linenumber, &line, 78, 1),
+            ));
+        }
+        if chars[79] != '-' && chars[79] != '+' {
+            return Err(PDBError::new(
+                ErrorLevel::BreakingError,
+                "Atom charge is not correct",
+                "The charge is not properly signed, it is defined to be [0-9][+-], so two characters in total.",
+                Context::line(linenumber, &line, 79, 1),
+            ));
+        }
+        charge = chars[78].to_digit(10).unwrap() as isize;
+        if chars[79] == '-' {
+            charge *= -1;
+        }
     }
 
     Ok(LexItem::Atom(
