@@ -8,8 +8,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 
-/// Parse the given filename into a PDB struct
-/// Returns an error message if it fails to parse it properly
+/// Parse the given filename into a PDB struct.
+/// Returns an PDBError when it found a BreakingError. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 pub fn parse(filename: &str) -> Result<(PDB, Vec<PDBError>), PDBError> {
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
     let mut errors = Vec::new();

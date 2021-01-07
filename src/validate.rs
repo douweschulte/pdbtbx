@@ -2,7 +2,7 @@ use crate::error::*;
 use crate::structs::*;
 
 /// Validate a given PDB file in terms of invariants that should be held up.
-/// It prints warning massages and returns a bool indicating success.
+/// It returns PDBErrors with the warning messages.
 ///
 /// ## Invariants Tested
 /// * With multiple models the models should all contain atoms that correspond.
