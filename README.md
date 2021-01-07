@@ -1,7 +1,7 @@
 ![Compile & Test](https://github.com/nonnominandus/rust-pdb/workflows/Compile%20&%20Test/badge.svg)
 
 ## Description
-This is a rust library helping to parse, edit and save crystallographic PDB files. The library will be put up to crates.io very soon, as soon as we think the API is somewhat complete and internally coherent. For the moment it can read most crystallographic PDB lines, some are missing which we are hopeful will be added over time.
+This is a rust library helping to parse, edit and save crystallographic PDB files. The library will be put up to `crates.io` very soon, as soon as we think the API is somewhat complete and internally coherent. For the moment it can read most crystallographic PDB lines, some are missing which we are hopeful will be added over time.
 
 ## Contributing
 As this is a library in active development feel free to share your thoughts, ideas, hopes, and criticisms. Every comment will be looked at and discussed so that the final result of this library is as useful as possible for all users. Of course we all like a civilised discussion so please follow the community guidelines, but over all please be a civilised human being.

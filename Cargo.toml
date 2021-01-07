@@ -2,9 +2,13 @@
 name = "rust_pdb"
 version = "0.0.1"
 authors = ["Douwe Schulte <d.schulte@uu.nl>"]
+license = "MIT"
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "A library to work with crystallographic Protein DataBank files."
+repository = "https://github.com/nonnominandus/rust-pdb"
+readme = "README.md"
+keywords = ["pdb", "crystal", "protein", "pdb-parser"]
+categories ["parser-implementations", "science"]
 
 [dependencies]
 
