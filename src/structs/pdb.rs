@@ -37,6 +37,11 @@ impl PDB {
         }
     }
 
+    /// Get the number of REMARK records in the PDB file
+    pub fn remark_count(&self) -> usize {
+        self.remarks.len()
+    }
+
     /// Get the remarks, containing the remark-type-number and a line of free text
     pub fn remarks(&self) -> impl DoubleEndedIterator<Item = &(usize, String)> + '_ {
         self.remarks.iter()
@@ -63,7 +68,7 @@ impl PDB {
             panic!("The given remark text contains invalid characters.");
         }
         // As the text can only contain ASCII len() on strings is fine (it returns the length in bytes)
-        if remark_text.len() > 68 {
+        if remark_text.len() > 70 {
             println!("WARNING: The given remark text is too long, the maximal length is 68 characters, the given string is {} characters.", remark_text.len());
         }
 

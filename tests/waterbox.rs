@@ -15,6 +15,7 @@ fn create_waterbox(size: (f64, f64, f64)) -> PDB {
     let time = now.elapsed();
 
     println!("Time to parse liquid.pdb {}ms", time.as_millis());
+    println!("The PDB: {}", liquid);
 
     let cell = liquid.unit_cell().size().clone();
     let fa = (size.0 / cell.0).ceil() as usize;

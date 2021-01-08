@@ -159,8 +159,18 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                     }
                 }
             }
+            let last_atom = chain.atoms().nth_back(0).unwrap();
+            let last_residue = chain.residues().nth_back(0).unwrap();
+            writer
+                .write_fmt(format_args!(
+                    "TER{:5}      {:3} {}{:4} \n",
+                    last_atom.serial_number(),
+                    last_residue.id(),
+                    chain.id(),
+                    last_residue.serial_number()
+                ))
+                .unwrap();
         }
-        writer.write_fmt(format_args!("TER\n")).unwrap();
         for chain in model.hetero_chains() {
             for residue in chain.residues() {
                 for atom in residue.atoms() {
@@ -206,6 +216,35 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
         }
     }
 
+    let mut xform = 0;
+    if pdb.has_origx() && pdb.origx().valid() {
+        xform += 3;
+    }
+    if pdb.has_scale() && pdb.scale().valid() {
+        xform += 3;
+    }
+    for mtrix in pdb.mtrix() {
+        if mtrix.valid() {
+            xform += 3;
+        }
+    }
+    writer
+        .write_fmt(format_args!(
+            "MASTER    {:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}\n",
+            pdb.remark_count(),
+            0, //defined to be empty
+            0, //numHet
+            0, //numHelix
+            0, //numSheet
+            0, //numTurn (deprecated)
+            0, //numSite
+            xform,
+            pdb.total_atom_count(),
+            pdb.model_count(),
+            0, //numConnect
+            0, //numSeq
+        ))
+        .unwrap();
     writer.write_fmt(format_args!("END\n")).unwrap();
 
     writer.flush().unwrap();

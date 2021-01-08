@@ -56,8 +56,10 @@ pub fn parse(filename: &str) -> Result<(PDB, Vec<PDBError>), PDBError> {
                 "MTRIX2" => lex_mtrix(linenumber, line, 1),
                 "MTRIX3" => lex_mtrix(linenumber, line, 2),
                 "MODEL " => lex_model(linenumber, line),
+                "MASTER" => lex_master(linenumber, line),
                 "ENDMDL" => Ok(LexItem::EndModel()),
-                "CONECT" => Ok(LexItem::Empty()),
+                "TER   " => Ok(LexItem::TER()),
+                "END   " => Ok(LexItem::End()),
                 _ => Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line))),
             }
         } else if line.len() > 2 {
@@ -169,13 +171,88 @@ pub fn parse(filename: &str) -> Result<(PDB, Vec<PDBError>), PDBError> {
                             .unwrap_or_else(|| panic!("Invalid space group: \"{}\"", spacegroup)),
                     );
                 }
+                LexItem::Master(
+                    num_remark,
+                    num_empty,
+                    _num_het,
+                    _num_helix,
+                    _num_sheet,
+                    _num_turn,
+                    _num_site,
+                    num_xform,
+                    num_coord,
+                    _num_ter,
+                    _num_connect,
+                    _num_seq,
+                ) => {
+                    // This has to be one of the last lines so push the current model
+                    if current_model.total_atom_count() > 0 {
+                        pdb.add_model(current_model);
+                        current_model = Model::new(0);
+                    }
+                    // The for now forgotten numbers will have to be added when the appropriate records are added to the parser
+                    if num_remark != pdb.remark_count() {
+                        errors.push(
+                            PDBError::new(
+                                ErrorLevel::StrictWarning,
+                                "MASTER checksum failed",
+                                &format!("The number of REMARKS ({}) is different then posed in the MASTER Record ({})", pdb.remark_count(), num_remark),
+                                Context::show(filename)
+                            )
+                        );
+                    }
+                    if num_empty != 0 {
+                        errors.push(
+                            PDBError::new(
+                                ErrorLevel::LooseWarning,
+                                "MASTER checksum failed",
+                                &format!("The empty checksum number is not empty (value: {}) while it is defined to be empty.", num_empty),
+                                Context::show(filename)
+                            )
+                        );
+                    }
+                    let mut xform = 0;
+                    if pdb.has_origx() && pdb.origx().valid() {
+                        xform += 3;
+                    }
+                    if pdb.has_scale() && pdb.scale().valid() {
+                        xform += 3;
+                    }
+                    for mtrix in pdb.mtrix() {
+                        if mtrix.valid() {
+                            xform += 3;
+                        }
+                    }
+                    if num_xform != xform {
+                        errors.push(
+                            PDBError::new(
+                                ErrorLevel::StrictWarning,
+                                "MASTER checksum failed",
+                                &format!("The number of coordinate transformation records ({}) is different then posed in the MASTER Record ({})", xform, num_xform),
+                                Context::show(filename)
+                            )
+                        );
+                    }
+                    if num_coord != pdb.total_atom_count() {
+                        errors.push(
+                            PDBError::new(
+                                ErrorLevel::StrictWarning,
+                                "MASTER checksum failed",
+                                &format!("The number of Atoms (Normal + Hetero) ({}) is different then posed in the MASTER Record ({})", pdb.total_atom_count(), num_coord),
+                                Context::show(filename)
+                            )
+                        );
+                    }
+                }
                 _ => (),
             }
         } else {
             errors.push(lineresult.unwrap_err())
         }
     }
-    pdb.add_model(current_model);
+    if current_model.total_atom_count() > 0 {
+        pdb.add_model(current_model);
+    }
     errors.extend(validate(&pdb));
 
     Ok((pdb, errors))
@@ -200,11 +277,11 @@ fn lex_remark(linenumber: usize, line: String) -> Result<LexItem, PDBError> {
     Ok(LexItem::Remark(
         number,
         if line.len() > 11 {
-            if line.len() - 11 > 68 {
+            if line.len() - 11 > 70 {
                 return Err(PDBError::new(
                     ErrorLevel::LooseWarning,
                     "Remark too long",
-                    "The REMARK is too long, the max is 68 characters.",
+                    "The REMARK is too long, the max is 70 characters.",
                     Context::line(linenumber, &line, 11, line.len() - 11),
                 ));
             }
@@ -270,7 +347,7 @@ fn lex_atom(linenumber: usize, line: String, hetero: bool) -> Result<LexItem, PD
         element = [chars[76], chars[77]];
     }
     let mut charge = 0;
-    if chars.len() >= 79 {
+    if chars.len() >= 79 && !(chars[78] == ' ' && chars[79] == ' ') {
         if !chars[78].is_ascii_digit() {
             return Err(PDBError::new(
                 ErrorLevel::BreakingError,
@@ -433,6 +510,40 @@ fn lex_mtrix(linenumber: usize, line: String, row: usize) -> Result<LexItem, PDB
     }
 
     Ok(LexItem::MtriX(row, ser, [a, b, c, d], given))
+}
+
+/// Lex a MASTER
+/// ## Fails
+/// It fails on incorrect numbers in the line
+fn lex_master(linenumber: usize, line: String) -> Result<LexItem, PDBError> {
+    let chars: Vec<char> = line.chars().collect();
+    let num_remark = parse_number(Context::line(linenumber, &line, 10, 5), &chars[10..15])?;
+    let num_empty = parse_number(Context::line(linenumber, &line, 15, 5), &chars[15..20])?;
+    let num_het = parse_number(Context::line(linenumber, &line, 20, 5), &chars[20..25])?;
+    let num_helix = parse_number(Context::line(linenumber, &line, 25, 5), &chars[25..30])?;
+    let num_sheet = parse_number(Context::line(linenumber, &line, 30, 5), &chars[30..35])?;
+    let num_turn = parse_number(Context::line(linenumber, &line, 35, 5), &chars[35..40])?;
+    let num_site = parse_number(Context::line(linenumber, &line, 40, 5), &chars[40..45])?;
+    let num_xform = parse_number(Context::line(linenumber, &line, 45, 5), &chars[45..50])?;
+    let num_coord = parse_number(Context::line(linenumber, &line, 50, 5), &chars[50..55])?;
+    let num_ter = parse_number(Context::line(linenumber, &line, 55, 5), &chars[55..60])?;
+    let num_connect = parse_number(Context::line(linenumber, &line, 60, 5), &chars[60..65])?;
+    let num_seq = parse_number(Context::line(linenumber, &line, 65, 5), &chars[65..70])?;
+
+    Ok(LexItem::Master(
+        num_remark,
+        num_empty,
+        num_het,
+        num_helix,
+        num_sheet,
+        num_turn,
+        num_site,
+        num_xform,
+        num_coord,
+        num_ter,
+        num_connect,
+        num_seq,
+    ))
 }
 
 /// Parse a number, generic for anything that can be parsed using FromStr

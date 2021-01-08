@@ -77,6 +77,21 @@ pub enum LexItem {
     Crystal(f64, f64, f64, f64, f64, f64, String, usize),
     /// A MODEL with its serial number
     Model(usize),
+    /// The Master record, having a checksum of the number of selected record types, used for verification
+    Master(
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+    ),
     /// ENDMODEL, end of the current model
     EndModel(),
     /// TER =, termination of ATOM lines to allow for HETATMs to be defined
