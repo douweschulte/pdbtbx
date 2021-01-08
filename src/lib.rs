@@ -1,4 +1,4 @@
-//! # Rust PDB (temporary name)
+//! # pdbtbx (PDB Toolbox)
 //!
 //! A library to work with crystallographic Protein DataBank files. It can parse the main part
 //! of the PDB format (it is actively in development so more will follow). After parsing the

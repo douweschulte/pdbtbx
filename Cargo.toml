@@ -1,17 +1,14 @@
 [package]
-name = "rust_pdb"
-version = "0.0.1"
+name = "pdbtbx"
+version = "0.1.0"
 authors = ["Douwe Schulte <d.schulte@uu.nl>"]
 license = "MIT"
 edition = "2018"
 description = "A library to open/edit/save (crystallographic) Protein Data Bank (PDB) files."
-repository = "https://github.com/nonnominandus/rust-pdb"
+repository = "https://github.com/nonnominandus/pdbtbx"
 readme = "README.md"
 keywords = ["pdb", "crystal", "protein", "pdb-parser"]
 categories = ["parser-implementations", "science"]
-
-[dependencies]
-
 
 [profile.dev]
 opt-level = 3
