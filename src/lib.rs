@@ -23,8 +23,8 @@
 //! to a file.
 //!
 //! ```
-//! use rust_pdb;
-//! let (mut pdb, _errors) = rust_pdb::parse("example-pdbs/1ubq.pdb").unwrap();
+//! use pdbtbx;
+//! let (mut pdb, _errors) = pdbtbx::parse("example-pdbs/1ubq.pdb").unwrap();
 //! pdb.remove_atoms_by(|atom| atom.element() == "H"); // Remove all H atoms
 //!
 //! let mut avg_b_factor = 0.0;
@@ -34,7 +34,7 @@
 //! avg_b_factor /= pdb.atom_count() as f64;
 //!
 //! println!("The average B factor of the protein is: {}", avg_b_factor);
-//! rust_pdb::save(&pdb, "dump/1ubq.pdb");
+//! pdbtbx::save(&pdb, "dump/1ubq.pdb");
 //! ```
 
 mod error;

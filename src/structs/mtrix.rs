@@ -59,8 +59,8 @@ impl MtriX {
     /// ## Example
     ///
     /// ```
-    /// use rust_pdb::TransformationMatrix;
-    /// use rust_pdb::MtriX;
+    /// use pdbtbx::TransformationMatrix;
+    /// use pdbtbx::MtriX;
     /// let mut example = MtriX::new();
     /// example.set_row(1, [0.0, 1.0, 0.0, 0.0]);
     /// example.set_row(2, [0.0, 0.0, 1.0, 0.0]);

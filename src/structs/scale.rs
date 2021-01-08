@@ -37,8 +37,8 @@ impl Scale {
     /// ## Example
     ///
     /// ```
-    /// use rust_pdb::TransformationMatrix;
-    /// use rust_pdb::Scale;
+    /// use pdbtbx::TransformationMatrix;
+    /// use pdbtbx::Scale;
     /// let mut example = Scale::new();
     /// example.set_row(1, [0.0, 1.0, 0.0, 0.0]);
     /// example.set_row(2, [0.0, 0.0, 1.0, 0.0]);

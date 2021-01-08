@@ -1,4 +1,4 @@
-use rust_pdb::*;
+use pdbtbx::*;
 use std::path::Path;
 use std::time::Instant;
 use std::{env, fs};

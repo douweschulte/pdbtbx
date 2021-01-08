@@ -37,8 +37,8 @@ impl OrigX {
     /// ## Example
     ///
     /// ```
-    /// use rust_pdb::TransformationMatrix;
-    /// use rust_pdb::OrigX;
+    /// use pdbtbx::TransformationMatrix;
+    /// use pdbtbx::OrigX;
     /// let mut example = OrigX::new();
     /// example.set_row(1, [0.0, 1.0, 0.0, 0.0]);
     /// example.set_row(2, [0.0, 0.0, 1.0, 0.0]);

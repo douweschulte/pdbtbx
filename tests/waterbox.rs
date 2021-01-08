@@ -1,4 +1,4 @@
-use rust_pdb::*;
+use pdbtbx::*;
 use std::time::Instant;
 
 #[test]
