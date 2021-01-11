@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
 use std::fmt;
@@ -244,6 +245,33 @@ impl Atom {
             .collect::<String>()
     }
 
+    /// Get the atomic number of this atom. If defined it uses `self.element()`, otherwise it uses `self.name()` of the atom.
+    /// ## Fails
+    /// It fails when the element() or name() is not a valid element name.
+    pub fn atomic_number(&self) -> Option<usize> {
+        if self.element != [' ', ' '] {
+            reference_tables::get_atomic_number(&self.element())
+        } else {
+            reference_tables::get_atomic_number(&self.name())
+        }
+    }
+
+    /// Get the atomic radius of this Atom in Å. The radius is defined up to Cm.
+    /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96.
+    /// Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL:
+    /// http://doi.wiley.com/10.1002/chem.201602949, doi:10.1002/chem.201602949.
+    /// ## Fails
+    /// It fails if the element name if this Atom is not defined (see `self.atomic_number()`).
+    /// It also fails when the atomic radius is not defined for the given atomic number, so if the atomic
+    /// number is higher than 96.
+    pub fn atomic_radius(&self) -> Option<f64> {
+        if let Some(s) = self.atomic_number() {
+            reference_tables::get_atomic_radius(s)
+        } else {
+            None
+        }
+    }
+
     /// Set the element of this atom
     /// ## Fails
     /// It fails if the element contains invalid characters (only ASCII graphic and space is allowed).
@@ -340,6 +368,30 @@ impl Atom {
             && self.charge() == other.charge()
             && ((self.atf.is_none() && other.atf.is_none())
                 || (self.atf.is_some() && other.atf.is_some()))
+    }
+
+    /// Checks if this Atom overlaps with the given atom. It overlaps if the sphere defined as sitting at
+    /// the atom position with a radius of the atomic radius (`atom.atomic_radius()`) intersect with this
+    /// sphere from the other Atom.
+    /// ## Fails
+    /// It fails if any one of the two radii are not defined.
+    pub fn overlaps(&self, other: &Atom) -> Option<bool> {
+        if let Some(self_rad) = self.atomic_radius() {
+            if let Some(other_rad) = other.atomic_radius() {
+                Some(
+                    self.x() + self_rad > other.x() - other_rad
+                        && self.x() - self_rad < other.x() + other_rad
+                        && self.y() + self_rad > other.y() - other_rad
+                        && self.y() - self_rad < other.y() + other_rad
+                        && self.z() + self_rad > other.z() - other_rad
+                        && self.z() - self_rad < other.z() + other_rad,
+                )
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 }
 

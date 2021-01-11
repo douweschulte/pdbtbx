@@ -216,9 +216,7 @@ impl Residue {
     /// Join this Residue with another Residue, this moves all atoms from the other Residue
     /// to this Residue. All other (meta) data of this Residue will stay the same.
     pub fn join(&mut self, other: Residue) {
-        for atom in other.atoms {
-            self.add_atom(atom)
-        }
+        self.atoms.extend(other.atoms);
     }
 }
 

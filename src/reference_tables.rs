@@ -28,11 +28,12 @@ pub fn get_transformation(index: usize) -> Option<&'static [[[f64; 4]; 3]]> {
     }
 }
 
-/// Gets the atomic number for the given element
+/// Gets the atomic number for the given element. It is case insensitive for the element name.
 pub fn get_atomic_number(element: &str) -> Option<usize> {
     let mut counter = 1;
+    let element = element.to_lowercase();
     for item in ELEMENT_SYMBOLS {
-        if *item == element {
+        if (*item).to_lowercase() == element {
             return Some(counter);
         }
         counter += 1;
@@ -40,7 +41,7 @@ pub fn get_atomic_number(element: &str) -> Option<usize> {
     None
 }
 
-/// Gets the atomic radius for the given atomic number (defined up until 'Cm')
+/// Gets the atomic radius for the given atomic number (defined up until 'Cm').
 /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96. Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: http://doi.wiley.com/10.1002/chem.201602949, doi:10.1002/chem.201602949.
 pub fn get_atomic_radius(atomic_number: usize) -> Option<f64> {
     match ELEMENT_RADII.get(atomic_number) {
@@ -21506,7 +21507,9 @@ const ELEMENT_SYMBOLS: &[&str] = &[
     "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In",
     "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb",
     "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl",
-    "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm",
+    "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk",
+    "Cf", "Es", "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh",
+    "Fl", "Mc", "Lv", "Ts", "Og",
 ];
 const ELEMENT_RADII: &[f64] = &[
     1.54, 1.34, 2.20, 2.19, 2.05, 1.90, 1.79, 1.71, 1.63, 1.56, 2.25, 2.40, 2.39, 2.32, 2.23, 2.14,
