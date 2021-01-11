@@ -20,3 +20,13 @@ Just for fun, to play with fancy abstractions. But at the same time I think that
 ## Contributors
 * Douwe Schulte
 * [Tianyi Shi](https://github.com/TianyiShi2001)
+
+## Changelog
+### v0.1.2
+* Added `.join()` on PDB. 
+* Fixed the behaviour of `.join()` on Model/Chain/Residue
+* Added atomic data lookup (number & radius) on Atoms
+* Added support for the `MASTER` PDB Record both while reading and saving
+
+### v0.1.1
+Textual changes to documentation
