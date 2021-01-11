@@ -282,7 +282,7 @@ impl Atom {
             .chars()
             .collect::<Vec<char>>();
         if chars.len() <= 2 {
-            if !check_chars(new_element.to_string()) {
+            if check_chars(new_element.to_string()) {
                 self.element = [chars[0], chars[1]];
                 Ok(())
             } else {
