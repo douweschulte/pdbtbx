@@ -24,9 +24,10 @@ Just for fun, to play with fancy abstractions. But at the same time I think that
 ## Changelog
 ### v0.1.2
 * Added `.join()` on PDB. 
-* Fixed the behaviour of `.join()` on Model/Chain/Residue
 * Added atomic data lookup (number & radius) on Atoms
+* Added `.overlaps()` function to Atom, which uses the atomic radius to determine if two atoms overlap
 * Added support for the `MASTER` PDB Record both while reading and saving
+* Fixed the behaviour of `.join()` on Model/Chain/Residue
 
 ### v0.1.1
 Textual changes to documentation
