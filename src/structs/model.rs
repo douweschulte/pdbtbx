@@ -439,32 +439,11 @@ impl Model {
     }
 
     /// Join this Model with another Model, this moves all atoms from the other Model
-    /// to this Model. All other (meta) data of this Model will stay the same.
+    /// to this Model. All other (meta) data of this Model will stay the same. It will add
+    /// new Chains and residues as defined in the other model.
     pub fn join(&mut self, other: Model) {
-        for chain in other.chains() {
-            for residue in chain.residues() {
-                for atom in residue.atoms() {
-                    self.add_atom(
-                        atom.clone(),
-                        chain.id(),
-                        residue.serial_number(),
-                        residue.id_array(),
-                    )
-                }
-            }
-        }
-        for chain in other.hetero_chains() {
-            for residue in chain.residues() {
-                for atom in residue.atoms() {
-                    self.add_hetero_atom(
-                        atom.clone(),
-                        chain.id(),
-                        residue.serial_number(),
-                        residue.id_array(),
-                    )
-                }
-            }
-        }
+        self.chains.extend(other.chains);
+        self.hetero_chains.extend(other.hetero_chains);
     }
 }
 

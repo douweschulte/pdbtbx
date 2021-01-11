@@ -237,11 +237,7 @@ impl Chain {
     /// Join this Chain with another Chain, this moves all atoms from the other Chain
     /// to this Chain. All other (meta) data of this Chain will stay the same.
     pub fn join(&mut self, other: Chain) {
-        for residue in other.residues() {
-            for atom in residue.atoms() {
-                self.add_atom(atom.clone(), residue.serial_number(), residue.id_array())
-            }
-        }
+        self.residues.extend(other.residues);
     }
 }
 
