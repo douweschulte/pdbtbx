@@ -177,6 +177,7 @@ impl Atom {
     /// The name should at max contain 4 characters (ASCII)
     /// The name can only contain valid characters, the ASCII graphic characters (char.is_ascii_graphic() || char == ' ')
     pub fn set_name(&mut self, new_name: &str) -> Result<(), String> {
+        let new_name = format!("{:^5}", new_name);
         let chars = new_name.to_ascii_uppercase().chars().collect::<Vec<char>>();
         if chars.len() < 5 {
             if check_chars(new_name.to_string()) {
@@ -277,6 +278,7 @@ impl Atom {
     /// It fails if the element contains invalid characters (only ASCII graphic and space is allowed).
     /// It also fails if the string is too ling, the max length is 2 characters.
     pub fn set_element(&mut self, new_element: &str) -> Result<(), String> {
+        let new_element = format!("{:>2}", new_element);
         let chars = new_element
             .to_ascii_uppercase()
             .chars()

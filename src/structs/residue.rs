@@ -64,6 +64,7 @@ impl Residue {
     /// It fails if any of the characters of the new name are invalid. It also fails if the new name is longer than allowed,
     /// the max length is 3 characters.
     pub fn set_id(&mut self, new_id: &str) -> Result<(), String> {
+        let new_id = format!("{:>3}", new_id);
         let chars = new_id.to_ascii_uppercase().chars().collect::<Vec<char>>();
         if chars.len() <= 3 {
             if check_chars(new_id.to_string()) {
