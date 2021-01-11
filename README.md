@@ -22,6 +22,9 @@ Just for fun, to play with fancy abstractions. But at the same time I think that
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Changelog
+### v0.1.3
+* Fixed a mistake witch prevented valid characters from being used to set various character based properties of atoms/residues/chains
+
 ### v0.1.2
 * Added `.join()` on PDB. 
 * Added atomic data lookup (number & radius) on Atoms
