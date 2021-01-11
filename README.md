@@ -22,10 +22,13 @@ Just for fun, to play with fancy abstractions. But at the same time I think that
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Changelog
-### v0.1.4
+### v0.1.5
+* Finally fixed the full bug encountered in v0.1.3
+
+### v0.1.4 (yanked)
 * Fixed a bug in which strings that are too short cause setter functions of various character based properties of atoms/residues/chains to panic
 
-### v0.1.3
+### v0.1.3 (yanked)
 * Fixed a mistake witch prevented valid characters from being used to set various character based properties of atoms/residues/chains
 
 ### v0.1.2
