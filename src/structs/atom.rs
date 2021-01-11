@@ -177,7 +177,7 @@ impl Atom {
     /// The name should at max contain 4 characters (ASCII)
     /// The name can only contain valid characters, the ASCII graphic characters (char.is_ascii_graphic() || char == ' ')
     pub fn set_name(&mut self, new_name: &str) -> Result<(), String> {
-        let new_name = format!("{:^5}", new_name);
+        let new_name = format!("{:^4}", new_name);
         let chars = new_name.to_ascii_uppercase().chars().collect::<Vec<char>>();
         if chars.len() < 5 {
             if check_chars(new_name.to_string()) {
@@ -446,5 +446,54 @@ impl PartialEq for Atom {
             && self.pos() == other.pos()
             && self.occupancy == other.occupancy
             && self.b_factor == other.b_factor
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Atom;
+
+    #[test]
+    fn set_name() {
+        let mut a = Atom::new(
+            0,
+            [' ', ' ', ' ', ' '],
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            [' ', ' '],
+            0,
+        )
+        .unwrap();
+        assert!(a.set_name("Å").is_err());
+        assert!(a.set_name("ATOMS").is_err());
+        a.set_name("ATOM").unwrap();
+        a.set_name("HOH").unwrap();
+        a.set_name("RK").unwrap();
+        a.set_name("R").unwrap();
+        a.set_name("").unwrap();
+    }
+
+    #[test]
+    fn set_element() {
+        let mut a = Atom::new(
+            0,
+            [' ', ' ', ' ', ' '],
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            [' ', ' '],
+            0,
+        )
+        .unwrap();
+        assert!(a.set_element("R̈").is_err());
+        assert!(a.set_element("HOH").is_err());
+        a.set_element("RK").unwrap();
+        a.set_element("R").unwrap();
+        a.set_element("").unwrap();
     }
 }
