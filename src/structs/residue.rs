@@ -66,7 +66,7 @@ impl Residue {
     pub fn set_id(&mut self, new_id: &str) -> Result<(), String> {
         let chars = new_id.to_ascii_uppercase().chars().collect::<Vec<char>>();
         if chars.len() <= 3 {
-            if !check_chars(new_id.to_string()) {
+            if check_chars(new_id.to_string()) {
                 self.id = [chars[0], chars[1], chars[2]];
                 Ok(())
             } else {

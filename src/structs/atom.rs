@@ -179,7 +179,7 @@ impl Atom {
     pub fn set_name(&mut self, new_name: &str) -> Result<(), String> {
         let chars = new_name.to_ascii_uppercase().chars().collect::<Vec<char>>();
         if chars.len() < 5 {
-            if !check_chars(new_name.to_string()) {
+            if check_chars(new_name.to_string()) {
                 self.name = [chars[0], chars[1], chars[2], chars[3]];
                 Ok(())
             } else {
