@@ -3,8 +3,12 @@ use std::time::Instant;
 
 #[test]
 fn simple_waterbox() {
-    let water = create_waterbox((25.0, 25.0, 25.0));
-    save(&water, "dump/waterbox.pdb").expect("Save not successful");
+    save(
+        create_waterbox((25.0, 25.0, 25.0)),
+        "dump/waterbox.pdb",
+        StrictnessLevel::Loose,
+    )
+    .expect("Save not successful");
 }
 
 fn create_waterbox(size: (f64, f64, f64)) -> PDB {

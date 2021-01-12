@@ -34,7 +34,7 @@
 //! avg_b_factor /= pdb.atom_count() as f64;
 //!
 //! println!("The average B factor of the protein is: {}", avg_b_factor);
-//! pdbtbx::save(&pdb, "dump/1ubq.pdb");
+//! pdbtbx::save(&pdb, "dump/1ubq.pdb", pdbtbx::StrictnessLevel::Loose);
 //! ```
 
 mod error;

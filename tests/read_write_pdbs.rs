@@ -32,7 +32,7 @@ fn do_someting(file: &str, output: &str) {
     println!("Working on file: {}", file);
     let now = Instant::now();
 
-    let (mut pdb, errors) = open(file, StrictnessLevel::Loose).unwrap();
+    let (pdb, errors) = open(file, StrictnessLevel::Loose).unwrap();
 
     let time = now.elapsed();
 
@@ -94,6 +94,5 @@ fn do_someting(file: &str, output: &str) {
         avg, avg_back, avg_side
     );
 
-    pdb.renumber();
-    save(&pdb, output).expect("Save not successful");
+    save(pdb, output, StrictnessLevel::Loose).expect("Save not successful");
 }

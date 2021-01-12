@@ -1,22 +1,47 @@
+use crate::error::*;
 use crate::structs::*;
+use crate::validate;
+use crate::StrictnessLevel;
 
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufWriter;
 
 /// Save the given PDB struct to the given file.
-/// It does not validate or renumber the PDB, so if that is needed that needs to be done in preparation.
-pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
+/// It validates and renumbers the PDB. It fails if the validation fails with the given `level`.
+/// If validation or renumbering gives rise to problems use the `save_raw` function.
+pub fn save(mut pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
+    pdb.renumber();
+    let mut errors = validate(&pdb);
+    for error in &errors {
+        if error.fails(level) {
+            return Err(errors);
+        }
+    }
+
     let file = match File::create(filename) {
         Ok(f) => f,
-        Err(e) => return Err(e.to_string()),
+        Err(e) => {
+            errors.push(PDBError::new(
+                ErrorLevel::BreakingError,
+                "Could not open file",
+                "Could not open the file for writing, make sure you have permission for this file and no other program is currently using it.",
+                Context::show(&e.to_string())
+            ));
+            return Err(errors);
+        }
     };
-    let mut writer = BufWriter::new(file);
 
+    save_raw(&pdb, BufWriter::new(file));
+    Ok(())
+}
+
+/// Save the given PDB struct to the given BufWriter.
+/// It does not validate or renumber the PDB, so if that is needed that needs to be done in preparation.
+pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
     // Remarks
     for line in pdb.remarks() {
-        writer
-            .write_fmt(format_args!("REMARK {:3} {}\n", line.0, line.1))
+        sink.write_fmt(format_args!("REMARK {:3} {}\n", line.0, line.1))
             .unwrap();
     }
 
@@ -28,24 +53,23 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
         } else {
             "P 1".to_string()
         };
-        writer
-            .write_fmt(format_args!(
-                "CRYST1{:9.3}{:9.3}{:9.3}{:7.2}{:7.2}{:7.2} {}\n",
-                unit_cell.a(),
-                unit_cell.b(),
-                unit_cell.c(),
-                unit_cell.alpha(),
-                unit_cell.beta(),
-                unit_cell.gamma(),
-                sym
-            ))
-            .unwrap();
+        sink.write_fmt(format_args!(
+            "CRYST1{:9.3}{:9.3}{:9.3}{:7.2}{:7.2}{:7.2} {}\n",
+            unit_cell.a(),
+            unit_cell.b(),
+            unit_cell.c(),
+            unit_cell.alpha(),
+            unit_cell.beta(),
+            unit_cell.gamma(),
+            sym
+        ))
+        .unwrap();
     }
 
     // Scale
     if pdb.has_scale() {
         let m = pdb.scale().transformation().matrix();
-        writer.write_fmt(format_args!(
+        sink.write_fmt(format_args!(
             "SCALE1    {:10.6}{:10.6}{:10.6}     {:10.5}\nSCALE2    {:10.6}{:10.6}{:10.6}     {:10.5}\nSCALE3    {:10.6}{:10.6}{:10.6}     {:10.5}\n",
             m[0][0],
             m[0][1],
@@ -65,7 +89,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     // OrigX
     if pdb.has_origx() {
         let m = pdb.origx().transformation().matrix();
-        writer.write_fmt(format_args!(
+        sink.write_fmt(format_args!(
             "ORIGX1    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX2    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX3    {:10.6}{:10.6}{:10.6}     {:10.5}\n",
             m[0][0],
             m[0][1],
@@ -85,7 +109,7 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     // MtriX
     for mtrix in pdb.mtrix() {
         let m = mtrix.transformation().matrix();
-        writer.write_fmt(format_args!(
+        sink.write_fmt(format_args!(
             "MTRIX1 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\nMTRIX2 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\nMTRIX3 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\n",
             mtrix.serial_number,
             m[0][0],
@@ -112,15 +136,14 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
     let multiple_models = pdb.models().size_hint().0 > 1;
     for model in pdb.models() {
         if multiple_models {
-            writer
-                .write_fmt(format_args!("MODEL        {}\n", model.serial_number()))
+            sink.write_fmt(format_args!("MODEL        {}\n", model.serial_number()))
                 .unwrap();
         }
 
         for chain in model.chains() {
             for residue in chain.residues() {
                 for atom in residue.atoms() {
-                    writer
+                    sink
                 .write_fmt(format_args!(
                     "ATOM  {:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}\n",
                     atom.serial_number(),
@@ -138,43 +161,47 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                 ))
                 .unwrap();
                     if atom.anisotropic_temperature_factors().is_some() {
-                        writer
-                            .write_fmt(format_args!(
-                        "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}\n",
-                        atom.serial_number(),
-                        atom.name(),
-                        residue.id(),
-                        chain.id(),
-                        residue.serial_number(),
-                        (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0) as isize,
-                        (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0) as isize,
-                        (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0) as isize,
-                        (atom.anisotropic_temperature_factors().unwrap()[1][0] * 10000.0) as isize,
-                        (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0) as isize,
-                        (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0) as isize,
-                        atom.element(),
-                        atom.pdb_charge(),
-                    ))
-                            .unwrap();
+                        sink.write_fmt(format_args!(
+                            "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}\n",
+                            atom.serial_number(),
+                            atom.name(),
+                            residue.id(),
+                            chain.id(),
+                            residue.serial_number(),
+                            (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0)
+                                as isize,
+                            (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0)
+                                as isize,
+                            (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0)
+                                as isize,
+                            (atom.anisotropic_temperature_factors().unwrap()[1][0] * 10000.0)
+                                as isize,
+                            (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0)
+                                as isize,
+                            (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0)
+                                as isize,
+                            atom.element(),
+                            atom.pdb_charge(),
+                        ))
+                        .unwrap();
                     }
                 }
             }
             let last_atom = chain.atoms().nth_back(0).unwrap();
             let last_residue = chain.residues().nth_back(0).unwrap();
-            writer
-                .write_fmt(format_args!(
-                    "TER{:5}      {:3} {}{:4} \n",
-                    last_atom.serial_number(),
-                    last_residue.id(),
-                    chain.id(),
-                    last_residue.serial_number()
-                ))
-                .unwrap();
+            sink.write_fmt(format_args!(
+                "TER{:5}      {:3} {}{:4} \n",
+                last_atom.serial_number(),
+                last_residue.id(),
+                chain.id(),
+                last_residue.serial_number()
+            ))
+            .unwrap();
         }
         for chain in model.hetero_chains() {
             for residue in chain.residues() {
                 for atom in residue.atoms() {
-                    writer
+                    sink
                 .write_fmt(format_args!(
                     "HETATM{:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}\n",
                     atom.serial_number(),
@@ -192,24 +219,29 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
                 ))
                 .unwrap();
                     if atom.anisotropic_temperature_factors().is_some() {
-                        writer
-                            .write_fmt(format_args!(
-                        "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}\n",
-                        atom.serial_number(),
-                        atom.name(),
-                        residue.id(),
-                        chain.id(),
-                        residue.serial_number(),
-                        (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0) as isize,
-                        (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0) as isize,
-                        (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0) as isize,
-                        (atom.anisotropic_temperature_factors().unwrap()[1][0] * 10000.0) as isize,
-                        (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0) as isize,
-                        (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0) as isize,
-                        atom.element(),
-                        atom.pdb_charge()
-                    ))
-                            .unwrap();
+                        sink.write_fmt(format_args!(
+                            "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}\n",
+                            atom.serial_number(),
+                            atom.name(),
+                            residue.id(),
+                            chain.id(),
+                            residue.serial_number(),
+                            (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0)
+                                as isize,
+                            (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0)
+                                as isize,
+                            (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0)
+                                as isize,
+                            (atom.anisotropic_temperature_factors().unwrap()[1][0] * 10000.0)
+                                as isize,
+                            (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0)
+                                as isize,
+                            (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0)
+                                as isize,
+                            atom.element(),
+                            atom.pdb_charge()
+                        ))
+                        .unwrap();
                     }
                 }
             }
@@ -228,25 +260,23 @@ pub fn save(pdb: &PDB, filename: &str) -> Result<(), String> {
             xform += 3;
         }
     }
-    writer
-        .write_fmt(format_args!(
-            "MASTER    {:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}\n",
-            pdb.remark_count(),
-            0, //defined to be empty
-            0, //numHet
-            0, //numHelix
-            0, //numSheet
-            0, //numTurn (deprecated)
-            0, //numSite
-            xform,
-            pdb.total_atom_count(),
-            pdb.model_count(),
-            0, //numConnect
-            0, //numSeq
-        ))
-        .unwrap();
-    writer.write_fmt(format_args!("END\n")).unwrap();
+    sink.write_fmt(format_args!(
+        "MASTER    {:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}\n",
+        pdb.remark_count(),
+        0, //defined to be empty
+        0, //numHet
+        0, //numHelix
+        0, //numSheet
+        0, //numTurn (deprecated)
+        0, //numSite
+        xform,
+        pdb.total_atom_count(),
+        pdb.model_count(),
+        0, //numConnect
+        0, //numSeq
+    ))
+    .unwrap();
+    sink.write_fmt(format_args!("END\n")).unwrap();
 
-    writer.flush().unwrap();
-    Ok(())
+    sink.flush().unwrap();
 }
