@@ -359,12 +359,12 @@ impl Model {
     }
 
     /// Add a Chain to the list of Chains making up this Model. This does not detect any duplicates of names or serial numbers in the list of Chains.
-    fn add_chain(&mut self, chain: Chain) {
+    pub fn add_chain(&mut self, chain: Chain) {
         self.chains.push(chain);
     }
 
     /// Add a Chain to the list of Hetero Chains making up this Model. This does not detect any duplicates of names or serial numbers in the list of Chains.
-    fn add_hetero_chain(&mut self, chain: Chain) {
+    pub fn add_hetero_chain(&mut self, chain: Chain) {
         self.hetero_chains.push(chain);
     }
 

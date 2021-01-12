@@ -157,7 +157,7 @@ impl Chain {
     }
 
     /// Add a Residue to the list of Residues making up this Chain. This does not detect any duplicates of names or serial numbers in the list of Residues.
-    fn add_residue(&mut self, residue: Residue) {
+    pub fn add_residue(&mut self, residue: Residue) {
         self.residues.push(residue);
     }
 

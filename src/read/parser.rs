@@ -22,7 +22,7 @@ pub fn open(filename: &str, level: StrictnessLevel) -> Result<(PDB, Vec<PDBError
     parse(reader, Context::show(filename), level)
 }
 
-/// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from rscb.org.
+/// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
 /// Returns an PDBError when it found a BreakingError. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// ## Arguments
