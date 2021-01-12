@@ -9,6 +9,7 @@ repository = "https://github.com/nonnominandus/pdbtbx"
 readme = "README.md"
 keywords = ["pdb", "crystal", "protein", "pdb-parser"]
 categories = ["parser-implementations", "science"]
+include = ["src/**/*", "LICENSE", "README.md"]
 
 [profile.dev]
 opt-level = 3
