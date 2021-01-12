@@ -287,7 +287,11 @@ impl PDB {
     /// Get the amount of Atoms making up this PDB.
     /// Including Hetero Atoms.
     pub fn total_atom_count(&self) -> usize {
-        self.models.len() * self.atom_count()
+        let mut total = 0;
+        for model in self.models() {
+            total += model.total_atom_count();
+        }
+        total
     }
 
     /// Get a specific Model from list of Models making up this PDB.
