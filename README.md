@@ -22,6 +22,16 @@ Just for fun, to play with fancy abstractions. But at the same time I think that
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Changelog
+### v0.2.0
+_API changes + additions_
+* Made `add_child` methods for model/chain/residue public.
+* Extended saving it now validates and renumbers the given PDB. It fails upon generation of validation errors, while the user can specify the error levels to allow
+* Added save_raw to save to a BufWriter. This function is called `save_raw`.
+* Extended parser error generation and handling. It now fails upon generation of errors, while the user can specify the error levels to allow
+* Added parser from BufReader. This function is called `parse` and the function previously called `parse` is renamed to `open`.
+* Rewrote `pdb.total_*_count()` as the previous version was inaccurate
+* Saved 21.4 MB in the published crate by ignoring certain files (thanks [Byron](https://github.com/Byron)!)
+
 ### v0.1.5
 * Finally fixed the full bug encountered in v0.1.3
 
@@ -32,6 +42,7 @@ Just for fun, to play with fancy abstractions. But at the same time I think that
 * Fixed a mistake witch prevented valid characters from being used to set various character based properties of atoms/residues/chains
 
 ### v0.1.2
+_API additions_
 * Added `.join()` on PDB. 
 * Added atomic data lookup (number & radius) on Atoms
 * Added `.overlaps()` function to Atom, which uses the atomic radius to determine if two atoms overlap
