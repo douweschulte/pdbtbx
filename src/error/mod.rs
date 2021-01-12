@@ -1,7 +1,7 @@
 mod context;
 mod errorlevel;
-mod parseerror;
+mod pdberror;
 
 pub use context::Context;
 pub use errorlevel::ErrorLevel;
-pub use parseerror::PDBError;
+pub use pdberror::PDBError;

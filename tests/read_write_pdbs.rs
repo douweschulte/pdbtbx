@@ -32,7 +32,7 @@ fn do_someting(file: &str, output: &str) {
     println!("Working on file: {}", file);
     let now = Instant::now();
 
-    let (mut pdb, errors) = parse(file).unwrap();
+    let (mut pdb, errors) = open(file, StrictnessLevel::Loose).unwrap();
 
     let time = now.elapsed();
 

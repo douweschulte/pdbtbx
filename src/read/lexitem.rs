@@ -65,7 +65,7 @@ pub enum LexItem {
         [[f64; 3]; 2],
         [char; 4],
         [char; 2],
-        [char; 2],
+        isize,
     ),
     /// A SCALEn line, as the row (1/2/3) and data
     Scale(usize, [f64; 4]),

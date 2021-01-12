@@ -1,3 +1,4 @@
+use crate::StrictnessLevel;
 use std::fmt;
 
 /// This indicates the level of the error, to handle it differently based on the level of the raised error.
@@ -23,11 +24,22 @@ impl ErrorLevel {
     /// the severity of the error.
     pub fn descriptor(&self) -> &str {
         match self {
-            ErrorLevel::BreakingError => "Error",
-            ErrorLevel::InvalidatingError => "Error",
-            ErrorLevel::StrictWarning => "Warning",
-            ErrorLevel::LooseWarning => "Warning",
-            ErrorLevel::GeneralWarning => "Warning",
+            ErrorLevel::BreakingError => "BreakingError",
+            ErrorLevel::InvalidatingError => "InvalidatingError",
+            ErrorLevel::StrictWarning => "StrictWarning",
+            ErrorLevel::LooseWarning => "LooseWarning",
+            ErrorLevel::GeneralWarning => "GeneralWarning",
+        }
+    }
+
+    /// Tests if this errors is breaking with the given strictness level
+    pub fn fails(&self, level: StrictnessLevel) -> bool {
+        match level {
+            StrictnessLevel::Strict => true,
+            StrictnessLevel::Medium => !matches!(self, ErrorLevel::GeneralWarning),
+            StrictnessLevel::Loose => {
+                !matches!(self, ErrorLevel::GeneralWarning | ErrorLevel::LooseWarning)
+            }
         }
     }
 }
