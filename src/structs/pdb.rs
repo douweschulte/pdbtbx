@@ -275,13 +275,21 @@ impl PDB {
     /// Get the amount of Chains making up this PDB.
     /// Including Hetero Chains.
     pub fn total_chain_count(&self) -> usize {
-        self.models.len() * self.chain_count()
+        let mut total = 0;
+        for model in self.models() {
+            total += model.total_chain_count();
+        }
+        total
     }
 
     /// Get the amount of Residues making up this PDB.
     /// Including Hetero Residues.
     pub fn total_residue_count(&self) -> usize {
-        self.models.len() * self.residue_count()
+        let mut total = 0;
+        for model in self.models() {
+            total += model.total_residue_count();
+        }
+        total
     }
 
     /// Get the amount of Atoms making up this PDB.
