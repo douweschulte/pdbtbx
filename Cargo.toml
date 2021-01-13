@@ -17,3 +17,4 @@ opt-level = 3
 [[bench]]
 name = "benchmark"
 harness = false
+path = "benches/benchmark.rs"
