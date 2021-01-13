@@ -22,6 +22,12 @@ Just for fun, to play with fancy abstractions. But at the same time I think that
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Changelog
+### Upcoming
+_API changes_
+* Exported `save_raw` was created in v0.2.0 but not accessible
+* Added `ENDMDL` records after model definitions while saving making saved ensemble files valid in other software
+* Extended warnings for validation of ensemble files, it will now generate a `LooseWarning` if `HETATM`s do not correspond
+* Changed the implementation of the `.remove_*_by` functions to be 75% faster
 ### v0.2.0
 _API changes + additions_
 * Made `add_child` methods for model/chain/residue public.

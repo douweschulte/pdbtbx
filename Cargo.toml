@@ -13,3 +13,7 @@ include = ["src/**/*", "LICENSE", "README.md"]
 
 [profile.dev]
 opt-level = 3
+
+[[bench]]
+name = "benchmark"
+harness = false
