@@ -238,8 +238,8 @@ mod tests {
         let new_pos = TransformationMatrix::rotation_x(44.5).apply(pos);
         let end = (
             0.0,
-            (44.5 as f64).to_radians().sin(),
-            -(44.5 as f64).to_radians().cos(),
+            44.5_f64.to_radians().sin(),
+            -44.5_f64.to_radians().cos(),
         );
         println!("{:?} vs {:?}", new_pos, end);
         assert!(close_tuple(new_pos, end));
@@ -287,9 +287,9 @@ mod tests {
         let pos = (0.0, 0.0, -1.0);
         let new_pos = TransformationMatrix::rotation_y(44.5).apply(pos);
         let end = (
-            -(44.5 as f64).to_radians().sin(),
+            -44.5_f64.to_radians().sin(),
             0.0,
-            -(44.5 as f64).to_radians().cos(),
+            -44.5_f64.to_radians().cos(),
         );
         println!("{:?} vs {:?}", new_pos, end);
         assert!(close_tuple(new_pos, end));
@@ -338,8 +338,8 @@ mod tests {
         let pos = (0.0, -1.0, 0.0);
         let new_pos = TransformationMatrix::rotation_z(44.5).apply(pos);
         let end = (
-            (44.5 as f64).to_radians().sin(),
-            -(44.5 as f64).to_radians().cos(),
+            44.5_f64.to_radians().sin(),
+            -44.5_f64.to_radians().cos(),
             0.0,
         );
         println!("{:?} vs {:?}", new_pos, end);

@@ -36,7 +36,7 @@
 //! println!("The average B factor of the protein is: {}", avg_b_factor);
 //! pdbtbx::save(pdb, "dump/1ubq.pdb", pdbtbx::StrictnessLevel::Loose);
 //! ```
-#![deny(missing_docs)]
+#![deny(missing_docs, trivial_casts, trivial_numeric_casts)]
 
 mod error;
 mod read;
