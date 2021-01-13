@@ -22,7 +22,7 @@ Just for fun, to play with fancy abstractions. But at the same time I think that
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Changelog
-### Upcoming
+### v0.2.1
 _API changes_
 * Exported `save_raw` was created in v0.2.0 but not accessible
 * Added `ENDMDL` records after model definitions while saving making saved ensemble files valid in other software
