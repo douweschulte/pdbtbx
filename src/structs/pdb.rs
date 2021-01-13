@@ -577,9 +577,7 @@ impl PDB {
     where
         F: Fn(&Model) -> bool,
     {
-        let models = std::mem::take(&mut self.models);
-        self.models
-            .extend(models.into_iter().filter(|model| !predicate(model)));
+        self.models.retain(|model| !predicate(model));
     }
 
     /// Remove the Model specified.

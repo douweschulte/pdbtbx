@@ -176,9 +176,7 @@ impl Chain {
     where
         F: Fn(&Residue) -> bool,
     {
-        let residues = std::mem::take(&mut self.residues);
-        self.residues
-            .extend(residues.into_iter().filter(|residue| !predicate(residue)));
+        self.residues.retain(|residue| !predicate(residue));
     }
 
     /// Remove the Residue specified.

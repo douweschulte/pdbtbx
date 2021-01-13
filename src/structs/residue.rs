@@ -150,9 +150,7 @@ impl Residue {
     where
         F: Fn(&Atom) -> bool,
     {
-        let atoms = std::mem::take(&mut self.atoms);
-        self.atoms
-            .extend(atoms.into_iter().filter(|atom| !predicate(atom)));
+        self.atoms.retain(|atom| !predicate(atom));
     }
 
     /// Remove the Atom specified.
