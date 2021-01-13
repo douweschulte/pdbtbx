@@ -246,6 +246,10 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
                 }
             }
         }
+
+        if multiple_models {
+            sink.write_fmt(format_args!("ENDMDL\n")).unwrap();
+        }
     }
 
     let mut xform = 0;
