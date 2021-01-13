@@ -98,6 +98,8 @@ impl TransformationMatrix {
         }
     }
 
+    /// This multiplies the translation with the given factors, this can be used to
+    /// convert fractional units into absolute units.
     pub fn multiply_translation(&mut self, factors: (f64, f64, f64)) {
         self.matrix[0][3] *= factors.0;
         self.matrix[1][3] *= factors.1;

@@ -6,14 +6,34 @@ pub enum Context {
     /// When no context can be given
     None,
     /// When only a line (eg filename) can be shown
-    Show { line: String },
-    /// When a full line is faulty and no special position can be annotated
-    FullLine { linenumber: usize, line: String },
-    /// When a special position can be annotated on a line
-    Line {
-        linenumber: usize,
+    Show {
+        /// The line to be shown to the user (eg filename)
         line: String,
+    },
+    /// When a full line is faulty and no special position can be annotated
+    FullLine {
+        /// The line number to recognise where the error is located
+        linenumber: usize,
+        /// The line to show the issue itself
+        line: String,
+    },
+    /// When a special position can be annotated on a line.
+    /// ```text
+    ///      |
+    /// 104  | ATOM      O  N   MET A   1      27.251  24.447   2.594  1.00 11.79           N
+    ///      |        ^^^^
+    ///        <-   -><-->
+    /// ```
+    /// The first space (annotated by `<-`, `->`) is the offset, in this case 7. The
+    /// second space is the length, in this case 4.
+    Line {
+        /// The line number to recognise where the error is located.
+        linenumber: usize,
+        /// The line to show the issue itself.
+        line: String,
+        /// The offset of the special position to be annotated.
         offset: usize,
+        /// The length of the special position to be annotated.
         length: usize,
     },
 }
