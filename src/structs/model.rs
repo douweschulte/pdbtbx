@@ -396,12 +396,8 @@ impl Model {
     where
         F: Fn(&Chain) -> bool,
     {
-        let chains = std::mem::take(&mut self.chains);
-        self.chains
-            .extend(chains.into_iter().filter(|chain| !predicate(chain)));
-        let hetero_chains = std::mem::take(&mut self.hetero_chains);
-        self.hetero_chains
-            .extend(hetero_chains.into_iter().filter(|chain| !predicate(chain)));
+        self.chains.retain(|chain| !predicate(chain));
+        self.hetero_chains.retain(|chain| !predicate(chain));
     }
 
     /// Remove the Chain specified.
