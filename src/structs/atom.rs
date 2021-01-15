@@ -372,6 +372,12 @@ impl Atom {
                 || (self.atf.is_some() && other.atf.is_some()))
     }
 
+    /// Gives the distance between the centers of two atoms.
+    pub fn distance(&self, other: &Atom) -> f64 {
+        ((other.x - self.x).powi(2) + (other.y - self.y).powi(2) + (other.z - self.z).powi(2))
+            .sqrt()
+    }
+
     /// Checks if this Atom overlaps with the given atom. It overlaps if the sphere defined as sitting at
     /// the atom position with a radius of the atomic radius (`atom.atomic_radius()`) intersect with this
     /// sphere from the other Atom.
@@ -380,14 +386,7 @@ impl Atom {
     pub fn overlaps(&self, other: &Atom) -> Option<bool> {
         if let Some(self_rad) = self.atomic_radius() {
             if let Some(other_rad) = other.atomic_radius() {
-                Some(
-                    self.x() + self_rad > other.x() - other_rad
-                        && self.x() - self_rad < other.x() + other_rad
-                        && self.y() + self_rad > other.y() - other_rad
-                        && self.y() - self_rad < other.y() + other_rad
-                        && self.z() + self_rad > other.z() - other_rad
-                        && self.z() - self_rad < other.z() + other_rad,
-                )
+                Some(self.distance(other) <= self_rad + other_rad)
             } else {
                 None
             }

@@ -57,43 +57,10 @@ where
                 context,
             )]);
         };
-        let lineresult = if line.len() > 6 {
-            match &line[..6] {
-                "REMARK" => lex_remark(linenumber, line),
-                "ATOM  " => lex_atom(linenumber, line, false),
-                "ANISOU" => lex_anisou(linenumber, line),
-                "HETATM" => lex_atom(linenumber, line, true),
-                "CRYST1" => lex_cryst(linenumber, line),
-                "SCALE1" => lex_scale(linenumber, line, 0),
-                "SCALE2" => lex_scale(linenumber, line, 1),
-                "SCALE3" => lex_scale(linenumber, line, 2),
-                "ORIGX1" => lex_origx(linenumber, line, 0),
-                "ORIGX2" => lex_origx(linenumber, line, 1),
-                "ORIGX3" => lex_origx(linenumber, line, 2),
-                "MTRIX1" => lex_mtrix(linenumber, line, 0),
-                "MTRIX2" => lex_mtrix(linenumber, line, 1),
-                "MTRIX3" => lex_mtrix(linenumber, line, 2),
-                "MODEL " => lex_model(linenumber, line),
-                "MASTER" => lex_master(linenumber, line),
-                "ENDMDL" => Ok((LexItem::EndModel(), Vec::new())),
-                "TER   " => Ok((LexItem::TER(), Vec::new())),
-                "END   " => Ok((LexItem::End(), Vec::new())),
-                _ => Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line))),
-            }
-        } else if line.len() > 2 {
-            match &line[..3] {
-                "TER" => Ok((LexItem::TER(), Vec::new())),
-                "END" => Ok((LexItem::End(), Vec::new())),
-                _ => Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line))),
-            }
-        } else if !line.is_empty() {
-            Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line)))
-        } else {
-            Ok((LexItem::Empty(), Vec::new()))
-        };
+        let line_result = lex_line(line, linenumber);
 
         // Then immediately add this lines information to the final PDB struct
-        if let Ok((result, line_errors)) = lineresult {
+        if let Ok((result, line_errors)) = line_result {
             errors.extend(line_errors);
             match result {
                 LexItem::Remark(num, text) => pdb.add_remark(num, text.to_string()),
@@ -266,7 +233,7 @@ where
                 _ => (),
             }
         } else {
-            errors.push(lineresult.unwrap_err())
+            errors.push(line_result.unwrap_err())
         }
     }
     if current_model.total_atom_count() > 0 {
@@ -281,6 +248,44 @@ where
     }
 
     Ok((pdb, errors))
+}
+
+/// Lex a full line. It returns a lexed item with errors if it can lex something, otherwise it will only return an error.
+fn lex_line(line: String, linenumber: usize) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+    if line.len() > 6 {
+        match &line[..6] {
+            "REMARK" => lex_remark(linenumber, line),
+            "ATOM  " => lex_atom(linenumber, line, false),
+            "ANISOU" => lex_anisou(linenumber, line),
+            "HETATM" => lex_atom(linenumber, line, true),
+            "CRYST1" => lex_cryst(linenumber, line),
+            "SCALE1" => lex_scale(linenumber, line, 0),
+            "SCALE2" => lex_scale(linenumber, line, 1),
+            "SCALE3" => lex_scale(linenumber, line, 2),
+            "ORIGX1" => lex_origx(linenumber, line, 0),
+            "ORIGX2" => lex_origx(linenumber, line, 1),
+            "ORIGX3" => lex_origx(linenumber, line, 2),
+            "MTRIX1" => lex_mtrix(linenumber, line, 0),
+            "MTRIX2" => lex_mtrix(linenumber, line, 1),
+            "MTRIX3" => lex_mtrix(linenumber, line, 2),
+            "MODEL " => lex_model(linenumber, line),
+            "MASTER" => lex_master(linenumber, line),
+            "ENDMDL" => Ok((LexItem::EndModel(), Vec::new())),
+            "TER   " => Ok((LexItem::TER(), Vec::new())),
+            "END   " => Ok((LexItem::End(), Vec::new())),
+            _ => Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line))),
+        }
+    } else if line.len() > 2 {
+        match &line[..3] {
+            "TER" => Ok((LexItem::TER(), Vec::new())),
+            "END" => Ok((LexItem::End(), Vec::new())),
+            _ => Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line))),
+        }
+    } else if !line.is_empty() {
+        Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line)))
+    } else {
+        Ok((LexItem::Empty(), Vec::new()))
+    }
 }
 
 /// Lex a REMARK
