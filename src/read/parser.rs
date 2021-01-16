@@ -5,6 +5,8 @@ use crate::structs::*;
 use crate::validate::*;
 use crate::StrictnessLevel;
 
+use std::cmp;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
@@ -40,6 +42,8 @@ where
     let mut errors = Vec::new();
     let mut pdb = PDB::new();
     let mut current_model = Model::new(0);
+    let mut sequence: HashMap<char, Vec<(usize, usize, Vec<String>)>> = HashMap::new();
+    let mut database_references = Vec::new();
 
     for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
@@ -157,6 +161,51 @@ where
                             .unwrap_or_else(|| panic!("Invalid space group: \"{}\"", spacegroup)),
                     );
                 }
+                LexItem::Seqres(ser_num, chain_id, num_res, values) => {
+                    if let Some(data) = sequence.get_mut(&chain_id) {
+                        data.push((ser_num, num_res, values));
+                    } else {
+                        sequence.insert(chain_id, vec![(ser_num, num_res, values)]);
+                    }
+                }
+                LexItem::Dbref(_pdb_id, chain_id, pdb_pos, db, db_acc, db_id, db_pos) => {
+                    database_references.push((
+                        chain_id,
+                        DatabaseReference::new(
+                            (db, db_acc, db_id),
+                            SequencePosition::from_tuple(pdb_pos),
+                            SequencePosition::from_tuple(db_pos),
+                        ),
+                    ));
+                }
+                LexItem::Seqadv(
+                    _id_code,
+                    chain_id,
+                    res_name,
+                    seq_num,
+                    _insert,
+                    _database,
+                    _database_accession,
+                    db_pos,
+                    comment,
+                ) => {
+                    if let Some((_, db_ref)) =
+                        database_references.iter_mut().find(|a| a.0 == chain_id)
+                    {
+                        db_ref.differences.push(SequenceDifference::new(
+                            (res_name, seq_num),
+                            db_pos,
+                            comment,
+                        ))
+                    } else {
+                        errors.push(PDBError::new(
+                            ErrorLevel::StrictWarning,
+                            "Sequence Difference Database not found",
+                            &format!("For this sequence difference (chain: {}) the corresponding database definition (DBREF) was not found, make sure the DBREF is located before the SEQADV", chain_id),
+                            context.clone()
+                        ))
+                    }
+                }
                 LexItem::Master(
                     num_remark,
                     num_empty,
@@ -239,6 +288,15 @@ where
     if current_model.total_atom_count() > 0 {
         pdb.add_model(current_model);
     }
+
+    for (chain_id, reference) in database_references {
+        if let Some(chain) = pdb.chains_mut().find(|a| a.id() == chain_id) {
+            chain.set_database_reference(reference);
+        }
+    }
+
+    errors.extend(validate_seqres(&mut pdb, sequence, &context));
+
     errors.extend(validate(&pdb));
 
     for error in &errors {
@@ -248,6 +306,124 @@ where
     }
 
     Ok((pdb, errors))
+}
+
+/// Validate the SEQRES data found, if there is any
+#[allow(clippy::comparison_chain)]
+fn validate_seqres(
+    pdb: &mut PDB,
+    sequence: HashMap<char, Vec<(usize, usize, Vec<String>)>>,
+    context: &Context,
+) -> Vec<PDBError> {
+    let mut errors = Vec::new();
+    for (chain_id, data) in sequence {
+        if let Some(chain) = pdb.chains_mut().find(|c| c.id() == chain_id) {
+            let mut chain_sequence = Vec::new();
+            let mut serial = 1;
+            let mut residues = 0;
+            for (ser_num, res_num, seq) in data {
+                if serial != ser_num {
+                    errors.push(PDBError::new(
+                        ErrorLevel::StrictWarning,
+                        "SEQRES serial number invalid",
+                        &format!("The serial number for SEQRES chain \"{}\" with number \"{}\" does not follow sequentially from the previous row.", chain_id, ser_num),
+                        context.clone()
+                    ));
+                }
+                serial += 1;
+                if residues == 0 {
+                    residues = res_num;
+                } else if residues != res_num {
+                    errors.push(PDBError::new(
+                        ErrorLevel::StrictWarning,
+                        "SEQRES residue total invalid",
+                        &format!("The residue total for SEQRES chain \"{}\" with number \"{}\" does not match the total on the first row for this chain.", chain_id, ser_num),
+                        context.clone()
+                    ));
+                }
+                chain_sequence.extend(seq);
+            }
+            if chain_sequence.len() != residues {
+                errors.push(PDBError::new(
+                    ErrorLevel::StrictWarning,
+                    "SEQRES residue total invalid",
+                    &format!("The residue total for SEQRES chain \"{}\" does not match the total residues found in the seqres records.", chain_id),
+                    context.clone()
+                ));
+            }
+            let mut offset = 1;
+            if let Some(db_ref) = chain.database_reference() {
+                offset = db_ref.pdb_position.start;
+                for dif in &db_ref.differences {
+                    if dif.database_residue.is_none() && dif.residue.1 < db_ref.pdb_position.start {
+                        // If there is a residue in front of the db sequence
+                        offset -= 1;
+                    }
+                }
+                if db_ref.pdb_position.end - offset + 1 != residues {
+                    errors.push(PDBError::new(
+                        ErrorLevel::StrictWarning,
+                        "SEQRES residue total invalid",
+                        &format!("The residue total for SEQRES chain \"{}\" does not match the total residues found in the dbref record.", chain_id),
+                        context.clone()
+                    ));
+                }
+            }
+
+            let copy = chain.clone();
+            let mut chain_res = copy.residues();
+            let mut next = chain_res.next();
+
+            for (raw_index, seq) in chain_sequence.iter().enumerate() {
+                let index = raw_index + offset;
+                if let Some(n) = next {
+                    if index == n.serial_number() {
+                        if *seq != n.id() {
+                            errors.push(PDBError::new(
+                                ErrorLevel::StrictWarning,
+                                "SEQRES residue invalid",
+                                &format!("The residue index {} value \"{}\" for SEQRES chain \"{}\" does not match the residue in the chain value \"{}\".", index, chain_sequence[index], chain_id, n.id()),
+                                context.clone()
+                            ));
+                        }
+                        next = chain_res.next();
+                    } else if index < n.serial_number() {
+                        let three = format!("{:<3}", seq).chars().collect::<Vec<char>>();
+                        chain.insert_residue(
+                            index,
+                            Residue::new(index, [three[0], three[1], three[2]], None).unwrap(),
+                        );
+                    } else {
+                        errors.push(PDBError::new(
+                            ErrorLevel::StrictWarning,
+                            "Chain residue invalid",
+                            &format!("The residue index {} value \"{}\" for Chain \"{}\" is not sequentially increasing, value expected: {}.", n.serial_number(), n.id(), chain_id, index),
+                            context.clone()
+                        ));
+                    }
+                } else {
+                    let three = format!("{:<3}", seq).chars().collect::<Vec<char>>();
+                    chain.add_residue(
+                        Residue::new(index, [three[0], three[1], three[2]], None).unwrap(),
+                    );
+                }
+            }
+
+            if chain_sequence.len() != chain.residue_count() {
+                errors.push(PDBError::new(
+                    ErrorLevel::StrictWarning,
+                    "SEQRES residue total invalid",
+                    &format!("The residue total ({}) for SEQRES chain \"{}\" does not match the total residues found in the chain ({}).", chain_sequence.len(), chain_id, chain.residue_count()),
+                    context.clone()
+                ));
+            } else {
+                for (index, original_res) in chain.residues().enumerate() {
+                    if chain_sequence[index] != original_res.id() {}
+                }
+            }
+        }
+    }
+    errors
 }
 
 /// Lex a full line. It returns a lexed item with errors if it can lex something, otherwise it will only return an error.
@@ -270,6 +446,9 @@ fn lex_line(line: String, linenumber: usize) -> Result<(LexItem, Vec<PDBError>),
             "MTRIX3" => lex_mtrix(linenumber, line, 2),
             "MODEL " => lex_model(linenumber, line),
             "MASTER" => lex_master(linenumber, line),
+            "SEQRES" => lex_seqres(linenumber, line),
+            "DBREF " => lex_dbref(linenumber, line),
+            "SEQADV" => lex_seqadv(linenumber, line),
             "ENDMDL" => Ok((LexItem::EndModel(), Vec::new())),
             "TER   " => Ok((LexItem::TER(), Vec::new())),
             "END   " => Ok((LexItem::End(), Vec::new())),
@@ -847,6 +1026,142 @@ fn lex_master(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
             num_ter,
             num_connect,
             num_seq,
+        ),
+        errors,
+    ))
+}
+
+fn lex_seqres(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+    let mut errors = Vec::new();
+    let chars: Vec<char> = line.chars().collect();
+    let mut check = |item| match item {
+        Ok(t) => t,
+        Err(e) => {
+            errors.push(e);
+            0
+        }
+    };
+    let ser_num = check(parse_number(
+        Context::line(linenumber, &line, 7, 3),
+        &chars[7..10],
+    ));
+    let chain_id = chars[11];
+    let num_res = check(parse_number(
+        Context::line(linenumber, &line, 13, 4),
+        &chars[13..17],
+    ));
+    let mut values = Vec::new();
+    let mut index = 19;
+    let max = cmp::min(chars.len(), 71);
+    while index + 3 < max {
+        let seq = chars[index..index + 3].iter().collect::<String>();
+        if seq == "   " {
+            break;
+        }
+        values.push(seq);
+        index += 4;
+    }
+    Ok((LexItem::Seqres(ser_num, chain_id, num_res, values), errors))
+}
+
+fn lex_dbref(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+    let mut errors = Vec::new();
+    let chars: Vec<char> = line.chars().collect();
+    let mut check = |item| match item {
+        Ok(t) => t,
+        Err(e) => {
+            errors.push(e);
+            0
+        }
+    };
+    let id_code = [chars[7], chars[8], chars[9], chars[10]];
+    let chain_id = chars[12];
+    let seq_begin = check(parse_number(
+        Context::line(linenumber, &line, 14, 4),
+        &chars[14..18],
+    ));
+    let insert_begin = chars[18];
+    let seq_end = check(parse_number(
+        Context::line(linenumber, &line, 21, 4),
+        &chars[21..24],
+    ));
+    let insert_end = chars[24];
+    let database = chars[26..32].iter().collect::<String>().trim().to_string();
+    let database_accession = chars[33..41].iter().collect::<String>().trim().to_string();
+    let database_id_code = chars[42..54].iter().collect::<String>().trim().to_string();
+    let database_seq_begin = check(parse_number(
+        Context::line(linenumber, &line, 55, 5),
+        &chars[55..60],
+    ));
+    let database_insert_begin = chars[60];
+    let database_seq_end = check(parse_number(
+        Context::line(linenumber, &line, 62, 5),
+        &chars[62..67],
+    ));
+    let database_insert_end = chars[67];
+
+    Ok((
+        LexItem::Dbref(
+            id_code,
+            chain_id,
+            (seq_begin, insert_begin, seq_end, insert_end),
+            database,
+            database_accession,
+            database_id_code,
+            (
+                database_seq_begin,
+                database_insert_begin,
+                database_seq_end,
+                database_insert_end,
+            ),
+        ),
+        errors,
+    ))
+}
+
+fn lex_seqadv(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+    let mut errors = Vec::new();
+    let chars: Vec<char> = line.chars().collect();
+    let mut check = |item| match item {
+        Ok(t) => t,
+        Err(e) => {
+            errors.push(e);
+            0
+        }
+    };
+    let id_code = [chars[7], chars[8], chars[9], chars[10]];
+    let res_name = [chars[12], chars[13], chars[14]];
+    let chain_id = chars[16];
+    let seq_num = check(parse_number(
+        Context::line(linenumber, &line, 18, 4),
+        &chars[18..22],
+    ));
+    let insert = chars[22];
+    let database = chars[24..28].iter().collect::<String>().trim().to_string();
+    let database_accession = chars[29..38].iter().collect::<String>().trim().to_string();
+
+    let mut db_pos = None;
+    if !chars[39..48].iter().all(|c| *c == ' ') {
+        let db_res_name = [chars[39], chars[40], chars[41]];
+        let db_seq_num = check(parse_number(
+            Context::line(linenumber, &line, 43, 5),
+            &chars[43..48],
+        ));
+        db_pos = Some((db_res_name, db_seq_num));
+    }
+    let comment = chars[49..].iter().collect::<String>().trim().to_string();
+
+    Ok((
+        LexItem::Seqadv(
+            id_code,
+            chain_id,
+            res_name,
+            seq_num,
+            insert,
+            database,
+            database_accession,
+            db_pos,
+            comment,
         ),
         errors,
     ))

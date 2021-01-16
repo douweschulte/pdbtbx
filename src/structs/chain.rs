@@ -9,6 +9,7 @@ pub struct Chain {
     id: char,
     /// The Residues making up this Chain
     residues: Vec<Residue>,
+    database_reference: Option<DatabaseReference>,
 }
 
 impl Chain {
@@ -26,6 +27,7 @@ impl Chain {
         Some(Chain {
             id,
             residues: Vec::new(),
+            database_reference: None,
         })
     }
 
@@ -42,6 +44,21 @@ impl Chain {
         } else {
             false
         }
+    }
+
+    /// Get the database reference, if any, for this chain.
+    pub fn database_reference(&self) -> Option<&DatabaseReference> {
+        self.database_reference.as_ref()
+    }
+
+    /// Get the database reference mutably, if any, for this chain.
+    pub fn database_reference_mut(&mut self) -> Option<&mut DatabaseReference> {
+        self.database_reference.as_mut()
+    }
+
+    /// Set the database reference for this chain.
+    pub fn set_database_reference(&mut self, reference: DatabaseReference) {
+        self.database_reference = Some(reference);
     }
 
     /// Get the amount of Residues making up this Chain
@@ -156,9 +173,15 @@ impl Chain {
         current_residue.add_atom(new_atom);
     }
 
-    /// Add a Residue to the list of Residues making up this Chain. This does not detect any duplicates of names or serial numbers in the list of Residues.
+    /// Add a Residue end of to the list of Residues making up this Chain. This does not detect any duplicates of names or serial numbers in the list of Residues.
     pub fn add_residue(&mut self, residue: Residue) {
         self.residues.push(residue);
+    }
+
+    /// Inserts a Residue to the index in the list of Residues making up this Chain. This does not detect any duplicates of names or serial numbers in the list of Residues.
+    /// This panics if `index > len`.
+    pub fn insert_residue(&mut self, index: usize, residue: Residue) {
+        self.residues.insert(index, residue);
     }
 
     /// Remove all Atoms matching the given predicate. As this is done in place this is the fastest way to remove Atoms from this Chain.

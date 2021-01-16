@@ -92,6 +92,30 @@ pub enum LexItem {
         usize,
         usize,
     ),
+    /// A SEQRES row
+    Seqres(usize, char, usize, Vec<String>),
+    /// A DBREF row in the original/standard format
+    Dbref(
+        [char; 4],
+        char,
+        (usize, char, usize, char),
+        String,
+        String,
+        String,
+        (usize, char, usize, char),
+    ),
+    /// A SEQADV row
+    Seqadv(
+        [char; 4],
+        char,
+        [char; 3],
+        usize,
+        char,
+        String,
+        String,
+        Option<([char; 3], usize)>,
+        String,
+    ),
     /// ENDMODEL, end of the current model
     EndModel(),
     /// TER =, termination of ATOM lines to allow for HETATMs to be defined
