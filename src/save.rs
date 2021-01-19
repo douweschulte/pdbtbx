@@ -8,10 +8,9 @@ use std::io::prelude::*;
 use std::io::BufWriter;
 
 /// Save the given PDB struct to the given file.
-/// It validates and renumbers the PDB. It fails if the validation fails with the given `level`.
-/// If validation or renumbering gives rise to problems use the `save_raw` function.
-pub fn save(mut pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
-    pdb.renumber();
+/// It validates the PDB. It fails if the validation fails with the given `level`.
+/// If validation gives rise to problems use the `save_raw` function.
+pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
     let mut errors = validate(&pdb);
     for error in &errors {
         if error.fails(level) {
