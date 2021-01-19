@@ -44,6 +44,23 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
             .unwrap();
     }
 
+    // MODRES
+    for chain in pdb.chains() {
+        for residue in chain.residues() {
+            if let Some((std_name, comment)) = residue.modification() {
+                sink.write_fmt(format_args!(
+                    "MODRES      {:3} {} {:4}  {:3}  {}\n",
+                    residue.id(),
+                    chain.id(),
+                    residue.serial_number(),
+                    std_name.iter().collect::<String>(),
+                    comment
+                ))
+                .unwrap();
+            }
+        }
+    }
+
     // Cryst
     if pdb.has_unit_cell() {
         let unit_cell = pdb.unit_cell();

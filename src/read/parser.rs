@@ -44,6 +44,7 @@ where
     let mut current_model = Model::new(0);
     let mut sequence: HashMap<char, Vec<(usize, usize, Vec<String>)>> = HashMap::new();
     let mut database_references = Vec::new();
+    let mut modifications = Vec::new();
 
     for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
@@ -206,6 +207,12 @@ where
                         ))
                     }
                 }
+                item @ LexItem::Modres(..) => modifications.push((
+                    Context::Show {
+                        line: format!("{:?}", item.clone()),
+                    },
+                    item,
+                )),
                 LexItem::Master(
                     num_remark,
                     num_empty,
@@ -296,6 +303,7 @@ where
     }
 
     errors.extend(validate_seqres(&mut pdb, sequence, &context));
+    errors.extend(add_modifications(&mut pdb, modifications));
 
     errors.extend(validate(&pdb));
 
@@ -426,6 +434,40 @@ fn validate_seqres(
     errors
 }
 
+/// Adds all MODRES records to the Atoms
+fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> Vec<PDBError> {
+    let mut errors = Vec::new();
+    for (context, item) in modifications {
+        match item {
+            LexItem::Modres(_, res_name, chain_id, seq_num, _, std_name, comment) => {
+                if let Some(chain) = pdb.chains_mut().find(|c| c.id() == chain_id) {
+                    if let Some(residue) = chain
+                        .residues_mut()
+                        .find(|r| r.id_array() == res_name && r.serial_number() == seq_num)
+                    {
+                        if let Err(e) = residue.set_modification((std_name, comment)) {
+                            errors.push(PDBError::new(
+                                ErrorLevel::InvalidatingError,
+                                "Invalid characters",
+                                &e,
+                                context,
+                            ));
+                        }
+                    } else {
+                        errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified chain in the PDB file.", context))
+                    }
+                } else {
+                    errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The chain presented in this MODRES record could not be found in the PDB file.", context))
+                }
+            }
+            _ => {
+                panic!("Found an invalid element in the modifications list, it is not a LexItem::Modres")
+            }
+        }
+    }
+    errors
+}
+
 /// Lex a full line. It returns a lexed item with errors if it can lex something, otherwise it will only return an error.
 fn lex_line(line: String, linenumber: usize) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     if line.len() > 6 {
@@ -446,9 +488,10 @@ fn lex_line(line: String, linenumber: usize) -> Result<(LexItem, Vec<PDBError>),
             "MTRIX3" => lex_mtrix(linenumber, line, 2),
             "MODEL " => lex_model(linenumber, line),
             "MASTER" => lex_master(linenumber, line),
-            "SEQRES" => lex_seqres(linenumber, line),
             "DBREF " => lex_dbref(linenumber, line),
+            "SEQRES" => lex_seqres(linenumber, line),
             "SEQADV" => lex_seqadv(linenumber, line),
+            "MODRES" => lex_modres(linenumber, line),
             "ENDMDL" => Ok((LexItem::EndModel(), Vec::new())),
             "TER   " => Ok((LexItem::TER(), Vec::new())),
             "END   " => Ok((LexItem::End(), Vec::new())),
@@ -1163,6 +1206,33 @@ fn lex_seqadv(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
             db_pos,
             comment,
         ),
+        errors,
+    ))
+}
+
+fn lex_modres(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+    let mut errors = Vec::new();
+    let chars: Vec<char> = line.chars().collect();
+    let mut check = |item| match item {
+        Ok(t) => t,
+        Err(e) => {
+            errors.push(e);
+            0
+        }
+    };
+    let id = [chars[7], chars[8], chars[9], chars[10]];
+    let res_name = [chars[12], chars[13], chars[14]];
+    let chain_id = chars[16];
+    let seq_num = check(parse_number(
+        Context::line(linenumber, &line, 18, 4),
+        &chars[18..22],
+    ));
+    let insert = chars[22];
+    let std_res = [chars[24], chars[25], chars[26]];
+    let comment = chars[29..].iter().collect::<String>().trim().to_string();
+
+    Ok((
+        LexItem::Modres(id, res_name, chain_id, seq_num, insert, std_res, comment),
         errors,
     ))
 }

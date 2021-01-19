@@ -2,7 +2,7 @@
 /// with all properties saved as primitive data types.
 ///
 /// See wwPDB v3.30 for detailed explanation of the meaning of all fields
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LexItem {
     /// A REMARK saved as the remark-type-number and the remark line itself
     Remark(usize, String),
@@ -116,6 +116,8 @@ pub enum LexItem {
         Option<([char; 3], usize)>,
         String,
     ),
+    /// A MODRES record, having information about modifications of atoms
+    Modres([char; 4], [char; 3], char, usize, char, [char; 3], String),
     /// ENDMODEL, end of the current model
     EndModel(),
     /// TER =, termination of ATOM lines to allow for HETATMs to be defined

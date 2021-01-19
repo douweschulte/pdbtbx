@@ -13,6 +13,8 @@ pub struct Residue {
     serial_number: usize,
     /// The list of atoms making up this Residue
     atoms: Vec<Atom>,
+    /// The modification, if present
+    modification: Option<([char; 3], String)>,
 }
 
 impl Residue {
@@ -34,6 +36,7 @@ impl Residue {
             id: name,
             serial_number: number,
             atoms: Vec::new(),
+            modification: None,
         };
 
         if let Some(a) = atom {
@@ -92,6 +95,32 @@ impl Residue {
     /// Set the serial number of the Residue
     pub fn set_serial_number(&mut self, new_number: usize) {
         self.serial_number = new_number;
+    }
+
+    /// Get the modification of this Residue e.g., chemical or post-translational. These will be saved in the MODRES records in the PDB file
+    pub fn modification(&self) -> Option<&([char; 3], String)> {
+        self.modification.as_ref()
+    }
+
+    /// Set the modification of this Residue e.g., chemical or post-translational. These will be saved in the MODRES records in the PDB file
+    pub fn set_modification(
+        &mut self,
+        new_modification: ([char; 3], String),
+    ) -> Result<(), String> {
+        if !check_char3(new_modification.0) {
+            Err(format!(
+                "New modification has invalid characters for standard residue name, residue: {}, standard name \"{}\"",
+                self.serial_number, new_modification.0.iter().collect::<String>()
+            ))
+        } else if !check_chars(new_modification.1.clone()) {
+            Err(format!(
+                "New modification has invalid characters the comment, residue: {}, comment \"{}\"",
+                self.serial_number, new_modification.1
+            ))
+        } else {
+            self.modification = Some(new_modification);
+            Ok(())
+        }
     }
 
     /// The amount of atoms making up this Residue
