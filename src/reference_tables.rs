@@ -21513,7 +21513,8 @@ const ELEMENT_SYMBOLS: &[&str] = &[
     "Cf", "Es", "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh",
     "Fl", "Mc", "Lv", "Ts", "Og",
 ];
-/// The radii of the elements up to Cs 96 
+
+/// The radii of the elements up to Cs 96
 const ELEMENT_RADII: &[f64] = &[
     1.54, 1.34, 2.20, 2.19, 2.05, 1.90, 1.79, 1.71, 1.63, 1.56, 2.25, 2.40, 2.39, 2.32, 2.23, 2.14,
     2.06, 1.97, 2.34, 2.70, 2.63, 2.57, 2.52, 2.33, 2.42, 2.26, 2.22, 2.19, 2.17, 2.22, 2.33, 2.34,
@@ -21522,6 +21523,7 @@ const ELEMENT_RADII: &[f64] = &[
     2.76, 2.75, 2.73, 2.72, 2.71, 2.77, 2.70, 2.64, 2.58, 2.53, 2.49, 2.44, 2.33, 2.30, 2.26, 2.29,
     2.42, 2.49, 2.50, 2.50, 2.47, 2.43, 2.58, 2.92, 2.93, 2.89, 2.85, 2.83, 2.80, 2.78, 2.76, 2.64,
 ];
+
 /// All amino acids
 const AMINO_ACIDS: &[&str] = &[
     "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS", "MET",
