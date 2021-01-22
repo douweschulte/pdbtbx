@@ -262,7 +262,8 @@ impl fmt::Display for Residue {
 
 impl Clone for Residue {
     fn clone(&self) -> Self {
-        let mut res = Residue::new(self.serial_number, self.id, None).unwrap();
+        let mut res = Residue::new(self.serial_number, self.id, None)
+            .expect("Invalid properties while cloning a Residue");
         res.atoms = self.atoms.clone();
         res
     }

@@ -3,6 +3,7 @@
 /// A 3D affine transformation matrix
 #[derive(Debug, Clone, PartialEq)]
 pub struct TransformationMatrix {
+    /// The matrix itself
     matrix: [[f64; 4]; 3],
 }
 
@@ -204,38 +205,38 @@ mod tests {
     #[test]
     fn rot_x() {
         // 90 deg y
-        let pos = (0.0, 10.0, 0.0);
-        let new_pos = TransformationMatrix::rotation_x(90.0).apply(pos);
+        let mut pos = (0.0, 10.0, 0.0);
+        let mut new_pos = TransformationMatrix::rotation_x(90.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, 0.0, 10.0)));
         // 90 deg z
-        let pos = (0.0, 0.0, 10.0);
-        let new_pos = TransformationMatrix::rotation_x(90.0).apply(pos);
+        pos = (0.0, 0.0, 10.0);
+        new_pos = TransformationMatrix::rotation_x(90.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, -10.0, 0.0)));
         // -90 deg z
-        let pos = (0.0, 0.0, 10.0);
-        let new_pos = TransformationMatrix::rotation_x(-90.0).apply(pos);
+        pos = (0.0, 0.0, 10.0);
+        new_pos = TransformationMatrix::rotation_x(-90.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, 10.0, 0.0)));
         // 180 deg z
-        let pos = (0.0, 0.0, 10.0);
-        let new_pos = TransformationMatrix::rotation_x(180.0).apply(pos);
+        pos = (0.0, 0.0, 10.0);
+        new_pos = TransformationMatrix::rotation_x(180.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, 0.0, -10.0)));
         // -180 deg z
-        let pos = (0.0, 0.0, 10.0);
-        let new_pos = TransformationMatrix::rotation_x(-180.0).apply(pos);
+        pos = (0.0, 0.0, 10.0);
+        new_pos = TransformationMatrix::rotation_x(-180.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, 0.0, -10.0)));
         // 360 deg z
-        let pos = (0.0, 0.0, 10.0);
-        let new_pos = TransformationMatrix::rotation_x(360.0).apply(pos);
+        pos = (0.0, 0.0, 10.0);
+        new_pos = TransformationMatrix::rotation_x(360.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, 0.0, 10.0)));
         // 44.5 deg z
-        let pos = (0.0, 0.0, -1.0);
-        let new_pos = TransformationMatrix::rotation_x(44.5).apply(pos);
+        pos = (0.0, 0.0, -1.0);
+        new_pos = TransformationMatrix::rotation_x(44.5).apply(pos);
         let end = (
             0.0,
             44.5_f64.to_radians().sin(),
@@ -244,8 +245,8 @@ mod tests {
         println!("{:?} vs {:?}", new_pos, end);
         assert!(close_tuple(new_pos, end));
         // 44.5 + 45.5 deg z
-        let pos = (0.0, 0.0, -1.0);
-        let new_pos = TransformationMatrix::rotation_x(44.5)
+        pos = (0.0, 0.0, -1.0);
+        new_pos = TransformationMatrix::rotation_x(44.5)
             .combine(&TransformationMatrix::rotation_x(45.5))
             .apply(pos);
         println!("{:?}", new_pos);
@@ -254,38 +255,38 @@ mod tests {
     #[test]
     fn rot_y() {
         // 90 deg x
-        let pos = (10.0, 0.0, 0.0);
-        let new_pos = TransformationMatrix::rotation_y(90.0).apply(pos);
+        let mut pos = (10.0, 0.0, 0.0);
+        let mut new_pos = TransformationMatrix::rotation_y(90.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, 0.0, -10.0)));
         // 90 deg z
-        let pos = (0.0, 0.0, 10.0);
-        let new_pos = TransformationMatrix::rotation_y(90.0).apply(pos);
+        pos = (0.0, 0.0, 10.0);
+        new_pos = TransformationMatrix::rotation_y(90.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (10.0, 0.0, 0.0)));
         // -90 deg z
-        let pos = (0.0, 0.0, 10.0);
-        let new_pos = TransformationMatrix::rotation_y(-90.0).apply(pos);
+        pos = (0.0, 0.0, 10.0);
+        new_pos = TransformationMatrix::rotation_y(-90.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (-10.0, 0.0, 0.0)));
         // 180 deg z
-        let pos = (0.0, 0.0, 10.0);
-        let new_pos = TransformationMatrix::rotation_y(180.0).apply(pos);
+        pos = (0.0, 0.0, 10.0);
+        new_pos = TransformationMatrix::rotation_y(180.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, 0.0, -10.0)));
         // -180 deg z
-        let pos = (0.0, 0.0, 10.0);
-        let new_pos = TransformationMatrix::rotation_y(-180.0).apply(pos);
+        pos = (0.0, 0.0, 10.0);
+        new_pos = TransformationMatrix::rotation_y(-180.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, 0.0, -10.0)));
         // 360 deg z
-        let pos = (0.0, 0.0, 10.0);
-        let new_pos = TransformationMatrix::rotation_y(360.0).apply(pos);
+        pos = (0.0, 0.0, 10.0);
+        new_pos = TransformationMatrix::rotation_y(360.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, 0.0, 10.0)));
         // 44.5 deg z
-        let pos = (0.0, 0.0, -1.0);
-        let new_pos = TransformationMatrix::rotation_y(44.5).apply(pos);
+        pos = (0.0, 0.0, -1.0);
+        new_pos = TransformationMatrix::rotation_y(44.5).apply(pos);
         let end = (
             -44.5_f64.to_radians().sin(),
             0.0,
@@ -294,8 +295,8 @@ mod tests {
         println!("{:?} vs {:?}", new_pos, end);
         assert!(close_tuple(new_pos, end));
         // 44.5 + 45.5 deg z
-        let pos = (0.0, 0.0, -1.0);
-        let new_pos = TransformationMatrix::rotation_y(44.5)
+        pos = (0.0, 0.0, -1.0);
+        new_pos = TransformationMatrix::rotation_y(44.5)
             .combine(&TransformationMatrix::rotation_y(45.5))
             .apply(pos);
         println!("{:?}", new_pos);
@@ -305,38 +306,38 @@ mod tests {
     #[test]
     fn rot_z() {
         // 90 deg x
-        let pos = (10.0, 0.0, 0.0);
-        let new_pos = TransformationMatrix::rotation_z(90.0).apply(pos);
+        let mut pos = (10.0, 0.0, 0.0);
+        let mut new_pos = TransformationMatrix::rotation_z(90.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, 10.0, 0.0)));
         // 90 deg y
-        let pos = (0.0, 10.0, 0.0);
-        let new_pos = TransformationMatrix::rotation_z(90.0).apply(pos);
+        pos = (0.0, 10.0, 0.0);
+        new_pos = TransformationMatrix::rotation_z(90.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (-10.0, 0.0, 0.0)));
         // -90 deg y
-        let pos = (0.0, 10.0, 0.0);
-        let new_pos = TransformationMatrix::rotation_z(-90.0).apply(pos);
+        pos = (0.0, 10.0, 0.0);
+        new_pos = TransformationMatrix::rotation_z(-90.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (10.0, 0.0, 0.0)));
         // 180 deg y
-        let pos = (0.0, 10.0, 0.0);
-        let new_pos = TransformationMatrix::rotation_z(180.0).apply(pos);
+        pos = (0.0, 10.0, 0.0);
+        new_pos = TransformationMatrix::rotation_z(180.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, -10.0, 0.0)));
         // -180 deg y
-        let pos = (0.0, 10.0, 0.0);
-        let new_pos = TransformationMatrix::rotation_z(-180.0).apply(pos);
+        pos = (0.0, 10.0, 0.0);
+        new_pos = TransformationMatrix::rotation_z(-180.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (0.0, -10.0, 0.0)));
         // 360 deg x
-        let pos = (10.0, 0.0, 0.0);
-        let new_pos = TransformationMatrix::rotation_z(360.0).apply(pos);
+        pos = (10.0, 0.0, 0.0);
+        new_pos = TransformationMatrix::rotation_z(360.0).apply(pos);
         println!("{:?}", new_pos);
         assert!(close_tuple(new_pos, (10.0, 0.0, 0.0)));
         // 44.5 deg y
-        let pos = (0.0, -1.0, 0.0);
-        let new_pos = TransformationMatrix::rotation_z(44.5).apply(pos);
+        pos = (0.0, -1.0, 0.0);
+        new_pos = TransformationMatrix::rotation_z(44.5).apply(pos);
         let end = (
             44.5_f64.to_radians().sin(),
             -44.5_f64.to_radians().cos(),
@@ -345,8 +346,8 @@ mod tests {
         println!("{:?} vs {:?}", new_pos, end);
         assert!(close_tuple(new_pos, end));
         // 44.5 + 45.5 deg y
-        let pos = (0.0, -1.0, 0.0);
-        let new_pos = TransformationMatrix::rotation_z(44.5)
+        pos = (0.0, -1.0, 0.0);
+        new_pos = TransformationMatrix::rotation_z(44.5)
             .combine(&TransformationMatrix::rotation_z(45.5))
             .apply(pos);
         println!("{:?}", new_pos);
@@ -355,27 +356,27 @@ mod tests {
 
     #[test]
     fn translation() {
-        let pos = (10.0, 0.0, 0.0);
-        let new_pos = TransformationMatrix::translation(-10.0, 0.0, 0.0).apply(pos);
+        let mut pos = (10.0, 0.0, 0.0);
+        let mut new_pos = TransformationMatrix::translation(-10.0, 0.0, 0.0).apply(pos);
         assert!(close_tuple(new_pos, (0.0, 0.0, 0.0)));
-        let pos = (-897.0, 0.0023, 1.0);
-        let new_pos = TransformationMatrix::translation(897.0, -0.0023, -1.0).apply(pos);
+        pos = (-897.0, 0.0023, 1.0);
+        new_pos = TransformationMatrix::translation(897.0, -0.0023, -1.0).apply(pos);
         assert!(close_tuple(new_pos, (0.0, 0.0, 0.0)));
-        let pos = (0.0, 0.0, 0.0);
-        let new_pos = TransformationMatrix::translation(0.0, 0.0, 0.0).apply(pos);
+        pos = (0.0, 0.0, 0.0);
+        new_pos = TransformationMatrix::translation(0.0, 0.0, 0.0).apply(pos);
         assert!(close_tuple(new_pos, (0.0, 0.0, 0.0)));
     }
 
     #[test]
     fn magnification() {
-        let pos = (10.0, 0.0, 0.0);
-        let new_pos = TransformationMatrix::magnify(10.0).apply(pos);
+        let mut pos = (10.0, 0.0, 0.0);
+        let mut new_pos = TransformationMatrix::magnify(10.0).apply(pos);
         assert!(close_tuple(new_pos, (100.0, 0.0, 0.0)));
-        let pos = (-897.0, 0.0023, 1.0);
-        let new_pos = TransformationMatrix::magnify(0.1).apply(pos);
+        pos = (-897.0, 0.0023, 1.0);
+        new_pos = TransformationMatrix::magnify(0.1).apply(pos);
         assert!(close_tuple(new_pos, (-89.7, 0.00023, 0.1)));
-        let pos = (0.0, 1.0, 0.0);
-        let new_pos = TransformationMatrix::magnify(2.5).apply(pos);
+        pos = (0.0, 1.0, 0.0);
+        new_pos = TransformationMatrix::magnify(2.5).apply(pos);
         assert!(close_tuple(new_pos, (0.0, 2.5, 0.0)));
     }
 

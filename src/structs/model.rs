@@ -313,6 +313,7 @@ impl Model {
                 break;
             }
         }
+        #[allow(clippy::unwrap_used)]
         if !found {
             // As this moves the chain the atom should be added later to keep the reference intact
             self.chains.push(new_chain);
@@ -350,6 +351,7 @@ impl Model {
                 break;
             }
         }
+        #[allow(clippy::unwrap_used)]
         if !found {
             self.hetero_chains.push(new_chain);
             current_chain = self.hetero_chains.last_mut().unwrap();

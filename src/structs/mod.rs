@@ -1,3 +1,4 @@
+#![allow(clippy::missing_docs_in_private_items)]
 mod atom;
 mod chain;
 mod database_reference;

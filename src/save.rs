@@ -37,6 +37,7 @@ pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<
 
 /// Save the given PDB struct to the given BufWriter.
 /// It does not validate or renumber the PDB, so if that is needed that needs to be done in preparation.
+#[allow(clippy::unwrap_used)]
 pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
     // Remarks
     for line in pdb.remarks() {
@@ -176,6 +177,7 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
                     atom.pdb_charge(),
                 ))
                 .unwrap();
+                    #[allow(clippy::cast_possible_truncation)]
                     if atom.anisotropic_temperature_factors().is_some() {
                         sink.write_fmt(format_args!(
                             "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}\n",
@@ -234,6 +236,7 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
                     atom.pdb_charge()
                 ))
                 .unwrap();
+                    #[allow(clippy::cast_possible_truncation)]
                     if atom.anisotropic_temperature_factors().is_some() {
                         sink.write_fmt(format_args!(
                             "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}\n",

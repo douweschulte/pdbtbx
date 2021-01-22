@@ -9,6 +9,7 @@ pub struct Chain {
     id: char,
     /// The Residues making up this Chain
     residues: Vec<Residue>,
+    /// A possible reference to a database for this chain
     database_reference: Option<DatabaseReference>,
 }
 
@@ -165,6 +166,7 @@ impl Chain {
                 break;
             }
         }
+        #[allow(clippy::unwrap_used)]
         if !found {
             self.residues.push(new_residue);
             current_residue = self.residues.last_mut().unwrap();
@@ -276,7 +278,7 @@ impl fmt::Display for Chain {
 
 impl Clone for Chain {
     fn clone(&self) -> Self {
-        let mut chain = Chain::new(self.id).unwrap();
+        let mut chain = Chain::new(self.id).expect("Invalid Chain id while cloning a Chain");
 
         chain.residues = self.residues.clone();
         chain

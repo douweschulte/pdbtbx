@@ -36,15 +36,49 @@
 //! println!("The average B factor of the protein is: {}", avg_b_factor);
 //! pdbtbx::save(pdb, "dump/1ubq.pdb", pdbtbx::StrictnessLevel::Loose);
 //! ```
-#![deny(missing_docs, trivial_casts, trivial_numeric_casts)]
+#![deny(
+    missing_docs,
+    trivial_casts,
+    trivial_numeric_casts,
+    missing_debug_implementations,
+    unused
+)]
+// Clippy lints
+#![deny(
+    clippy::enum_glob_use,
+    clippy::single_match_else,
+    clippy::nonminimal_bool,
+    clippy::pub_enum_variant_names,
+    clippy::print_stdout,
+    clippy::use_debug,
+    clippy::shadow_unrelated,
+    clippy::shadow_same,
+    clippy::shadow_reuse,
+    clippy::filter_map,
+    clippy::missing_docs_in_private_items,
+    clippy::unwrap_used,
+    clippy::map_unwrap_or,
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::similar_names
+)]
 
+/// To save and display errors
 mod error;
+/// To open PDB files
 mod read;
+/// Reference tables for constants
 mod reference_tables;
+/// To save PDB files
 mod save;
+/// To determine the level of scrutiny that a step should display
 mod strictness_level;
 mod structs;
+/// To handle transformations
 mod transformation;
+/// To validate certain invariants of PDB files
 mod validate;
 
 pub use error::*;

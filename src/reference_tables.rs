@@ -67,6 +67,7 @@ pub fn valid_remark_type_number(number: usize) -> bool {
     REMARK_TYPES.contains(&number)
 }
 
+/// The valid remark type numbers as of PDB v3.30
 const REMARK_TYPES: [usize; 41] = [
     0, 1, 2, 3, 4, 5, 100, 200, 205, 210, 215, 217, 230, 240, 245, 247, 250, 265, 280, 285, 290,
     300, 350, 375, 450, 465, 470, 475, 480, 500, 525, 600, 610, 615, 620, 630, 650, 700, 800, 900,
@@ -21501,6 +21502,7 @@ const SYMBOL_TRANSFORMATION: &[&[[[f64; 4]; 3]]] = &[
     ],
 ];
 
+/// The symbols/names of the elements of the periodic table
 const ELEMENT_SYMBOLS: &[&str] = &[
     "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl",
     "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As",
@@ -21511,6 +21513,7 @@ const ELEMENT_SYMBOLS: &[&str] = &[
     "Cf", "Es", "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh",
     "Fl", "Mc", "Lv", "Ts", "Og",
 ];
+/// The radii of the elements up to Cs 96 
 const ELEMENT_RADII: &[f64] = &[
     1.54, 1.34, 2.20, 2.19, 2.05, 1.90, 1.79, 1.71, 1.63, 1.56, 2.25, 2.40, 2.39, 2.32, 2.23, 2.14,
     2.06, 1.97, 2.34, 2.70, 2.63, 2.57, 2.52, 2.33, 2.42, 2.26, 2.22, 2.19, 2.17, 2.22, 2.33, 2.34,
@@ -21519,11 +21522,13 @@ const ELEMENT_RADII: &[f64] = &[
     2.76, 2.75, 2.73, 2.72, 2.71, 2.77, 2.70, 2.64, 2.58, 2.53, 2.49, 2.44, 2.33, 2.30, 2.26, 2.29,
     2.42, 2.49, 2.50, 2.50, 2.47, 2.43, 2.58, 2.92, 2.93, 2.89, 2.85, 2.83, 2.80, 2.78, 2.76, 2.64,
 ];
+/// All amino acids
 const AMINO_ACIDS: &[&str] = &[
     "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS", "MET",
     "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
 ];
 
+/// The list of Hermann Mauguin symbols in the same order as in the handbook
 const HERMANN_MAUGUIN_SYMBOL: &[&str] = &[
     "P 1",
     "P -1",

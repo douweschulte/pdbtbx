@@ -35,6 +35,7 @@ impl Symmetry {
     }
 
     /// Get the Z value, the number of polymeric sub units in a unit cell, for this space group
+    #[allow(clippy::unwrap_used)]
     pub fn z(&self) -> usize {
         reference_tables::get_transformation(self.index)
             .unwrap()
@@ -50,6 +51,7 @@ impl Symmetry {
     /// Get the transformations for this space group needed to fill the unit cell.
     /// The first transformation is always an identity transformation.
     /// The translation is fractional to the unit cell size.
+    #[allow(clippy::unwrap_used)]
     pub fn transformations(&self) -> Vec<TransformationMatrix> {
         let matrices = reference_tables::get_transformation(self.index).unwrap();
         let mut output = Vec::with_capacity(matrices.len() + 1);
@@ -63,6 +65,7 @@ impl Symmetry {
     /// Get the transformations for this space group needed to fill the unit cell.
     /// The first transformation is always an identity transformation.
     /// The translation is in Å.
+    #[allow(clippy::unwrap_used)]
     pub fn transformations_absolute(&self, unit_cell: &UnitCell) -> Vec<TransformationMatrix> {
         let matrices = reference_tables::get_transformation(self.index).unwrap();
         let mut output = Vec::with_capacity(matrices.len() + 1);
@@ -89,6 +92,7 @@ mod tests {
     use super::Symmetry;
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn both_creations() {
         let a = Symmetry::new("P 21 21 21").unwrap();
         let b = Symmetry::from_index(19).unwrap();
@@ -102,6 +106,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn symbol_invariant() {
         let a = Symmetry::new("P 21 21 21").unwrap();
         assert_eq!(a.symbol(), "P 21 21 21")

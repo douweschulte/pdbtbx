@@ -307,6 +307,7 @@ impl Atom {
     }
 
     /// Get the charge in the PDB format [0-9][-+]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn pdb_charge(&self) -> String {
         if self.charge == 0 {
             String::new()
@@ -357,7 +358,8 @@ impl Atom {
 
     /// Apply a transformation to the position of this atom, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
-        self.set_pos(transformation.apply(self.pos())).unwrap();
+        self.set_pos(transformation.apply(self.pos()))
+            .expect("Some numbers were invalid in applying a transformation");
     }
 
     /// See if the `other` Atom corresponds with this Atom.
@@ -427,7 +429,7 @@ impl Clone for Atom {
             self.element,
             self.charge,
         )
-        .unwrap();
+        .expect("Invalid characters in generating a clone of the atom");
 
         atom.atf = self.atf;
 
@@ -453,6 +455,7 @@ mod tests {
     use super::Atom;
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn set_name() {
         let mut a = Atom::new(
             0,
@@ -476,6 +479,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn set_element() {
         let mut a = Atom::new(
             0,

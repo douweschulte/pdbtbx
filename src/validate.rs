@@ -50,6 +50,7 @@ pub fn validate(pdb: &PDB) -> Vec<PDBError> {
 
 /// Validate the models by enforcing that all models should contain the same atoms (with possibly different data).
 /// It checks this by matching all atoms (not hetatoms) for each model to see if they correspond (`Atom::correspond`).
+#[allow(clippy::unwrap_used)]
 fn validate_models(pdb: &PDB) -> Vec<PDBError> {
     let mut errors = Vec::new();
     let total_atoms = pdb.model(0).unwrap().atom_count();

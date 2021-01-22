@@ -629,6 +629,7 @@ impl PDB {
                 counter += 1;
             }
             counter = 0;
+            #[allow(clippy::unwrap_used, clippy::cast_possible_truncation)]
             for chain in model.all_chains_mut() {
                 chain.set_id(std::char::from_u32((65 + counter % 26) as u32).unwrap());
                 counter += 1;
@@ -652,6 +653,7 @@ impl PDB {
     /// not have any models it moves the models of the other PDB to this PDB. If both have one model it moves all chains/residues/atoms
     /// form the first model of the other PDB to the first model of this PDB. Effectively the same as calling join on those models.
     pub fn join(&mut self, mut other: PDB) {
+        #[allow(clippy::unwrap_used)]
         if self.model_count() > 1 || other.model_count() > 1 {
             self.models.extend(other.models);
         } else if self.model_count() == 0 {

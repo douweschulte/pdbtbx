@@ -7,6 +7,7 @@ use crate::StrictnessLevel;
 
 use std::cmp;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
@@ -169,12 +170,12 @@ where
                         sequence.insert(chain_id, vec![(ser_num, num_res, values)]);
                     }
                 }
-                LexItem::Dbref(_pdb_id, chain_id, pdb_pos, db, db_acc, db_id, db_pos) => {
+                LexItem::Dbref(_pdb_id, chain_id, local_pos, db, db_acc, db_id, db_pos) => {
                     database_references.push((
                         chain_id,
                         DatabaseReference::new(
                             (db, db_acc, db_id),
-                            SequencePosition::from_tuple(pdb_pos),
+                            SequencePosition::from_tuple(local_pos),
                             SequencePosition::from_tuple(db_pos),
                         ),
                     ));
@@ -399,7 +400,8 @@ fn validate_seqres(
                         let three = format!("{:<3}", seq).chars().collect::<Vec<char>>();
                         chain.insert_residue(
                             index,
-                            Residue::new(index, [three[0], three[1], three[2]], None).unwrap(),
+                            Residue::new(index, [three[0], three[1], three[2]], None)
+                                .expect("Invalid characters in Residue generations"),
                         );
                     } else {
                         errors.push(PDBError::new(
@@ -412,7 +414,8 @@ fn validate_seqres(
                 } else {
                     let three = format!("{:<3}", seq).chars().collect::<Vec<char>>();
                     chain.add_residue(
-                        Residue::new(index, [three[0], three[1], three[2]], None).unwrap(),
+                        Residue::new(index, [three[0], three[1], three[2]], None)
+                            .expect("Invalid characters in Residue generations"),
                     );
                 }
             }
@@ -706,6 +709,7 @@ fn lex_anisou(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
         Context::line(linenumber, &line, 63, 7),
         &chars[63..70],
     ));
+    #[allow(clippy::cast_precision_loss)]
     let factors = [
         [
             (ai as f64) / 10000.0,
@@ -805,6 +809,7 @@ fn lex_atom_basics(
         element = [chars[76], chars[77]];
     }
     let mut charge = 0;
+    #[allow(clippy::unwrap_used)]
     if chars.len() >= 79 && !(chars[78] == ' ' && chars[79] == ' ') {
         if !chars[78].is_ascii_digit() {
             errors.push(PDBError::new(
@@ -821,7 +826,7 @@ fn lex_atom_basics(
                 Context::line(linenumber, &line, 79, 1),
             ));
         } else {
-            charge = chars[78].to_digit(10).unwrap() as isize;
+            charge = isize::try_from(chars[78].to_digit(10).unwrap()).unwrap();
             if chars[79] == '-' {
                 charge *= -1;
             }
@@ -963,6 +968,7 @@ fn lex_mtrix(
     Ok((LexItem::MtriX(row, ser, data, given), errors))
 }
 
+/// Lexes the general structure of a transformation record (ORIGXn, SCALEn, MTRIXn)
 fn lex_transformation(linenumber: usize, line: String) -> ([f64; 4], Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
@@ -1074,6 +1080,7 @@ fn lex_master(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
     ))
 }
 
+/// Lexes a SEQRES record
 fn lex_seqres(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
@@ -1107,6 +1114,7 @@ fn lex_seqres(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
     Ok((LexItem::Seqres(ser_num, chain_id, num_res, values), errors))
 }
 
+/// Lexes a DBREF record
 fn lex_dbref(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
@@ -1162,6 +1170,7 @@ fn lex_dbref(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>)
     ))
 }
 
+/// Lexes a SEQADV record
 fn lex_seqadv(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
@@ -1210,6 +1219,7 @@ fn lex_seqadv(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
     ))
 }
 
+/// Lexes a MODRES record
 fn lex_modres(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
