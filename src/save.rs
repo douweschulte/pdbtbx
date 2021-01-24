@@ -6,6 +6,7 @@ use crate::StrictnessLevel;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufWriter;
+use std::iter;
 
 /// Save the given PDB struct to the given file.
 /// It validates the PDB. It fails if the validation fails with the given `level`.
@@ -31,33 +32,51 @@ pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<
         }
     };
 
-    save_raw(&pdb, BufWriter::new(file));
+    save_raw(&pdb, BufWriter::new(file), level);
     Ok(())
 }
 
 /// Save the given PDB struct to the given BufWriter.
 /// It does not validate or renumber the PDB, so if that is needed that needs to be done in preparation.
+/// It does change the output format based on the StrictnessLevel given.
+///
+/// ## Loose
+/// * Does not pad all lines to 70 chars length
+/// * Does not save the MASTER record
 #[allow(clippy::unwrap_used)]
-pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
+pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: StrictnessLevel) {
+    let mut finish_line = |mut line: String| {
+        if level != StrictnessLevel::Loose && line.len() < 70 {
+            let dif = 70 - line.len();
+            line.reserve(dif);
+            line.extend(iter::repeat(" ").take(dif));
+        }
+        sink.write(line.as_bytes()).unwrap();
+        sink.write("\n".as_bytes()).unwrap();
+    };
+    macro_rules! write {
+        ($($arg:tt)*) => {
+            finish_line(format!($($arg)*));
+        }
+    }
+
     // Remarks
     for line in pdb.remarks() {
-        sink.write_fmt(format_args!("REMARK {:3} {}\n", line.0, line.1))
-            .unwrap();
+        write!("REMARK {:3} {}", line.0, line.1);
     }
 
     // MODRES
     for chain in pdb.chains() {
         for residue in chain.residues() {
             if let Some((std_name, comment)) = residue.modification() {
-                sink.write_fmt(format_args!(
-                    "MODRES      {:3} {} {:4}  {:3}  {}\n",
+                write!(
+                    "MODRES      {:3} {} {:4}  {:3}  {}",
                     residue.id(),
                     chain.id(),
                     residue.serial_number(),
                     std_name.iter().collect::<String>(),
                     comment
-                ))
-                .unwrap();
+                );
             }
         }
     }
@@ -68,10 +87,10 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
         let sym = if pdb.has_symmetry() {
             format!("{:10}{:3}", pdb.symmetry().symbol(), pdb.symmetry().z(),)
         } else {
-            "P 1".to_string()
+            "P 1         1".to_string()
         };
-        sink.write_fmt(format_args!(
-            "CRYST1{:9.3}{:9.3}{:9.3}{:7.2}{:7.2}{:7.2} {}\n",
+        write!(
+            "CRYST1{:9.3}{:9.3}{:9.3}{:7.2}{:7.2}{:7.2} {}",
             unit_cell.a(),
             unit_cell.b(),
             unit_cell.c(),
@@ -79,108 +98,110 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
             unit_cell.beta(),
             unit_cell.gamma(),
             sym
-        ))
-        .unwrap();
+        );
     }
 
     // Scale
     if pdb.has_scale() {
         let m = pdb.scale().transformation().matrix();
-        sink.write_fmt(format_args!(
-            "SCALE1    {:10.6}{:10.6}{:10.6}     {:10.5}\nSCALE2    {:10.6}{:10.6}{:10.6}     {:10.5}\nSCALE3    {:10.6}{:10.6}{:10.6}     {:10.5}\n",
+        write!(
+            "SCALE1    {:10.6}{:10.6}{:10.6}     {:10.5}",
             m[0][0],
-            m[0][1],
-            m[0][2],
-            m[0][3],
+            m[0][1], m[0][2], m[0][3],
+        );
+        write!(
+            "SCALE2    {:10.6}{:10.6}{:10.6}     {:10.5}",
             m[1][0],
-            m[1][1],
-            m[1][2],
-            m[1][3],
+            m[1][1], m[1][2], m[1][3],
+        );
+        write!(
+            "SCALE3    {:10.6}{:10.6}{:10.6}     {:10.5}",
             m[2][0],
-            m[2][1],
-            m[2][2],
-            m[2][3],
-        )).unwrap();
+            m[2][1], m[2][2], m[2][3],
+        );
     }
 
     // OrigX
     if pdb.has_origx() {
         let m = pdb.origx().transformation().matrix();
-        sink.write_fmt(format_args!(
-            "ORIGX1    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX2    {:10.6}{:10.6}{:10.6}     {:10.5}\nORIGX3    {:10.6}{:10.6}{:10.6}     {:10.5}\n",
+        write!(
+            "ORIGX1    {:10.6}{:10.6}{:10.6}     {:10.5}",
             m[0][0],
-            m[0][1],
-            m[0][2],
-            m[0][3],
+            m[0][1], m[0][2], m[0][3],
+        );
+        write!(
+            "ORIGX2    {:10.6}{:10.6}{:10.6}     {:10.5}",
             m[1][0],
-            m[1][1],
-            m[1][2],
-            m[1][3],
+            m[1][1], m[1][2], m[1][3],
+        );
+        write!(
+            "ORIGX3    {:10.6}{:10.6}{:10.6}     {:10.5}",
             m[2][0],
-            m[2][1],
-            m[2][2],
-            m[2][3],
-        )).unwrap();
+            m[2][1], m[2][2], m[2][3],
+        );
     }
 
     // MtriX
     for mtrix in pdb.mtrix() {
         let m = mtrix.transformation().matrix();
-        sink.write_fmt(format_args!(
-            "MTRIX1 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\nMTRIX2 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\nMTRIX3 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}\n",
+        write!(
+            "MTRIX1 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}",
             mtrix.serial_number,
             m[0][0],
             m[0][1],
             m[0][2],
             m[0][3],
-            if mtrix.contained {'1'} else {' '},
+            if mtrix.contained { '1' } else { ' ' },
+        );
+        write!(
+            "MTRIX2 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}",
             mtrix.serial_number,
             m[1][0],
             m[1][1],
             m[1][2],
             m[1][3],
-            if mtrix.contained {'1'} else {' '},
+            if mtrix.contained { '1' } else { ' ' },
+        );
+        write!(
+            "MTRIX3 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}",
             mtrix.serial_number,
             m[2][0],
             m[2][1],
             m[2][2],
             m[2][3],
-            if mtrix.contained {'1'} else {' '},
-        )).unwrap();
+            if mtrix.contained { '1' } else { ' ' },
+        );
     }
 
     // Models
     let multiple_models = pdb.models().size_hint().0 > 1;
     for model in pdb.models() {
         if multiple_models {
-            sink.write_fmt(format_args!("MODEL        {}\n", model.serial_number()))
-                .unwrap();
+            write!("MODEL        {}", model.serial_number());
         }
 
         for chain in model.chains() {
             for residue in chain.residues() {
                 for atom in residue.atoms() {
-                    sink
-                .write_fmt(format_args!(
-                    "ATOM  {:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}\n",
-                    atom.serial_number(),
-                    atom.name(),
-                    residue.id(),
-                    chain.id(),
-                    residue.serial_number(),
-                    atom.pos().0,
-                    atom.pos().1,
-                    atom.pos().2,
-                    atom.occupancy(),
-                    atom.b_factor(),
-                    atom.element(),
-                    atom.pdb_charge(),
-                ))
-                .unwrap();
+                    write!(
+                        "ATOM  {:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}",
+                        atom.serial_number(),
+                        atom.name(),
+                        residue.id(),
+                        chain.id(),
+                        residue.serial_number(),
+                        atom.pos().0,
+                        atom.pos().1,
+                        atom.pos().2,
+                        atom.occupancy(),
+                        atom.b_factor(),
+                        atom.element(),
+                        atom.pdb_charge(),
+                    );
                     #[allow(clippy::cast_possible_truncation)]
                     if atom.anisotropic_temperature_factors().is_some() {
-                        sink.write_fmt(format_args!(
-                            "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}\n",
+                        write!(
+                            "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}",
                             atom.serial_number(),
                             atom.name(),
                             residue.id(),
@@ -200,46 +221,42 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
                                 as isize,
                             atom.element(),
                             atom.pdb_charge(),
-                        ))
-                        .unwrap();
+                        );
                     }
                 }
             }
             let last_atom = chain.atoms().nth_back(0).unwrap();
             let last_residue = chain.residues().nth_back(0).unwrap();
-            sink.write_fmt(format_args!(
-                "TER{:5}      {:3} {}{:4} \n",
+            write!(
+                "TER{:5}      {:3} {}{:4}",
                 last_atom.serial_number(),
                 last_residue.id(),
                 chain.id(),
                 last_residue.serial_number()
-            ))
-            .unwrap();
+            );
         }
         for chain in model.hetero_chains() {
             for residue in chain.residues() {
                 for atom in residue.atoms() {
-                    sink
-                .write_fmt(format_args!(
-                    "HETATM{:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}\n",
-                    atom.serial_number(),
-                    atom.name(),
-                    residue.id(),
-                    chain.id(),
-                    residue.serial_number(),
-                    atom.pos().0,
-                    atom.pos().1,
-                    atom.pos().2,
-                    atom.occupancy(),
-                    atom.b_factor(),
-                    atom.element(),
-                    atom.pdb_charge()
-                ))
-                .unwrap();
+                    write!(
+                        "HETATM{:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}",
+                        atom.serial_number(),
+                        atom.name(),
+                        residue.id(),
+                        chain.id(),
+                        residue.serial_number(),
+                        atom.pos().0,
+                        atom.pos().1,
+                        atom.pos().2,
+                        atom.occupancy(),
+                        atom.b_factor(),
+                        atom.element(),
+                        atom.pdb_charge()
+                    );
                     #[allow(clippy::cast_possible_truncation)]
                     if atom.anisotropic_temperature_factors().is_some() {
-                        sink.write_fmt(format_args!(
-                            "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}\n",
+                        write!(
+                            "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}",
                             atom.serial_number(),
                             atom.name(),
                             residue.id(),
@@ -259,47 +276,46 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
                                 as isize,
                             atom.element(),
                             atom.pdb_charge()
-                        ))
-                        .unwrap();
+                        );
                     }
                 }
             }
         }
 
         if multiple_models {
-            sink.write_fmt(format_args!("ENDMDL\n")).unwrap();
+            write!("ENDMDL");
         }
     }
-
-    let mut xform = 0;
-    if pdb.has_origx() && pdb.origx().valid() {
-        xform += 3;
-    }
-    if pdb.has_scale() && pdb.scale().valid() {
-        xform += 3;
-    }
-    for mtrix in pdb.mtrix() {
-        if mtrix.valid() {
+    if level != StrictnessLevel::Loose {
+        let mut xform = 0;
+        if pdb.has_origx() && pdb.origx().valid() {
             xform += 3;
         }
+        if pdb.has_scale() && pdb.scale().valid() {
+            xform += 3;
+        }
+        for mtrix in pdb.mtrix() {
+            if mtrix.valid() {
+                xform += 3;
+            }
+        }
+        write!(
+            "MASTER    {:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}",
+            pdb.remark_count(),
+            0, //defined to be empty
+            0, //numHet
+            0, //numHelix
+            0, //numSheet
+            0, //numTurn (deprecated)
+            0, //numSite
+            xform,
+            pdb.total_atom_count(),
+            pdb.model_count(),
+            0, //numConnect
+            0, //numSeq
+        );
     }
-    sink.write_fmt(format_args!(
-        "MASTER    {:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}\n",
-        pdb.remark_count(),
-        0, //defined to be empty
-        0, //numHet
-        0, //numHelix
-        0, //numSheet
-        0, //numTurn (deprecated)
-        0, //numSite
-        xform,
-        pdb.total_atom_count(),
-        pdb.model_count(),
-        0, //numConnect
-        0, //numSeq
-    ))
-    .unwrap();
-    sink.write_fmt(format_args!("END\n")).unwrap();
+    write!("END");
 
     sink.flush().unwrap();
 }
