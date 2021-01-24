@@ -1,4 +1,5 @@
 use pdbtbx::*;
+use std::cmp::min;
 use std::time::{Duration, Instant};
 
 fn main() {
@@ -89,22 +90,18 @@ fn measure<T: Clone>(
 ) {
     let mut times = Vec::new();
     let _ = function(subject.clone());
+    let now = Instant::now();
 
     for _ in 0..5 {
         times.push(function(subject.clone()));
     }
 
-    let average = times
-        .iter()
-        .fold(Duration::new(0, 0), |total, item| {
-            total.checked_add(*item).unwrap()
-        })
-        .checked_div(5)
-        .unwrap();
-    // Lets run for 3 more seconds
+    let average = now.elapsed().checked_div(5).unwrap();
+
+    // Lets run for 3 more seconds, including cloning of the subject
     let mut runs = 3_000_000_000 / average.as_nanos();
     if let Some(n) = max {
-        runs = n;
+        runs = min(n, runs);
     }
     for _ in 0..runs {
         times.push(function(subject.clone()));
@@ -125,36 +122,38 @@ fn measure<T: Clone>(
     }
     deviation /= times.len() as f64;
     deviation = deviation.sqrt();
+    let standard_deviation = Duration::from_secs_f64(deviation / 1_000_000_000.0);
 
     println!(
-        "{}: average time over {} runs:\n\t{} ± {}\n",
+        "{}: average time over {} runs:\n    {} ± {} ={:6.2}%\n",
         description,
         times.len(),
         pretty_print(average),
-        pretty_print(Duration::from_secs_f64(deviation / 1_000_000_000.0))
+        pretty_print(standard_deviation),
+        deviation / (average.as_nanos() as f64) * 100.0
     );
 }
 
 fn pretty_print(duration: Duration) -> String {
-    if duration.as_secs() > 1 {
+    if duration.as_secs() > 0 {
         format!(
-            "{}s {}ms",
+            "{:3}s {:3}ms",
             duration.as_secs(),
             duration.as_millis() - (duration.as_secs() * 1000) as u128
         )
-    } else if duration.as_millis() > 1 {
+    } else if duration.as_millis() > 0 {
         format!(
-            "{}ms {}μs",
+            "{:3}ms {:3}μs",
             duration.as_millis(),
             duration.as_micros() - (duration.as_millis() * 1000) as u128
         )
-    } else if duration.as_micros() > 1 {
+    } else if duration.as_micros() > 0 {
         format!(
-            "{}μs {}ns",
+            "{:3}μs {:3}ns",
             duration.as_micros(),
             duration.as_nanos() - (duration.as_micros() * 1000) as u128
         )
     } else {
-        format!("{}ns", duration.as_nanos())
+        format!("     {:4}ns", duration.as_nanos())
     }
 }
