@@ -52,7 +52,7 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: StrictnessLe
             line.extend(iter::repeat(" ").take(dif));
         }
         sink.write_all(line.as_bytes()).unwrap();
-        sink.write_all("\n".as_bytes()).unwrap();
+        sink.write_all(b"\n").unwrap();
     };
     macro_rules! write {
         ($($arg:tt)*) => {
