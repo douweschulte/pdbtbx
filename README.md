@@ -22,12 +22,22 @@ Just for fun, to play with fancy abstractions. But at the same time I think that
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Changelog
+### v0.3.0 'Primary Sequence Support'
+_API changes + additions_
+* Added support for parsing and validating `DBREF`/`SEQADV`/`SEQRES`/`MODRES`
+* Added saving of `MODRES` records, the other primary structure sections will follow soon
+* Added differential saving, which changes the output based on the `StrictnessLevel` provided
+* Redefined `overlaps` function on Atoms, the calculation was faulty before
+* Added `distance` function between two Atoms
+* Removed renumber on save
+
 ### v0.2.1
 _API changes_
 * Exported `save_raw` was created in v0.2.0 but not accessible
 * Added `ENDMDL` records after model definitions while saving making saved ensemble files valid in other software
 * Extended warnings for validation of ensemble files, it will now generate a `LooseWarning` if `HETATM`s do not correspond
 * Changed the implementation of the `.remove_*_by` functions to be 75% faster
+
 ### v0.2.0
 _API changes + additions_
 * Made `add_child` methods for model/chain/residue public.
