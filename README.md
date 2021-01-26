@@ -22,6 +22,10 @@ Just for fun, to play with fancy abstractions. But at the same time I think that
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Changelog
+### v0.3.1
+_API additions_
+* Added `distance_wrapping` and `overlaps_wrapping` functions to Atom which wrap around the unit cell to find the shortest distance
+
 ### v0.3.0 'Primary Sequence Support'
 _API changes + additions_
 * Added support for parsing and validating `DBREF`/`SEQADV`/`SEQRES`/`MODRES`
