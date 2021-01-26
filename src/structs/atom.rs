@@ -374,6 +374,38 @@ impl Atom {
                 || (self.atf.is_some() && other.atf.is_some()))
     }
 
+    /// Gives the distance between the centers of two atoms. Wrapping around the unit cell if needed.
+    pub fn distance_wrapping(&self, other: &Atom, cell: &UnitCell) -> f64 {
+        let mut x = other.x;
+        if (self.x - other.x).abs() > cell.a() / 2.0 {
+            if self.x > other.x {
+                x += cell.a();
+            } else {
+                x -= cell.a();
+            }
+        }
+
+        let mut y = other.y;
+        if (self.y - other.y).abs() > cell.b() / 2.0 {
+            if self.y > other.y {
+                y += cell.b();
+            } else {
+                y -= cell.b();
+            }
+        }
+
+        let mut z = other.z;
+        if (self.z - other.z).abs() > cell.c() / 2.0 {
+            if self.z > other.z {
+                z += cell.c();
+            } else {
+                z -= cell.c();
+            }
+        }
+
+        ((x - self.x).powi(2) + (y - self.y).powi(2) + (z - self.z).powi(2)).sqrt()
+    }
+
     /// Gives the distance between the centers of two atoms.
     pub fn distance(&self, other: &Atom) -> f64 {
         ((other.x - self.x).powi(2) + (other.y - self.y).powi(2) + (other.z - self.z).powi(2))
@@ -389,6 +421,23 @@ impl Atom {
         if let Some(self_rad) = self.atomic_radius() {
             if let Some(other_rad) = other.atomic_radius() {
                 Some(self.distance(other) <= self_rad + other_rad)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    /// Checks if this Atom overlaps with the given atom. It overlaps if the sphere defined as sitting at
+    /// the atom position with a radius of the atomic radius (`atom.atomic_radius()`) intersect with this
+    /// sphere from the other Atom. Wrapping around the unit cell if needed.
+    /// ## Fails
+    /// It fails if any one of the two radii are not defined.
+    pub fn overlaps_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
+        if let Some(self_rad) = self.atomic_radius() {
+            if let Some(other_rad) = other.atomic_radius() {
+                Some(self.distance_wrapping(other, cell) <= self_rad + other_rad)
             } else {
                 None
             }
@@ -453,6 +502,7 @@ impl PartialEq for Atom {
 #[cfg(test)]
 mod tests {
     use super::Atom;
+    use super::UnitCell;
 
     #[test]
     #[allow(clippy::unwrap_used)]
@@ -498,5 +548,71 @@ mod tests {
         a.set_element("RK").unwrap();
         a.set_element("R").unwrap();
         a.set_element("").unwrap();
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn distance() {
+        let a = Atom::new(
+            0,
+            [' ', ' ', ' ', ' '],
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            [' ', 'C'],
+            0,
+        )
+        .unwrap();
+        let b = Atom::new(
+            0,
+            [' ', ' ', ' ', ' '],
+            9.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            [' ', 'C'],
+            0,
+        )
+        .unwrap();
+        let cell = UnitCell::new(10.0, 10.0, 10.0, 90.0, 90.0, 90.0);
+        assert!(!a.overlaps(&b).unwrap());
+        assert!(a.overlaps_wrapping(&b, &cell).unwrap());
+        assert_eq!(a.distance(&b), 8.0);
+        assert_eq!(a.distance_wrapping(&b, &cell), 2.0);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn distance_all_axes() {
+        let a = Atom::new(
+            0,
+            [' ', ' ', ' ', ' '],
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            [' ', 'C'],
+            0,
+        )
+        .unwrap();
+        let b = Atom::new(
+            0,
+            [' ', ' ', ' ', ' '],
+            9.0,
+            9.0,
+            9.0,
+            0.0,
+            0.0,
+            [' ', 'C'],
+            0,
+        )
+        .unwrap();
+        let cell = UnitCell::new(10.0, 10.0, 10.0, 90.0, 90.0, 90.0);
+        assert!(!a.overlaps(&b).unwrap());
+        assert!(a.overlaps_wrapping(&b, &cell).unwrap());
     }
 }
