@@ -65,18 +65,93 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: StrictnessLe
         write!("REMARK {:3} {}", line.0, line.1);
     }
 
-    // MODRES
-    for chain in pdb.chains() {
-        for residue in chain.residues() {
-            if let Some((std_name, comment)) = residue.modification() {
+    if let Some(model) = pdb.models().next() {
+        // DBREF
+        let mut seqres = level == StrictnessLevel::Strict;
+        for chain in model.chains() {
+            if let Some(dbref) = chain.database_reference() {
+                seqres = true;
                 write!(
-                    "MODRES      {:3} {} {:4}  {:3}  {}",
-                    residue.id(),
+                    "DBREF  {:4} {:1} {:4}{:1} {:4}{:1} {:6} {:8} {:12} {:5}{:1} {:5}{:1}",
+                    "    ",
                     chain.id(),
-                    residue.serial_number(),
-                    std_name.iter().collect::<String>(),
-                    comment
-                );
+                    dbref.pdb_position.start,
+                    dbref.pdb_position.start_insert,
+                    dbref.pdb_position.end,
+                    dbref.pdb_position.end_insert,
+                    dbref.database.0,
+                    dbref.database.1,
+                    dbref.database.2,
+                    dbref.database_position.start,
+                    dbref.database_position.start_insert,
+                    dbref.database_position.end,
+                    dbref.database_position.end_insert,
+                )
+            }
+        }
+
+        // SEQADV
+        for chain in model.chains() {
+            if let Some(dbref) = chain.database_reference() {
+                for dif in &dbref.differences {
+                    write!(
+                        "SEQADV {:4} {:3} {:1} {:4}{:1} {:4} {:9} {:3} {:5} {}",
+                        "    ",
+                        dif.residue.0.iter().collect::<String>(),
+                        chain.id(),
+                        dif.residue.1,
+                        " ",
+                        dbref.database.0,
+                        dbref.database.1,
+                        match dif.database_residue {
+                            Some((name, _)) => name.iter().collect::<String>(),
+                            None => "".to_owned(),
+                        },
+                        match dif.database_residue {
+                            Some((_, seq)) => seq,
+                            None => 0,
+                        },
+                        dif.comment
+                    )
+                }
+            }
+        }
+
+        // SEQRES
+        if seqres {
+            for chain in model.chains() {
+                for (index, chunk) in chain
+                    .residues()
+                    .map(|r| format!("{:3}", r.id()))
+                    .collect::<Vec<String>>()
+                    .chunks(13)
+                    .enumerate()
+                {
+                    write!(
+                        "SEQRES {:3} {:1} {:4}  {}",
+                        index + 1,
+                        chain.id(),
+                        chain.residue_count(),
+                        chunk.join(" ")
+                    )
+                }
+            }
+        }
+
+        // MODRES
+        for chain in model.chains() {
+            for residue in chain.residues() {
+                if let Some((std_name, comment)) = residue.modification() {
+                    write!(
+                        "MODRES {:4} {:3} {} {:4}  {:3}  {}",
+                        "    ",
+                        residue.id(),
+                        chain.id(),
+                        residue.serial_number(),
+                        std_name.iter().collect::<String>(),
+                        comment
+                    );
+                }
             }
         }
     }
