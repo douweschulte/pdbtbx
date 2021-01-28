@@ -2,6 +2,7 @@ use crate::error::*;
 use crate::structs::*;
 use crate::validate;
 use crate::StrictnessLevel;
+use crate::TransformationMatrix;
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -176,44 +177,44 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: StrictnessLe
         );
     }
 
+    let mut write_matrix = |name, matrix: [[f64; 4]; 3]| {
+        write!(
+            "{}1    {:10.6}{:10.6}{:10.6}     {:10.5}",
+            name,
+            matrix[0][0], matrix[0][1], matrix[0][2], matrix[0][3],
+        );
+        write!(
+            "{}2    {:10.6}{:10.6}{:10.6}     {:10.5}",
+            name,
+            matrix[1][0], matrix[1][1], matrix[1][2], matrix[1][3],
+        );
+        write!(
+            "{}3    {:10.6}{:10.6}{:10.6}     {:10.5}",
+            name,
+            matrix[2][0], matrix[2][1], matrix[2][2], matrix[2][3],
+        );
+    };
+
     // Scale
     if pdb.has_scale() {
-        let m = pdb.scale().transformation().matrix();
-        write!(
-            "SCALE1    {:10.6}{:10.6}{:10.6}     {:10.5}",
-            m[0][0],
-            m[0][1], m[0][2], m[0][3],
-        );
-        write!(
-            "SCALE2    {:10.6}{:10.6}{:10.6}     {:10.5}",
-            m[1][0],
-            m[1][1], m[1][2], m[1][3],
-        );
-        write!(
-            "SCALE3    {:10.6}{:10.6}{:10.6}     {:10.5}",
-            m[2][0],
-            m[2][1], m[2][2], m[2][3],
+        write_matrix("SCALE", pdb.scale().transformation().matrix());
+    } else if level == StrictnessLevel::Strict {
+        write_matrix(
+            "SCALE",
+            TransformationMatrix::scale(
+                1.0 / pdb.unit_cell().a(),
+                1.0 / pdb.unit_cell().b(),
+                1.0 / pdb.unit_cell().c(),
+            )
+            .matrix(),
         );
     }
 
     // OrigX
     if pdb.has_origx() {
-        let m = pdb.origx().transformation().matrix();
-        write!(
-            "ORIGX1    {:10.6}{:10.6}{:10.6}     {:10.5}",
-            m[0][0],
-            m[0][1], m[0][2], m[0][3],
-        );
-        write!(
-            "ORIGX2    {:10.6}{:10.6}{:10.6}     {:10.5}",
-            m[1][0],
-            m[1][1], m[1][2], m[1][3],
-        );
-        write!(
-            "ORIGX3    {:10.6}{:10.6}{:10.6}     {:10.5}",
-            m[2][0],
-            m[2][1], m[2][2], m[2][3],
-        );
+        write_matrix("ORIGX", pdb.origx().transformation().matrix());
+    } else if level == StrictnessLevel::Strict {
+        write_matrix("ORIGX", TransformationMatrix::identity().matrix());
     }
 
     // MtriX

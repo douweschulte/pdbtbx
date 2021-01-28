@@ -99,6 +99,23 @@ impl TransformationMatrix {
         }
     }
 
+    /// Create a matrix defining a magnification with three different factors
+    /// ## Arguments
+    /// * `x` the factor for the x dimension where 1.0 is the original size
+    /// * `y` the factor for the y dimension where 1.0 is the original size
+    /// * `z` the factor for the z dimension where 1.0 is the original size
+    /// ## Panics
+    /// It panics if any of the arguments is not finite (`f64.is_finite()`)
+    pub fn scale(x: f64, y: f64, z: f64) -> Self {
+        assert!(
+            x.is_finite() && y.is_finite() && z.is_finite(),
+            "One or more of the arguments is not finite"
+        );
+        TransformationMatrix {
+            matrix: [[x, 0.0, 0.0, 0.0], [0.0, y, 0.0, 0.0], [0.0, 0.0, z, 0.0]],
+        }
+    }
+
     /// This multiplies the translation with the given factors, this can be used to
     /// convert fractional units into absolute units.
     pub fn multiply_translation(&mut self, factors: (f64, f64, f64)) {
