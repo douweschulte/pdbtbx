@@ -22,6 +22,12 @@ Just for fun, to play with fancy abstractions. But at the same time I think that
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Changelog
+### v0.3.2
+_API additions_
+* Added saving of `DBREF`/`SEQADV`/`SEQRES`
+* Generates default matrices for `SCALE` and `ORIGX` if not available and the strictness level on save is `Strict`
+* Added constructor `scale` to `TransformationMatrix` to have a magnifying matrix with 3 different factors
+
 ### v0.3.1
 _API additions_
 * Added `distance_wrapping` and `overlaps_wrapping` functions to Atom which wrap around the unit cell to find the shortest distance
