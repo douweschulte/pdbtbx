@@ -22,12 +22,12 @@ pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<
 
     let file = match File::create(filename) {
         Ok(f) => f,
-        Err(e) => {
+        Err(_e) => {
             errors.push(PDBError::new(
                 ErrorLevel::BreakingError,
                 "Could not open file",
                 "Could not open the file for writing, make sure you have permission for this file and no other program is currently using it.",
-                Context::show(&e.to_string())
+                Context::show(filename)
             ));
             return Err(errors);
         }

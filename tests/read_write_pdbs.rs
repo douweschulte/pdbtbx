@@ -7,7 +7,13 @@ use std::{env, fs};
 fn run_pdbs() {
     let current_dir = env::current_dir().unwrap();
     let pdb_dir = current_dir.as_path().join(Path::new("example-pdbs"));
-    let dump_dir = current_dir.as_path().join(Path::new("dump"));
+    let dump_dir = current_dir
+        .as_path()
+        .join(Path::new("dump"))
+        .into_os_string()
+        .into_string()
+        .unwrap()
+        + "\\";
     let _ = fs::create_dir(dump_dir.clone());
     println!("{:?}", pdb_dir);
 
@@ -18,9 +24,11 @@ fn run_pdbs() {
         if metadata.is_file() {
             do_someting(
                 &path.clone().into_os_string().into_string().unwrap(),
-                &dump_dir
-                    .join(Path::new(path.file_name().unwrap()))
-                    .into_os_string()
+                &dump_dir,
+                &path
+                    .file_stem()
+                    .unwrap()
+                    .to_os_string()
                     .into_string()
                     .unwrap(),
             );
@@ -28,7 +36,7 @@ fn run_pdbs() {
     }
 }
 
-fn do_someting(file: &str, output: &str) {
+fn do_someting(file: &str, folder: &str, name: &str) {
     println!("Working on file: {}", file);
     let now = Instant::now();
 
@@ -94,5 +102,17 @@ fn do_someting(file: &str, output: &str) {
         avg, avg_back, avg_side
     );
 
-    save(pdb, output, StrictnessLevel::Loose).expect("Save not successful");
+    save(
+        pdb.clone(),
+        &(folder.to_string() + name + ".pdb"),
+        StrictnessLevel::Loose,
+    )
+    .expect("Save not successful");
+    save_pdbx(
+        pdb,
+        &(folder.to_string() + name + ".cif"),
+        StrictnessLevel::Loose,
+        name,
+    )
+    .expect("Save not successful");
 }
