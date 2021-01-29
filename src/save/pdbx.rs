@@ -75,7 +75,7 @@ _audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdb
         let unit_cell = pdb.unit_cell();
         write!(
             "# 
-_cell.entry_id           ?
+_cell.entry_id           {}
 _cell.length_a           {} 
 _cell.length_b           {} 
 _cell.length_c           {} 
@@ -90,6 +90,7 @@ _cell.length_c_esd       ?
 _cell.angle_alpha_esd    ?
 _cell.angle_beta_esd     ?
 _cell.angle_gamma_esd    ?",
+            name,
             unit_cell.a(),
             unit_cell.b(),
             unit_cell.c(),
@@ -107,12 +108,13 @@ _cell.angle_gamma_esd    ?",
     if pdb.has_symmetry() {
         write!(
             "# 
-_symmetry.entry_id                         ? 
+_symmetry.entry_id                         {} 
 _symmetry.space_group_name_H-M             '{}' 
 _symmetry.pdbx_full_space_group_name_H-M   ? 
 _symmetry.cell_setting                     ? 
 _symmetry.Int_Tables_number                {} 
 _symmetry.space_group_name_Hall            ? ",
+            name,
             pdb.symmetry().symbol(),
             pdb.symmetry().index()
         );
@@ -215,8 +217,13 @@ _atom_site.pdbx_PDB_model_num"
         output.push_str(&" ".repeat(sizes[0] - line[0].len()));
         for index in 1..line.len() {
             output.push(' ');
-            output.push_str(&line[index]);
-            output.push_str(&" ".repeat(sizes[index] - line[index].len()));
+            if line[index].trim() != "" {
+                output.push_str(&line[index]);
+                output.push_str(&" ".repeat(sizes[index] - line[index].len()));
+            } else {
+                output.push('?');
+                output.push_str(&" ".repeat(sizes[index] - 1));
+            }
         }
         output.push('\n');
         sink.write_all(output.as_bytes()).unwrap();
