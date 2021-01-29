@@ -1,11 +1,21 @@
 use pdbtbx::*;
+use std::env;
+use std::path::Path;
 use std::time::Instant;
 
 #[test]
 fn simple_waterbox() {
+    let filename = env::current_dir()
+        .unwrap()
+        .as_path()
+        .join(Path::new("dump"))
+        .join(Path::new("waterbox.pdb"))
+        .into_os_string()
+        .into_string()
+        .unwrap();
     save(
         create_waterbox((25.0, 25.0, 25.0)),
-        "dump/waterbox.pdb",
+        &filename,
         StrictnessLevel::Loose,
     )
     .expect("Save not successful");
