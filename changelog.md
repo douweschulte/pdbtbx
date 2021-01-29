@@ -1,5 +1,5 @@
 # Changelog
-All versions are properly annotated on github so there the source code for each version can be retrieved.
+All versions are properly annotated on [github](https://github.com/nonnominandus/pdbtbx/releases) so there the source code for each version can be retrieved.
 
 ### v0.3.3
 _API additions_
