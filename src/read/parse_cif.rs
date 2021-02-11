@@ -64,7 +64,7 @@ struct Position<'a> {
 
 fn parse_main(input: &mut Position) -> Result<DataBlock, ()> {
     trim_comments_and_whitespace(input);
-    return parse_data_block(input);
+    parse_data_block(input)
 }
 
 fn parse_data_block(input: &mut Position) -> Result<DataBlock, ()> {
@@ -87,19 +87,19 @@ fn parse_data_block(input: &mut Position) -> Result<DataBlock, ()> {
 fn parse_data_item_or_saveframe(input: &mut Position) -> Result<Item, ()> {
     if let Ok(()) = start_with(input, "save_") {
         let mut frame = SaveFrame { items: Vec::new() };
-        while input.text.len() > 0 && input.text.chars().next().unwrap() == '_' {
+        while !input.text.is_empty() && input.text.starts_with('_') {
             let item = parse_data_item(input)?;
             trim_comments_and_whitespace(input);
             frame.items.push(item);
         }
         if let Ok(()) = start_with(input, "save_") {
-            return Ok(Item::SaveFrame(frame));
+            Ok(Item::SaveFrame(frame))
         } else {
-            return Err(());
+            Err(())
         }
     } else {
         let item = parse_data_item(input)?;
-        return Ok(Item::DataItem(item));
+        Ok(Item::DataItem(item))
     }
 }
 
@@ -130,15 +130,13 @@ fn parse_data_item(input: &mut Position) -> Result<DataItem, ()> {
                 name: name.to_string(),
                 content: MultiValue::Loop(loop_value),
             })
+        } else if let Ok(value) = parse_value(input) {
+            Ok(DataItem {
+                name: name.to_string(),
+                content: MultiValue::Value(value),
+            })
         } else {
-            if let Ok(value) = parse_value(input) {
-                Ok(DataItem {
-                    name: name.to_string(),
-                    content: MultiValue::Value(value),
-                })
-            } else {
-                Err(())
-            }
+            Err(())
         }
     } else {
         Err(())
@@ -146,26 +144,24 @@ fn parse_data_item(input: &mut Position) -> Result<DataItem, ()> {
 }
 
 fn parse_value(input: &mut Position) -> Result<Value, ()> {
-    if input.text.len() == 0 {
+    if input.text.is_empty() {
         Err(())
+    } else if input.text.starts_with('.') {
+        input.text = &input.text[1..];
+        input.column += 1;
+        Ok(Value::Inapplicable)
+    } else if input.text.starts_with('?') {
+        input.text = &input.text[1..];
+        input.column += 1;
+        Ok(Value::Unknown)
+    } else if let Ok(num) = parse_numeric(input) {
+        Ok(num)
+    } else if let Ok(value) = parse_char_string(input) {
+        Ok(Value::Text(value))
+    } else if let Ok(value) = parse_text_field(input) {
+        Ok(Value::Text(value))
     } else {
-        if input.text.chars().next().unwrap() == '.' {
-            input.text = &input.text[1..];
-            input.column += 1;
-            Ok(Value::Inapplicable)
-        } else if input.text.chars().next().unwrap() == '?' {
-            input.text = &input.text[1..];
-            input.column += 1;
-            Ok(Value::Unknown)
-        } else if let Ok(num) = parse_numeric(input) {
-            Ok(num)
-        } else if let Ok(value) = parse_char_string(input) {
-            Ok(Value::Text(value))
-        } else if let Ok(value) = parse_text_field(input) {
-            Ok(Value::Text(value))
-        } else {
-            Err(())
-        }
+        Err(())
     }
 }
 
@@ -206,19 +202,18 @@ fn parse_numeric(input: &mut Position) -> Result<Value, ()> {
     // Now take the decimal part
     let mut decimal_set = false;
     let mut decimal = 0.0;
-    if input.text.len() > chars_to_remove {
-        if input.text.chars().nth(chars_to_remove).unwrap() == '.' {
-            chars_to_remove += 1;
-            let mut power: f64 = 1.0;
-            for c in input.text.chars().skip(chars_to_remove) {
-                if c.is_ascii_digit() {
-                    decimal_set = true;
-                    power *= 10.0;
-                    decimal += c.to_digit(10).unwrap() as f64 / power;
-                    chars_to_remove += 1;
-                } else {
-                    break;
-                }
+    if input.text.len() > chars_to_remove && input.text.chars().nth(chars_to_remove).unwrap() == '.'
+    {
+        chars_to_remove += 1;
+        let mut power: f64 = 1.0;
+        for c in input.text.chars().skip(chars_to_remove) {
+            if c.is_ascii_digit() {
+                decimal_set = true;
+                power *= 10.0;
+                decimal += c.to_digit(10).unwrap() as f64 / power;
+                chars_to_remove += 1;
+            } else {
+                break;
             }
         }
     }
@@ -257,7 +252,7 @@ fn parse_numeric(input: &mut Position) -> Result<Value, ()> {
             }
             #[allow(clippy::cast_possible_wrap)]
             if exp_minus {
-                exponent = -1 * exp_value as i32;
+                exponent = -(exp_value as i32);
             } else {
                 exponent = exp_value as i32;
             }
@@ -267,26 +262,25 @@ fn parse_numeric(input: &mut Position) -> Result<Value, ()> {
     // Take the uncertainty
     let mut uncertainty_set = false;
     let mut uncertainty = 0;
-    if input.text.len() > chars_to_remove {
-        if input.text.chars().nth(chars_to_remove).unwrap() == '(' {
-            uncertainty_set = true;
-            chars_to_remove += 1;
-            for c in input.text.chars().skip(chars_to_remove) {
-                if c.is_ascii_digit() {
-                    uncertainty *= 10;
-                    uncertainty += c.to_digit(10).unwrap();
-                    chars_to_remove += 1;
-                } else {
-                    break;
-                }
+    if input.text.len() > chars_to_remove && input.text.chars().nth(chars_to_remove).unwrap() == '('
+    {
+        uncertainty_set = true;
+        chars_to_remove += 1;
+        for c in input.text.chars().skip(chars_to_remove) {
+            if c.is_ascii_digit() {
+                uncertainty *= 10;
+                uncertainty += c.to_digit(10).unwrap();
+                chars_to_remove += 1;
+            } else {
+                break;
             }
-            if input.text.len() == chars_to_remove
-                || input.text.chars().nth(chars_to_remove).unwrap() != ')'
-            {
-                return Err(());
-            }
-            chars_to_remove += 1;
         }
+        if input.text.len() == chars_to_remove
+            || input.text.chars().nth(chars_to_remove).unwrap() != ')'
+        {
+            return Err(());
+        }
+        chars_to_remove += 1;
     }
 
     if !integer_set && !decimal_set {
@@ -327,7 +321,7 @@ fn parse_identifier<'a>(input: &mut Position<'a>) -> &'a str {
     let identifier = input.text;
     input.text = "";
     input.column += chars_to_remove;
-    return identifier;
+    identifier
 }
 
 fn start_with<'a, 'b>(input: &mut Position<'a>, pattern: &'b str) -> Result<(), ()> {
@@ -351,7 +345,7 @@ fn trim_comments_and_whitespace(input: &mut Position) {
         if input.text == "" {
             return;
         }
-        if input.text.chars().next().unwrap() == '#' {
+        if input.text.starts_with('#') {
             skip_to_eol(input);
         } else {
             return;
@@ -387,7 +381,6 @@ fn skip_to_eol(input: &mut Position) {
 
     input.text = "";
     input.column += chars_to_remove;
-    return;
 }
 
 fn trim_whitespace(input: &mut Position) {
