@@ -75,7 +75,7 @@ fn parse_data_block(input: &mut Position) -> Result<DataBlock, ()> {
         items: Vec::new(),
     };
     loop {
-        if input.text == "" {
+        if input.text.is_empty() {
             return Ok(block);
         }
         trim_comments_and_whitespace(input);
@@ -324,7 +324,7 @@ fn parse_identifier<'a>(input: &mut Position<'a>) -> &'a str {
     identifier
 }
 
-fn start_with<'a, 'b>(input: &mut Position<'a>, pattern: &'b str) -> Result<(), ()> {
+fn start_with(input: &mut Position, pattern: &str) -> Result<(), ()> {
     if input.text.len() < pattern.len() {
         Err(())
     } else {
@@ -342,7 +342,7 @@ fn start_with<'a, 'b>(input: &mut Position<'a>, pattern: &'b str) -> Result<(), 
 fn trim_comments_and_whitespace(input: &mut Position) {
     loop {
         trim_whitespace(input);
-        if input.text == "" {
+        if input.text.is_empty() {
             return;
         }
         if input.text.starts_with('#') {
