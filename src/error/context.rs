@@ -81,7 +81,7 @@ impl Context {
     /// Creates a new context to highlight a certain position
     #[allow(clippy::unwrap_used)]
     pub fn position(pos: &Position) -> Context {
-        if pos.text == "" {
+        if pos.text.is_empty() {
             Context::Line {
                 linenumber: pos.line,
                 line: "".to_string(),
