@@ -6,7 +6,7 @@ use crate::transformation::*;
 /// A Chain containing multiple Residues
 pub struct Chain {
     /// The identifier of this Chain
-    id: char,
+    id: String,
     /// The Residues making up this Chain
     residues: Vec<Residue>,
     /// A possible reference to a database for this chain
@@ -21,8 +21,8 @@ impl Chain {
     ///
     /// ## Fails
     /// It fails if the identifier is an invalid character.
-    pub fn new(id: char) -> Option<Chain> {
-        if !check_char(id) {
+    pub fn new(id: String) -> Option<Chain> {
+        if !valid_identifier(&id) {
             return None;
         }
         Some(Chain {
@@ -33,13 +33,13 @@ impl Chain {
     }
 
     /// The ID of the Chain
-    pub fn id(&self) -> char {
-        self.id
+    pub fn id(&self) -> &str {
+        &self.id
     }
 
     /// Set the ID of the Chain, returns `false` if the new id is an invalid character.
-    pub fn set_id(&mut self, new_id: char) -> bool {
-        if check_char(new_id) {
+    pub fn set_id(&mut self, new_id: String) -> bool {
+        if valid_identifier(&new_id) {
             self.id = new_id;
             true
         } else {
@@ -149,12 +149,7 @@ impl Chain {
     ///
     /// ## Panics
     /// It panics if the Residue name contains any invalid characters.
-    pub fn add_atom(
-        &mut self,
-        new_atom: Atom,
-        residue_serial_number: usize,
-        residue_name: [char; 3],
-    ) {
+    pub fn add_atom(&mut self, new_atom: Atom, residue_serial_number: usize, residue_name: String) {
         let mut found = false;
         let mut new_residue = Residue::new(residue_serial_number, residue_name, None)
             .expect("Invalid chars in Residue creation");
@@ -278,7 +273,8 @@ impl fmt::Display for Chain {
 
 impl Clone for Chain {
     fn clone(&self) -> Self {
-        let mut chain = Chain::new(self.id).expect("Invalid Chain id while cloning a Chain");
+        let mut chain =
+            Chain::new(self.id.clone()).expect("Invalid Chain id while cloning a Chain");
 
         chain.residues = self.residues.clone();
         chain

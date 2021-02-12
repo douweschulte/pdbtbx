@@ -26,10 +26,10 @@ pub enum LexItem {
     Atom(
         bool,
         usize,
-        [char; 4],
+        String,
         char,
-        [char; 3],
-        char,
+        String,
+        String,
         usize,
         char,
         f64,
@@ -37,12 +37,11 @@ pub enum LexItem {
         f64,
         f64,
         f64,
-        [char; 4],
-        [char; 2],
+        String,
+        String,
         isize,
     ),
     /// An Anisou record with all its information, including the deprecated and rarely used fields.
-    /// * hetatom (true) or atom (false)
     /// * serial number
     /// * name
     /// * alternate location
@@ -56,15 +55,15 @@ pub enum LexItem {
     /// * charge
     Anisou(
         usize,
-        [char; 4],
+        String,
         char,
-        [char; 3],
-        char,
+        String,
+        String,
         usize,
         char,
         [[f64; 3]; 2],
-        [char; 4],
-        [char; 2],
+        String,
+        String,
         isize,
     ),
     /// A SCALEn line, as the row (1/2/3) and data
@@ -93,11 +92,11 @@ pub enum LexItem {
         usize,
     ),
     /// A SEQRES row
-    Seqres(usize, char, usize, Vec<String>),
+    Seqres(usize, String, usize, Vec<String>),
     /// A DBREF row in the original/standard format
     Dbref(
         [char; 4],
-        char,
+        String,
         (usize, char, usize, char),
         String,
         String,
@@ -107,7 +106,7 @@ pub enum LexItem {
     /// A SEQADV row
     Seqadv(
         [char; 4],
-        char,
+        String,
         [char; 3],
         usize,
         char,
@@ -117,7 +116,7 @@ pub enum LexItem {
         String,
     ),
     /// A MODRES record, having information about modifications of atoms
-    Modres([char; 4], [char; 3], char, usize, char, [char; 3], String),
+    Modres([char; 4], String, String, usize, char, String, String),
     /// ENDMODEL, end of the current model
     EndModel(),
     /// TER =, termination of ATOM lines to allow for HETATMs to be defined

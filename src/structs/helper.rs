@@ -1,37 +1,46 @@
-/// Checks if a char is allowed in an identifier in a PDB file.
+/// Checks if a char is allowed in a PDB file.
 /// The char has to be ASCII graphic or a space.
-/// Returns `true` if the chars is valid.
+/// Returns `true` if the char is valid.
 pub fn check_char(c: char) -> bool {
     (c as u32) < 127 && c as u32 > 31
 }
 
-/// Checks an array of two chars using `check_char`.
-/// Returns `true` if the text is valid.
-pub fn check_char2(c: [char; 2]) -> bool {
-    check_char(c[0]) && check_char(c[1])
-}
-
-/// Checks an array of three chars using `check_char`.
-/// Returns `true` if the text is valid.
-pub fn check_char3(c: [char; 3]) -> bool {
-    check_char(c[0]) && check_char(c[1]) && check_char(c[2])
-}
-
-/// Checks an array of four chars using `check_char`.
-/// Returns `true` if the text is valid.
-pub fn check_char4(c: [char; 4]) -> bool {
-    check_char(c[0]) && check_char(c[1]) && check_char(c[2]) && check_char(c[3])
-}
-
 /// Checks a string using `check_char`.
 /// Returns `true` if the text is valid.
-pub fn check_chars(text: String) -> bool {
+pub fn valid_text(text: &str) -> bool {
     for c in text.chars() {
         if !check_char(c) {
             return false;
         }
     }
     true
+}
+
+/// Checks a string using `check_char`.
+/// Returns `true` if the text is valid.
+pub fn valid_identifier(text: &str) -> bool {
+    for c in text.chars() {
+        if !check_char(c) {
+            return false;
+        }
+    }
+    true
+}
+
+const ALPHABET: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+/// Converts a number into a base26 with only the alphabet as possible chars
+pub fn number_to_base26(mut num: usize) -> String {
+    let mut output = Vec::new();
+    #[allow(clippy::unwrap_used)]
+    output.push(ALPHABET.chars().nth(num % 26).unwrap());
+    num /= 26;
+    while num != 0 {
+        #[allow(clippy::unwrap_used)]
+        output.push(ALPHABET.chars().nth(num % 26).unwrap());
+        num /= 26;
+    }
+    output.iter().rev().collect::<String>()
 }
 
 #[cfg(test)]
@@ -44,11 +53,8 @@ mod tests {
         assert!(check_char('*'));
         assert!(check_char('@'));
         assert!(check_char('O'));
-        assert!(check_char2(['a', 'a']));
-        assert!(check_char3(['V', 'A', 'L']));
-        assert!(check_char4(['R', 'E', 'S', 'D']));
-        assert!(check_chars("ResidueName".to_string()));
-        assert!(check_chars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890`-=[]\\;',./~!@#$%^&*()_+{}|:\"<>? ".to_string()));
+        assert!(valid_text("ResidueName"));
+        assert!(valid_text("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890`-=[]\\;',./~!@#$%^&*()_+{}|:\"<>? "));
     }
     #[test]
     fn incorrect_examples() {
@@ -57,10 +63,17 @@ mod tests {
         assert!(!check_char('👍'));
         assert!(!check_char('ÿ'));
         assert!(!check_char('\u{0}'));
-        assert!(!check_char2(['\u{0}', 'a']));
-        assert!(!check_char3(['V', 'ÿ', 'L']));
-        assert!(!check_char4(['R', 'E', '\u{0}', 'D']));
-        assert!(!check_chars("ResidueName∞".to_string()));
-        assert!(!check_chars("Escape\u{0}".to_string()));
+        assert!(!valid_text("ResidueName∞"));
+        assert!(!valid_text("Escape\u{0}"));
+    }
+    #[test]
+    fn number_to_base26_test() {
+        assert_eq!(number_to_base26(26), "BA");
+        assert_eq!(number_to_base26(0), "A");
+        assert_eq!(number_to_base26(234), "JA");
+        assert_eq!(number_to_base26(25), "Z");
+        assert_eq!(number_to_base26(457), "RP");
+        assert_eq!(number_to_base26(15250), "WOO");
+        assert_eq!(number_to_base26(396514), "WOOO");
     }
 }

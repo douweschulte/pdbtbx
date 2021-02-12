@@ -87,4 +87,4 @@ pub use save::*;
 pub use strictness_level::StrictnessLevel;
 pub use structs::*;
 pub use transformation::*;
-pub use validate::validate;
+pub use validate::{validate, validate_pdb};

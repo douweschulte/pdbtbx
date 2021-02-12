@@ -299,12 +299,13 @@ impl Model {
     pub fn add_atom(
         &mut self,
         new_atom: Atom,
-        chain_id: char,
+        chain_id: String,
         residue_serial_number: usize,
-        residue_name: [char; 3],
+        residue_name: String,
     ) {
         let mut found = false;
-        let mut new_chain = Chain::new(chain_id).expect("Invalid characters in chain creation");
+        let mut new_chain =
+            Chain::new(chain_id.clone()).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
         for chain in &mut self.chains {
             if chain.id() == chain_id {
@@ -336,12 +337,12 @@ impl Model {
     pub fn add_hetero_atom(
         &mut self,
         new_atom: Atom,
-        chain_id: char,
+        chain_id: String,
         residue_serial_number: usize,
-        residue_name: [char; 3],
+        residue_name: String,
     ) {
         let mut found = false;
-        let mut new_chain = Chain::new(chain_id)
+        let mut new_chain = Chain::new(chain_id.clone())
             .unwrap_or_else(|| panic!("Invalid characters in chain creation ({})", chain_id));
         let mut current_chain = &mut new_chain;
         for chain in &mut self.hetero_chains {
@@ -418,7 +419,7 @@ impl Model {
     ///
     /// ## Arguments
     /// * `id` - the id of the Chain to remove
-    pub fn remove_chain_id(&mut self, id: char) -> bool {
+    pub fn remove_chain_id(&mut self, id: String) -> bool {
         let index = self.chains.iter().position(|a| a.id() == id);
 
         if let Some(i) = index {

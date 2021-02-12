@@ -1,8 +1,8 @@
 use crate::error::*;
 use crate::structs::*;
-use crate::validate;
 use crate::StrictnessLevel;
 use crate::TransformationMatrix;
+use crate::{validate, validate_pdb};
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -14,6 +14,7 @@ use std::iter;
 /// If validation gives rise to problems use the `save_raw` function.
 pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
     let mut errors = validate(&pdb);
+    errors.extend(validate_pdb(&pdb));
     for error in &errors {
         if error.fails(level) {
             return Err(errors);
@@ -149,7 +150,7 @@ pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: StrictnessLe
                         residue.id(),
                         chain.id(),
                         residue.serial_number(),
-                        std_name.iter().collect::<String>(),
+                        std_name,
                         comment
                     );
                 }

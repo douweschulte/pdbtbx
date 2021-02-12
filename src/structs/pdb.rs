@@ -64,7 +64,7 @@ impl PDB {
         if !reference_tables::valid_remark_type_number(remark_type) {
             panic!(format!("The given remark-type-number is not valid: {}, see wwPDB v3.30 for valid remark-type-numbers", remark_type));
         }
-        if !check_chars(remark_text.clone()) {
+        if !valid_text(&remark_text) {
             panic!("The given remark text contains invalid characters.");
         }
         // As the text can only contain ASCII len() on strings is fine (it returns the length in bytes)
@@ -631,7 +631,7 @@ impl PDB {
             counter = 0;
             #[allow(clippy::unwrap_used, clippy::cast_possible_truncation)]
             for chain in model.all_chains_mut() {
-                chain.set_id(std::char::from_u32((65 + counter % 26) as u32).unwrap());
+                chain.set_id(number_to_base26(counter));
                 counter += 1;
             }
         }

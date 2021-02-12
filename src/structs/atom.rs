@@ -9,8 +9,8 @@ use std::fmt;
 pub struct Atom {
     /// The serial number of the Atom, should be unique within its model
     serial_number: usize,
-    /// The name of the Atom, can only be four chars, can only use the standard allowed characters
-    name: [char; 4],
+    /// The name of the Atom, can only use the standard allowed characters
+    name: String,
     /// The X position of the Atom (Å)
     x: f64,
     /// The Y position of the Atom (Å)
@@ -21,8 +21,8 @@ pub struct Atom {
     occupancy: f64,
     /// The B-factor (or temperature factor) of the Atom
     b_factor: f64,
-    /// The element of the Atom, can only be two chars, can only use the standard allowed characters
-    element: [char; 2],
+    /// The element of the Atom, can only use the standard allowed characters
+    element: String,
     /// The charge of the Atom
     charge: isize,
     /// The anisotropic temperature factors, if applicable
@@ -34,32 +34,30 @@ impl Atom {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         serial_number: usize,
-        atom_name: [char; 4],
+        atom_name: String,
         x: f64,
         y: f64,
         z: f64,
         occupancy: f64,
         b_factor: f64,
-        element: [char; 2],
+        element: String,
         charge: isize,
     ) -> Option<Atom> {
-        let atom = Atom {
-            serial_number,
-            name: atom_name,
-            x,
-            y,
-            z,
-            occupancy,
-            b_factor,
-            element,
-            charge,
-            atf: None,
-        };
-
-        if !check_char4(atom_name) || !check_char2(element) {
-            None
+        if valid_identifier(&atom_name) && valid_identifier(&element) {
+            Some(Atom {
+                serial_number,
+                name: atom_name,
+                x,
+                y,
+                z,
+                occupancy,
+                b_factor,
+                element,
+                charge,
+                atf: None,
+            })
         } else {
-            Some(atom)
+            None
         }
     }
 
@@ -163,37 +161,23 @@ impl Atom {
 
     /// Get the name of the atom
     /// The name is max 4 characters and is trimmed
-    pub fn name(&self) -> String {
-        self.name
-            .iter()
-            .collect::<String>()
-            .split_whitespace()
-            .collect::<String>()
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     /// Set the name of the atom
     /// If the name is invalid an error message is provided
     /// ## Errors
-    /// The name should at max contain 4 characters (ASCII)
     /// The name can only contain valid characters, the ASCII graphic characters (char.is_ascii_graphic() || char == ' ')
     pub fn set_name(&mut self, new_name: &str) -> Result<(), String> {
-        let new_name = format!("{:^4}", new_name);
-        let chars = new_name.to_ascii_uppercase().chars().collect::<Vec<char>>();
-        if chars.len() < 5 {
-            if check_chars(new_name.to_string()) {
-                self.name = [chars[0], chars[1], chars[2], chars[3]];
-                Ok(())
-            } else {
-                Err(format!(
-                    "New name has invalid characters for atom {} name {}",
-                    self.serial_number, new_name
-                ))
-            }
-        } else {
+        if !valid_identifier(new_name) {
             Err(format!(
-                "New name is too long (max 4 chars) for atom {} name {}",
+                "New name has invalid characters for atom {} name {}",
                 self.serial_number, new_name
             ))
+        } else {
+            self.name = new_name.to_ascii_uppercase();
+            Ok(())
         }
     }
 
@@ -238,19 +222,15 @@ impl Atom {
     }
 
     /// Get the element of this atom
-    pub fn element(&self) -> String {
-        self.element
-            .iter()
-            .collect::<String>()
-            .split_whitespace()
-            .collect::<String>()
+    pub fn element(&self) -> &str {
+        &self.element
     }
 
     /// Get the atomic number of this atom. If defined it uses `self.element()`, otherwise it uses `self.name()` of the atom.
     /// ## Fails
     /// It fails when the element() or name() is not a valid element name.
     pub fn atomic_number(&self) -> Option<usize> {
-        if self.element != [' ', ' '] {
+        if !self.element.is_empty() {
             reference_tables::get_atomic_number(&self.element())
         } else {
             reference_tables::get_atomic_number(&self.name())
@@ -278,26 +258,14 @@ impl Atom {
     /// It fails if the element contains invalid characters (only ASCII graphic and space is allowed).
     /// It also fails if the string is too ling, the max length is 2 characters.
     pub fn set_element(&mut self, new_element: &str) -> Result<(), String> {
-        let new_element = format!("{:>2}", new_element);
-        let chars = new_element
-            .to_ascii_uppercase()
-            .chars()
-            .collect::<Vec<char>>();
-        if chars.len() <= 2 {
-            if check_chars(new_element.to_string()) {
-                self.element = [chars[0], chars[1]];
-                Ok(())
-            } else {
-                Err(format!(
-                    "New element has invalid characters for atom {} name {}",
-                    self.serial_number, new_element
-                ))
-            }
-        } else {
+        if !valid_identifier(new_element) {
             Err(format!(
-                "New element is too long (max 2 chars) for atom {} name {}",
+                "New element has invalid characters for atom {} name {}",
                 self.serial_number, new_element
             ))
+        } else {
+            self.element = new_element.to_ascii_uppercase();
+            Ok(())
         }
     }
 
@@ -353,7 +321,7 @@ impl Atom {
     /// Get if this atom is likely to be a part of the backbone of a protein
     pub fn backbone(&self) -> bool {
         let backbone_names = vec!["N", "CA", "C", "O"];
-        backbone_names.contains(&self.name().as_str())
+        backbone_names.contains(&self.name())
     }
 
     /// Apply a transformation to the position of this atom, the new position is immediately set.
@@ -469,13 +437,13 @@ impl Clone for Atom {
     fn clone(&self) -> Self {
         let mut atom = Atom::new(
             self.serial_number,
-            self.name,
+            self.name.clone(),
             self.x,
             self.y,
             self.z,
             self.occupancy,
             self.b_factor,
-            self.element,
+            self.element.clone(),
             self.charge,
         )
         .expect("Invalid characters in generating a clone of the atom");
@@ -509,18 +477,18 @@ mod tests {
     fn set_name() {
         let mut a = Atom::new(
             0,
-            [' ', ' ', ' ', ' '],
+            "".to_string(),
             0.0,
             0.0,
             0.0,
             0.0,
             0.0,
-            [' ', ' '],
+            "".to_string(),
             0,
         )
         .unwrap();
         assert!(a.set_name("Å").is_err());
-        assert!(a.set_name("ATOMS").is_err());
+        assert!(a.set_name("ATOMS").is_ok());
         a.set_name("ATOM").unwrap();
         a.set_name("HOH").unwrap();
         a.set_name("RK").unwrap();
@@ -533,18 +501,18 @@ mod tests {
     fn set_element() {
         let mut a = Atom::new(
             0,
-            [' ', ' ', ' ', ' '],
+            "".to_string(),
             0.0,
             0.0,
             0.0,
             0.0,
             0.0,
-            [' ', ' '],
+            "".to_string(),
             0,
         )
         .unwrap();
         assert!(a.set_element("R̈").is_err());
-        assert!(a.set_element("HOH").is_err());
+        assert!(a.set_element("HOH").is_ok());
         a.set_element("RK").unwrap();
         a.set_element("R").unwrap();
         a.set_element("").unwrap();
@@ -555,25 +523,25 @@ mod tests {
     fn distance() {
         let a = Atom::new(
             0,
-            [' ', ' ', ' ', ' '],
+            "".to_string(),
             1.0,
             0.0,
             0.0,
             0.0,
             0.0,
-            [' ', 'C'],
+            "C".to_string(),
             0,
         )
         .unwrap();
         let b = Atom::new(
             0,
-            [' ', ' ', ' ', ' '],
+            "".to_string(),
             9.0,
             0.0,
             0.0,
             0.0,
             0.0,
-            [' ', 'C'],
+            "C".to_string(),
             0,
         )
         .unwrap();
@@ -589,25 +557,25 @@ mod tests {
     fn distance_all_axes() {
         let a = Atom::new(
             0,
-            [' ', ' ', ' ', ' '],
+            "".to_string(),
             1.0,
             1.0,
             1.0,
             0.0,
             0.0,
-            [' ', 'C'],
+            "C".to_string(),
             0,
         )
         .unwrap();
         let b = Atom::new(
             0,
-            [' ', ' ', ' ', ' '],
+            "".to_string(),
             9.0,
             9.0,
             9.0,
             0.0,
             0.0,
-            [' ', 'C'],
+            "C".to_string(),
             0,
         )
         .unwrap();

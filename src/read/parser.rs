@@ -43,7 +43,7 @@ where
     let mut errors = Vec::new();
     let mut pdb = PDB::new();
     let mut current_model = Model::new(0);
-    let mut sequence: HashMap<char, Vec<(usize, usize, Vec<String>)>> = HashMap::new();
+    let mut sequence: HashMap<String, Vec<(usize, usize, Vec<String>)>> = HashMap::new();
     let mut database_references = Vec::new();
     let mut modifications = Vec::new();
 
@@ -114,8 +114,7 @@ where
                     if !found {
                         println!(
                             "Could not find atom for temperature factors, coupled to atom {} {}",
-                            s,
-                            n.iter().collect::<String>()
+                            s, n
                         )
                     }
                 }
@@ -321,7 +320,7 @@ where
 #[allow(clippy::comparison_chain)]
 fn validate_seqres(
     pdb: &mut PDB,
-    sequence: HashMap<char, Vec<(usize, usize, Vec<String>)>>,
+    sequence: HashMap<String, Vec<(usize, usize, Vec<String>)>>,
     context: &Context,
 ) -> Vec<PDBError> {
     let mut errors = Vec::new();
@@ -400,7 +399,7 @@ fn validate_seqres(
                         let three = format!("{:<3}", seq).chars().collect::<Vec<char>>();
                         chain.insert_residue(
                             index,
-                            Residue::new(index, [three[0], three[1], three[2]], None)
+                            Residue::new(index, three[0..3].iter().collect::<String>(), None)
                                 .expect("Invalid characters in Residue generations"),
                         );
                     } else {
@@ -414,7 +413,7 @@ fn validate_seqres(
                 } else {
                     let three = format!("{:<3}", seq).chars().collect::<Vec<char>>();
                     chain.add_residue(
-                        Residue::new(index, [three[0], three[1], three[2]], None)
+                        Residue::new(index, three[0..3].iter().collect::<String>(), None)
                             .expect("Invalid characters in Residue generations"),
                     );
                 }
@@ -446,7 +445,7 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
                 if let Some(chain) = pdb.chains_mut().find(|c| c.id() == chain_id) {
                     if let Some(residue) = chain
                         .residues_mut()
-                        .find(|r| r.id_array() == res_name && r.serial_number() == seq_num)
+                        .find(|r| r.id() == res_name && r.serial_number() == seq_num)
                     {
                         if let Err(e) = residue.set_modification((std_name, comment)) {
                             errors.push(PDBError::new(
@@ -766,14 +765,14 @@ fn lex_atom_basics(
 ) -> (
     (
         usize,
-        [char; 4],
+        String,
         char,
-        [char; 3],
-        char,
+        String,
+        String,
         usize,
         char,
-        [char; 4],
-        [char; 2],
+        String,
+        String,
         isize,
     ),
     Vec<PDBError>,
@@ -791,22 +790,22 @@ fn lex_atom_basics(
         Context::line(linenumber, &line, 7, 4),
         &chars[7..11],
     ));
-    let atom_name = [chars[12], chars[13], chars[14], chars[15]];
+    let atom_name = chars[12..16].iter().collect::<String>();
     let alternate_location = chars[16];
-    let residue_name = [chars[17], chars[18], chars[19]];
-    let chain_id = chars[21];
+    let residue_name = chars[17..20].iter().collect::<String>();
+    let chain_id = String::from(chars[21]);
     let residue_serial_number = check_usize(parse_number(
         Context::line(linenumber, &line, 22, 4),
         &chars[22..26],
     ));
     let insertion = chars[26];
-    let mut segment_id = [' ', ' ', ' ', ' '];
+    let mut segment_id = String::new();
     if chars.len() >= 75 {
-        segment_id = [chars[72], chars[73], chars[74], chars[75]];
+        segment_id = chars[72..76].iter().collect::<String>();
     }
-    let mut element = [' ', ' '];
+    let mut element = String::new();
     if chars.len() >= 77 {
-        element = [chars[76], chars[77]];
+        element = chars[76..78].iter().collect::<String>();
     }
     let mut charge = 0;
     #[allow(clippy::unwrap_used)]
@@ -1099,7 +1098,10 @@ fn lex_seqres(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
         values.push(seq);
         index += 4;
     }
-    (LexItem::Seqres(ser_num, chain_id, num_res, values), errors)
+    (
+        LexItem::Seqres(ser_num, String::from(chain_id), num_res, values),
+        errors,
+    )
 }
 
 /// Lexes a DBREF record
@@ -1142,7 +1144,7 @@ fn lex_dbref(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     (
         LexItem::Dbref(
             id_code,
-            chain_id,
+            String::from(chain_id),
             (seq_begin, insert_begin, seq_end, insert_end),
             database,
             database_accession,
@@ -1194,7 +1196,7 @@ fn lex_seqadv(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     (
         LexItem::Seqadv(
             id_code,
-            chain_id,
+            String::from(chain_id),
             res_name,
             seq_num,
             insert,
@@ -1219,18 +1221,26 @@ fn lex_modres(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
         }
     };
     let id = [chars[7], chars[8], chars[9], chars[10]];
-    let res_name = [chars[12], chars[13], chars[14]];
+    let res_name = chars[12..15].iter().collect::<String>();
     let chain_id = chars[16];
     let seq_num = check(parse_number(
         Context::line(linenumber, &line, 18, 4),
         &chars[18..22],
     ));
     let insert = chars[22];
-    let std_res = [chars[24], chars[25], chars[26]];
+    let std_res = chars[24..27].iter().collect::<String>();
     let comment = chars[29..].iter().collect::<String>().trim().to_string();
 
     (
-        LexItem::Modres(id, res_name, chain_id, seq_num, insert, std_res, comment),
+        LexItem::Modres(
+            id,
+            res_name,
+            String::from(chain_id),
+            seq_num,
+            insert,
+            std_res,
+            comment,
+        ),
         errors,
     )
 }

@@ -8,13 +8,13 @@ use std::fmt;
 /// A Residue containing multiple atoms
 pub struct Residue {
     /// The identifier or name of Residue
-    id: [char; 3],
+    id: String,
     /// The serial number of this Residue
     serial_number: usize,
     /// The list of atoms making up this Residue
     atoms: Vec<Atom>,
     /// The modification, if present
-    modification: Option<([char; 3], String)>,
+    modification: Option<(String, String)>,
 }
 
 impl Residue {
@@ -27,8 +27,8 @@ impl Residue {
     ///
     /// ## Fails
     /// It fails if any of the characters making up the name are invalid.
-    pub fn new(number: usize, name: [char; 3], atom: Option<Atom>) -> Option<Residue> {
-        if !check_char3(name) {
+    pub fn new(number: usize, name: String, atom: Option<Atom>) -> Option<Residue> {
+        if !valid_identifier(&name) {
             return None;
         }
 
@@ -47,18 +47,8 @@ impl Residue {
     }
 
     /// The ID or name of the Residue
-    pub fn id(&self) -> String {
-        let str_id = self.id.iter().collect::<String>();
-        if str_id != "   " {
-            str_id.split_whitespace().collect::<String>()
-        } else {
-            " ".to_string()
-        }
-    }
-
-    /// The ID or name of the Residue, as a char array
-    pub fn id_array(&self) -> [char; 3] {
-        self.id
+    pub fn id(&self) -> &str {
+        &self.id
     }
 
     /// Set the ID or name of the Residue
@@ -67,23 +57,14 @@ impl Residue {
     /// It fails if any of the characters of the new name are invalid. It also fails if the new name is longer than allowed,
     /// the max length is 3 characters.
     pub fn set_id(&mut self, new_id: &str) -> Result<(), String> {
-        let new_id = format!("{:>3}", new_id);
-        let chars = new_id.to_ascii_uppercase().chars().collect::<Vec<char>>();
-        if chars.len() <= 3 {
-            if check_chars(new_id.to_string()) {
-                self.id = [chars[0], chars[1], chars[2]];
-                Ok(())
-            } else {
-                Err(format!(
-                    "New id has invalid characters for residue {} name {}",
-                    self.serial_number, new_id
-                ))
-            }
-        } else {
+        if !valid_identifier(new_id) {
             Err(format!(
-                "New id is too long (max 3 chars) for residue {} name {}",
+                "New id has invalid characters for residue {} name {}",
                 self.serial_number, new_id
             ))
+        } else {
+            self.id = new_id.to_ascii_uppercase();
+            Ok(())
         }
     }
 
@@ -98,21 +79,18 @@ impl Residue {
     }
 
     /// Get the modification of this Residue e.g., chemical or post-translational. These will be saved in the MODRES records in the PDB file
-    pub fn modification(&self) -> Option<&([char; 3], String)> {
+    pub fn modification(&self) -> Option<&(String, String)> {
         self.modification.as_ref()
     }
 
     /// Set the modification of this Residue e.g., chemical or post-translational. These will be saved in the MODRES records in the PDB file
-    pub fn set_modification(
-        &mut self,
-        new_modification: ([char; 3], String),
-    ) -> Result<(), String> {
-        if !check_char3(new_modification.0) {
+    pub fn set_modification(&mut self, new_modification: (String, String)) -> Result<(), String> {
+        if !valid_identifier(&new_modification.0) {
             Err(format!(
                 "New modification has invalid characters for standard residue name, residue: {}, standard name \"{}\"",
-                self.serial_number, new_modification.0.iter().collect::<String>()
+                self.serial_number, new_modification.0
             ))
-        } else if !check_chars(new_modification.1.clone()) {
+        } else if !valid_text(&new_modification.1) {
             Err(format!(
                 "New modification has invalid characters the comment, residue: {}, comment \"{}\"",
                 self.serial_number, new_modification.1
@@ -171,7 +149,7 @@ impl Residue {
 
     /// Returns if this Residue is an amino acid
     pub fn amino_acid(&self) -> bool {
-        reference_tables::get_amino_acid_number(self.id().as_str()).is_some()
+        reference_tables::get_amino_acid_number(self.id()).is_some()
     }
 
     /// Remove all Atoms matching the given predicate. As this is done in place this is the fastest way to remove Atoms from this Residue.
@@ -262,7 +240,7 @@ impl fmt::Display for Residue {
 
 impl Clone for Residue {
     fn clone(&self) -> Self {
-        let mut res = Residue::new(self.serial_number, self.id, None)
+        let mut res = Residue::new(self.serial_number, self.id.clone(), None)
             .expect("Invalid properties while cloning a Residue");
         res.atoms = self.atoms.clone();
         res
