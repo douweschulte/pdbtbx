@@ -477,24 +477,24 @@ fn lex_line(line: String, linenumber: usize) -> Result<(LexItem, Vec<PDBError>),
         match &line[..6] {
             "REMARK" => lex_remark(linenumber, line),
             "ATOM  " => lex_atom(linenumber, line, false),
-            "ANISOU" => lex_anisou(linenumber, line),
+            "ANISOU" => Ok(lex_anisou(linenumber, line)),
             "HETATM" => lex_atom(linenumber, line, true),
-            "CRYST1" => lex_cryst(linenumber, line),
-            "SCALE1" => lex_scale(linenumber, line, 0),
-            "SCALE2" => lex_scale(linenumber, line, 1),
-            "SCALE3" => lex_scale(linenumber, line, 2),
-            "ORIGX1" => lex_origx(linenumber, line, 0),
-            "ORIGX2" => lex_origx(linenumber, line, 1),
-            "ORIGX3" => lex_origx(linenumber, line, 2),
-            "MTRIX1" => lex_mtrix(linenumber, line, 0),
-            "MTRIX2" => lex_mtrix(linenumber, line, 1),
-            "MTRIX3" => lex_mtrix(linenumber, line, 2),
-            "MODEL " => lex_model(linenumber, line),
-            "MASTER" => lex_master(linenumber, line),
-            "DBREF " => lex_dbref(linenumber, line),
-            "SEQRES" => lex_seqres(linenumber, line),
-            "SEQADV" => lex_seqadv(linenumber, line),
-            "MODRES" => lex_modres(linenumber, line),
+            "CRYST1" => Ok(lex_cryst(linenumber, line)),
+            "SCALE1" => Ok(lex_scale(linenumber, line, 0)),
+            "SCALE2" => Ok(lex_scale(linenumber, line, 1)),
+            "SCALE3" => Ok(lex_scale(linenumber, line, 2)),
+            "ORIGX1" => Ok(lex_origx(linenumber, line, 0)),
+            "ORIGX2" => Ok(lex_origx(linenumber, line, 1)),
+            "ORIGX3" => Ok(lex_origx(linenumber, line, 2)),
+            "MTRIX1" => Ok(lex_mtrix(linenumber, line, 0)),
+            "MTRIX2" => Ok(lex_mtrix(linenumber, line, 1)),
+            "MTRIX3" => Ok(lex_mtrix(linenumber, line, 2)),
+            "MODEL " => Ok(lex_model(linenumber, line)),
+            "MASTER" => Ok(lex_master(linenumber, line)),
+            "DBREF " => Ok(lex_dbref(linenumber, line)),
+            "SEQRES" => Ok(lex_seqres(linenumber, line)),
+            "SEQADV" => Ok(lex_seqadv(linenumber, line)),
+            "MODRES" => Ok(lex_modres(linenumber, line)),
             "ENDMDL" => Ok((LexItem::EndModel(), Vec::new())),
             "TER   " => Ok((LexItem::TER(), Vec::new())),
             "END   " => Ok((LexItem::End(), Vec::new())),
@@ -560,7 +560,7 @@ fn lex_remark(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
 /// Lex a MODEL
 /// ## Fails
 /// It fails on incorrect numbers for the serial number
-fn lex_model(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_model(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let number = match parse_number(
         Context::line(linenumber, &line, 6, line.len() - 6),
@@ -577,7 +577,7 @@ fn lex_model(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>)
             0
         }
     };
-    Ok((LexItem::Model(number), errors))
+    (LexItem::Model(number), errors)
 }
 
 /// Lex an ATOM
@@ -675,7 +675,7 @@ fn lex_atom(
 /// Lex an ANISOU
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_anisou(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_anisou(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let mut check = |item| match item {
         Ok(t) => t,
@@ -740,7 +740,7 @@ fn lex_anisou(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
     ) = lex_atom_basics(linenumber, line);
     errors.extend(basic_errors);
 
-    Ok((
+    (
         LexItem::Anisou(
             serial_number,
             atom_name,
@@ -755,7 +755,7 @@ fn lex_anisou(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
             charge,
         ),
         errors,
-    ))
+    )
 }
 
 /// Lex the basic structure of the ATOM/HETATM/ANISOU Records, to minimise code duplication
@@ -853,7 +853,7 @@ fn lex_atom_basics(
 /// Lex a CRYST1
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_cryst(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_cryst(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -904,46 +904,34 @@ fn lex_cryst(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>)
         };
     }
 
-    Ok((
+    (
         LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, z),
         errors,
-    ))
+    )
 }
 
 /// Lex an SCALEn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_scale(
-    linenumber: usize,
-    line: String,
-    row: usize,
-) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_scale(linenumber: usize, line: String, row: usize) -> (LexItem, Vec<PDBError>) {
     let (data, errors) = lex_transformation(linenumber, line);
 
-    Ok((LexItem::Scale(row, data), errors))
+    (LexItem::Scale(row, data), errors)
 }
 
 /// Lex an ORIGXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_origx(
-    linenumber: usize,
-    line: String,
-    row: usize,
-) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_origx(linenumber: usize, line: String, row: usize) -> (LexItem, Vec<PDBError>) {
     let (data, errors) = lex_transformation(linenumber, line);
 
-    Ok((LexItem::OrigX(row, data), errors))
+    (LexItem::OrigX(row, data), errors)
 }
 
 /// Lex an MTRIXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_mtrix(
-    linenumber: usize,
-    line: String,
-    row: usize,
-) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_mtrix(linenumber: usize, line: String, row: usize) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -965,7 +953,7 @@ fn lex_mtrix(
         given = chars[59] == '1';
     }
 
-    Ok((LexItem::MtriX(row, ser, data, given), errors))
+    (LexItem::MtriX(row, ser, data, given), errors)
 }
 
 /// Lexes the general structure of a transformation record (ORIGXn, SCALEn, MTRIXn)
@@ -1002,7 +990,7 @@ fn lex_transformation(linenumber: usize, line: String) -> ([f64; 4], Vec<PDBErro
 /// Lex a MASTER
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_master(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_master(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1061,7 +1049,7 @@ fn lex_master(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
         &chars[65..70],
     ));
 
-    Ok((
+    (
         LexItem::Master(
             num_remark,
             num_empty,
@@ -1077,11 +1065,11 @@ fn lex_master(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
             num_seq,
         ),
         errors,
-    ))
+    )
 }
 
 /// Lexes a SEQRES record
-fn lex_seqres(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_seqres(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1111,11 +1099,11 @@ fn lex_seqres(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
         values.push(seq);
         index += 4;
     }
-    Ok((LexItem::Seqres(ser_num, chain_id, num_res, values), errors))
+    (LexItem::Seqres(ser_num, chain_id, num_res, values), errors)
 }
 
 /// Lexes a DBREF record
-fn lex_dbref(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_dbref(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1151,7 +1139,7 @@ fn lex_dbref(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>)
     ));
     let database_insert_end = chars[67];
 
-    Ok((
+    (
         LexItem::Dbref(
             id_code,
             chain_id,
@@ -1167,11 +1155,11 @@ fn lex_dbref(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>)
             ),
         ),
         errors,
-    ))
+    )
 }
 
 /// Lexes a SEQADV record
-fn lex_seqadv(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_seqadv(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1203,7 +1191,7 @@ fn lex_seqadv(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
     }
     let comment = chars[49..].iter().collect::<String>().trim().to_string();
 
-    Ok((
+    (
         LexItem::Seqadv(
             id_code,
             chain_id,
@@ -1216,11 +1204,11 @@ fn lex_seqadv(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
             comment,
         ),
         errors,
-    ))
+    )
 }
 
 /// Lexes a MODRES record
-fn lex_modres(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_modres(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1241,10 +1229,10 @@ fn lex_modres(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
     let std_res = [chars[24], chars[25], chars[26]];
     let comment = chars[29..].iter().collect::<String>().trim().to_string();
 
-    Ok((
+    (
         LexItem::Modres(id, res_name, chain_id, seq_num, insert, std_res, comment),
         errors,
-    ))
+    )
 }
 
 /// Parse a number, generic for anything that can be parsed using FromStr
