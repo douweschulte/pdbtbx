@@ -5,6 +5,6 @@ mod errorlevel;
 /// An error with all its properties
 mod pdberror;
 
-pub use context::Context;
+pub use context::{Context, Position};
 pub use errorlevel::ErrorLevel;
 pub use pdberror::PDBError;

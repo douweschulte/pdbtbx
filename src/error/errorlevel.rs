@@ -2,7 +2,7 @@ use crate::StrictnessLevel;
 use std::fmt;
 
 /// This indicates the level of the error, to handle it differently based on the level of the raised error.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ErrorLevel {
     /// An error that breaks the execution of the program.
     BreakingError,

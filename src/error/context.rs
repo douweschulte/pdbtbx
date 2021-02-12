@@ -1,7 +1,7 @@
 use std::fmt;
 
 /// A struct to define the context of an error message
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Context {
     /// When no context can be given
     None,
@@ -36,6 +36,15 @@ pub enum Context {
         /// The length of the special position to be annotated.
         length: usize,
     },
+    /// To show multiple lines where an error occurred.
+    Range {
+        /// The linenumber of the first line
+        start_linenumber: usize,
+        /// The lines to show
+        lines: Vec<String>,
+        /// The possible offset of the first line, will be padded with spaces
+        offset: usize,
+    },
 }
 
 impl Context {
@@ -68,6 +77,49 @@ impl Context {
             length,
         }
     }
+
+    /// Creates a new context to highlight a certain position
+    #[allow(clippy::unwrap_used)]
+    pub fn position(pos: &Position) -> Context {
+        if pos.text == "" {
+            Context::Line {
+                linenumber: pos.line,
+                line: "".to_string(),
+                offset: 0,
+                length: 3,
+            }
+        } else {
+            Context::Line {
+                linenumber: pos.line,
+                line: pos.text.lines().into_iter().next().unwrap().to_string(),
+                offset: 0,
+                length: 3,
+            }
+        }
+    }
+
+    /// Creates a new context from a start and end point within a single file
+    pub fn range(start: &Position, end: &Position) -> Context {
+        if start.line == end.line {
+            Context::Line {
+                linenumber: start.line,
+                line: start.text[..(end.column - start.column)].to_string(),
+                offset: start.column,
+                length: end.column - start.column,
+            }
+        } else {
+            Context::Range {
+                start_linenumber: start.line,
+                lines: start.text[..(end.text.len() - start.text.len())]
+                    .to_string()
+                    .lines()
+                    .into_iter()
+                    .map(|a| a.to_string())
+                    .collect::<Vec<String>>(),
+                offset: start.column,
+            }
+        }
+    }
 }
 
 impl fmt::Display for Context {
@@ -91,6 +143,32 @@ impl fmt::Display for Context {
                 " ".repeat(*offset),
                 "^".repeat(*length)
             ),
+            Context::Range {
+                start_linenumber,
+                lines,
+                offset,
+            } => {
+                write!(f, "\"     |").expect("Fault in writing to output");
+                let mut number = *start_linenumber;
+                write!(f, "\n{:<4} | {}{}", number, " ".repeat(*offset), lines[0])
+                    .expect("Fault in writing to output");
+                for line in lines.iter().skip(1) {
+                    number += 1;
+                    write!(f, "\n{:<4} | {}", number, line).expect("Fault in writing to output");
+                }
+                write!(f, "\"     |")
+            }
         }
     }
+}
+
+#[derive(Debug, PartialEq, Copy, Clone)]
+/// A position in a file for use in parsing/lexing
+pub struct Position<'a> {
+    /// The remaining text (as ref so no copies)
+    pub text: &'a str,
+    /// The current linenumber
+    pub line: usize,
+    /// The current column number
+    pub column: usize,
 }

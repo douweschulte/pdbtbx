@@ -82,7 +82,7 @@ mod transformation;
 mod validate;
 
 pub use error::*;
-pub use read::{open, parse};
+pub use read::{open, open_cif, parse, parse_cif};
 pub use save::*;
 pub use strictness_level::StrictnessLevel;
 pub use structs::*;

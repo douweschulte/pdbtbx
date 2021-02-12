@@ -13,7 +13,7 @@ pub struct PDB {
     scale: Option<Scale>,
     /// The OrigX needed to transform orthogonal coordinates to submitted coordinates, if available
     origx: Option<OrigX>,
-    /// The MtriXs needed to transform the Models to the full assymetric subunit, if needed to contain the non-crystallographic symmetry
+    /// The MtriXs needed to transform the Models to the full asymmetric subunit, if needed to contain the non-crystallographic symmetry
     mtrix: Vec<MtriX>,
     /// The unit cell of the crystal, containing its size and shape, if available
     unit_cell: Option<UnitCell>,
