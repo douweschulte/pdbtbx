@@ -87,7 +87,7 @@ impl UnitCell {
         if !new_alpha.is_finite() {
             panic!("The new alpha value of this UnitCell is not finite");
         }
-        if new_alpha >= 360.0 || new_alpha < 0.0 {
+        if !(0.0..360.0).contains(&new_alpha) {
             panic!("The new alpha value of this UnitCell is out of bounds [0, 360).")
         }
         self.alpha = new_alpha;
@@ -104,7 +104,7 @@ impl UnitCell {
         if !new_beta.is_finite() {
             panic!("The new beta value of this UnitCell is not finite");
         }
-        if new_beta >= 360.0 || new_beta < 0.0 {
+        if !(0.0..360.0).contains(&new_beta) {
             panic!("The new beta value of this UnitCell is out of bounds [0, 360).")
         }
         self.beta = new_beta;
@@ -121,7 +121,7 @@ impl UnitCell {
         if !new_gamma.is_finite() {
             panic!("The new gamma value of this UnitCell is not finite");
         }
-        if new_gamma >= 360.0 || new_gamma < 0.0 {
+        if !(0.0..360.0).contains(&new_gamma) {
             panic!("The new gamma value of this UnitCell is out of bounds [0, 360).")
         }
         self.gamma = new_gamma;
