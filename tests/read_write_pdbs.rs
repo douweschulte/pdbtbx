@@ -21,8 +21,8 @@ fn run_pdbs() {
         let entry = entry.unwrap();
         let path = entry.path();
         let metadata = fs::metadata(&path).unwrap();
-        if metadata.is_file() {
-            do_someting(
+        if metadata.is_file() && path.ends_with(".pdb") {
+            do_something(
                 &path.clone().into_os_string().into_string().unwrap(),
                 &dump_dir,
                 &path
@@ -36,11 +36,11 @@ fn run_pdbs() {
     }
 }
 
-fn do_someting(file: &str, folder: &str, name: &str) {
+fn do_something(file: &str, folder: &str, name: &str) {
     println!("Working on file: {}", file);
     let now = Instant::now();
 
-    let (pdb, errors) = open(file, StrictnessLevel::Loose).unwrap();
+    let (pdb, errors) = open_pdb(file, StrictnessLevel::Loose).unwrap();
 
     let time = now.elapsed();
 
@@ -102,13 +102,13 @@ fn do_someting(file: &str, folder: &str, name: &str) {
         avg, avg_back, avg_side
     );
 
-    save(
+    save_pdb(
         pdb.clone(),
         &(folder.to_string() + name + ".pdb"),
         StrictnessLevel::Loose,
     )
     .expect("Save not successful");
-    save_pdbx(
+    save_mmcif(
         pdb,
         &(folder.to_string() + name + ".cif"),
         StrictnessLevel::Loose,

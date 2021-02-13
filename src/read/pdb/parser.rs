@@ -14,7 +14,10 @@ use std::str::FromStr;
 
 /// Parse the given file into a PDB struct.
 /// Returns an PDBError when it found a BreakingError. Otherwise it returns the PDB with all errors/warnings found while parsing it.
-pub fn open(filename: &str, level: StrictnessLevel) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+pub fn open_pdb(
+    filename: &str,
+    level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
     let file = if let Ok(f) = File::open(filename) {
         f
@@ -22,7 +25,7 @@ pub fn open(filename: &str, level: StrictnessLevel) -> Result<(PDB, Vec<PDBError
         return Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
     };
     let reader = BufReader::new(file);
-    parse(reader, Context::show(filename), level)
+    parse_pdb(reader, Context::show(filename), level)
 }
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
@@ -32,7 +35,7 @@ pub fn open(filename: &str, level: StrictnessLevel) -> Result<(PDB, Vec<PDBError
 /// * `input` - the input stream
 /// * `context` - the context of the full stream, to place error messages correctly, for files this is `Context::show(filename)`.
 /// * `level` - the strictness level to operate in. If errors are generated which are breaking in the given level the parsing will fail.
-pub fn parse<T>(
+pub fn parse_pdb<T>(
     input: std::io::BufReader<T>,
     context: Context,
     level: StrictnessLevel,

@@ -1,82 +1,14 @@
 #![allow(clippy::missing_docs_in_private_items, clippy::unwrap_used)]
+use super::lexitem::*;
 use crate::error::*;
-use std::fs::File;
-use std::io::prelude::*;
 
-/// !!UNSTABLE!!
-/// Parse the given file into CIF intermediate structure.
-pub fn open_cif(filename: &str) -> Result<DataBlock, PDBError> {
-    // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
-    let mut file = if let Ok(f) = File::open(filename) {
-        f
-    } else {
-        return Err(PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename)));
-    };
-    let mut contents = String::new();
-    if let Err(e) = file.read_to_string(&mut contents) {
-        return Err(PDBError::new(
-            ErrorLevel::BreakingError,
-            "Error while reading file",
-            &format!("Error: {}", e),
-            Context::show(filename),
-        ));
-    }
-    parse_cif(contents)
-}
-
-/// !!UNSTABLE!!
-/// Parse a CIF file into CIF intermediate structure
-pub fn parse_cif(input: String) -> Result<DataBlock, PDBError> {
+/// Parse/lex a CIF file into CIF intermediate structure
+pub fn lex_cif(input: String) -> Result<DataBlock, PDBError> {
     parse_main(&mut Position {
         text: &input[..],
         line: 0,
         column: 0,
     })
-}
-
-#[derive(Debug, PartialEq)]
-pub struct DataBlock {
-    name: String,
-    items: Vec<Item>,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Item {
-    DataItem(DataItem),
-    SaveFrame(SaveFrame),
-}
-
-#[derive(Debug, PartialEq)]
-pub struct SaveFrame {
-    name: String,
-    items: Vec<DataItem>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct DataItem {
-    name: String,
-    content: MultiValue,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum MultiValue {
-    Value(Value),
-    Loop(Loop),
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Loop {
-    header: Vec<String>,
-    data: Vec<Value>,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Value {
-    Inapplicable,
-    Unknown,
-    Numeric(f64),
-    NumericWithUncertainty(f64, u32),
-    Text(String),
 }
 
 fn parse_main(input: &mut Position) -> Result<DataBlock, PDBError> {
@@ -102,7 +34,6 @@ fn parse_data_block(input: &mut Position) -> Result<DataBlock, PDBError> {
         if input.text.is_empty() {
             return Ok(block);
         }
-        trim_comments_and_whitespace(input);
         let item = parse_data_item_or_save_frame(input)?;
         block.items.push(item);
     }
@@ -110,15 +41,13 @@ fn parse_data_block(input: &mut Position) -> Result<DataBlock, PDBError> {
 
 fn parse_data_item_or_save_frame(input: &mut Position) -> Result<Item, PDBError> {
     let start = *input;
+    trim_comments_and_whitespace(input);
     if let Some(()) = start_with(input, "save_") {
         let mut frame = SaveFrame {
             name: parse_identifier(input).to_string(),
             items: Vec::new(),
         };
-        trim_comments_and_whitespace(input);
-        while !input.text.is_empty() && input.text.starts_with('_') {
-            let item = parse_data_item(input)?;
-            trim_comments_and_whitespace(input);
+        while let Ok(item) = parse_data_item(input) {
             frame.items.push(item);
         }
         if let Some(()) = start_with(input, "save_") {
@@ -139,37 +68,36 @@ fn parse_data_item_or_save_frame(input: &mut Position) -> Result<Item, PDBError>
 
 fn parse_data_item(input: &mut Position) -> Result<DataItem, PDBError> {
     let start = *input;
-    if let Some(()) = start_with(input, "_") {
-        let name = parse_identifier(input);
+    trim_comments_and_whitespace(input);
+    if let Some(()) = start_with(input, "loop_") {
+        let mut loop_value = Loop {
+            header: Vec::new(),
+            data: Vec::new(),
+        };
+        println!("Starting loop at line {}", input.line);
         trim_comments_and_whitespace(input);
 
-        if let Some(()) = start_with(input, "loop_") {
-            let mut loop_value = Loop {
-                header: Vec::new(),
-                data: Vec::new(),
-            };
+        while let Some(()) = start_with(input, "_") {
+            let inner_name = parse_identifier(input);
+            loop_value.header.push(inner_name.to_string());
+            println!("Found loop header at line {}", input.line);
             trim_comments_and_whitespace(input);
+        }
 
-            while let Some(()) = start_with(input, "_") {
-                let inner_name = parse_identifier(input);
-                trim_comments_and_whitespace(input);
-                loop_value.header.push(inner_name.to_string());
-            }
+        while let Ok(value) = parse_value(input) {
+            loop_value.data.push(value);
+            println!("Found loop value at line {}", input.line);
+        }
 
-            while let Ok(value) = parse_value(input) {
-                loop_value.data.push(value);
-                trim_comments_and_whitespace(input);
-            }
-
-            Ok(DataItem {
+        Ok(DataItem::Loop(loop_value))
+    } else if let Some(()) = start_with(input, "_") {
+        println!("Starting data item at line {}", input.line);
+        let name = parse_identifier(input);
+        if let Ok(value) = parse_value(input) {
+            Ok(DataItem::Single(Single {
                 name: name.to_string(),
-                content: MultiValue::Loop(loop_value),
-            })
-        } else if let Ok(value) = parse_value(input) {
-            Ok(DataItem {
-                name: name.to_string(),
-                content: MultiValue::Value(value),
-            })
+                content: value,
+            }))
         } else {
             Err(PDBError::new(
                 ErrorLevel::BreakingError,
@@ -181,20 +109,33 @@ fn parse_data_item(input: &mut Position) -> Result<DataItem, PDBError> {
     } else {
         Err(PDBError::new(
             ErrorLevel::BreakingError,
-            "No valid Data Item",
-            "A data item should be started with an underscore \'_\'.",
-            Context::position(input),
+            "No valid DataItem",
+            "A Data Item should be a tag with a value or a loop.",
+            Context::range(&start, input),
         ))
     }
 }
 
 fn parse_value(input: &mut Position) -> Result<Value, PDBError> {
     let start = *input;
+    trim_comments_and_whitespace(input);
     if input.text.is_empty() {
         Err(PDBError::new(
             ErrorLevel::BreakingError,
             "Empty value",
             "No text left",
+            Context::position(input),
+        ))
+    } else if start_with(input, "data_").is_some()
+        || start_with(input, "global_").is_some()
+        || start_with(input, "loop_").is_some()
+        || start_with(input, "save_").is_some()
+        || start_with(input, "stop_").is_some()
+    {
+        Err(PDBError::new(
+            ErrorLevel::BreakingError,
+            "Use of reserved word",
+            "\"data_\", \"global_\", \"loop_\", \"save_\" and \"stop_\" are reserved words.",
             Context::position(input),
         ))
     } else if input.text.starts_with('.') {
@@ -456,6 +397,8 @@ fn parse_multiline_string<'a>(input: &mut Position<'a>) -> &'a str {
                 input.line += 1;
                 input.column = 0;
                 eol = true;
+            } else {
+                eol = false;
             }
             chars_to_remove += 1;
         } else {
@@ -476,20 +419,18 @@ fn skip_to_eol(input: &mut Position) {
 
     for c in input.text.chars() {
         if c == '\r' || c == '\n' {
-            if eol {
-                input.text = &input.text[chars_to_remove..];
+            if !eol {
+                chars_to_remove += 1;
                 input.line += 1;
                 input.column = 0;
-                return;
-            } else {
-                chars_to_remove += 1;
                 eol = true;
+            } else {
+                input.text = &input.text[chars_to_remove..];
+                return;
             }
         } else {
             if eol {
                 input.text = &input.text[chars_to_remove..];
-                input.line += 1;
-                input.column = 0;
                 return;
             }
             chars_to_remove += 1;
@@ -945,10 +886,10 @@ mod tests {
         let res = parse_data_item(&mut pos);
         assert_eq!(
             res,
-            Ok(DataItem {
+            Ok(DataItem::Single(Single {
                 name: "tag".to_string(),
-                content: MultiValue::Value(Value::Numeric(42.3))
-            })
+                content: Value::Numeric(42.3)
+            }))
         );
         assert_eq!(pos.text, "");
         assert_eq!(pos.line, 1);
@@ -965,10 +906,10 @@ mod tests {
         let res = parse_data_item(&mut pos);
         assert_eq!(
             res,
-            Ok(DataItem {
+            Ok(DataItem::Single(Single {
                 name: "tag".to_string(),
-                content: MultiValue::Value(Value::Text("of course I would".to_string()))
-            })
+                content: Value::Text("of course I would".to_string())
+            }))
         );
         assert_eq!(pos.text, "");
         assert_eq!(pos.line, 0);
@@ -985,12 +926,12 @@ mod tests {
         let res = parse_data_item(&mut pos);
         assert_eq!(
             res,
-            Ok(DataItem {
+            Ok(DataItem::Single(Single {
                 name: "long__tag".to_string(),
-                content: MultiValue::Value(Value::Text(
+                content: Value::Text(
                     "\tOf course I would\nAlso on multiple lines ;-)\n".to_string()
-                ))
-            })
+                )
+            }))
         );
         assert_eq!(pos.text, "");
         assert_eq!(pos.line, 3);
@@ -1000,34 +941,31 @@ mod tests {
     #[test]
     fn parse_data_item_loop() {
         let mut pos = Position {
-            text: "_some_loop loop_\n_first\n_second\n_last\n#Some comment because I need to put that in here as well!\n. 23.2 ?\nHello 25.9 ?\nHey 30.3 N",
+            text: "loop_\n\t_first\n\t_second\n\t_last\n#Some comment because I need to put that in here as well!\n. 23.2 ?\nHello 25.9 ?\nHey 30.3 N",
             line: 0,
             column: 0,
         };
         let res = parse_data_item(&mut pos);
         assert_eq!(
             res,
-            Ok(DataItem {
-                name: "some_loop".to_string(),
-                content: MultiValue::Loop(Loop {
-                    header: vec![
-                        "first".to_string(),
-                        "second".to_string(),
-                        "last".to_string()
-                    ],
-                    data: vec![
-                        Value::Inapplicable,
-                        Value::Numeric(23.2),
-                        Value::Unknown,
-                        Value::Text("Hello".to_string()),
-                        Value::Numeric(25.9),
-                        Value::Unknown,
-                        Value::Text("Hey".to_string()),
-                        Value::Numeric(30.3),
-                        Value::Text("N".to_string())
-                    ]
-                })
-            })
+            Ok(DataItem::Loop(Loop {
+                header: vec![
+                    "first".to_string(),
+                    "second".to_string(),
+                    "last".to_string()
+                ],
+                data: vec![
+                    Value::Inapplicable,
+                    Value::Numeric(23.2),
+                    Value::Unknown,
+                    Value::Text("Hello".to_string()),
+                    Value::Numeric(25.9),
+                    Value::Unknown,
+                    Value::Text("Hey".to_string()),
+                    Value::Numeric(30.3),
+                    Value::Text("N".to_string())
+                ]
+            }))
         );
         assert_eq!(pos.text, "");
         assert_eq!(pos.line, 7);
@@ -1044,10 +982,10 @@ mod tests {
         let res = parse_data_item_or_save_frame(&mut pos);
         assert_eq!(
             res,
-            Ok(Item::DataItem(DataItem {
+            Ok(Item::DataItem(DataItem::Single(Single {
                 name: "data".to_string(),
-                content: MultiValue::Value(Value::Unknown)
-            }))
+                content: Value::Unknown
+            })))
         );
         assert_eq!(pos.text, "");
         assert_eq!(pos.line, 0);
@@ -1066,10 +1004,10 @@ mod tests {
             res,
             Ok(Item::SaveFrame(SaveFrame {
                 name: "something_to_save".to_string(),
-                items: vec![DataItem {
+                items: vec![DataItem::Single(Single {
                     name: "data".to_string(),
-                    content: MultiValue::Value(Value::Inapplicable)
-                }]
+                    content: Value::Inapplicable
+                })]
             }))
         );
         assert_eq!(pos.text, "");

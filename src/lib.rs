@@ -24,7 +24,7 @@
 //!
 //! ```
 //! use pdbtbx;
-//! let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Loose).unwrap();
+//! let (mut pdb, _errors) = pdbtbx::open_pdb("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Loose).unwrap();
 //! pdb.remove_atoms_by(|atom| atom.element() == "H"); // Remove all H atoms
 //!
 //! let mut avg_b_factor = 0.0;
@@ -34,7 +34,7 @@
 //! avg_b_factor /= pdb.atom_count() as f64;
 //!
 //! println!("The average B factor of the protein is: {}", avg_b_factor);
-//! pdbtbx::save(pdb, "dump/1ubq.pdb", pdbtbx::StrictnessLevel::Loose);
+//! pdbtbx::save_pdb(pdb, "dump/1ubq.pdb", pdbtbx::StrictnessLevel::Loose);
 //! ```
 #![deny(
     missing_docs,
@@ -82,7 +82,7 @@ mod transformation;
 mod validate;
 
 pub use error::*;
-pub use read::{open, open_cif, parse, parse_cif};
+pub use read::{open_mmcif, open_pdb, parse_pdb};
 pub use save::*;
 pub use strictness_level::StrictnessLevel;
 pub use structs::*;

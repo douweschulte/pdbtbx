@@ -12,7 +12,7 @@ use std::io::BufWriter;
 /// If validation gives rise to problems use the `save_raw` function.
 /// ## Warning
 /// This function is unstable and unfinished!
-pub fn save_pdbx(
+pub fn save_mmcif(
     pdb: PDB,
     filename: &str,
     level: StrictnessLevel,
@@ -38,7 +38,7 @@ pub fn save_pdbx(
         }
     };
 
-    save_pdbx_raw(&pdb, BufWriter::new(file), name);
+    save_mmcif_raw(&pdb, BufWriter::new(file), name);
     Ok(())
 }
 
@@ -49,7 +49,7 @@ pub fn save_pdbx(
 /// ## Warning
 /// This function is unstable and unfinished!
 #[allow(clippy::unwrap_used)]
-pub fn save_pdbx_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, name: &str) {
+pub fn save_mmcif_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, name: &str) {
     macro_rules! write {
         ($($arg:tt)*) => {
             sink.write_fmt(format_args!($($arg)*)).unwrap();

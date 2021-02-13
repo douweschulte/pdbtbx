@@ -110,10 +110,11 @@ impl Context {
         } else {
             Context::Range {
                 start_linenumber: start.line,
-                lines: start.text[..(end.text.len() - start.text.len())]
-                    .to_string()
+                lines: start
+                    .text
                     .lines()
                     .into_iter()
+                    .take(end.line - start.line)
                     .map(|a| a.to_string())
                     .collect::<Vec<String>>(),
                 offset: start.column,
@@ -148,7 +149,7 @@ impl fmt::Display for Context {
                 lines,
                 offset,
             } => {
-                write!(f, "\"     |").expect("Fault in writing to output");
+                write!(f, "\n     |").expect("Fault in writing to output");
                 let mut number = *start_linenumber;
                 write!(f, "\n{:<4} | {}{}", number, " ".repeat(*offset), lines[0])
                     .expect("Fault in writing to output");
@@ -156,7 +157,7 @@ impl fmt::Display for Context {
                     number += 1;
                     write!(f, "\n{:<4} | {}", number, line).expect("Fault in writing to output");
                 }
-                write!(f, "\"     |")
+                write!(f, "\n     |")
             }
         }
     }

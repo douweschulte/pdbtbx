@@ -48,17 +48,83 @@ impl UnitCell {
     pub fn c(&self) -> f64 {
         self.c
     }
+    /// Set the a-axis dimension
+    /// ## Panics
+    /// It panics if the new value is not finite
+    pub fn set_a(&mut self, new_a: f64) {
+        if !new_a.is_finite() {
+            panic!("The new a value of this UnitCell is not finite");
+        }
+        self.a = new_a;
+    }
+    /// Set the b-axis dimension
+    /// ## Panics
+    /// It panics if the new value is not finite
+    pub fn set_b(&mut self, new_b: f64) {
+        if !new_b.is_finite() {
+            panic!("The new b value of this UnitCell is not finite");
+        }
+        self.b = new_b;
+    }
+    /// Set the c-axis dimension
+    /// ## Panics
+    /// It panics if the new value is not finite
+    pub fn set_c(&mut self, new_c: f64) {
+        if !new_c.is_finite() {
+            panic!("The new c value of this UnitCell is not finite");
+        }
+        self.c = new_c;
+    }
     /// Get the alpha angle in degrees
     pub fn alpha(&self) -> f64 {
         self.alpha
+    }
+    /// Set the alpha angle in degrees
+    /// ## Panics
+    /// It panics if the new value is not finite.
+    /// It also panics if the alpha value is outside of bounds [0, 360)
+    pub fn set_alpha(&mut self, new_alpha: f64) {
+        if !new_alpha.is_finite() {
+            panic!("The new alpha value of this UnitCell is not finite");
+        }
+        if new_alpha >= 360.0 || new_alpha < 0.0 {
+            panic!("The new alpha value of this UnitCell is out of bounds [0, 360).")
+        }
+        self.alpha = new_alpha;
     }
     /// Get the beta angle in degrees
     pub fn beta(&self) -> f64 {
         self.beta
     }
+    /// Set the beta angle in degrees
+    /// ## Panics
+    /// It panics if the new value is not finite.
+    /// It also panics if the beta value is outside of bounds [0, 360)
+    pub fn set_beta(&mut self, new_beta: f64) {
+        if !new_beta.is_finite() {
+            panic!("The new beta value of this UnitCell is not finite");
+        }
+        if new_beta >= 360.0 || new_beta < 0.0 {
+            panic!("The new beta value of this UnitCell is out of bounds [0, 360).")
+        }
+        self.beta = new_beta;
+    }
     /// Get the gamma angle in degrees
     pub fn gamma(&self) -> f64 {
         self.gamma
+    }
+    /// Set the gamma angle in degrees
+    /// ## Panics
+    /// It panics if the new value is not finite.
+    /// It also panics if the gamma value is outside of bounds [0, 360)
+    pub fn set_gamma(&mut self, new_gamma: f64) {
+        if !new_gamma.is_finite() {
+            panic!("The new gamma value of this UnitCell is not finite");
+        }
+        if new_gamma >= 360.0 || new_gamma < 0.0 {
+            panic!("The new gamma value of this UnitCell is out of bounds [0, 360).")
+        }
+        self.gamma = new_gamma;
     }
     /// Get the dimensions in a tuple (a, b, c)
     pub fn size(&self) -> (f64, f64, f64) {
@@ -72,5 +138,12 @@ impl PartialEq for UnitCell {
             && self.alpha == other.alpha
             && self.beta == other.beta
             && self.gamma == other.gamma
+    }
+}
+
+impl Default for UnitCell {
+    /// Default UnitCell with all sizes set to 0.0 and angles to 90.0
+    fn default() -> Self {
+        Self::new(0.0, 0.0, 0.0, 90.0, 90.0, 90.0)
     }
 }

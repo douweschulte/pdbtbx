@@ -12,7 +12,7 @@ use std::iter;
 /// Save the given PDB struct to the given file.
 /// It validates the PDB. It fails if the validation fails with the given `level`.
 /// If validation gives rise to problems use the `save_raw` function.
-pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
+pub fn save_pdb(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
     let mut errors = validate(&pdb);
     errors.extend(validate_pdb(&pdb));
     for error in &errors {
@@ -34,7 +34,7 @@ pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<
         }
     };
 
-    save_raw(&pdb, BufWriter::new(file), level);
+    save_pdb_raw(&pdb, BufWriter::new(file), level);
     Ok(())
 }
 
@@ -46,7 +46,7 @@ pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<
 /// * Does not pad all lines to 70 chars length
 /// * Does not save the MASTER record
 #[allow(clippy::unwrap_used)]
-pub fn save_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: StrictnessLevel) {
+pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: StrictnessLevel) {
     let mut finish_line = |mut line: String| {
         if level != StrictnessLevel::Loose && line.len() < 70 {
             let dif = 70 - line.len();
