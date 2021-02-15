@@ -24,7 +24,7 @@
 //!
 //! ```
 //! use pdbtbx;
-//! let (mut pdb, _errors) = pdbtbx::open_pdb("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Loose).unwrap();
+//! let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Loose).unwrap();
 //! pdb.remove_atoms_by(|atom| atom.element() == "H"); // Remove all H atoms
 //!
 //! let mut avg_b_factor = 0.0;
@@ -62,7 +62,8 @@
     clippy::cast_possible_wrap,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
-    clippy::similar_names
+    clippy::similar_names,
+    clippy::warnings
 )]
 
 /// To save and display errors
@@ -82,9 +83,9 @@ mod transformation;
 mod validate;
 
 pub use error::*;
-pub use read::{open_mmcif, open_pdb, parse_pdb};
+pub use read::*;
 pub use save::*;
 pub use strictness_level::StrictnessLevel;
 pub use structs::*;
 pub use transformation::*;
-pub use validate::{validate, validate_pdb};
+pub use validate::*;

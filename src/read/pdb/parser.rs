@@ -25,7 +25,7 @@ pub fn open_pdb(
         return Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
     };
     let reader = BufReader::new(file);
-    parse_pdb(reader, Context::show(filename), level)
+    open_pdb_raw(reader, Context::show(filename), level)
 }
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
@@ -35,7 +35,7 @@ pub fn open_pdb(
 /// * `input` - the input stream
 /// * `context` - the context of the full stream, to place error messages correctly, for files this is `Context::show(filename)`.
 /// * `level` - the strictness level to operate in. If errors are generated which are breaking in the given level the parsing will fail.
-pub fn parse_pdb<T>(
+pub fn open_pdb_raw<T>(
     input: std::io::BufReader<T>,
     context: Context,
     level: StrictnessLevel,
@@ -310,13 +310,11 @@ where
 
     errors.extend(validate(&pdb));
 
-    for error in &errors {
-        if error.fails(level) {
-            return Err(errors);
-        }
+    if errors.iter().any(|e| e.fails(level)) {
+        Err(errors)
+    } else {
+        Ok((pdb, errors))
     }
-
-    Ok((pdb, errors))
 }
 
 /// Validate the SEQRES data found, if there is any

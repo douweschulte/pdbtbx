@@ -13,7 +13,7 @@ fn main() {
     ];
     let mut models = Vec::with_capacity(names.len());
     for (name, path) in &names {
-        models.push((*name, open(path, StrictnessLevel::Loose).unwrap().0))
+        models.push((*name, open_pdb(path, StrictnessLevel::Loose).unwrap().0))
     }
     let mut results = Vec::new();
 
@@ -47,7 +47,7 @@ fn main() {
 }
 
 fn bench_open(filename: &str) {
-    let (_pdb, _errors) = open(filename, StrictnessLevel::Loose).unwrap();
+    let (_pdb, _errors) = open_pdb(filename, StrictnessLevel::Loose).unwrap();
 }
 
 fn bench_transformation(mut pdb: PDB) {
@@ -80,7 +80,7 @@ fn bench_clone(pdb: PDB) {
 }
 
 fn bench_save(pdb: PDB) {
-    save(pdb, "dump/dump.pdb", StrictnessLevel::Loose).unwrap();
+    save_pdb(pdb, "dump/dump.pdb", StrictnessLevel::Loose).unwrap();
 }
 
 fn measure_multiple<T: Clone>(

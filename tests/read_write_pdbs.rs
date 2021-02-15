@@ -21,7 +21,7 @@ fn run_pdbs() {
         let entry = entry.unwrap();
         let path = entry.path();
         let metadata = fs::metadata(&path).unwrap();
-        if metadata.is_file() && path.ends_with(".pdb") {
+        if metadata.is_file() {
             do_something(
                 &path.clone().into_os_string().into_string().unwrap(),
                 &dump_dir,
@@ -40,7 +40,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
     println!("Working on file: {}", file);
     let now = Instant::now();
 
-    let (pdb, errors) = open_pdb(file, StrictnessLevel::Loose).unwrap();
+    let (pdb, errors) = open(file, StrictnessLevel::Loose).unwrap();
 
     let time = now.elapsed();
 
