@@ -63,7 +63,7 @@
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
     clippy::similar_names,
-    clippy::warnings
+    clippy::all
 )]
 
 /// To save and display errors
