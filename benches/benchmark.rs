@@ -6,19 +6,25 @@ use std::time::{Duration, Instant};
 
 fn main() {
     // Setup the data needed
-    let names = vec![
+    let pdb_names = vec![
         ("small", "example-pdbs/1ubq.pdb"),
         ("medium", "example-pdbs/1yyf.pdb"),
         ("big", "example-pdbs/pTLS-6484.pdb"),
     ];
-    let mut models = Vec::with_capacity(names.len());
-    for (name, path) in &names {
+    let mmcif_names = vec![
+        ("small", "example-pdbs/1ubq.cif"),
+        ("medium", "example-pdbs/1yyf.cif"),
+        ("big", "example-pdbs/pTLS-6484.cif"),
+    ];
+    let mut models = Vec::with_capacity(pdb_names.len());
+    for (name, path) in &pdb_names {
         models.push((*name, open_pdb(path, StrictnessLevel::Loose).unwrap().0))
     }
     let mut results = Vec::new();
 
     // Do the benchmarking
-    results.extend(measure_multiple(bench_open, &names, "Open"));
+    results.extend(measure_multiple(bench_open, &pdb_names, "Open PDB"));
+    results.extend(measure_multiple(bench_open, &mmcif_names, "Open mmCIF"));
     results.extend(measure_multiple(
         bench_transformation,
         &models,
@@ -29,7 +35,8 @@ fn main() {
     results.extend(measure_multiple(bench_validate, &models, "Validate"));
     results.extend(measure_multiple(bench_renumber, &models, "Renumber"));
     results.extend(measure_multiple(bench_clone, &models, "Clone"));
-    results.extend(measure_multiple(bench_save, &models, "Save"));
+    results.extend(measure_multiple(bench_save_pdb, &models, "Save PDB"));
+    results.extend(measure_multiple(bench_save_mmcif, &models, "Save mmCIF"));
 
     // Save the results to a csv
     let file = File::create("dump/benchmark_results.csv").unwrap();
@@ -47,7 +54,7 @@ fn main() {
 }
 
 fn bench_open(filename: &str) {
-    let (_pdb, _errors) = open_pdb(filename, StrictnessLevel::Loose).unwrap();
+    let (_pdb, _errors) = open(filename, StrictnessLevel::Loose).unwrap();
 }
 
 fn bench_transformation(mut pdb: PDB) {
@@ -79,8 +86,12 @@ fn bench_clone(pdb: PDB) {
     let _copy = pdb.clone();
 }
 
-fn bench_save(pdb: PDB) {
-    save_pdb(pdb, "dump/dump.pdb", StrictnessLevel::Loose).unwrap();
+fn bench_save_pdb(pdb: PDB) {
+    save(pdb, "dump/dump.pdb", StrictnessLevel::Loose).unwrap();
+}
+
+fn bench_save_mmcif(pdb: PDB) {
+    save(pdb, "dump/dump.cif", StrictnessLevel::Loose).unwrap();
 }
 
 fn measure_multiple<T: Clone>(

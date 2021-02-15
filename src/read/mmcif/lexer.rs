@@ -1,4 +1,4 @@
-#![allow(clippy::missing_docs_in_private_items, clippy::unwrap_used)]
+#![allow(clippy::unwrap_used)]
 use super::lexitem::*;
 use crate::error::*;
 
@@ -11,11 +11,13 @@ pub fn lex_cif(input: String) -> Result<DataBlock, PDBError> {
     })
 }
 
+/// Parse a CIF file
 fn parse_main(input: &mut Position) -> Result<DataBlock, PDBError> {
     trim_comments_and_whitespace(input);
     parse_data_block(input)
 }
 
+/// Parse a data block, the main item of a CIF file
 fn parse_data_block(input: &mut Position) -> Result<DataBlock, PDBError> {
     if start_with(input, "data_").is_none() {
         return Err(PDBError::new(
@@ -31,7 +33,7 @@ fn parse_data_block(input: &mut Position) -> Result<DataBlock, PDBError> {
         items: Vec::new(),
     };
     loop {
-        //println!("Starting main loop at {}:{}", input.line, input.column);
+        trim_comments_and_whitespace(input);
         if input.text.is_empty() {
             return Ok(block);
         }
@@ -40,13 +42,9 @@ fn parse_data_block(input: &mut Position) -> Result<DataBlock, PDBError> {
     }
 }
 
+/// Parse a main loop item, a data item or a save frame
 fn parse_data_item_or_save_frame(input: &mut Position) -> Result<Item, PDBError> {
     let start = *input;
-    trim_comments_and_whitespace(input);
-    //println!(
-    //    "Starting save frame or data item at {}:{}",
-    //    input.line, input.column
-    //);
     if let Some(()) = start_with(input, "save_") {
         let mut frame = SaveFrame {
             name: parse_identifier(input).to_string(),
@@ -71,40 +69,33 @@ fn parse_data_item_or_save_frame(input: &mut Position) -> Result<Item, PDBError>
     }
 }
 
+/// Parse a data item, a loop or a single item
 fn parse_data_item(input: &mut Position) -> Result<DataItem, PDBError> {
-    //println!("Starting data item at {}:{}", input.line, input.column);
     let start = *input;
     trim_comments_and_whitespace(input);
-    //println!(
-    //    "Starting data item (after trimming) at {}:{}",
-    //    input.line, input.column
-    //);
     if let Some(()) = start_with(input, "loop_") {
         let mut loop_value = Loop {
             header: Vec::new(),
             data: Vec::new(),
         };
         let mut values = Vec::new();
-        //println!("Starting loop at line {}", input.line);
         trim_comments_and_whitespace(input);
 
         while let Some(()) = start_with(input, "_") {
             let inner_name = parse_identifier(input);
             loop_value.header.push(inner_name.to_string());
-            //println!("Found loop header at line {}", input.line);
             trim_comments_and_whitespace(input);
         }
 
         while let Ok(value) = parse_value(input) {
             values.push(value);
-            //println!("Found loop value at line {}", input.line);
         }
 
         let columns = loop_value.header.len();
         if values.len() % columns == 0 {
             loop_value.data = Vec::with_capacity(values.len() / columns);
             let mut iter = values.into_iter().peekable();
-            while let Some(_) = (&mut iter).peek() {
+            while (&mut iter).peek().is_some() {
                 loop_value.data.push((&mut iter).take(columns).collect());
             }
         } else {
@@ -118,7 +109,6 @@ fn parse_data_item(input: &mut Position) -> Result<DataItem, PDBError> {
 
         Ok(DataItem::Loop(loop_value))
     } else if let Some(()) = start_with(input, "_") {
-        //println!("Starting single at {}:{}", input.line, input.column);
         let name = parse_identifier(input);
         if let Ok(value) = parse_value(input) {
             Ok(DataItem::Single(Single {
@@ -138,11 +128,12 @@ fn parse_data_item(input: &mut Position) -> Result<DataItem, PDBError> {
             ErrorLevel::BreakingError,
             "No valid DataItem",
             "A Data Item should be a tag with a value or a loop.",
-            Context::range(&start, input),
+            Context::position(input),
         ))
     }
 }
 
+/// Parse a value for a data item or inside a loop
 fn parse_value(input: &mut Position) -> Result<Value, PDBError> {
     let start = *input;
     trim_comments_and_whitespace(input);
@@ -153,6 +144,7 @@ fn parse_value(input: &mut Position) -> Result<Value, PDBError> {
             "No text left",
             Context::position(input),
         ))
+        // The following are reserved words, and need to be checked with a branching position as otherwise it would consume the keyword if matched
     } else if start_with(&mut input.clone(), "data_").is_some()
         || start_with(&mut input.clone(), "global_").is_some()
         || start_with(&mut input.clone(), "loop_").is_some()
@@ -166,9 +158,17 @@ fn parse_value(input: &mut Position) -> Result<Value, PDBError> {
             Context::position(input),
         ))
     } else if input.text.starts_with('.') {
-        input.text = &input.text[1..];
-        input.column += 1;
-        Ok(Value::Inapplicable)
+        // Technically there could be a number starting with a dot...
+        let mut branch: Position = *input;
+        if let Some(value) = parse_numeric(parse_identifier(&mut branch)) {
+            input.text = branch.text;
+            input.column = branch.column;
+            Ok(value)
+        } else {
+            input.text = &input.text[1..];
+            input.column += 1;
+            Ok(Value::Inapplicable)
+        }
     } else if input.text.starts_with('?') {
         input.text = &input.text[1..];
         input.column += 1;
@@ -203,6 +203,7 @@ fn parse_value(input: &mut Position) -> Result<Value, PDBError> {
     }
 }
 
+/// Parse a numeric value from a string which is expected to be of non zero length and not containing whitespace
 fn parse_numeric(text: &str) -> Option<Value> {
     let mut chars_to_remove = 0;
     let first_char = text.chars().next().unwrap();
@@ -219,10 +220,10 @@ fn parse_numeric(text: &str) -> Option<Value> {
     let mut integer_set = false;
     let mut value = 0;
     for c in text.chars().skip(chars_to_remove) {
-        if c.is_ascii_digit() {
+        if let Some(num) = c.to_digit(10) {
             integer_set = true;
             value *= 10;
-            value += c.to_digit(10).unwrap();
+            value += num;
             chars_to_remove += 1;
         } else {
             break;
@@ -270,10 +271,10 @@ fn parse_numeric(text: &str) -> Option<Value> {
             // Parse the integer part
             let mut exp_value = 0;
             for c in text.chars().skip(chars_to_remove) {
-                if c.is_ascii_digit() {
+                if let Some(num) = c.to_digit(10) {
                     exponent_set = true;
                     exp_value *= 10;
-                    exp_value += c.to_digit(10).unwrap();
+                    exp_value += num;
                     chars_to_remove += 1;
                 } else {
                     break;
@@ -295,9 +296,9 @@ fn parse_numeric(text: &str) -> Option<Value> {
         uncertainty_set = true;
         chars_to_remove += 1;
         for c in text.chars().skip(chars_to_remove) {
-            if c.is_ascii_digit() {
+            if let Some(num) = c.to_digit(10) {
                 uncertainty *= 10;
-                uncertainty += c.to_digit(10).unwrap();
+                uncertainty += num;
                 chars_to_remove += 1;
             } else {
                 break;
@@ -327,6 +328,7 @@ fn parse_numeric(text: &str) -> Option<Value> {
     }
 }
 
+/// Parse an identifier, basically all chars until the next whitespace
 fn parse_identifier<'a>(input: &mut Position<'a>) -> &'a str {
     let mut chars_to_remove = 0;
 
@@ -347,6 +349,9 @@ fn parse_identifier<'a>(input: &mut Position<'a>) -> &'a str {
     identifier
 }
 
+/// Check if the input starts with the given pattern, it is case insensitive by
+/// lowercasing the input string, so the pattern should be lowercase otherwise
+/// it can never match.
 fn start_with(input: &mut Position, pattern: &str) -> Option<()> {
     if input.text.len() < pattern.len() {
         None
@@ -362,6 +367,7 @@ fn start_with(input: &mut Position, pattern: &str) -> Option<()> {
     }
 }
 
+/// Trim all allowed whitespace (including comments)
 fn trim_comments_and_whitespace(input: &mut Position) {
     loop {
         trim_whitespace(input);
@@ -369,15 +375,15 @@ fn trim_comments_and_whitespace(input: &mut Position) {
             return;
         }
         if input.text.starts_with('#') {
-            //println!("Found comment at {}:{}", input.line, input.column);
             skip_to_eol(input);
-            //println!("Ended comment at {}:{}", input.line, input.column);
         } else {
             return;
         }
     }
 }
 
+/// Parse a piece of text enclosed by a char, it assumes the first position also matches the char.
+/// It will fail if it finds a newline in the text. SO it can be used for single or double quoted strings.
 fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PDBError> {
     let mut chars_to_remove = 1; //Assume the first position is 'pat'
 
@@ -411,25 +417,36 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
     Ok(trimmed)
 }
 
+/// Parse a multiline string <eol>; ...(text)... <eol>;, it assumes the first position is ';'
 fn parse_multiline_string<'a>(input: &mut Position<'a>) -> &'a str {
-    let mut chars_to_remove = 1; //Assume the first position is 'pat'
+    let mut chars_to_remove = 1; //Assume the first position is ';'
     let mut eol = false;
+    let mut iter = input.text.chars().skip(1).peekable();
 
-    for c in input.text.chars().skip(1) {
+    while let Some(c) = (&mut iter).next() {
         if eol && c == ';' {
             let trimmed = &input.text[1..chars_to_remove];
             input.text = &input.text[(chars_to_remove + 1)..];
             input.column += 1;
             return trimmed;
-        } else if c == '\n' || c == '\r' {
-            if !eol {
-                input.line += 1;
-                input.column = 1;
-                eol = true;
-            } else {
-                eol = false;
+        } else if c == '\n' {
+            if let Some('\r') = (&mut iter).peek() {
+                chars_to_remove += 1;
+                let _ = (&mut iter).next();
             }
+            input.line += 1;
+            input.column = 1;
             chars_to_remove += 1;
+            eol = true;
+        } else if c == '\r' {
+            if let Some('\n') = (&mut iter).peek() {
+                chars_to_remove += 1;
+                let _ = (&mut iter).next();
+            }
+            input.line += 1;
+            input.column = 1;
+            chars_to_remove += 1;
+            eol = true;
         } else {
             chars_to_remove += 1;
             input.column += 1;
@@ -442,26 +459,31 @@ fn parse_multiline_string<'a>(input: &mut Position<'a>) -> &'a str {
     trimmed
 }
 
+/// Skip forward until the next eol, \r\n and \n\r are but consumed in full
 fn skip_to_eol(input: &mut Position) {
-    let mut chars_to_remove = 0;
-    let mut eol = false;
+    let mut chars_to_remove = 1;
+    let mut iter = input.text.chars().skip(1).peekable();
 
-    for c in input.text.chars() {
-        if c == '\r' || c == '\n' {
-            if !eol {
-                chars_to_remove += 1;
-                input.line += 1;
-                input.column = 1;
-                eol = true;
-            } else {
-                input.text = &input.text[chars_to_remove + 1..];
-                return;
+    while let Some(c) = (&mut iter).next() {
+        if c == '\n' {
+            if let Some('\r') = (&mut iter).peek() {
+                chars_to_remove += 1
             }
+            input.line += 1;
+            input.column = 1;
+            chars_to_remove += 1;
+            input.text = &input.text[chars_to_remove..];
+            return;
+        } else if c == '\r' {
+            if let Some('\n') = (&mut iter).peek() {
+                chars_to_remove += 1
+            }
+            input.line += 1;
+            input.column = 1;
+            chars_to_remove += 1;
+            input.text = &input.text[chars_to_remove..];
+            return;
         } else {
-            if eol {
-                input.text = &input.text[chars_to_remove..];
-                return;
-            }
             chars_to_remove += 1;
         }
     }
@@ -470,32 +492,40 @@ fn skip_to_eol(input: &mut Position) {
     input.column += chars_to_remove;
 }
 
+/// Trim all whitespace (<space, \t, <eol>) from the start of the string
 fn trim_whitespace(input: &mut Position) {
     let mut chars_to_remove = 0;
-    let mut eol = false;
+    let mut iter = input.text.chars().peekable();
 
-    for c in input.text.chars() {
+    while let Some(c) = (&mut iter).next() {
         if c == ' ' || c == '\t' {
             input.column += 1;
             chars_to_remove += 1;
-            eol = false;
-        } else if c == '\r' || c == '\n' {
-            if eol {
+        } else if c == '\n' {
+            if let Some('\r') = (&mut iter).peek() {
                 chars_to_remove += 1;
-                eol = false;
-            } else {
-                input.column = 1;
-                input.line += 1;
-                chars_to_remove += 1;
-                eol = true;
+                let _ = (&mut iter).next();
             }
+            input.line += 1;
+            input.column = 1;
+            chars_to_remove += 1;
+        } else if c == '\r' {
+            if let Some('\n') = (&mut iter).peek() {
+                chars_to_remove += 1;
+                let _ = (&mut iter).next();
+            }
+            input.line += 1;
+            input.column = 1;
+            chars_to_remove += 1;
         } else {
             input.text = &input.text[chars_to_remove..];
             return;
         }
     }
+    input.text = &input.text[chars_to_remove..];
 }
 
+/// Test if the character is an ordinary character, one which can start a line in a multiline string
 fn is_ordinary(c: char) -> bool {
     match c {
         '#' | '$' | '\'' | '\"' | '_' | '[' | ']' | ';' | ' ' | '\t' => false,
@@ -571,14 +601,53 @@ mod tests {
     }
 
     #[test]
-    fn skip_to_eol_test() {
+    fn skip_to_eol_test_n() {
         let mut pos = Position {
-            text: "bla bla bla\na",
+            text: "bla bla bla\n\na",
             line: 1,
             column: 1,
         };
         skip_to_eol(&mut pos);
-        assert_eq!(pos.text, "a");
+        assert_eq!(pos.text, "\na");
+        assert_eq!(pos.line, 2);
+        assert_eq!(pos.column, 1);
+    }
+
+    #[test]
+    fn skip_to_eol_test_r() {
+        let mut pos = Position {
+            text: "bla bla bla\r\ra",
+            line: 1,
+            column: 1,
+        };
+        skip_to_eol(&mut pos);
+        assert_eq!(pos.text, "\ra");
+        assert_eq!(pos.line, 2);
+        assert_eq!(pos.column, 1);
+    }
+
+    #[test]
+    fn skip_to_eol_test_nr() {
+        let mut pos = Position {
+            text: "bla bla bla\n\r\n\ra",
+            line: 1,
+            column: 1,
+        };
+        skip_to_eol(&mut pos);
+        assert_eq!(pos.text, "\n\ra");
+        assert_eq!(pos.line, 2);
+        assert_eq!(pos.column, 1);
+    }
+
+    #[test]
+    fn skip_to_eol_test_rn() {
+        let mut pos = Position {
+            text: "bla bla bla\r\n\r\na",
+            line: 1,
+            column: 1,
+        };
+        skip_to_eol(&mut pos);
+        assert_eq!(pos.text, "\r\na");
         assert_eq!(pos.line, 2);
         assert_eq!(pos.column, 1);
     }
@@ -923,6 +992,26 @@ mod tests {
         assert_eq!(pos.text, "");
         assert_eq!(pos.line, 2);
         assert_eq!(pos.column, 5);
+    }
+
+    #[test]
+    fn parse_data_single_item_numeric_no_leading_zero() {
+        let mut pos = Position {
+            text: "_tag\n.16",
+            line: 1,
+            column: 1,
+        };
+        let res = parse_data_item(&mut pos);
+        assert_eq!(
+            res,
+            Ok(DataItem::Single(Single {
+                name: "tag".to_string(),
+                content: Value::Numeric(0.16)
+            }))
+        );
+        assert_eq!(pos.text, "");
+        assert_eq!(pos.line, 2);
+        assert_eq!(pos.column, 4);
     }
 
     #[test]

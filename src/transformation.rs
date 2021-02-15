@@ -257,7 +257,7 @@ mod tests {
         let end = (
             0.0,
             44.5_f64.to_radians().sin(),
-            -44.5_f64.to_radians().cos(),
+            (-44.5_f64).to_radians().cos(),
         );
         println!("{:?} vs {:?}", new_pos, end);
         assert!(close_tuple(new_pos, end));
@@ -305,9 +305,9 @@ mod tests {
         pos = (0.0, 0.0, -1.0);
         new_pos = TransformationMatrix::rotation_y(44.5).apply(pos);
         let end = (
-            -44.5_f64.to_radians().sin(),
+            (-44.5_f64).to_radians().sin(),
             0.0,
-            -44.5_f64.to_radians().cos(),
+            (-44.5_f64).to_radians().cos(),
         );
         println!("{:?} vs {:?}", new_pos, end);
         assert!(close_tuple(new_pos, end));
@@ -357,7 +357,7 @@ mod tests {
         new_pos = TransformationMatrix::rotation_z(44.5).apply(pos);
         let end = (
             44.5_f64.to_radians().sin(),
-            -44.5_f64.to_radians().cos(),
+            (-44.5_f64).to_radians().cos(),
             0.0,
         );
         println!("{:?} vs {:?}", new_pos, end);
@@ -414,7 +414,7 @@ mod tests {
     fn matrix() {
         let normal = TransformationMatrix::rotation_x(45.0);
         let raw = normal.matrix();
-        let from_matrix = TransformationMatrix::from_matrix(raw.clone());
+        let from_matrix = TransformationMatrix::from_matrix(raw);
         let mut set = TransformationMatrix::identity();
         set.set_matrix(raw);
         assert_eq!(normal, from_matrix);
@@ -427,6 +427,7 @@ mod tests {
     }
 
     fn close(a: f64, b: f64) -> bool {
+        #[allow(clippy::float_cmp)]
         if a == b {
             true
         } else if a == 0.0 || b == 0.0 {

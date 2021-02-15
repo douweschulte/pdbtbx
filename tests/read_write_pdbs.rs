@@ -44,17 +44,8 @@ fn do_something(file: &str, folder: &str, name: &str) {
 
     let time = now.elapsed();
 
-    let mut stop = false;
-
     for error in errors {
         println!("{}", error);
-        if error.level() == ErrorLevel::BreakingError {
-            stop = true;
-        }
-    }
-
-    if stop {
-        panic!("Stopped execution because of previous error message(s).")
     }
 
     println!(
@@ -65,6 +56,10 @@ fn do_something(file: &str, folder: &str, name: &str) {
         pdb.model_count(),
         time.as_millis()
     );
+
+    if pdb.total_atom_count() == 0 {
+        panic!("No atoms found");
+    }
 
     println!("PDB parsed");
 
