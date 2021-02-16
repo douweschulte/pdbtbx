@@ -34,25 +34,25 @@ impl Atom {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         serial_number: usize,
-        atom_name: String,
+        atom_name: &str,
         x: f64,
         y: f64,
         z: f64,
         occupancy: f64,
         b_factor: f64,
-        element: String,
+        element: &str,
         charge: isize,
     ) -> Option<Atom> {
-        if valid_identifier(&atom_name) && valid_identifier(&element) {
+        if valid_identifier(atom_name) && valid_identifier(element) {
             Some(Atom {
                 serial_number,
-                name: atom_name,
+                name: atom_name.trim().to_ascii_uppercase(),
                 x,
                 y,
                 z,
                 occupancy,
                 b_factor,
-                element,
+                element: element.trim().to_ascii_uppercase(),
                 charge,
                 atf: None,
             })
@@ -165,8 +165,8 @@ impl Atom {
         &self.name
     }
 
-    /// Set the name of the atom
-    /// If the name is invalid an error message is provided
+    /// Set the name of the atom. The name will be changed to uppercase as requested by PDB/PDBx standard.
+    /// If the name is invalid an error message is provided.
     /// ## Errors
     /// The name can only contain valid characters, the ASCII graphic characters (char.is_ascii_graphic() || char == ' ')
     pub fn set_name(&mut self, new_name: &str) -> Result<(), String> {
@@ -176,7 +176,7 @@ impl Atom {
                 self.serial_number, new_name
             ))
         } else {
-            self.name = new_name.to_ascii_uppercase();
+            self.name = new_name.trim().to_ascii_uppercase();
             Ok(())
         }
     }
@@ -253,7 +253,7 @@ impl Atom {
         }
     }
 
-    /// Set the element of this atom
+    /// Set the element of this atom. The element will be changed to uppercase as requested by PDB/PDBx standard.
     /// ## Fails
     /// It fails if the element contains invalid characters (only ASCII graphic and space is allowed).
     /// It also fails if the string is too ling, the max length is 2 characters.
@@ -264,7 +264,7 @@ impl Atom {
                 self.serial_number, new_element
             ))
         } else {
-            self.element = new_element.to_ascii_uppercase();
+            self.element = new_element.trim().to_ascii_uppercase();
             Ok(())
         }
     }
@@ -384,7 +384,7 @@ impl Atom {
     /// the atom position with a radius of the atomic radius (`atom.atomic_radius()`) intersect with this
     /// sphere from the other Atom.
     /// ## Fails
-    /// It fails if any one of the two radii are not defined.
+    /// It fails if for any one of the two atoms the radius (`.atomic_radius()`) is not defined.
     pub fn overlaps(&self, other: &Atom) -> Option<bool> {
         if let Some(self_rad) = self.atomic_radius() {
             if let Some(other_rad) = other.atomic_radius() {
@@ -401,7 +401,7 @@ impl Atom {
     /// the atom position with a radius of the atomic radius (`atom.atomic_radius()`) intersect with this
     /// sphere from the other Atom. Wrapping around the unit cell if needed.
     /// ## Fails
-    /// It fails if any one of the two radii are not defined.
+    /// It fails if for any one of the two atoms the radius (`.atomic_radius()`) is not defined.
     pub fn overlaps_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
         if let Some(self_rad) = self.atomic_radius() {
             if let Some(other_rad) = other.atomic_radius() {
@@ -437,13 +437,13 @@ impl Clone for Atom {
     fn clone(&self) -> Self {
         let mut atom = Atom::new(
             self.serial_number,
-            self.name.clone(),
+            &self.name,
             self.x,
             self.y,
             self.z,
             self.occupancy,
             self.b_factor,
-            self.element.clone(),
+            &self.element,
             self.charge,
         )
         .expect("Invalid characters in generating a clone of the atom");
@@ -475,18 +475,7 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn set_name() {
-        let mut a = Atom::new(
-            0,
-            "".to_string(),
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            "".to_string(),
-            0,
-        )
-        .unwrap();
+        let mut a = Atom::new(0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         assert!(a.set_name("Å").is_err());
         assert!(a.set_name("ATOMS").is_ok());
         a.set_name("ATOM").unwrap();
@@ -499,18 +488,7 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn set_element() {
-        let mut a = Atom::new(
-            0,
-            "".to_string(),
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            "".to_string(),
-            0,
-        )
-        .unwrap();
+        let mut a = Atom::new(0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         assert!(a.set_element("R̈").is_err());
         assert!(a.set_element("HOH").is_ok());
         a.set_element("RK").unwrap();
@@ -521,30 +499,8 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn distance() {
-        let a = Atom::new(
-            0,
-            "".to_string(),
-            1.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            "C".to_string(),
-            0,
-        )
-        .unwrap();
-        let b = Atom::new(
-            0,
-            "".to_string(),
-            9.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            "C".to_string(),
-            0,
-        )
-        .unwrap();
+        let a = Atom::new(0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(0, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
         let cell = UnitCell::new(10.0, 10.0, 10.0, 90.0, 90.0, 90.0);
         assert!(!a.overlaps(&b).unwrap());
         assert!(a.overlaps_wrapping(&b, &cell).unwrap());
@@ -555,30 +511,8 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn distance_all_axes() {
-        let a = Atom::new(
-            0,
-            "".to_string(),
-            1.0,
-            1.0,
-            1.0,
-            0.0,
-            0.0,
-            "C".to_string(),
-            0,
-        )
-        .unwrap();
-        let b = Atom::new(
-            0,
-            "".to_string(),
-            9.0,
-            9.0,
-            9.0,
-            0.0,
-            0.0,
-            "C".to_string(),
-            0,
-        )
-        .unwrap();
+        let a = Atom::new(0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(0, "", 9.0, 9.0, 9.0, 0.0, 0.0, "C", 0).unwrap();
         let cell = UnitCell::new(10.0, 10.0, 10.0, 90.0, 90.0, 90.0);
         assert!(!a.overlaps(&b).unwrap());
         assert!(a.overlaps_wrapping(&b, &cell).unwrap());

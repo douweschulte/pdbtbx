@@ -631,7 +631,7 @@ impl PDB {
             counter = 0;
             #[allow(clippy::unwrap_used, clippy::cast_possible_truncation)]
             for chain in model.all_chains_mut() {
-                chain.set_id(number_to_base26(counter));
+                chain.set_id(&number_to_base26(counter));
                 counter += 1;
             }
         }

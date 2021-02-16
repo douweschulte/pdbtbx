@@ -91,18 +91,23 @@ where
                     element,
                     charge,
                 ) => {
-                    let atom = Atom::new(serial_number, name, x, y, z, occ, b, element, charge)
+                    let atom = Atom::new(serial_number, &name, x, y, z, occ, b, &element, charge)
                         .expect("Invalid characters in atom creation");
 
                     if hetero {
                         current_model.add_hetero_atom(
                             atom,
-                            chain_id,
+                            &chain_id,
                             residue_serial_number,
-                            residue_name,
+                            &residue_name,
                         );
                     } else {
-                        current_model.add_atom(atom, chain_id, residue_serial_number, residue_name);
+                        current_model.add_atom(
+                            atom,
+                            &chain_id,
+                            residue_serial_number,
+                            &residue_name,
+                        );
                     }
                 }
                 LexItem::Anisou(s, n, _, _r, _c, _rs, _, factors, _, _e, _ch) => {
@@ -397,10 +402,9 @@ fn validate_seqres(
                         }
                         next = chain_res.next();
                     } else if index < n.serial_number() {
-                        let three = format!("{:<3}", seq).chars().collect::<Vec<char>>();
                         chain.insert_residue(
                             index,
-                            Residue::new(index, three[0..3].iter().collect::<String>(), None)
+                            Residue::new(index, seq, None)
                                 .expect("Invalid characters in Residue generations"),
                         );
                     } else {
@@ -412,9 +416,8 @@ fn validate_seqres(
                         ));
                     }
                 } else {
-                    let three = format!("{:<3}", seq).chars().collect::<Vec<char>>();
                     chain.add_residue(
-                        Residue::new(index, three[0..3].iter().collect::<String>(), None)
+                        Residue::new(index, seq, None)
                             .expect("Invalid characters in Residue generations"),
                     );
                 }

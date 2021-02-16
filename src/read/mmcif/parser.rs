@@ -221,29 +221,19 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
 
         if let Some(atom) = Atom::new(
             serial_number,
-            name.to_string(),
+            name,
             pos_x,
             pos_y,
             pos_z,
             occupancy,
             b_factor,
-            element.to_string(),
+            element,
             charge,
         ) {
             if atom_type == "ATOM" {
-                model.add_atom(
-                    atom,
-                    chain_name.to_string(),
-                    residue_number,
-                    residue_name.to_string(),
-                );
+                model.add_atom(atom, chain_name, residue_number, residue_name);
             } else if atom_type == "HETATM" {
-                model.add_hetero_atom(
-                    atom,
-                    chain_name.to_string(),
-                    residue_number,
-                    residue_name.to_string(),
-                );
+                model.add_hetero_atom(atom, chain_name, residue_number, residue_name);
             } else {
                 errors.push(PDBError::new(
                     ErrorLevel::InvalidatingError,

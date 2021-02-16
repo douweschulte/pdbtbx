@@ -27,13 +27,13 @@ impl Residue {
     ///
     /// ## Fails
     /// It fails if any of the characters making up the name are invalid.
-    pub fn new(number: usize, name: String, atom: Option<Atom>) -> Option<Residue> {
-        if !valid_identifier(&name) {
+    pub fn new(number: usize, name: &str, atom: Option<Atom>) -> Option<Residue> {
+        if !valid_identifier(name) {
             return None;
         }
 
         let mut res = Residue {
-            id: name,
+            id: name.trim().to_ascii_uppercase(),
             serial_number: number,
             atoms: Vec::new(),
             modification: None,
@@ -63,7 +63,7 @@ impl Residue {
                 self.serial_number, new_id
             ))
         } else {
-            self.id = new_id.to_ascii_uppercase();
+            self.id = new_id.trim().to_ascii_uppercase();
             Ok(())
         }
     }
@@ -240,7 +240,7 @@ impl fmt::Display for Residue {
 
 impl Clone for Residue {
     fn clone(&self) -> Self {
-        let mut res = Residue::new(self.serial_number, self.id.clone(), None)
+        let mut res = Residue::new(self.serial_number, &self.id, None)
             .expect("Invalid properties while cloning a Residue");
         res.atoms = self.atoms.clone();
         res

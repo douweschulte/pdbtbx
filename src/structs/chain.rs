@@ -21,12 +21,12 @@ impl Chain {
     ///
     /// ## Fails
     /// It fails if the identifier is an invalid character.
-    pub fn new(id: String) -> Option<Chain> {
+    pub fn new(id: &str) -> Option<Chain> {
         if !valid_identifier(&id) {
             return None;
         }
         Some(Chain {
-            id,
+            id: id.trim().to_ascii_uppercase(),
             residues: Vec::new(),
             database_reference: None,
         })
@@ -38,9 +38,10 @@ impl Chain {
     }
 
     /// Set the ID of the Chain, returns `false` if the new id is an invalid character.
-    pub fn set_id(&mut self, new_id: String) -> bool {
+    /// The ID will be changed to uppercase as requested by PDB/PDBx standard.
+    pub fn set_id(&mut self, new_id: &str) -> bool {
         if valid_identifier(&new_id) {
-            self.id = new_id;
+            self.id = new_id.trim().to_ascii_uppercase();
             true
         } else {
             false
@@ -149,7 +150,7 @@ impl Chain {
     ///
     /// ## Panics
     /// It panics if the Residue name contains any invalid characters.
-    pub fn add_atom(&mut self, new_atom: Atom, residue_serial_number: usize, residue_name: String) {
+    pub fn add_atom(&mut self, new_atom: Atom, residue_serial_number: usize, residue_name: &str) {
         let mut found = false;
         let mut new_residue = Residue::new(residue_serial_number, residue_name, None)
             .expect("Invalid chars in Residue creation");
@@ -273,8 +274,7 @@ impl fmt::Display for Chain {
 
 impl Clone for Chain {
     fn clone(&self) -> Self {
-        let mut chain =
-            Chain::new(self.id.clone()).expect("Invalid Chain id while cloning a Chain");
+        let mut chain = Chain::new(&self.id).expect("Invalid Chain id while cloning a Chain");
 
         chain.residues = self.residues.clone();
         chain
