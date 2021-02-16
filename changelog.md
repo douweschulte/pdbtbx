@@ -1,6 +1,10 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/nonnominandus/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.4.1
+* All string based properties for atom/residue/chain are trimmed and converted to uppercase before being set
+* A `.extend` function is provided for residue/chain/model/pdb to easily add an iterator to the list of children 
+
 ### v0.4.0 'basic mmCIF support'
 * Added mmCIF/PDBx open support
 * Changed `open` and `save` to determine the filetype based on the extension

@@ -24,11 +24,8 @@ Also because it is written in Rust it is much faster then anything written in Py
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Last update
-### v0.4.0 'basic mmCIF support'
-* Added mmCIF/PDBx open support
-* Changed `open` and `save` to determine the filetype based on the extension
-* Added `validate_pdb` to validate a PDB model before saving it in a PDB file
-* Added support for bigger serial numbers and names to allow for bigger models to be saved in mmCIF files
-* Fixed some issues with mmCIF output
+### v0.4.1
+* All string based properties for atom/residue/chain are trimmed and converted to uppercase before being set
+* A `.extend` function is provided for residue/chain/model/pdb to easily add an iterator to the list of children 
 
 Also see [changelog](https://github.com/nonnominandus/pdbtbx/blob/master/changelog.md).
