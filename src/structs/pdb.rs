@@ -664,6 +664,11 @@ impl PDB {
             self.model_mut(0).unwrap().join(other.models.remove(0))
         }
     }
+
+    /// Extend the Models on this PDB by the given iterator.
+    pub fn extend<T: IntoIterator<Item = Model>>(&mut self, iter: T) {
+        self.models.extend(iter);
+    }
 }
 
 use std::fmt;

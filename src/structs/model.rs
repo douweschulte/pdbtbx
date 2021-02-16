@@ -438,10 +438,20 @@ impl Model {
 
     /// Join this Model with another Model, this moves all atoms from the other Model
     /// to this Model. All other (meta) data of this Model will stay the same. It will add
-    /// new Chains and residues as defined in the other model.
+    /// new Chains and Residues as defined in the other model.
     pub fn join(&mut self, other: Model) {
         self.chains.extend(other.chains);
         self.hetero_chains.extend(other.hetero_chains);
+    }
+
+    /// Extend the normal Chains on this Model by the given iterator.
+    pub fn extend<T: IntoIterator<Item = Chain>>(&mut self, iter: T) {
+        self.chains.extend(iter);
+    }
+
+    /// Extend the hetero Chains on this Model by the given iterator.
+    pub fn extend_hetero<T: IntoIterator<Item = Chain>>(&mut self, iter: T) {
+        self.hetero_chains.extend(iter);
     }
 }
 

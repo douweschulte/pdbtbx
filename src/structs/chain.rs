@@ -258,6 +258,11 @@ impl Chain {
     pub fn join(&mut self, other: Chain) {
         self.residues.extend(other.residues);
     }
+
+    /// Extend the Residues on this Chain by the given iterator.
+    pub fn extend<T: IntoIterator<Item = Residue>>(&mut self, iter: T) {
+        self.residues.extend(iter);
+    }
 }
 
 use std::fmt;

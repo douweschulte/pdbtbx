@@ -224,6 +224,11 @@ impl Residue {
     pub fn join(&mut self, other: Residue) {
         self.atoms.extend(other.atoms);
     }
+
+    /// Extend the Atoms on this Residue by the given iterator.
+    pub fn extend<T: IntoIterator<Item = Atom>>(&mut self, iter: T) {
+        self.atoms.extend(iter);
+    }
 }
 
 impl fmt::Display for Residue {
