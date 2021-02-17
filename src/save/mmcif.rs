@@ -74,7 +74,7 @@ _audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdb
     if pdb.has_unit_cell() {
         let unit_cell = pdb.unit_cell();
         write!(
-            "# 
+            "# Unit cell definition
 _cell.entry_id           {}
 _cell.length_a           {} 
 _cell.length_b           {} 
@@ -82,14 +82,7 @@ _cell.length_c           {}
 _cell.angle_alpha        {}
 _cell.angle_beta         {}
 _cell.angle_gamma        {}
-_cell.Z_PDB              {} 
-_cell.pdbx_unique_axis   ?
-_cell.length_a_esd       ?
-_cell.length_b_esd       ?
-_cell.length_c_esd       ?
-_cell.angle_alpha_esd    ?
-_cell.angle_beta_esd     ?
-_cell.angle_gamma_esd    ?",
+_cell.Z_PDB              {}",
             name,
             unit_cell.a(),
             unit_cell.b(),
@@ -107,31 +100,30 @@ _cell.angle_gamma_esd    ?",
 
     if pdb.has_symmetry() {
         write!(
-            "# 
+            "# Space group definition
 _symmetry.entry_id                         {} 
 _symmetry.space_group_name_H-M             '{}' 
-_symmetry.pdbx_full_space_group_name_H-M   ? 
-_symmetry.cell_setting                     ? 
-_symmetry.Int_Tables_number                {} 
-_symmetry.space_group_name_Hall            ? ",
+_symmetry.pdbx_full_space_group_name_H-M   '{}'
+_symmetry.Int_Tables_number                {}",
             name,
+            pdb.symmetry().symbol(),
             pdb.symmetry().symbol(),
             pdb.symmetry().index()
         );
     }
 
-    // Models
     write!(
-        "# 
-loop_
+        "loop_
 _atom_site.group_PDB 
-_atom_site.label_atom_id 
 _atom_site.id 
 _atom_site.type_symbol 
+_atom_site.label_atom_id 
+_atom_site.label_alt_id 
 _atom_site.label_comp_id 
+_atom_site.label_asym_id 
+_atom_site.label_entity_id 
 _atom_site.label_seq_id 
-_atom_site.label_asym_id
-_atom_site.label_entity_id
+_atom_site.pdbx_PDB_ins_code 
 _atom_site.Cartn_x 
 _atom_site.Cartn_y 
 _atom_site.Cartn_z 
@@ -140,65 +132,57 @@ _atom_site.B_iso_or_equiv
 _atom_site.pdbx_formal_charge 
 _atom_site.pdbx_PDB_model_num"
     );
+
     let mut lines = Vec::new();
+
+    let mut add_to_list = |atom_type: &str,
+                           atom: &Atom,
+                           residue: &Residue,
+                           chain: &Chain,
+                           chain_index: usize,
+                           model: &Model| {
+        lines.push(vec![
+            atom_type.to_string(),               // ATOM or HETATM
+            atom.serial_number().to_string(),    // Serial number
+            atom.element().to_string(),          // Element
+            atom.name().to_string(),             // Name
+            ".".to_string(),                     // Alternative location
+            residue.id().to_string(),            // Residue name
+            chain.id().to_string(),              // Chain name
+            chain_index.to_string(),             // Entity ID, using chain serial number
+            residue.serial_number().to_string(), // Residue serial number
+            ".".to_string(),                     // Insertion code
+            atom.x().to_string(),                // X
+            atom.y().to_string(),                // Y
+            atom.z().to_string(),                // Z
+            atom.occupancy().to_string(),        // OCC/Q
+            atom.b_factor().to_string(),         // B
+            atom.charge().to_string(),           // Charge
+            model.serial_number().to_string(),   // Model serial number
+        ]);
+    };
+
     for model in pdb.models() {
-        for (index, chain) in model.chains().enumerate() {
+        let mut chain_index = 0;
+        for chain in model.chains() {
+            chain_index += 1;
             for residue in chain.residues() {
                 for atom in residue.atoms() {
-                    lines.push([
-                        "ATOM".to_string(),                  // ATOM or HETATM
-                        atom.name().to_string(),             // Name
-                        atom.serial_number().to_string(),    // Serial number
-                        atom.element().to_string(),          // Element
-                        residue.id().to_string(),            // Residue name
-                        residue.serial_number().to_string(), // Residue serial number
-                        chain.id().to_string(),              // Chain name
-                        (index + 1).to_string(),             // Chain serial number
-                        atom.x().to_string(),                // X
-                        atom.y().to_string(),                // Y
-                        atom.z().to_string(),                // Z
-                        atom.occupancy().to_string(),        // OCC/Q
-                        atom.b_factor().to_string(),         // B
-                        if atom.charge() == 0 {
-                            "?".to_string()
-                        } else {
-                            atom.charge().to_string() // Charge
-                        },
-                        model.serial_number().to_string(), // Model number
-                    ]);
+                    add_to_list("ATOM", atom, residue, chain, chain_index, model);
                 }
             }
         }
-        for (index, chain) in model.hetero_chains().enumerate() {
+        for chain in model.hetero_chains() {
+            chain_index += 1;
             for residue in chain.residues() {
                 for atom in residue.atoms() {
-                    lines.push([
-                        "HETATM".to_string(),
-                        atom.name().to_string(),
-                        atom.serial_number().to_string(),
-                        atom.element().to_string(),
-                        residue.id().to_string(),
-                        residue.serial_number().to_string(),
-                        chain.id().to_string(),
-                        (index + 1 + model.chain_count()).to_string(),
-                        atom.x().to_string(),
-                        atom.y().to_string(),
-                        atom.z().to_string(),
-                        atom.occupancy().to_string(),
-                        atom.b_factor().to_string(),
-                        if atom.charge() == 0 {
-                            "?".to_string()
-                        } else {
-                            atom.charge().to_string()
-                        },
-                        model.serial_number().to_string(),
-                    ]);
+                    add_to_list("HETATM", atom, residue, chain, chain_index, model);
                 }
             }
         }
     }
     // Now align the table
-    let mut sizes = [1; 19];
+    let mut sizes = vec![1; lines[0].len()];
     for line in &lines {
         for index in 0..line.len() {
             sizes[index] = std::cmp::max(sizes[index], line[index].len());
