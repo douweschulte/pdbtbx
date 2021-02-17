@@ -598,7 +598,7 @@ fn lex_remark(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
 fn lex_header(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     if line.len() < 66 {
         Err(PDBError::new(
-            ErrorLevel::StrictWarning,
+            ErrorLevel::LooseWarning,
             "Header too short",
             "The HEADER is too short, the min is 66 characters.",
             Context::line(linenumber, &line, 11, line.len() - 11),
