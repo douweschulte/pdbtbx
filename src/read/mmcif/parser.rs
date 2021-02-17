@@ -73,18 +73,18 @@ fn parse_mmcif(
                             .map(|n| unit_cell.set_gamma(n.expect("UnitCell angle gamma should be provided")))
                             .err(),
                         "Int_Tables_number" => {
-                            if !pdb.has_symmetry() {
+                            if pdb.symmetry.is_none() {
                                 get_usize(&single.content, &context)
-                                    .map(|n| Symmetry::from_index(n.expect("Symmetry international tables number should be provided")).map(|s| pdb.set_symmetry(s)))
+                                    .map(|n| pdb.symmetry = Symmetry::from_index(n.expect("Symmetry international tables number should be provided")))
                                     .err()
                             } else {
                                 None
                             }
                         }
                         "space_group_name_H-M" => {
-                            if !pdb.has_symmetry() {
+                            if pdb.symmetry.is_none() {
                                 get_text(&single.content, &context)
-                                    .map(|t| Symmetry::new(t.expect("Symmetry space group name H-M should be provided")).map(|s| pdb.set_symmetry(s)))
+                                    .map(|t| pdb.symmetry = Symmetry::new(t.expect("Symmetry space group name H-M should be provided")))
                                     .err()
                             } else {
                                 None
@@ -103,7 +103,7 @@ fn parse_mmcif(
     }
 
     if unit_cell != UnitCell::default() {
-        pdb.set_unit_cell(unit_cell);
+        pdb.unit_cell = Some(unit_cell);
     }
     errors.extend(validate(&pdb));
     if errors.iter().any(|e| e.fails(level)) {

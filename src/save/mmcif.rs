@@ -71,8 +71,7 @@ _audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdb
     );
 
     // Cryst
-    if pdb.has_unit_cell() {
-        let unit_cell = pdb.unit_cell();
+    if let Some(unit_cell) = &pdb.unit_cell {
         write!(
             "# Unit cell definition
 _cell.entry_id           {}
@@ -90,15 +89,15 @@ _cell.Z_PDB              {}",
             unit_cell.alpha(),
             unit_cell.beta(),
             unit_cell.gamma(),
-            if pdb.has_symmetry() {
-                pdb.symmetry().z().to_string()
+            if let Some(symmetry) = &pdb.symmetry {
+                symmetry.z().to_string()
             } else {
                 "?".to_owned()
             }
         );
     }
 
-    if pdb.has_symmetry() {
+    if let Some(symmetry) = &pdb.symmetry {
         write!(
             "# Space group definition
 _symmetry.entry_id                         {} 
@@ -106,9 +105,9 @@ _symmetry.space_group_name_H-M             '{}'
 _symmetry.pdbx_full_space_group_name_H-M   '{}'
 _symmetry.Int_Tables_number                {}",
             name,
-            pdb.symmetry().symbol(),
-            pdb.symmetry().symbol(),
-            pdb.symmetry().index()
+            symmetry.symbol(),
+            symmetry.symbol(),
+            symmetry.index()
         );
     }
 

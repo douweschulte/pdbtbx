@@ -6,7 +6,6 @@ use crate::structs::*;
 ///
 /// ## Invariants Tested
 /// * With multiple models the models should all contain atoms that correspond.
-/// * All matrix type PDB records (SCALEn, ORIGXn, MTRIXn) have to be fully specified, so all rows set.
 ///
 /// ## Invariants Not Tested
 /// * Numbering of all structs, serial numbers should be unique. To enforce this the `renumber()` function should be called on the PDB struct.
@@ -15,35 +14,6 @@ pub fn validate(pdb: &PDB) -> Vec<PDBError> {
     let mut errors = Vec::new();
     if pdb.model_count() > 1 {
         errors.append(&mut validate_models(pdb));
-    }
-    if pdb.has_scale() && !pdb.scale().valid() {
-        errors.push(PDBError::new(
-            ErrorLevel::InvalidatingError,
-            "Row not set",
-            "A row was not set for SCALEn in the PDB.",
-            Context::None,
-        ));
-    }
-    if pdb.has_origx() && !pdb.origx().valid() {
-        errors.push(PDBError::new(
-            ErrorLevel::InvalidatingError,
-            "Row not set",
-            "A row was not set for ORIGXn in the PDB.",
-            Context::None,
-        ));
-    }
-    for m in pdb.mtrix() {
-        if !m.valid() {
-            errors.push(PDBError::new(
-                ErrorLevel::InvalidatingError,
-                "Row not set",
-                &format!(
-                    "A row was not set for MTRIXn Serial number {} in the PDB.",
-                    m.serial_number()
-                ),
-                Context::None,
-            ));
-        }
     }
     errors
 }

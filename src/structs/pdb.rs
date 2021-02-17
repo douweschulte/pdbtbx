@@ -7,18 +7,20 @@ use crate::transformation::*;
 /// A PDB file containing the 3D coordinates of many atoms making up the
 /// 3D structure of a protein, but it can also be used for other molecules.
 pub struct PDB {
+    /// The identifier as posed in the PDB Header or mmCIF entry.id, normally a 4 char string like '1UBQ'
+    pub identifier: Option<String>,
     /// The remarks above the PDB file, containing the remark-type-number and a line of free text
     remarks: Vec<(usize, String)>,
     /// The Scale needed to transform orthogonal coordinates to fractional coordinates, if available
-    scale: Option<Scale>,
+    pub scale: Option<TransformationMatrix>,
     /// The OrigX needed to transform orthogonal coordinates to submitted coordinates, if available
-    origx: Option<OrigX>,
+    pub origx: Option<TransformationMatrix>,
     /// The MtriXs needed to transform the Models to the full asymmetric subunit, if needed to contain the non-crystallographic symmetry
     mtrix: Vec<MtriX>,
     /// The unit cell of the crystal, containing its size and shape, if available
-    unit_cell: Option<UnitCell>,
+    pub unit_cell: Option<UnitCell>,
     /// The Symmetry or space group of the crystal, if available
-    symmetry: Option<Symmetry>,
+    pub symmetry: Option<Symmetry>,
     /// The Models making up this PDB
     models: Vec<Model>,
 }
@@ -27,6 +29,7 @@ impl PDB {
     /// Create an empty PDB struct
     pub fn new() -> PDB {
         PDB {
+            identifier: None,
             remarks: Vec::new(),
             scale: None,
             origx: None,
@@ -75,66 +78,6 @@ impl PDB {
         self.remarks.push((remark_type, remark_text));
     }
 
-    /// Returns `true` if the PDB has a Scale
-    pub fn has_scale(&self) -> bool {
-        self.scale.is_some()
-    }
-
-    /// Get the Scale from this PDB
-    /// ## Panics
-    /// It panics when there is no scale
-    pub fn scale(&self) -> &Scale {
-        match &self.scale {
-            Some(u) => u,
-            None => panic!("PDB has no scale"),
-        }
-    }
-
-    /// Get the Scale from this PDB as a mutable reference
-    /// ## Panics
-    /// It panics when there is no scale
-    pub fn scale_mut(&mut self) -> &mut Scale {
-        match &mut self.scale {
-            Some(u) => u,
-            None => panic!("PDB has no scale"),
-        }
-    }
-
-    /// Set the Scale fro this PDB
-    pub fn set_scale(&mut self, scale: Scale) {
-        self.scale = Some(scale);
-    }
-
-    /// Returns `true` if the PDB has an OrigX
-    pub fn has_origx(&self) -> bool {
-        self.origx.is_some()
-    }
-
-    /// Get the OrigX from this PDB
-    /// ## Panics
-    /// It panics when there is no OrigX
-    pub fn origx(&self) -> &OrigX {
-        match &self.origx {
-            Some(u) => u,
-            None => panic!("PDB has no origx"),
-        }
-    }
-
-    /// Get the OrigX from this PDB as a mutable reference
-    /// ## Panics
-    /// It panics when there is no OrigX
-    pub fn origx_mut(&mut self) -> &mut OrigX {
-        match &mut self.origx {
-            Some(u) => u,
-            None => panic!("PDB has no origx"),
-        }
-    }
-
-    /// Set the OrigX fro this PDB
-    pub fn set_origx(&mut self, origx: OrigX) {
-        self.origx = Some(origx);
-    }
-
     /// Get the MtriX records for this PDB
     pub fn mtrix(&self) -> impl DoubleEndedIterator<Item = &MtriX> + '_ {
         self.mtrix.iter()
@@ -170,66 +113,6 @@ impl PDB {
     /// Add a MtriX to this PDB
     pub fn add_mtrix(&mut self, mtrix: MtriX) {
         self.mtrix.push(mtrix);
-    }
-
-    /// Returns `true` if the PDB has a UnitCell
-    pub fn has_unit_cell(&self) -> bool {
-        self.unit_cell.is_some()
-    }
-
-    /// Get the UnitCell from this PDB
-    /// ## Panics
-    /// It panics when there is no UnitCell
-    pub fn unit_cell(&self) -> &UnitCell {
-        match &self.unit_cell {
-            Some(u) => u,
-            None => panic!("PDB has no unit cell"),
-        }
-    }
-
-    /// Get the UnitCell from this PDB as a mutable reference
-    /// ## Panics
-    /// It panics when there is no UnitCell
-    pub fn unit_cell_mut(&mut self) -> &mut UnitCell {
-        match &mut self.unit_cell {
-            Some(u) => u,
-            None => panic!("PDB has no unit cell"),
-        }
-    }
-
-    /// Set the UnitCell fro this PDB
-    pub fn set_unit_cell(&mut self, cell: UnitCell) {
-        self.unit_cell = Some(cell);
-    }
-
-    /// Returns `true` if the PDB has a Symmetry
-    pub fn has_symmetry(&self) -> bool {
-        self.symmetry.is_some()
-    }
-
-    /// Get the Symmetry from this PDB
-    /// ## Panics
-    /// It panics when there is no Symmetry
-    pub fn symmetry(&self) -> &Symmetry {
-        match &self.symmetry {
-            Some(u) => u,
-            None => panic!("PDB has no symmetry"),
-        }
-    }
-
-    /// Get the Symmetry from this PDB as a mutable reference
-    /// ## Panics
-    /// It panics when there is no Symmetry
-    pub fn symmetry_mut(&mut self) -> &mut Symmetry {
-        match &mut self.symmetry {
-            Some(u) => u,
-            None => panic!("PDB has no symmetry"),
-        }
-    }
-
-    /// Set the Symmetry fro this PDB
-    pub fn set_symmetry(&mut self, symmetry: Symmetry) {
-        self.symmetry = Some(symmetry);
     }
 
     /// Adds a Model to this PDB
@@ -634,11 +517,6 @@ impl PDB {
                 chain.set_id(&number_to_base26(counter));
                 counter += 1;
             }
-        }
-        let mut counter = 1;
-        for mtrix in &mut self.mtrix {
-            mtrix.serial_number = counter;
-            counter += 1;
         }
     }
 

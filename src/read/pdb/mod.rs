@@ -2,5 +2,7 @@
 mod lexitem;
 /// The parser and lexer
 mod parser;
+/// Structs to help in building up the PDB struct
+mod temporary_structs;
 
 pub use parser::*;

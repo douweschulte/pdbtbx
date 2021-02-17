@@ -1,4 +1,5 @@
 use super::lexitem::*;
+use super::temporary_structs::*;
 use crate::error::*;
 use crate::reference_tables;
 use crate::structs::*;
@@ -49,6 +50,9 @@ where
     let mut sequence: HashMap<String, Vec<(usize, usize, Vec<String>)>> = HashMap::new();
     let mut database_references = Vec::new();
     let mut modifications = Vec::new();
+    let mut temp_scale = BuildUpMatrix::empty();
+    let mut temp_origx = BuildUpMatrix::empty();
+    let mut temp_mtrix: Vec<(usize, BuildUpMatrix, bool)> = Vec::new();
 
     for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
@@ -134,38 +138,30 @@ where
                     current_model = Model::new(number);
                 }
                 LexItem::Scale(n, row) => {
-                    if !pdb.has_scale() {
-                        pdb.set_scale(Scale::new());
-                    }
-                    pdb.scale_mut().set_row(n, row);
+                    temp_scale.set_row(n, row);
                 }
                 LexItem::OrigX(n, row) => {
-                    if !pdb.has_origx() {
-                        pdb.set_origx(OrigX::new());
-                    }
-                    pdb.origx_mut().set_row(n, row);
+                    temp_origx.set_row(n, row);
                 }
                 LexItem::MtriX(n, ser, row, given) => {
                     let mut found = false;
-                    for mtrix in pdb.mtrix_mut() {
-                        if mtrix.serial_number == ser {
-                            mtrix.set_row(n, row);
-                            mtrix.contained = given;
+                    for (index, matrix, contained) in &mut temp_mtrix {
+                        if *index == ser {
+                            matrix.set_row(n, row);
+                            *contained = given;
                             found = true;
                             break;
                         }
                     }
                     if !found {
-                        let mut mtrix = MtriX::new();
-                        mtrix.serial_number = ser;
-                        mtrix.set_row(n, row);
-                        mtrix.contained = given;
-                        pdb.add_mtrix(mtrix);
+                        let mut matrix = BuildUpMatrix::empty();
+                        matrix.set_row(n, row);
+                        temp_mtrix.push((ser, matrix, given))
                     }
                 }
                 LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, _z) => {
-                    pdb.set_unit_cell(UnitCell::new(a, b, c, alpha, beta, gamma));
-                    pdb.set_symmetry(
+                    pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
+                    pdb.symmetry = Some(
                         Symmetry::new(&spacegroup)
                             .unwrap_or_else(|| panic!("Invalid space group: \"{}\"", spacegroup)),
                     );
@@ -262,14 +258,14 @@ where
                         );
                     }
                     let mut xform = 0;
-                    if pdb.has_origx() && pdb.origx().valid() {
+                    if temp_origx.is_set() {
                         xform += 3;
                     }
-                    if pdb.has_scale() && pdb.scale().valid() {
+                    if temp_scale.is_set() {
                         xform += 3;
                     }
-                    for mtrix in pdb.mtrix() {
-                        if mtrix.valid() {
+                    for (_, mtrix, _) in &temp_mtrix {
+                        if mtrix.is_set() {
                             xform += 3;
                         }
                     }
@@ -307,6 +303,44 @@ where
     for (chain_id, reference) in database_references {
         if let Some(chain) = pdb.chains_mut().find(|a| a.id() == chain_id) {
             chain.set_database_reference(reference);
+        }
+    }
+
+    if let Some(scale) = temp_scale.get_matrix() {
+        pdb.scale = Some(scale);
+    } else if temp_scale.is_partly_set() {
+        errors.push(PDBError::new(
+            ErrorLevel::StrictWarning,
+            "Invalid SCALE definition",
+            "Not all rows are set in the scale definition",
+            context.clone(),
+        ))
+    }
+
+    if let Some(origx) = temp_origx.get_matrix() {
+        pdb.origx = Some(origx);
+    } else if temp_origx.is_partly_set() {
+        errors.push(PDBError::new(
+            ErrorLevel::StrictWarning,
+            "Invalid ORIGX definition",
+            "Not all rows are set in the ORIGX definition",
+            context.clone(),
+        ))
+    }
+
+    for (index, matrix, given) in temp_mtrix {
+        if let Some(m) = matrix.get_matrix() {
+            pdb.add_mtrix(MtriX::new(index, m, given))
+        } else {
+            errors.push(PDBError::new(
+                ErrorLevel::StrictWarning,
+                "Invalid MATRIX definition",
+                &format!(
+                    "Not all rows are set in the MtriX definition, number: {}",
+                    index
+                ),
+                context.clone(),
+            ))
         }
     }
 
@@ -501,16 +535,14 @@ fn lex_line(line: String, linenumber: usize) -> Result<(LexItem, Vec<PDBError>),
             "ENDMDL" => Ok((LexItem::EndModel(), Vec::new())),
             "TER   " => Ok((LexItem::TER(), Vec::new())),
             "END   " => Ok((LexItem::End(), Vec::new())),
-            _ => Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line))),
+            _ => Ok((LexItem::Empty(), Vec::new())),
         }
     } else if line.len() > 2 {
         match &line[..3] {
             "TER" => Ok((LexItem::TER(), Vec::new())),
             "END" => Ok((LexItem::End(), Vec::new())),
-            _ => Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line))),
+            _ => Ok((LexItem::Empty(), Vec::new())),
         }
-    } else if !line.is_empty() {
-        Err(PDBError::new(ErrorLevel::GeneralWarning, "Could not recognise tag.", "Could not parse the tag above, it is possible that it is valid PDB but just not supported right now.",Context::full_line(linenumber, &line)))
     } else {
         Ok((LexItem::Empty(), Vec::new()))
     }

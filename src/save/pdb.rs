@@ -159,10 +159,9 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
     }
 
     // Cryst
-    if pdb.has_unit_cell() {
-        let unit_cell = pdb.unit_cell();
-        let sym = if pdb.has_symmetry() {
-            format!("{:10}{:3}", pdb.symmetry().symbol(), pdb.symmetry().z(),)
+    if let Some(unit_cell) = &pdb.unit_cell {
+        let sym = if let Some(symmetry) = &pdb.symmetry {
+            format!("{:10}{:3}", symmetry.symbol(), symmetry.z(),)
         } else {
             "P 1         1".to_string()
         };
@@ -197,30 +196,32 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
     };
 
     // Scale
-    if pdb.has_scale() {
-        write_matrix("SCALE", pdb.scale().transformation().matrix());
+    if let Some(scale) = &pdb.scale {
+        write_matrix("SCALE", scale.matrix());
     } else if level == StrictnessLevel::Strict {
-        write_matrix(
-            "SCALE",
-            TransformationMatrix::scale(
-                1.0 / pdb.unit_cell().a(),
-                1.0 / pdb.unit_cell().b(),
-                1.0 / pdb.unit_cell().c(),
-            )
-            .matrix(),
-        );
+        if let Some(unit_cell) = &pdb.unit_cell {
+            write_matrix(
+                "SCALE",
+                TransformationMatrix::scale(
+                    1.0 / unit_cell.a(),
+                    1.0 / unit_cell.b(),
+                    1.0 / unit_cell.c(),
+                )
+                .matrix(),
+            );
+        }
     }
 
     // OrigX
-    if pdb.has_origx() {
-        write_matrix("ORIGX", pdb.origx().transformation().matrix());
+    if let Some(origx) = &pdb.origx {
+        write_matrix("ORIGX", origx.matrix());
     } else if level == StrictnessLevel::Strict {
         write_matrix("ORIGX", TransformationMatrix::identity().matrix());
     }
 
     // MtriX
     for mtrix in pdb.mtrix() {
-        let m = mtrix.transformation().matrix();
+        let m = mtrix.transformation.matrix();
         write!(
             "MTRIX1 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}",
             mtrix.serial_number,
@@ -365,16 +366,14 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
     }
     if level != StrictnessLevel::Loose {
         let mut xform = 0;
-        if pdb.has_origx() && pdb.origx().valid() {
+        if pdb.origx.is_some() {
             xform += 3;
         }
-        if pdb.has_scale() && pdb.scale().valid() {
+        if pdb.scale.is_some() {
             xform += 3;
         }
-        for mtrix in pdb.mtrix() {
-            if mtrix.valid() {
-                xform += 3;
-            }
+        for _ in pdb.mtrix() {
+            xform += 3;
         }
         write!(
             "MASTER    {:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}",
