@@ -41,6 +41,8 @@ fn parse_mmcif(
     let mut errors: Vec<PDBError> = Vec::new();
     let mut unit_cell = UnitCell::default();
 
+    pdb.identifier = Some(input.name.clone());
+
     for item in &input.items {
         let result = match item {
             Item::DataItem(di) => match di {

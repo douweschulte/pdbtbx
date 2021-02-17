@@ -107,7 +107,6 @@ fn do_something(file: &str, folder: &str, name: &str) {
         pdb,
         &(folder.to_string() + name + ".cif"),
         StrictnessLevel::Loose,
-        name,
     )
     .expect("Save not successful");
 }

@@ -4,6 +4,11 @@
 /// See wwPDB v3.30 for detailed explanation of the meaning of all fields
 #[derive(Debug, Clone)]
 pub enum LexItem {
+    /// A HEADER in a PDB file
+    /// * classification
+    /// * date of deposition
+    /// * identification
+    Header(String, String, String),
     /// A REMARK saved as the remark-type-number and the remark line itself
     Remark(usize, String),
     /// An Atom with all its information, including the deprecated and rarely used fields.

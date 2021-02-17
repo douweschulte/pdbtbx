@@ -76,6 +76,7 @@ where
         if let Ok((result, line_errors)) = line_result {
             errors.extend(line_errors);
             match result {
+                LexItem::Header(_, _, identifier) => pdb.identifier = Some(identifier),
                 LexItem::Remark(num, text) => pdb.add_remark(num, text.to_string()),
                 LexItem::Atom(
                     hetero,
@@ -512,6 +513,7 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
 fn lex_line(line: String, linenumber: usize) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     if line.len() > 6 {
         match &line[..6] {
+            "HEADER" => lex_header(linenumber, line),
             "REMARK" => lex_remark(linenumber, line),
             "ATOM  " => lex_atom(linenumber, line, false),
             "ANISOU" => Ok(lex_anisou(linenumber, line)),
@@ -590,6 +592,33 @@ fn lex_remark(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
         ),
         errors,
     ))
+}
+
+/// Lex a HEADER
+fn lex_header(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+    if line.len() < 66 {
+        Err(PDBError::new(
+            ErrorLevel::StrictWarning,
+            "Header too short",
+            "The HEADER is too short, the min is 66 characters.",
+            Context::line(linenumber, &line, 11, line.len() - 11),
+        ))
+    } else {
+        Ok((
+            LexItem::Header(
+                line.chars().collect::<Vec<char>>()[10..50]
+                    .iter()
+                    .collect::<String>(),
+                line.chars().collect::<Vec<char>>()[50..59]
+                    .iter()
+                    .collect::<String>(),
+                line.chars().collect::<Vec<char>>()[62..66]
+                    .iter()
+                    .collect::<String>(),
+            ),
+            Vec::new(),
+        ))
+    }
 }
 
 /// Lex a MODEL

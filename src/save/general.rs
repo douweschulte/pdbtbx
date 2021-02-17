@@ -11,7 +11,7 @@ pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<
     if filename.ends_with(".pdb") {
         save_pdb(pdb, filename, level)
     } else if filename.ends_with(".cif") {
-        save_mmcif(pdb, filename, level, "NONE")
+        save_mmcif(pdb, filename, level)
     } else {
         Err(vec![PDBError::new(
             ErrorLevel::BreakingError,
