@@ -246,6 +246,11 @@ impl Chain {
         }
     }
 
+    /// Remove all empty Residues from this Chain.
+    pub fn remove_empty(&mut self) {
+        self.residues.retain(|r| r.atom_count() > 0);
+    }
+
     /// Apply a transformation to the position of all atoms making up this Chain, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
         for atom in self.atoms_mut() {

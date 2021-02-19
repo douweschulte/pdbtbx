@@ -156,33 +156,27 @@ impl PDB {
     }
 
     /// Get the amount of Chains making up this PDB.
-    /// Including Hetero Chains.
+    /// Including Hetero Chains. Including all models.
     pub fn total_chain_count(&self) -> usize {
-        let mut total = 0;
-        for model in self.models() {
-            total += model.total_chain_count();
-        }
-        total
+        self.models
+            .iter()
+            .fold(0, |acc, item| acc + item.total_chain_count())
     }
 
     /// Get the amount of Residues making up this PDB.
-    /// Including Hetero Residues.
+    /// Including Hetero Residues. Including all models.
     pub fn total_residue_count(&self) -> usize {
-        let mut total = 0;
-        for model in self.models() {
-            total += model.total_residue_count();
-        }
-        total
+        self.models
+            .iter()
+            .fold(0, |acc, item| acc + item.total_residue_count())
     }
 
     /// Get the amount of Atoms making up this PDB.
-    /// Including Hetero Atoms.
+    /// Including Hetero Atoms. Including all models.
     pub fn total_atom_count(&self) -> usize {
-        let mut total = 0;
-        for model in self.models() {
-            total += model.total_atom_count();
-        }
-        total
+        self.models
+            .iter()
+            .fold(0, |acc, item| acc + item.total_atom_count())
     }
 
     /// Get a specific Model from list of Models making up this PDB.
@@ -491,6 +485,12 @@ impl PDB {
         } else {
             false
         }
+    }
+
+    /// Remove all empty Models from this PDB, and all empty Chains from the Model, and all empty Residues from the Chains.
+    pub fn remove_empty(&mut self) {
+        self.models.retain(|m| m.chain_count() > 0);
+        self.models.iter_mut().for_each(|m| m.remove_empty());
     }
 
     /// This renumbers all numbered structs in the PDB.

@@ -429,6 +429,12 @@ impl Model {
         }
     }
 
+    /// Remove all empty Chain from this Model, and all empty Residues from the Chains.
+    pub fn remove_empty(&mut self) {
+        self.chains.retain(|c| c.residue_count() > 0);
+        self.chains.iter_mut().for_each(|c| c.remove_empty());
+    }
+
     /// Apply a transformation to the position of all atoms (Normal and Hetero) making up this Model, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
         for atom in self.all_atoms_mut() {
