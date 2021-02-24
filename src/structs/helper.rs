@@ -27,6 +27,14 @@ pub fn valid_identifier(text: &str) -> bool {
     true
 }
 
+pub fn prepare_identifier(text: &str) -> Option<String> {
+    if valid_identifier(text) && !text.trim().is_empty() {
+        Some(text.trim().to_ascii_uppercase())
+    } else {
+        None
+    }
+}
+
 const ALPHABET: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 /// Converts a number into a base26 with only the alphabet as possible chars

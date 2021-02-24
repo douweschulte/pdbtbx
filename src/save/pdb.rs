@@ -98,7 +98,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                 for dif in &dbref.differences {
                     write!(
                         "SEQADV {:4} {:3} {:1} {:4}{:1} {:4} {:9} {:3} {:5} {}",
-                        "    ",
+                        pdb.identifier.as_deref().unwrap_or(""),
                         dif.residue.0.iter().collect::<String>(),
                         chain.id(),
                         dif.residue.1,
@@ -124,7 +124,13 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
             for chain in model.chains() {
                 for (index, chunk) in chain
                     .residues()
-                    .map(|r| format!("{:3}", r.id()))
+                    .map(|r| {
+                        format!(
+                            "{:3}",
+                            r.name()
+                                .expect("Residue has multiple conformers in SEQRES generation")
+                        )
+                    })
                     .collect::<Vec<String>>()
                     .chunks(13)
                     .enumerate()
@@ -143,16 +149,19 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         // MODRES
         for chain in model.chains() {
             for residue in chain.residues() {
-                if let Some((std_name, comment)) = residue.modification() {
-                    write!(
-                        "MODRES {:4} {:3} {} {:4}  {:3}  {}",
-                        "    ",
-                        residue.id(),
-                        chain.id(),
-                        residue.serial_number(),
-                        std_name,
-                        comment
-                    );
+                for conformer in residue.conformers() {
+                    if let Some((std_name, comment)) = conformer.modification() {
+                        write!(
+                            "MODRES {:4} {:3} {} {:4}{} {:3}  {}",
+                            "    ",
+                            conformer.name(),
+                            chain.id(),
+                            residue.serial_number(),
+                            residue.insertion_code().unwrap_or(" "),
+                            std_name,
+                            comment
+                        );
+                    }
                 }
             }
         }
@@ -258,103 +267,105 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
             write!("MODEL        {}", model.serial_number());
         }
 
+        let atom_line = |atom: &Atom, conformer: &Conformer, residue: &Residue, chain: &Chain| {
+            format!(
+                "{:5} {:^4}{}{:4}{}{:4}{}",
+                atom.serial_number(),
+                atom.name(),
+                conformer.alternative_location().unwrap_or(" "),
+                conformer.name(),
+                chain.id(),
+                residue.serial_number(),
+                residue.insertion_code().unwrap_or(" ")
+            )
+        };
+
         for chain in model.chains() {
             for residue in chain.residues() {
-                for atom in residue.atoms() {
-                    write!(
-                        "ATOM  {:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}",
-                        atom.serial_number(),
-                        atom.name(),
-                        residue.id(),
-                        chain.id(),
-                        residue.serial_number(),
-                        atom.pos().0,
-                        atom.pos().1,
-                        atom.pos().2,
-                        atom.occupancy(),
-                        atom.b_factor(),
-                        atom.element(),
-                        atom.pdb_charge(),
-                    );
-                    #[allow(clippy::cast_possible_truncation)]
-                    if atom.anisotropic_temperature_factors().is_some() {
+                for conformer in residue.conformers() {
+                    for atom in conformer.atoms() {
                         write!(
-                            "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}",
-                            atom.serial_number(),
-                            atom.name(),
-                            residue.id(),
-                            chain.id(),
-                            residue.serial_number(),
-                            (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0)
-                                as isize,
-                            (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0)
-                                as isize,
-                            (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0)
-                                as isize,
-                            (atom.anisotropic_temperature_factors().unwrap()[1][0] * 10000.0)
-                                as isize,
-                            (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0)
-                                as isize,
-                            (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0)
-                                as isize,
+                            "ATOM  {}   {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}",
+                            atom_line(atom, conformer, residue, chain),
+                            atom.pos().0,
+                            atom.pos().1,
+                            atom.pos().2,
+                            atom.occupancy(),
+                            atom.b_factor(),
                             atom.element(),
                             atom.pdb_charge(),
                         );
+                        #[allow(clippy::cast_possible_truncation)]
+                        if atom.anisotropic_temperature_factors().is_some() {
+                            write!(
+                                "ANSIOU{} {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}",
+                                atom_line(atom, conformer, residue, chain),
+                                (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0)
+                                    as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0)
+                                    as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0)
+                                    as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[1][0] * 10000.0)
+                                    as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0)
+                                    as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0)
+                                    as isize,
+                                atom.element(),
+                                atom.pdb_charge(),
+                            );
+                        }
                     }
                 }
             }
             let last_atom = chain.atoms().nth_back(0).unwrap();
             let last_residue = chain.residues().nth_back(0).unwrap();
+            let last_conformer = chain.conformers().nth_back(0).unwrap();
             write!(
                 "TER{:5}      {:3} {}{:4}",
                 last_atom.serial_number(),
-                last_residue.id(),
+                last_conformer.name(),
                 chain.id(),
                 last_residue.serial_number()
             );
         }
         for chain in model.hetero_chains() {
             for residue in chain.residues() {
-                for atom in residue.atoms() {
-                    write!(
-                        "HETATM{:5} {:^4} {:4}{}{:4}    {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}",
-                        atom.serial_number(),
-                        atom.name(),
-                        residue.id(),
-                        chain.id(),
-                        residue.serial_number(),
-                        atom.pos().0,
-                        atom.pos().1,
-                        atom.pos().2,
-                        atom.occupancy(),
-                        atom.b_factor(),
-                        atom.element(),
-                        atom.pdb_charge()
-                    );
-                    #[allow(clippy::cast_possible_truncation)]
-                    if atom.anisotropic_temperature_factors().is_some() {
+                for conformer in residue.conformers() {
+                    for atom in conformer.atoms() {
                         write!(
-                            "ANSIOU{:5} {:^4} {:4}{}{:4}  {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}",
-                            atom.serial_number(),
-                            atom.name(),
-                            residue.id(),
-                            chain.id(),
-                            residue.serial_number(),
-                            (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0)
-                                as isize,
-                            (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0)
-                                as isize,
-                            (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0)
-                                as isize,
-                            (atom.anisotropic_temperature_factors().unwrap()[1][0] * 10000.0)
-                                as isize,
-                            (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0)
-                                as isize,
-                            (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0)
-                                as isize,
+                            "HETATM{}   {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}",
+                            atom_line(atom, conformer, residue, chain),
+                            atom.pos().0,
+                            atom.pos().1,
+                            atom.pos().2,
+                            atom.occupancy(),
+                            atom.b_factor(),
                             atom.element(),
                             atom.pdb_charge()
                         );
+                        #[allow(clippy::cast_possible_truncation)]
+                        if atom.anisotropic_temperature_factors().is_some() {
+                            write!(
+                                "ANSIOU{} {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}",
+                                atom_line(atom, conformer, residue, chain),
+                                (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0)
+                                    as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0)
+                                    as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0)
+                                    as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[1][0] * 10000.0)
+                                    as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0)
+                                    as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0)
+                                    as isize,
+                                atom.element(),
+                                atom.pdb_charge()
+                            );
+                        }
                     }
                 }
             }

@@ -68,6 +68,12 @@ impl Chain {
         self.residues.len()
     }
 
+    /// Get the amount of Conformers making up this Chain
+    pub fn conformer_count(&self) -> usize {
+        self.residues()
+            .fold(0, |sum, res| res.conformer_count() + sum)
+    }
+
     /// Get the amount of Atoms making up this Chain
     pub fn atom_count(&self) -> usize {
         self.residues().fold(0, |sum, res| res.atom_count() + sum)
@@ -93,6 +99,28 @@ impl Chain {
     /// It fails when the index is outside bounds.
     pub fn residue_mut(&mut self, index: usize) -> Option<&mut Residue> {
         self.residues.get_mut(index)
+    }
+
+    /// Get a specific Conformer from list of Conformers making up this Chain.
+    ///
+    /// ## Arguments
+    /// * `index` - the index of the Conformer
+    ///
+    /// ## Fails
+    /// It fails when the index is outside bounds.
+    pub fn conformer(&self, index: usize) -> Option<&Conformer> {
+        self.conformers().nth(index)
+    }
+
+    /// Get a specific Conformer as a mutable reference from list of Conformers making up this Chain.
+    ///
+    /// ## Arguments
+    /// * `index` - the index of the Conformer
+    ///
+    /// ## Fails
+    /// It fails when the index is outside bounds.
+    pub fn conformer_mut(&mut self, index: usize) -> Option<&mut Conformer> {
+        self.conformers_mut().nth(index)
     }
 
     /// Get a specific Atom from the Atoms making up this Chain.
@@ -129,6 +157,18 @@ impl Chain {
         self.residues.iter_mut()
     }
 
+    /// Get the list of Conformers making up this Chain.
+    /// Double ended so iterating from the end is just as fast as from the start.
+    pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
+        self.residues.iter().flat_map(|a| a.conformers())
+    }
+
+    /// Get the list of Conformers as mutable references making up this Chain.
+    /// Double ended so iterating from the end is just as fast as from the start.
+    pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
+        self.residues.iter_mut().flat_map(|a| a.conformers_mut())
+    }
+
     /// Get the list of Atoms making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
@@ -145,18 +185,23 @@ impl Chain {
     ///
     /// ## Arguments
     /// * `new_atom` - the new Atom to add
-    /// * `residue_serial_number` - the serial number of the Residue to add the Atom to
-    /// * `residue_name` - the name of the Residue to add the Atom to, only used to create a new Residue if needed
+    /// * `residue_id` - the id construct of the Residue to add the Atom to
+    /// * `conformer_id` - the id construct of the Conformer to add the Atom to
     ///
     /// ## Panics
     /// It panics if the Residue name contains any invalid characters.
-    pub fn add_atom(&mut self, new_atom: Atom, residue_serial_number: usize, residue_name: &str) {
+    pub fn add_atom(
+        &mut self,
+        new_atom: Atom,
+        residue_id: (usize, Option<&str>),
+        conformer_id: (&str, Option<&str>),
+    ) {
         let mut found = false;
-        let mut new_residue = Residue::new(residue_serial_number, residue_name, None)
+        let mut new_residue = Residue::new(residue_id.0, residue_id.1, None)
             .expect("Invalid chars in Residue creation");
         let mut current_residue = &mut new_residue;
         for residue in &mut self.residues {
-            if residue.serial_number() == residue_serial_number {
+            if residue.id() == residue_id {
                 current_residue = residue;
                 found = true;
                 break;
@@ -168,7 +213,7 @@ impl Chain {
             current_residue = self.residues.last_mut().unwrap();
         }
 
-        current_residue.add_atom(new_atom);
+        current_residue.add_atom(new_atom, conformer_id);
     }
 
     /// Add a Residue end of to the list of Residues making up this Chain. This does not detect any duplicates of names or serial numbers in the list of Residues.
@@ -192,6 +237,16 @@ impl Chain {
         }
     }
 
+    /// Remove all Conformers matching the given predicate. As this is done in place this is the fastest way to remove Conformers from this Chain.
+    pub fn remove_conformers_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Conformer) -> bool,
+    {
+        for residue in self.residues_mut() {
+            residue.remove_conformers_by(&predicate);
+        }
+    }
+
     /// Remove all residues matching the given predicate. As this is done in place this is the fastest way to remove Residues from this Chain.
     pub fn remove_residues_by<F>(&mut self, predicate: F)
     where
@@ -207,7 +262,7 @@ impl Chain {
     ///
     /// ## Panics
     /// It panics when the index is outside bounds.
-    pub fn remove_residue_by_id(&mut self, index: usize) {
+    pub fn remove_residue(&mut self, index: usize) {
         self.residues.remove(index);
     }
 
@@ -215,40 +270,22 @@ impl Chain {
     /// It removes the first matching Residue from the list.
     ///
     /// ## Arguments
-    /// * `serial_number` - the serial number of the Residue to remove
-    pub fn remove_residue_serial_number(&mut self, serial_number: usize) -> bool {
-        let index = self
-            .residues
-            .iter()
-            .position(|a| a.serial_number() == serial_number);
-
-        if let Some(i) = index {
-            self.remove_residue_by_id(i);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Remove the Residue specified. It returns `true` if it found a matching Residue and removed it.
-    /// It removes the first matching Residue from the list.
-    ///
-    /// ## Arguments
-    /// * `id` - the id of the Residue to remove  
-    pub fn remove_residue_id(&mut self, id: String) -> bool {
+    /// * `id` - the id construct of the Residue to remove (see Residue.id())
+    pub fn remove_residue_by_id(&mut self, id: (usize, Option<&str>)) -> bool {
         let index = self.residues.iter().position(|a| a.id() == id);
 
         if let Some(i) = index {
-            self.remove_residue_by_id(i);
+            self.remove_residue(i);
             true
         } else {
             false
         }
     }
 
-    /// Remove all empty Residues from this Chain.
+    /// Remove all empty Residues from this Chain, and all empty Conformers from the Residues.
     pub fn remove_empty(&mut self) {
-        self.residues.retain(|r| r.atom_count() > 0);
+        self.residues.retain(|c| c.conformer_count() > 0);
+        self.residues.iter_mut().for_each(|c| c.remove_empty());
     }
 
     /// Apply a transformation to the position of all atoms making up this Chain, the new position is immediately set.

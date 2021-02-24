@@ -68,7 +68,7 @@ impl DatabaseReference {
 /// A difference between the sequence of the database and the pdb file
 pub struct SequenceDifference {
     /// The residue in the PDB file
-    pub residue: ([char; 3], usize),
+    pub residue: ([char; 3], usize, Option<String>),
     /// The residue in the database
     pub database_residue: Option<([char; 3], usize)>,
     /// The comment to explain the difference
@@ -78,7 +78,7 @@ pub struct SequenceDifference {
 impl SequenceDifference {
     /// Create a new DatabaseReference
     pub fn new(
-        residue: ([char; 3], usize),
+        residue: ([char; 3], usize, Option<String>),
         database_residue: Option<([char; 3], usize)>,
         comment: String,
     ) -> Self {

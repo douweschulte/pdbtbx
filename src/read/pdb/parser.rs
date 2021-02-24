@@ -82,11 +82,11 @@ where
                     hetero,
                     serial_number,
                     name,
-                    _,
+                    alt_loc,
                     residue_name,
                     chain_id,
                     residue_serial_number,
-                    _,
+                    insertion_code,
                     x,
                     y,
                     z,
@@ -103,15 +103,15 @@ where
                         current_model.add_hetero_atom(
                             atom,
                             &chain_id,
-                            residue_serial_number,
-                            &residue_name,
+                            (residue_serial_number, insertion_code.as_deref()),
+                            (&residue_name, alt_loc.as_deref()),
                         );
                     } else {
                         current_model.add_atom(
                             atom,
                             &chain_id,
-                            residue_serial_number,
-                            &residue_name,
+                            (residue_serial_number, insertion_code.as_deref()),
+                            (&residue_name, alt_loc.as_deref()),
                         );
                     }
                 }
@@ -189,7 +189,7 @@ where
                     chain_id,
                     res_name,
                     seq_num,
-                    _insert,
+                    insert,
                     _database,
                     _database_accession,
                     db_pos,
@@ -199,7 +199,7 @@ where
                         database_references.iter_mut().find(|a| a.0 == chain_id)
                     {
                         db_ref.differences.push(SequenceDifference::new(
-                            (res_name, seq_num),
+                            (res_name, seq_num, insert),
                             db_pos,
                             comment,
                         ))
@@ -427,11 +427,14 @@ fn validate_seqres(
                 let index = raw_index + offset;
                 if let Some(n) = next {
                     if index == n.serial_number() {
-                        if *seq != n.id() {
+                        if *seq
+                            != n.name()
+                                .expect("Multiple Conformers for a Residue in parsing of SEQRES")
+                        {
                             errors.push(PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "SEQRES residue invalid",
-                                &format!("The residue index {} value \"{}\" for SEQRES chain \"{}\" does not match the residue in the chain value \"{}\".", index, chain_sequence[index], chain_id, n.id()),
+                                &format!("The residue index {} value \"{}\" for SEQRES chain \"{}\" does not match the residue in the chain value \"{:?}\".", index, chain_sequence[index], chain_id, n.name()),
                                 context.clone()
                             ));
                         }
@@ -439,21 +442,35 @@ fn validate_seqres(
                     } else if index < n.serial_number() {
                         chain.insert_residue(
                             index,
-                            Residue::new(index, seq, None)
-                                .expect("Invalid characters in Residue generations"),
+                            Residue::new(
+                                index,
+                                None,
+                                Some(
+                                    Conformer::new(seq, None, None)
+                                        .expect("Invalid characters in Conformer generation"),
+                                ),
+                            )
+                            .expect("Invalid characters in Residue generation"),
                         );
                     } else {
                         errors.push(PDBError::new(
                             ErrorLevel::StrictWarning,
                             "Chain residue invalid",
-                            &format!("The residue index {} value \"{}\" for Chain \"{}\" is not sequentially increasing, value expected: {}.", n.serial_number(), n.id(), chain_id, index),
+                            &format!("The residue index {} value \"{:?}\" for Chain \"{}\" is not sequentially increasing, value expected: {}.", n.serial_number(), n.name(), chain_id, index),
                             context.clone()
                         ));
                     }
                 } else {
                     chain.add_residue(
-                        Residue::new(index, seq, None)
-                            .expect("Invalid characters in Residue generations"),
+                        Residue::new(
+                            index,
+                            None,
+                            Some(
+                                Conformer::new(seq, None, None)
+                                    .expect("Invalid characters in Conformer generation"),
+                            ),
+                        )
+                        .expect("Invalid characters in Residue generation"),
                     );
                 }
             }
@@ -467,7 +484,12 @@ fn validate_seqres(
                 ));
             } else {
                 for (index, original_res) in chain.residues().enumerate() {
-                    if chain_sequence[index] != original_res.id() {}
+                    if chain_sequence[index]
+                        != original_res
+                            .name()
+                            .expect("Multiple Conformers for a Residue in parsing of SEQRES")
+                    {
+                    }
                 }
             }
         }
@@ -480,19 +502,24 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
     let mut errors = Vec::new();
     for (context, item) in modifications {
         match item {
-            LexItem::Modres(_, res_name, chain_id, seq_num, _, std_name, comment) => {
+            LexItem::Modres(_, res_name, chain_id, seq_num, icode, std_name, comment) => {
                 if let Some(chain) = pdb.chains_mut().find(|c| c.id() == chain_id) {
-                    if let Some(residue) = chain
-                        .residues_mut()
-                        .find(|r| r.id() == res_name && r.serial_number() == seq_num)
-                    {
-                        if let Err(e) = residue.set_modification((std_name, comment)) {
-                            errors.push(PDBError::new(
-                                ErrorLevel::InvalidatingError,
-                                "Invalid characters",
-                                &e,
-                                context,
-                            ));
+                    if let Some(residue) = chain.residues_mut().find(|r| {
+                        r.serial_number() == seq_num && r.insertion_code() == icode.as_deref()
+                    }) {
+                        if let Some(conformer) =
+                            residue.conformers_mut().find(|c| c.name() == res_name)
+                        {
+                            if let Err(e) = conformer.set_modification((std_name, comment)) {
+                                errors.push(PDBError::new(
+                                    ErrorLevel::InvalidatingError,
+                                    "Invalid characters",
+                                    &e,
+                                    context,
+                                ));
+                            }
+                        } else {
+                            errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified residue in the PDB file.", context))
                         }
                     } else {
                         errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified chain in the PDB file.", context))
@@ -585,7 +612,7 @@ fn lex_remark(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
                         Context::line(linenumber, &line, 11, line.len() - 11),
                     ));
                 }
-                line[11..].to_string()
+                line[11..].trim_end().to_string()
             } else {
                 "".to_string()
             },
@@ -831,11 +858,11 @@ fn lex_atom_basics(
     (
         usize,
         String,
-        char,
+        Option<String>,
         String,
         String,
         usize,
-        char,
+        Option<String>,
         String,
         String,
         isize,
@@ -901,11 +928,19 @@ fn lex_atom_basics(
         (
             serial_number,
             atom_name,
-            alternate_location,
+            if alternate_location == ' ' {
+                None
+            } else {
+                Some(String::from(alternate_location))
+            },
             residue_name,
             chain_id,
             residue_serial_number,
-            insertion,
+            if insertion == ' ' {
+                None
+            } else {
+                Some(String::from(insertion))
+            },
             segment_id,
             element,
             charge,
@@ -1264,7 +1299,11 @@ fn lex_seqadv(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
             String::from(chain_id),
             res_name,
             seq_num,
-            insert,
+            if insert == ' ' {
+                None
+            } else {
+                Some(String::from(insert))
+            },
             database,
             database_accession,
             db_pos,
@@ -1302,7 +1341,11 @@ fn lex_modres(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
             res_name,
             String::from(chain_id),
             seq_num,
-            insert,
+            if insert == ' ' {
+                None
+            } else {
+                Some(String::from(insert))
+            },
             std_res,
             comment,
         ),

@@ -49,6 +49,13 @@ impl Model {
             .fold(0, |sum, chain| chain.residue_count() + sum)
     }
 
+    /// Get the amount of Conformers making up this Model.
+    /// This disregards all Hetero Conformers.
+    pub fn conformer_count(&self) -> usize {
+        self.chains()
+            .fold(0, |sum, chain| chain.conformer_count() + sum)
+    }
+
     /// Get the amount of Atoms making up this Model.
     /// This disregards all Hetero Atoms.
     pub fn atom_count(&self) -> usize {
@@ -66,6 +73,13 @@ impl Model {
     pub fn total_residue_count(&self) -> usize {
         self.all_chains()
             .fold(0, |sum, chain| chain.residue_count() + sum)
+    }
+
+    /// Get the amount of Conformers making up this Model.
+    /// This includes all Hetero Conformers.
+    pub fn total_conformer_count(&self) -> usize {
+        self.all_chains()
+            .fold(0, |sum, chain| chain.conformer_count() + sum)
     }
 
     /// Get the amount of Atoms making up this Model.
@@ -119,6 +133,28 @@ impl Model {
         self.all_residues_mut().nth(index)
     }
 
+    /// Get a specific Conformer from the Conformers making up this Model.
+    ///
+    /// ## Arguments
+    /// * `index` - the index of the Conformer
+    ///
+    /// ## Fails
+    /// It fails when the index is outside bounds.
+    pub fn conformer(&self, index: usize) -> Option<&Conformer> {
+        self.all_conformers().nth(index)
+    }
+
+    /// Get a specific Conformer as a mutable reference from the Conformers making up this Model.
+    ///
+    /// ## Arguments
+    /// * `index` - the index of the Conformer
+    ///
+    /// ## Fails
+    /// It fails when the index is outside bounds.
+    pub fn conformer_mut(&mut self, index: usize) -> Option<&mut Conformer> {
+        self.all_conformers_mut().nth(index)
+    }
+
     /// Get a specific Atom from the Atoms making up this Model.
     ///
     /// ## Arguments
@@ -169,6 +205,18 @@ impl Model {
         self.chains.iter_mut().flat_map(|a| a.residues_mut())
     }
 
+    /// Get the list of Conformers making up this Model.
+    /// Double ended so iterating from the end is just as fast as from the start.
+    pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
+        self.chains.iter().flat_map(|a| a.conformers())
+    }
+
+    /// Get the list of Conformers as mutable references making up this Model.
+    /// Double ended so iterating from the end is just as fast as from the start.
+    pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
+        self.chains.iter_mut().flat_map(|a| a.conformers_mut())
+    }
+
     /// Get the list of Atoms making up this Model.
     /// This disregards all Hetero Atoms.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -212,6 +260,24 @@ impl Model {
             .iter_mut()
             .map(|a| a.residues_mut())
             .flatten()
+    }
+
+    /// Get the list of Conformers making up this Model.
+    /// This disregards all Normal Conformers.
+    /// Double ended so iterating from the end is just as fast as from the start.
+    pub fn hetero_conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
+        self.hetero_chains.iter().flat_map(|a| a.conformers())
+    }
+
+    /// Get the list of Conformers as mutable references making up this Model.
+    /// This disregards all Normal Conformers.
+    /// Double ended so iterating from the end is just as fast as from the start.
+    pub fn hetero_conformers_mut(
+        &mut self,
+    ) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
+        self.hetero_chains
+            .iter_mut()
+            .flat_map(|a| a.conformers_mut())
     }
 
     /// Get the list of Atoms making up this Model.
@@ -266,6 +332,30 @@ impl Model {
             .chain(self.hetero_chains.iter_mut().flat_map(|a| a.residues_mut()))
     }
 
+    /// Get the list of Conformers making up this Model.
+    /// This includes all Normal and Hetero Conformers.
+    /// Double ended so iterating from the end is just as fast as from the start.
+    pub fn all_conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
+        self.chains
+            .iter()
+            .flat_map(|a| a.conformers())
+            .chain(self.hetero_chains.iter().flat_map(|a| a.conformers()))
+    }
+
+    /// Get the list of Conformers as mutable references making up this Model.
+    /// This includes all Normal and Hetero Conformers.
+    /// Double ended so iterating from the end is just as fast as from the start.
+    pub fn all_conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
+        self.chains
+            .iter_mut()
+            .flat_map(|a| a.conformers_mut())
+            .chain(
+                self.hetero_chains
+                    .iter_mut()
+                    .flat_map(|a| a.conformers_mut()),
+            )
+    }
+
     /// Get the list of Atoms making up this Model.
     /// This includes all Normal and Hetero Atoms.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -291,8 +381,8 @@ impl Model {
     /// ## Arguments
     /// * `new_atom` - the new Atom to add
     /// * `chain_id` - the id of the Chain to add the Atom to
-    /// * `residue_serial_number` - the serial number of the Residue to add the Atom to
-    /// * `residue_name` - the name of the Residue to add the Atom to, only used to create a new Residue if needed
+    /// * `residue_id` - the id construct of the Residue to add the Atom to
+    /// * `conformer_id` - the id construct of the Conformer to add the Atom to
     ///
     /// ## Panics
     /// It panics if the Chain id or Residue name contains any invalid characters.
@@ -300,8 +390,8 @@ impl Model {
         &mut self,
         new_atom: Atom,
         chain_id: &str,
-        residue_serial_number: usize,
-        residue_name: &str,
+        residue_id: (usize, Option<&str>),
+        conformer_id: (&str, Option<&str>),
     ) {
         let mut found = false;
         let mut new_chain = Chain::new(chain_id).expect("Invalid characters in chain creation");
@@ -320,7 +410,7 @@ impl Model {
             current_chain = (&mut self.chains).last_mut().unwrap();
         }
 
-        current_chain.add_atom(new_atom, residue_serial_number, residue_name);
+        current_chain.add_atom(new_atom, residue_id, conformer_id);
     }
 
     /// Add a new Atom to the hetero Atoms of this Model. It finds if there already is a Chain with the given `chain_id` if there is it will add this atom to that Chain, otherwise it will create a new Chain and add that to the list of Chains making up this Model. It does the same for the Residue, so it will create a new one if there does not yet exist a Residue with the given serial number.
@@ -328,8 +418,8 @@ impl Model {
     /// ## Arguments
     /// * `new_atom` - the new Atom to add
     /// * `chain_id` - the id of the Chain to add the Atom to
-    /// * `residue_serial_number` - the serial number of the Residue to add the Atom to
-    /// * `residue_name` - the name of the Residue to add the Atom to, only used to create a new Residue if needed
+    /// * `residue_id` - the id construct of the Residue to add the Atom to
+    /// * `conformer_id` - the id construct of the Conformer to add the Atom to
     ///
     /// ## Panics
     /// It panics if the Chain id or Residue name contains any invalid characters.
@@ -337,8 +427,8 @@ impl Model {
         &mut self,
         new_atom: Atom,
         chain_id: &str,
-        residue_serial_number: usize,
-        residue_name: &str,
+        residue_id: (usize, Option<&str>),
+        conformer_id: (&str, Option<&str>),
     ) {
         let mut found = false;
         let mut new_chain = Chain::new(chain_id)
@@ -357,7 +447,7 @@ impl Model {
             current_chain = self.hetero_chains.last_mut().unwrap();
         }
 
-        current_chain.add_atom(new_atom, residue_serial_number, residue_name);
+        current_chain.add_atom(new_atom, residue_id, conformer_id);
     }
 
     /// Add a Chain to the list of Chains making up this Model. This does not detect any duplicates of names or serial numbers in the list of Chains.
@@ -378,6 +468,17 @@ impl Model {
     {
         for residue in self.all_residues_mut() {
             residue.remove_atoms_by(&predicate);
+        }
+    }
+
+    /// Remove all Conformers matching the given predicate. The predicate will be run on all Conformers (Normal and Hetero).
+    /// As this is done in place this is the fastest way to remove Conformers from this Model.
+    pub fn remove_conformers_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Conformer) -> bool,
+    {
+        for chain in self.all_chains_mut() {
+            chain.remove_conformers_by(&predicate);
         }
     }
 
@@ -402,24 +503,29 @@ impl Model {
         self.hetero_chains.retain(|chain| !predicate(chain));
     }
 
-    /// Remove the Chain specified.
+    /// Remove the Chain specified. It regards all Normal and Hetero Chains.
+    /// It uses the index as used by `.chain()`, so first all Normal then all Hetero Chains.
     ///
     /// ## Arguments
     /// * `index` - the index of the Chain to remove
     ///
     /// ## Panics
     /// It panics when the index is outside bounds.
-    pub fn remove_chain(&mut self, index: usize) {
-        self.chains.remove(index);
+    pub fn remove_chain(&mut self, index: usize) -> Chain {
+        if index < self.chains.len() {
+            self.chains.remove(index)
+        } else {
+            self.hetero_chains.remove(index - self.chains.len())
+        }
     }
 
     /// Remove the Chain specified. It returns `true` if it found a matching Chain and removed it.
-    /// It removes the first matching Chain from the list.
+    /// It removes the first matching Chain from the list. It regards all Normal and Hetero Chains.
     ///
     /// ## Arguments
     /// * `id` - the id of the Chain to remove
-    pub fn remove_chain_id(&mut self, id: String) -> bool {
-        let index = self.chains.iter().position(|a| a.id() == id);
+    pub fn remove_chain_by_id(&mut self, id: String) -> bool {
+        let index = self.all_chains().position(|a| a.id() == id);
 
         if let Some(i) = index {
             self.remove_chain(i);

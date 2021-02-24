@@ -134,28 +134,29 @@ _atom_site.pdbx_PDB_model_num"
 
     let mut add_to_list = |atom_type: &str,
                            atom: &Atom,
+                           conformer: &Conformer,
                            residue: &Residue,
                            chain: &Chain,
                            chain_index: usize,
                            model: &Model| {
         lines.push(vec![
-            atom_type.to_string(),               // ATOM or HETATM
-            atom.serial_number().to_string(),    // Serial number
-            atom.element().to_string(),          // Element
-            atom.name().to_string(),             // Name
-            ".".to_string(),                     // Alternative location
-            residue.id().to_string(),            // Residue name
-            chain.id().to_string(),              // Chain name
-            chain_index.to_string(),             // Entity ID, using chain serial number
+            atom_type.to_string(),                                       // ATOM or HETATM
+            atom.serial_number().to_string(),                            // Serial number
+            atom.element().to_string(),                                  // Element
+            atom.name().to_string(),                                     // Name
+            conformer.alternative_location().unwrap_or(".").to_string(), // Alternative location
+            conformer.name().to_string(),                                // Residue name
+            chain.id().to_string(),                                      // Chain name
+            chain_index.to_string(), // Entity ID, using chain serial number
             residue.serial_number().to_string(), // Residue serial number
-            ".".to_string(),                     // Insertion code
-            atom.x().to_string(),                // X
-            atom.y().to_string(),                // Y
-            atom.z().to_string(),                // Z
-            atom.occupancy().to_string(),        // OCC/Q
-            atom.b_factor().to_string(),         // B
-            atom.charge().to_string(),           // Charge
-            model.serial_number().to_string(),   // Model serial number
+            residue.insertion_code().unwrap_or(".").to_string(), // Insertion code
+            atom.x().to_string(),    // X
+            atom.y().to_string(),    // Y
+            atom.z().to_string(),    // Z
+            atom.occupancy().to_string(), // OCC/Q
+            atom.b_factor().to_string(), // B
+            atom.charge().to_string(), // Charge
+            model.serial_number().to_string(), // Model serial number
         ]);
     };
 
@@ -164,16 +165,28 @@ _atom_site.pdbx_PDB_model_num"
         for chain in model.chains() {
             chain_index += 1;
             for residue in chain.residues() {
-                for atom in residue.atoms() {
-                    add_to_list("ATOM", atom, residue, chain, chain_index, model);
+                for conformer in residue.conformers() {
+                    for atom in conformer.atoms() {
+                        add_to_list("ATOM", atom, conformer, residue, chain, chain_index, model);
+                    }
                 }
             }
         }
         for chain in model.hetero_chains() {
             chain_index += 1;
             for residue in chain.residues() {
-                for atom in residue.atoms() {
-                    add_to_list("HETATM", atom, residue, chain, chain_index, model);
+                for conformer in residue.conformers() {
+                    for atom in conformer.atoms() {
+                        add_to_list(
+                            "HETATM",
+                            atom,
+                            conformer,
+                            residue,
+                            chain,
+                            chain_index,
+                            model,
+                        );
+                    }
                 }
             }
         }

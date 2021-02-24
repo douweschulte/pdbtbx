@@ -141,7 +141,12 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         "atom_site.occupancy",
         "atom_site.B_iso_or_equiv",
         "atom_site.pdbx_formal_charge",
+    ];
+    /// These are some optional columns with data that will be used but is not required to be present
+    const OPTIONAL_COLUMNS: &[&str] = &[
         "atom_site.pdbx_PDB_model_num",
+        "atom_site.label_alt_id",
+        "atom_site.pdbx_PDB_ins_code",
     ];
 
     let positions_: Vec<Result<usize, PDBError>> = COLUMNS
@@ -169,9 +174,17 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
 
     #[allow(clippy::unwrap_used)]
     let positions: Vec<usize> = positions_.iter().map(|i| *i.as_ref().unwrap()).collect();
+    let optional_positions: Vec<Option<usize>> = OPTIONAL_COLUMNS
+        .iter()
+        .map(|tag| input.header.iter().position(|t| t == tag))
+        .collect();
 
     for (index, row) in input.data.iter().enumerate() {
         let values: Vec<&Value> = positions.iter().map(|i| &row[*i]).collect();
+        let optional_values: Vec<Option<&Value>> = optional_positions
+            .iter()
+            .map(|i| i.map(|x| &row[x]))
+            .collect();
         let context = Context::show(&format!("Main atomic data loop row: {}", index));
 
         macro_rules! parse_column {
@@ -182,6 +195,22 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
                         errors.push(e);
                         continue;
                     }
+                }
+            };
+        }
+
+        macro_rules! parse_optional {
+            ($type:tt, $index:tt) => {
+                if let Some(value) = optional_values[$index] {
+                    match $type(value, &context) {
+                        Ok(t) => t,
+                        Err(e) => {
+                            errors.push(e);
+                            None
+                        }
+                    }
+                } else {
+                    None
                 }
             };
         }
@@ -201,8 +230,9 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         let occupancy = parse_column!(get_f64, 10).unwrap_or(1.0);
         let b_factor = parse_column!(get_f64, 11).unwrap_or(1.0);
         let charge = parse_column!(get_isize, 12).unwrap_or(0);
-        let model_number =
-            parse_column!(get_usize, 13).expect("Model serial number should be provided");
+        let model_number = parse_optional!(get_usize, 0).unwrap_or(1);
+        let alt_loc = parse_optional!(get_text, 1);
+        let insertion_code = parse_optional!(get_text, 2);
 
         let model = unsafe {
             // I could not find a way to make the borrow checker happy, but if no item
@@ -233,9 +263,19 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             charge,
         ) {
             if atom_type == "ATOM" {
-                model.add_atom(atom, chain_name, residue_number, residue_name);
+                model.add_atom(
+                    atom,
+                    chain_name,
+                    (residue_number, insertion_code),
+                    (residue_name, alt_loc),
+                );
             } else if atom_type == "HETATM" {
-                model.add_hetero_atom(atom, chain_name, residue_number, residue_name);
+                model.add_hetero_atom(
+                    atom,
+                    chain_name,
+                    (residue_number, insertion_code),
+                    (residue_name, alt_loc),
+                );
             } else {
                 errors.push(PDBError::new(
                     ErrorLevel::InvalidatingError,

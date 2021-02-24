@@ -1,6 +1,7 @@
 #![allow(clippy::missing_docs_in_private_items)]
 mod atom;
 mod chain;
+mod conformer;
 mod database_reference;
 mod helper;
 mod model;
@@ -12,6 +13,7 @@ mod unit_cell;
 
 pub use atom::Atom;
 pub use chain::Chain;
+pub use conformer::Conformer;
 pub use database_reference::*;
 use helper::*;
 pub use model::Model;

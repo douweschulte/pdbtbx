@@ -46,31 +46,58 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                 ));
             }
             for residue in chain.residues() {
-                if residue.id().len() > 3 {
-                    errors.push(PDBError::new(
-                        ErrorLevel::LooseWarning,
-                        "Residue name too long",
-                        &format!(
-                            "Residue {} has a name which is too long, max 3 chars.",
-                            residue.serial_number()
-                        ),
-                        Context::None,
-                    ));
-                }
                 if residue.serial_number() > 9999 {
                     errors.push(PDBError::new(
                         ErrorLevel::LooseWarning,
                         "Residue serial number too high",
                         &format!(
-                            "Residue {} has a serial number which is too high, max is 9999.",
-                            residue.serial_number()
+                            "Residue {:?} has a serial number which is too high, max is 9999.",
+                            residue.id()
                         ),
                         Context::None,
                     ));
                 }
-                if let Some((n, comment)) = residue.modification() {
-                    if n.len() > 3 {
+                if let Some(ic) = residue.insertion_code() {
+                    if ic.len() > 1 {
                         errors.push(PDBError::new(
+                            ErrorLevel::LooseWarning,
+                            "Residue insertion code too long",
+                            &format!(
+                                "Residue {:?} has an insertion code which is too long, max 1 char.",
+                                residue.id()
+                            ),
+                            Context::None,
+                        ));
+                    }
+                }
+                for conformer in residue.conformers() {
+                    if conformer.name().len() > 3 {
+                        errors.push(PDBError::new(
+                            ErrorLevel::LooseWarning,
+                            "Conformer name too long",
+                            &format!(
+                                "Conformer {:?} has a name which is too long, max 3 chars.",
+                                conformer.id()
+                            ),
+                            Context::None,
+                        ));
+                    }
+                    if let Some(alt_loc) = conformer.alternative_location() {
+                        if alt_loc.len() > 1 {
+                            errors.push(PDBError::new(
+                                ErrorLevel::LooseWarning,
+                                "Conformer alternative location too long",
+                                &format!(
+                                    "Conformer {:?} has an alternative location which is too long, max 1 char.",
+                                    conformer.id()
+                                ),
+                                Context::None,
+                            ));
+                        }
+                    }
+                    if let Some((n, comment)) = conformer.modification() {
+                        if n.len() > 3 {
+                            errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Residue modification name too long",
                             &format!(
@@ -79,9 +106,9 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ),
                             Context::None,
                         ));
-                    }
-                    if comment.len() > 41 {
-                        errors.push(PDBError::new(
+                        }
+                        if comment.len() > 41 {
+                            errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Residue modification comment too long",
                             &format!(
@@ -90,55 +117,55 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ),
                             Context::None,
                         ));
+                        }
                     }
-                }
-                for atom in residue.atoms() {
-                    if atom.name().len() > 4 {
-                        errors.push(PDBError::new(
-                            ErrorLevel::LooseWarning,
-                            "Atom name too long",
-                            &format!(
-                                "Atom {} has a name which is too long, max 4 chars.",
-                                atom.serial_number()
-                            ),
-                            Context::None,
-                        ));
-                    }
-                    if atom.element().len() > 2 {
-                        errors.push(PDBError::new(
-                            ErrorLevel::LooseWarning,
-                            "Atom element too long",
-                            &format!(
-                                "Atom {} has a element which is too long, max 2 chars.",
-                                atom.serial_number()
-                            ),
-                            Context::None,
-                        ));
-                    }
-                    if atom.serial_number() > 9999 {
-                        errors.push(PDBError::new(
-                            ErrorLevel::LooseWarning,
-                            "Atom serial number too high",
-                            &format!(
-                                "Atom {} has a serial number which is too high, max is 9999.",
-                                atom.serial_number()
-                            ),
-                            Context::None,
-                        ));
-                    }
-                    if atom.charge() > 9 || atom.charge() < -9 {
-                        errors.push(PDBError::new(
-                            ErrorLevel::LooseWarning,
-                            "Atom charge out of bounds",
-                            &format!(
+                    for atom in conformer.atoms() {
+                        if atom.name().len() > 4 {
+                            errors.push(PDBError::new(
+                                ErrorLevel::LooseWarning,
+                                "Atom name too long",
+                                &format!(
+                                    "Atom {} has a name which is too long, max 4 chars.",
+                                    atom.serial_number()
+                                ),
+                                Context::None,
+                            ));
+                        }
+                        if atom.element().len() > 2 {
+                            errors.push(PDBError::new(
+                                ErrorLevel::LooseWarning,
+                                "Atom element too long",
+                                &format!(
+                                    "Atom {} has a element which is too long, max 2 chars.",
+                                    atom.serial_number()
+                                ),
+                                Context::None,
+                            ));
+                        }
+                        if atom.serial_number() > 9999 {
+                            errors.push(PDBError::new(
+                                ErrorLevel::LooseWarning,
+                                "Atom serial number too high",
+                                &format!(
+                                    "Atom {} has a serial number which is too high, max is 9999.",
+                                    atom.serial_number()
+                                ),
+                                Context::None,
+                            ));
+                        }
+                        if atom.charge() > 9 || atom.charge() < -9 {
+                            errors.push(PDBError::new(
+                                ErrorLevel::LooseWarning,
+                                "Atom charge out of bounds",
+                                &format!(
                                 "Atom {} has a charge which is out of bounds, max is 9 min is -9.",
                                 atom.serial_number()
                             ),
-                            Context::None,
-                        ));
-                    }
-                    if atom.occupancy() > 999.99 || atom.occupancy() < 0.01 {
-                        errors.push(PDBError::new(
+                                Context::None,
+                            ));
+                        }
+                        if atom.occupancy() > 999.99 || atom.occupancy() < 0.01 {
+                            errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom occupancy out of bounds",
                             &format!(
@@ -147,9 +174,9 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ),
                             Context::None,
                         ));
-                    }
-                    if atom.b_factor() > 999.99 || atom.b_factor() < 0.01 {
-                        errors.push(PDBError::new(
+                        }
+                        if atom.b_factor() > 999.99 || atom.b_factor() < 0.01 {
+                            errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom b factor out of bounds",
                             &format!(
@@ -158,9 +185,9 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ),
                             Context::None,
                         ));
-                    }
-                    if atom.x() > 9999.999 || atom.x().abs() < 0.001 || atom.x() < -999.999 {
-                        errors.push(PDBError::new(
+                        }
+                        if atom.x() > 9999.999 || atom.x().abs() < 0.001 || atom.x() < -999.999 {
+                            errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom x position out of bounds",
                             &format!(
@@ -169,9 +196,9 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ),
                             Context::None,
                         ));
-                    }
-                    if atom.y() > 9999.999 || atom.y().abs() < 0.001 || atom.y() < -999.999 {
-                        errors.push(PDBError::new(
+                        }
+                        if atom.y() > 9999.999 || atom.y().abs() < 0.001 || atom.y() < -999.999 {
+                            errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom y position out of bounds",
                             &format!(
@@ -180,9 +207,9 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ),
                             Context::None,
                         ));
-                    }
-                    if atom.z() > 9999.999 || atom.z().abs() < 0.001 || atom.z() < -999.999 {
-                        errors.push(PDBError::new(
+                        }
+                        if atom.z() > 9999.999 || atom.z().abs() < 0.001 || atom.z() < -999.999 {
+                            errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom z position out of bounds",
                             &format!(
@@ -191,6 +218,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ),
                             Context::None,
                         ));
+                        }
                     }
                 }
             }

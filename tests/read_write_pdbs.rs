@@ -72,14 +72,16 @@ fn do_something(file: &str, folder: &str, name: &str) {
     println!("Set values");
 
     for residue in pdb.residues() {
-        for atom in residue.atoms() {
-            avg += atom.b_factor();
-            if residue.amino_acid() && atom.backbone() {
-                total_back += 1;
-                avg_back += atom.b_factor();
-            } else {
-                total_side += 1;
-                avg_side += atom.b_factor();
+        for conformer in residue.conformers() {
+            for atom in conformer.atoms() {
+                avg += atom.b_factor();
+                if conformer.amino_acid() && atom.backbone() {
+                    total_back += 1;
+                    avg_back += atom.b_factor();
+                } else {
+                    total_side += 1;
+                    avg_side += atom.b_factor();
+                }
             }
         }
     }
@@ -104,9 +106,24 @@ fn do_something(file: &str, folder: &str, name: &str) {
     )
     .expect("Save not successful");
     save_mmcif(
-        pdb,
+        pdb.clone(),
         &(folder.to_string() + name + ".cif"),
         StrictnessLevel::Loose,
     )
     .expect("Save not successful");
+
+    let (_saved_pdb, _) = open(
+        &(folder.to_string() + name + ".pdb"),
+        StrictnessLevel::Loose,
+    )
+    .unwrap();
+    let (_saved_mmcif, _) = open(
+        &(folder.to_string() + name + ".cif"),
+        StrictnessLevel::Loose,
+    )
+    .unwrap();
+
+    // These should be equal in the future
+    //assert_eq!(pdb, saved_pdb);
+    //assert_eq!(pdb, saved_mmcif);
 }
