@@ -62,6 +62,13 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         }
     }
 
+    if let Some(name) = &pdb.identifier {
+        write!(
+            "HEADER                                                        {}",
+            name
+        )
+    }
+
     // Remarks
     for line in pdb.remarks() {
         write!("REMARK {:3} {}", line.0, line.1);

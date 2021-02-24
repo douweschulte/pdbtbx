@@ -901,7 +901,7 @@ fn lex_atom_basics(
     }
     let mut charge = 0;
     #[allow(clippy::unwrap_used)]
-    if chars.len() >= 79 && !(chars[78] == ' ' && chars[79] == ' ') {
+    if chars.len() >= 80 && !(chars[78] == ' ' && chars[79] == ' ') {
         if !chars[78].is_ascii_digit() {
             errors.push(PDBError::new(
                 ErrorLevel::InvalidatingError,
