@@ -1,7 +1,7 @@
 ![Compile & Test](https://github.com/nonnominandus/rust-pdb/workflows/Compile%20&%20Test/badge.svg)
 
 ## Description
-This is a Rust library helping to parse, edit and save crystallographic PDB/PDBx files. It can read most atomic data from PDB/PDBx files, some is missing but will be added over time. Its high level goal is to create a stable, efficient and easy to use interface to PDB/PDBx files. 
+This is a Rust library helping to parse, edit and save crystallographic PDB/mmCIF files. It can read most atomic data from PDB/mmCIF files, some is missing but will be added over time. Its high level goal is to create a stable, efficient and easy to use interface to PDB/mmCIF files. 
 
 ## Contributing
 As this is a library in active development, feel free to share your thoughts, ideas, hopes, and criticisms. Every comment will be read and discussed so that this library is as useful as possible for all users. Of course we all like a civilised discussion so please follow the community guidelines, but over all please be a civilised human being.
@@ -12,7 +12,7 @@ MIT, just use it if you can use it. If you use it for something cool I would lik
 ## PDB format
 PDB 3.30 as published by wwPDB in 2008.
 
-mmCIF, basic support to retrieve and save atomic data, will be extended.
+PDBx/mmCIF, basic support to retrieve and save atomic data, will be extended.
 
 ## Why
 Just for fun, to play with fancy abstractions. But at the same time I think that using Rust in scientific computing would be really cool and this library would be needed if I where to be doing my internship in Rust. So by creating it I hope to extend the usability of Rust a little bit more. Since Nature published an [article](https://www.nature.com/articles/d41586-020-03382-2) (technology feature) which laid out the benefits of using Rust and showed that Rust is used more and more, recently I am planning on working more with Rust in scientific projects. And I think that the best way to help Rust move forward (in the scientific community) is by creating more support for scientific projects in Rust.
@@ -23,9 +23,12 @@ Also because it is written in Rust it is much faster then anything written in Py
 * Douwe Schulte
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
-## Last update
-### v0.4.1
-* All string based properties for atom/residue/chain are trimmed and converted to uppercase before being set
-* A `.extend` function is provided for residue/chain/model/pdb to easily add an iterator to the list of children 
+## Latest update
+### v0.5.0 'Alternative location support'
+* Added `Conformer` which sits between `Residue` and `Atom` and is analogous to `atom_group` in cctbx
+* Added editing functions for Conformers
+* Added `HEADER` identifier support for parsing PDB and saving PDB and mmCIF
+* Reverted mmCIF output atom_site column ordering to v0.3.3, the newly introduced ordering gave issues with Phenix
+* Added `remove_empty` functions on all structs, to remove all empty layers after large scale deletions 
 
 Also see [changelog](https://github.com/nonnominandus/pdbtbx/blob/master/changelog.md).

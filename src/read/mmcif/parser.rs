@@ -1,7 +1,7 @@
 use super::lexitem::*;
 use crate::error::*;
 use crate::structs::*;
-use crate::validate::validate;
+use crate::validate::*;
 use crate::StrictnessLevel;
 use std::fs::File;
 use std::io::prelude::*;
@@ -107,6 +107,8 @@ fn parse_mmcif(
     if unit_cell != UnitCell::default() {
         pdb.unit_cell = Some(unit_cell);
     }
+
+    reshuffle_conformers(&mut pdb);
     errors.extend(validate(&pdb));
     if errors.iter().any(|e| e.fails(level)) {
         Err(errors)

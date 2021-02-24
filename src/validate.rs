@@ -296,3 +296,29 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
     }
     errors
 }
+
+/// Copy all atoms in blank alternative conformers into the other conformers.
+/// So if there is a A and B conformer with one atom different, based on the
+/// PDB file the generated structs will contain a blank, an A, and a B Conformer
+/// so the atoms in the blank constructs will have to be copied to the A and B
+/// Conformers.
+pub fn reshuffle_conformers(pdb: &mut PDB) {
+    for residue in pdb.residues_mut() {
+        if residue.conformer_count() > 1 {
+            let mut blank = None;
+            for (index, conformer) in residue.conformers().enumerate() {
+                if conformer.alternative_location().is_none() {
+                    blank = Some(index);
+                }
+            }
+            if let Some(index) = blank {
+                #[allow(clippy::unwrap_used)]
+                let shared = residue.conformer(index).unwrap().clone();
+                residue.remove_conformer(index);
+                for conformer in residue.conformers_mut() {
+                    conformer.join(shared.clone());
+                }
+            }
+        }
+    }
+}

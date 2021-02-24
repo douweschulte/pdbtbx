@@ -36,6 +36,19 @@
 //! println!("The average B factor of the protein is: {}", avg_b_factor);
 //! pdbtbx::save(pdb, "dump/1ubq.pdb", pdbtbx::StrictnessLevel::Loose);
 //! ```
+//!
+//! ## PDB Hierarchy
+//! As explained in depth in the documentation of [CCTBX](https://cci.lbl.gov/cctbx_docs/iotbx/iotbx.pdb.html#iotbx-pdb-hierarchy)
+//! it can be quite hard to properly define a hierarchy for PDB files which works for all files.
+//! This library follows the hierarchy presented by CCTBX, but renames the `residue_group` and
+//! `atom_group` constructs. This gives the following hierarchy:
+//!
+//! * PDB
+//!     * Model
+//!         * Chain
+//!             * Residue (analogous to `residue_group` in CCTBX)
+//!                 * Conformer (analogous to `atom_group` in CCTBX)
+//!                     * Atom
 #![deny(
     missing_docs,
     trivial_casts,
@@ -88,4 +101,4 @@ pub use save::*;
 pub use strictness_level::StrictnessLevel;
 pub use structs::*;
 pub use transformation::*;
-pub use validate::*;
+pub use validate::{validate, validate_pdb};

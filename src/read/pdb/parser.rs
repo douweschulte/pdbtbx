@@ -345,6 +345,8 @@ where
         }
     }
 
+    reshuffle_conformers(&mut pdb);
+
     errors.extend(validate_seqres(&mut pdb, sequence, &context));
     errors.extend(add_modifications(&mut pdb, modifications));
 

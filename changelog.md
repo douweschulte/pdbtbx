@@ -1,6 +1,13 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/nonnominandus/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.5.0 'Alternative location support'
+* Added `Conformer` which sits between `Residue` and `Atom` and is analogous to `atom_group` in cctbx
+* Added editing functions for Conformers
+* Added `HEADER` identifier support for parsing PDB and saving PDB and mmCIF
+* Reverted mmCIF output atom_site column ordering to v0.3.3, the newly introduced ordering gave issues with Phenix
+* Added `remove_empty` functions on all structs, to remove all empty layers after large scale deletions
+
 ### v0.4.1
 * All string based properties for atom/residue/chain are trimmed and converted to uppercase before being set
 * A `.extend` function is provided for residue/chain/model/pdb to easily add an iterator to the list of children 
