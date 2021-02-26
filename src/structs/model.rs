@@ -539,6 +539,9 @@ impl Model {
     pub fn remove_empty(&mut self) {
         self.chains.retain(|c| c.residue_count() > 0);
         self.chains.iter_mut().for_each(|c| c.remove_empty());
+
+        self.hetero_chains.retain(|c| c.residue_count() > 0);
+        self.hetero_chains.iter_mut().for_each(|c| c.remove_empty());
     }
 
     /// Apply a transformation to the position of all atoms (Normal and Hetero) making up this Model, the new position is immediately set.
