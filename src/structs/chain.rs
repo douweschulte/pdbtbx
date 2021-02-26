@@ -284,8 +284,8 @@ impl Chain {
 
     /// Remove all empty Residues from this Chain, and all empty Conformers from the Residues.
     pub fn remove_empty(&mut self) {
-        self.residues.retain(|c| c.conformer_count() > 0);
-        self.residues.iter_mut().for_each(|c| c.remove_empty());
+        self.residues.iter_mut().for_each(|r| r.remove_empty());
+        self.residues.retain(|r| r.conformer_count() > 0);
     }
 
     /// Apply a transformation to the position of all atoms making up this Chain, the new position is immediately set.

@@ -574,8 +574,8 @@ impl PDB {
 
     /// Remove all empty Models from this PDB, and all empty Chains from the Model, and all empty Residues from the Chains.
     pub fn remove_empty(&mut self) {
-        self.models.retain(|m| m.total_chain_count() > 0);
         self.models.iter_mut().for_each(|m| m.remove_empty());
+        self.models.retain(|m| m.total_chain_count() > 0);
     }
 
     /// This renumbers all numbered structs in the PDB.
