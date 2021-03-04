@@ -106,15 +106,15 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                     write!(
                         "SEQADV {:4} {:3} {:1} {:4}{:1} {:4} {:9} {:3} {:5} {}",
                         pdb.identifier.as_deref().unwrap_or(""),
-                        dif.residue.0.iter().collect::<String>(),
+                        dif.residue.0,
                         chain.id(),
                         dif.residue.1,
                         " ",
                         dbref.database.0,
                         dbref.database.1,
-                        match dif.database_residue {
-                            Some((name, _)) => name.iter().collect::<String>(),
-                            None => "".to_owned(),
+                        match &dif.database_residue {
+                            Some((name, _)) => name.as_str(),
+                            None => "",
                         },
                         match dif.database_residue {
                             Some((_, seq)) => seq,

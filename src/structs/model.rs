@@ -390,7 +390,7 @@ impl Model {
         &mut self,
         new_atom: Atom,
         chain_id: &str,
-        residue_id: (usize, Option<&str>),
+        residue_id: (isize, Option<&str>),
         conformer_id: (&str, Option<&str>),
     ) {
         let mut found = false;
@@ -427,7 +427,7 @@ impl Model {
         &mut self,
         new_atom: Atom,
         chain_id: &str,
-        residue_id: (usize, Option<&str>),
+        residue_id: (isize, Option<&str>),
         conformer_id: (&str, Option<&str>),
     ) {
         let mut found = false;

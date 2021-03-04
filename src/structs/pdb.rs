@@ -591,10 +591,10 @@ impl PDB {
                 atom.set_serial_number(counter);
                 counter += 1;
             }
-            counter = 1;
+            let mut counter_i = 1;
             for residue in model.all_residues_mut() {
-                residue.set_serial_number(counter);
-                counter += 1;
+                residue.set_serial_number(counter_i);
+                counter_i += 1;
             }
             counter = 0;
             #[allow(clippy::unwrap_used, clippy::cast_possible_truncation)]

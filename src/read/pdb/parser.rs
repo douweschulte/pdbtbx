@@ -360,7 +360,11 @@ where
 }
 
 /// Validate the SEQRES data found, if there is any
-#[allow(clippy::comparison_chain)]
+#[allow(
+    clippy::comparison_chain,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss
+)]
 fn validate_seqres(
     pdb: &mut PDB,
     sequence: HashMap<String, Vec<(usize, usize, Vec<String>)>>,
@@ -411,7 +415,7 @@ fn validate_seqres(
                         offset -= 1;
                     }
                 }
-                if db_ref.pdb_position.end - offset + 1 != residues {
+                if db_ref.pdb_position.end - offset + 1 != residues as isize {
                     errors.push(PDBError::new(
                         ErrorLevel::StrictWarning,
                         "SEQRES residue total invalid",
@@ -426,7 +430,7 @@ fn validate_seqres(
             let mut next = chain_res.next();
 
             for (raw_index, seq) in chain_sequence.iter().enumerate() {
-                let index = raw_index + offset;
+                let index = raw_index as isize + offset;
                 if let Some(n) = next {
                     if index == n.serial_number() {
                         if *seq
@@ -436,14 +440,14 @@ fn validate_seqres(
                             errors.push(PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "SEQRES residue invalid",
-                                &format!("The residue index {} value \"{}\" for SEQRES chain \"{}\" does not match the residue in the chain value \"{:?}\".", index, chain_sequence[index], chain_id, n.name()),
+                                &format!("The residue index {} value \"{}\" for SEQRES chain \"{}\" does not match the residue in the chain value \"{:?}\".", index, chain_sequence[index as usize], chain_id, n.name()),
                                 context.clone()
                             ));
                         }
                         next = chain_res.next();
                     } else if index < n.serial_number() {
                         chain.insert_residue(
-                            index,
+                            index as usize,
                             Residue::new(
                                 index,
                                 None,
@@ -863,7 +867,7 @@ fn lex_atom_basics(
         Option<String>,
         String,
         String,
-        usize,
+        isize,
         Option<String>,
         String,
         String,
@@ -873,14 +877,14 @@ fn lex_atom_basics(
 ) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
-    let mut check_usize = |item| match item {
+    let mut check = |item: Result<usize, PDBError>| match item {
         Ok(t) => t,
         Err(e) => {
             errors.push(e);
             0
         }
     };
-    let serial_number = check_usize(parse_number(
+    let serial_number = check(parse_number(
         Context::line(linenumber, &line, 7, 4),
         &chars[7..11],
     ));
@@ -888,10 +892,11 @@ fn lex_atom_basics(
     let alternate_location = chars[16];
     let residue_name = chars[17..20].iter().collect::<String>();
     let chain_id = String::from(chars[21]);
-    let residue_serial_number = check_usize(parse_number(
-        Context::line(linenumber, &line, 22, 4),
-        &chars[22..26],
-    ));
+    let residue_serial_number =
+        parse_number(Context::line(linenumber, &line, 22, 4), &chars[22..26]).unwrap_or_else(|e| {
+            errors.push(e);
+            0
+        });
     let insertion = chars[26];
     let mut segment_id = String::new();
     if chars.len() >= 75 {
@@ -1274,7 +1279,7 @@ fn lex_seqadv(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
         }
     };
     let id_code = [chars[7], chars[8], chars[9], chars[10]];
-    let res_name = [chars[12], chars[13], chars[14]];
+    let res_name = chars[12..15].iter().collect::<String>().trim().to_string();
     let chain_id = chars[16];
     let seq_num = check(parse_number(
         Context::line(linenumber, &line, 18, 4),
@@ -1286,7 +1291,7 @@ fn lex_seqadv(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
 
     let mut db_pos = None;
     if !chars[39..48].iter().all(|c| *c == ' ') {
-        let db_res_name = [chars[39], chars[40], chars[41]];
+        let db_res_name = chars[39..42].iter().collect::<String>().trim().to_string();
         let db_seq_num = check(parse_number(
             Context::line(linenumber, &line, 43, 5),
             &chars[43..48],

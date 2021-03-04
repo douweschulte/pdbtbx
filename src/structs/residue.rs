@@ -6,8 +6,8 @@ use std::fmt;
 #[derive(Debug)]
 /// A Residue containing multiple conformers
 pub struct Residue {
-    /// The serial number of this Residue
-    serial_number: usize,
+    /// The serial number of this Residue, can be negative as that is used sometimes. See https://proteopedia.org/wiki/index.php/Unusual_sequence_numbering.
+    serial_number: isize,
     /// The insertion code of this Residue, used in conjunction with the serial number to uniquely identify Residues.
     insertion_code: Option<String>,
     /// The list of conformers making up this Residue
@@ -25,7 +25,7 @@ impl Residue {
     /// ## Fails
     /// It fails if any of the characters making up the insertion_code are invalid.
     pub fn new(
-        number: usize,
+        number: isize,
         insertion_code: Option<&str>,
         conformer: Option<Conformer>,
     ) -> Option<Residue> {
@@ -49,12 +49,12 @@ impl Residue {
     }
 
     /// The serial number of the Residue
-    pub fn serial_number(&self) -> usize {
+    pub fn serial_number(&self) -> isize {
         self.serial_number
     }
 
     /// Set the serial number of the Residue
-    pub fn set_serial_number(&mut self, new_number: usize) {
+    pub fn set_serial_number(&mut self, new_number: isize) {
         self.serial_number = new_number;
     }
 
@@ -76,7 +76,7 @@ impl Residue {
 
     /// Returns the uniquely identifying construct for this Residue.
     /// It consists of the serial number and the insertion code.
-    pub fn id(&self) -> (usize, Option<&str>) {
+    pub fn id(&self) -> (isize, Option<&str>) {
         (self.serial_number, self.insertion_code())
     }
 

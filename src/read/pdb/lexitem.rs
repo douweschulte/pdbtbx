@@ -35,7 +35,7 @@ pub enum LexItem {
         Option<String>,
         String,
         String,
-        usize,
+        isize,
         Option<String>,
         f64,
         f64,
@@ -64,7 +64,7 @@ pub enum LexItem {
         Option<String>,
         String,
         String,
-        usize,
+        isize,
         Option<String>,
         [[f64; 3]; 2],
         String,
@@ -97,35 +97,62 @@ pub enum LexItem {
         usize,
     ),
     /// A SEQRES row
+    ///  * SerNum - Serial number of the SEQRES record for the current chain
+    ///  * ChainID - The Chain, will be a single character, can be blank (it then selects the only chain available)
+    ///  * NumRes - The number of residues in the chain (repeated every row)
+    ///  * ResidueNames - All residues in the chain
     Seqres(usize, String, usize, Vec<String>),
     /// A DBREF row in the original/standard format
+    ///  * IDCode
+    ///  * ChainID
+    ///  * (SeqBegin, InsertBegin, SeqEnd, InsertEnd)
+    ///  * Database - Sequence database name
+    ///  * DBAccession - Sequence database accession code
+    ///  * DBIDCode - Sequence database identification code
+    ///  * (DBSeqBegin, DBInsertBegin, DBSeqEnd, DBInsertEnd)
     Dbref(
         [char; 4],
         String,
-        (usize, char, usize, char),
+        (isize, char, isize, char),
         String,
         String,
         String,
-        (usize, char, usize, char),
+        (isize, char, isize, char),
     ),
     /// A SEQADV row
+    ///  * IDCode
+    ///  * ResName - Name of the PDB residue in conflict
+    ///  * ChainID
+    ///  * SeqNum
+    ///  * InsertionCode
+    ///  * Database
+    ///  * DBAccession
+    ///  * (DBRes, DBSeq) - Sequence database residue name and sequence number
+    ///  * Conflict comment
     Seqadv(
         [char; 4],
         String,
-        [char; 3],
-        usize,
+        String,
+        isize,
         Option<String>,
         String,
         String,
-        Option<([char; 3], usize)>,
+        Option<(String, isize)>,
         String,
     ),
     /// A MODRES record, having information about modifications of atoms
+    ///  * IDCode
+    ///  * ResName
+    ///  * ChainID
+    ///  * SeqNum
+    ///  * InsertionCode
+    ///  * Standard residue name
+    ///  * Comment
     Modres(
         [char; 4],
         String,
         String,
-        usize,
+        isize,
         Option<String>,
         String,
         String,

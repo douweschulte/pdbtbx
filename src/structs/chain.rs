@@ -193,7 +193,7 @@ impl Chain {
     pub fn add_atom(
         &mut self,
         new_atom: Atom,
-        residue_id: (usize, Option<&str>),
+        residue_id: (isize, Option<&str>),
         conformer_id: (&str, Option<&str>),
     ) {
         let mut found = false;
@@ -271,7 +271,7 @@ impl Chain {
     ///
     /// ## Arguments
     /// * `id` - the id construct of the Residue to remove (see Residue.id())
-    pub fn remove_residue_by_id(&mut self, id: (usize, Option<&str>)) -> bool {
+    pub fn remove_residue_by_id(&mut self, id: (isize, Option<&str>)) -> bool {
         let index = self.residues.iter().position(|a| a.id() == id);
 
         if let Some(i) = index {

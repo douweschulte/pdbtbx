@@ -223,8 +223,9 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             parse_column!(get_usize, 2).expect("Atom serial number should be provided");
         let element = parse_column!(get_text, 3).expect("Atom element should be provided");
         let residue_name = parse_column!(get_text, 4).expect("Residue name should be provided");
+        #[allow(clippy::cast_possible_wrap)]
         let residue_number =
-            parse_column!(get_usize, 5).unwrap_or_else(|| pdb.total_residue_count());
+            parse_column!(get_isize, 5).unwrap_or_else(|| pdb.total_residue_count() as isize);
         let chain_name = parse_column!(get_text, 6).expect("Chain name should be provided");
         let pos_x = parse_column!(get_f64, 7).expect("Atom X position should be provided");
         let pos_y = parse_column!(get_f64, 8).expect("Atom Y position should be provided");

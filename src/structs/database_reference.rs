@@ -4,18 +4,18 @@
 /// The position of the sequence for a cross-reference of sequences.
 pub struct SequencePosition {
     /// The starting position
-    pub start: usize,
+    pub start: isize,
     /// Initial insertion code of the PDB sequence segment
     pub start_insert: char,
     /// The ending position
-    pub end: usize,
+    pub end: isize,
     /// Ending insertion code of the PDB sequence segment
     pub end_insert: char,
 }
 
 impl SequencePosition {
     /// Create a new SequencePosition
-    pub fn new(start: usize, start_insert: char, end: usize, end_insert: char) -> Self {
+    pub fn new(start: isize, start_insert: char, end: isize, end_insert: char) -> Self {
         SequencePosition {
             start,
             start_insert,
@@ -25,7 +25,7 @@ impl SequencePosition {
     }
 
     /// Create a new SequencePosition, from a tuple
-    pub fn from_tuple((start, start_insert, end, end_insert): (usize, char, usize, char)) -> Self {
+    pub fn from_tuple((start, start_insert, end, end_insert): (isize, char, isize, char)) -> Self {
         SequencePosition {
             start,
             start_insert,
@@ -68,9 +68,9 @@ impl DatabaseReference {
 /// A difference between the sequence of the database and the pdb file
 pub struct SequenceDifference {
     /// The residue in the PDB file
-    pub residue: ([char; 3], usize, Option<String>),
+    pub residue: (String, isize, Option<String>),
     /// The residue in the database
-    pub database_residue: Option<([char; 3], usize)>,
+    pub database_residue: Option<(String, isize)>,
     /// The comment to explain the difference
     pub comment: String,
 }
@@ -78,8 +78,8 @@ pub struct SequenceDifference {
 impl SequenceDifference {
     /// Create a new DatabaseReference
     pub fn new(
-        residue: ([char; 3], usize, Option<String>),
-        database_residue: Option<([char; 3], usize)>,
+        residue: (String, isize, Option<String>),
+        database_residue: Option<(String, isize)>,
         comment: String,
     ) -> Self {
         SequenceDifference {
