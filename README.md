@@ -24,11 +24,10 @@ Also because it is written in Rust it is much faster then anything written in Py
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Latest update
-### v0.5.0 'Alternative location support'
-* Added `Conformer` which sits between `Residue` and `Atom` and is analogous to `atom_group` in cctbx
-* Added editing functions for Conformers
-* Added `HEADER` identifier support for parsing PDB and saving PDB and mmCIF
-* Reverted mmCIF output atom_site column ordering to v0.3.3, the newly introduced ordering gave issues with Phenix
-* Added `remove_empty` functions on all structs, to remove all empty layers after large scale deletions 
+### v0.5.1
+* Fixed bugs in `.remove_empty` to work better with hetero chains
+* Added support for negative residue sequence numbers
+* Standardised the precision of floating points in the mmCIF output, at least 1 and at most 5 decimals will be shown
+* Fixed an issue with the occupancy of atoms shared between multiple conformers, it will now add up to the original value 
 
 Also see [changelog](https://github.com/nonnominandus/pdbtbx/blob/master/changelog.md).

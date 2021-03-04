@@ -1,6 +1,12 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/nonnominandus/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.5.1
+* Fixed bugs in `.remove_empty` to work better with hetero chains
+* Added support for negative residue sequence numbers
+* Standardised the precision of floating points in the mmCIF output, at least 1 and at most 5 decimals will be shown
+* Fixed an issue with the occupancy of atoms shared between multiple conformers, it will now add up to the original value 
+
 ### v0.5.0 'Alternative location support'
 * Added `Conformer` which sits between `Residue` and `Atom` and is analogous to `atom_group` in cctbx
 * Added editing functions for Conformers
