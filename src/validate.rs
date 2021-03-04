@@ -304,16 +304,20 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
 /// Conformers.
 pub fn reshuffle_conformers(pdb: &mut PDB) {
     for residue in pdb.residues_mut() {
-        if residue.conformer_count() > 1 {
+        let count = residue.conformer_count();
+        if count > 1 {
             let mut blank = None;
             for (index, conformer) in residue.conformers().enumerate() {
                 if conformer.alternative_location().is_none() {
                     blank = Some(index);
                 }
             }
+            #[allow(clippy::unwrap_used, clippy::cast_precision_loss)]
             if let Some(index) = blank {
-                #[allow(clippy::unwrap_used)]
-                let shared = residue.conformer(index).unwrap().clone();
+                let mut shared = residue.conformer(index).unwrap().clone();
+                shared
+                    .atoms_mut()
+                    .for_each(|a| a.set_occupancy(a.occupancy() / (count as f64)).unwrap());
                 residue.remove_conformer(index);
                 for conformer in residue.conformers_mut() {
                     conformer.join(shared.clone());

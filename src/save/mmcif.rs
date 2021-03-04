@@ -238,7 +238,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[allow(clippy::excessive_precision)]
+    #[allow(clippy::excessive_precision, clippy::print_literal)]
     fn test_print_float() {
         assert_eq!(print_float(1.), "1.0".to_string());
         assert_eq!(print_float(128734.), "128734.0".to_string());

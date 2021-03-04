@@ -508,10 +508,11 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
     let mut errors = Vec::new();
     for (context, item) in modifications {
         match item {
-            LexItem::Modres(_, res_name, chain_id, seq_num, icode, std_name, comment) => {
+            LexItem::Modres(_, res_name, chain_id, seq_num, insertion_code, std_name, comment) => {
                 if let Some(chain) = pdb.chains_mut().find(|c| c.id() == chain_id) {
                     if let Some(residue) = chain.residues_mut().find(|r| {
-                        r.serial_number() == seq_num && r.insertion_code() == icode.as_deref()
+                        r.serial_number() == seq_num
+                            && r.insertion_code() == insertion_code.as_deref()
                     }) {
                         if let Some(conformer) =
                             residue.conformers_mut().find(|c| c.name() == res_name)

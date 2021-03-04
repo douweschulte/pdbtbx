@@ -241,16 +241,16 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             // I could not find a way to make the borrow checker happy, but if no item
             // could be find the borrow should be ended and as such safe for mutating
             // in the second branch.
-            let pdb_pntr: *mut PDB = pdb;
-            if let Some(m) = (*pdb_pntr)
+            let pdb_pointer: *mut PDB = pdb;
+            if let Some(m) = (*pdb_pointer)
                 .models_mut()
                 .find(|m| m.serial_number() == model_number)
             {
                 m
             } else {
-                (*pdb_pntr).add_model(Model::new(model_number));
+                (*pdb_pointer).add_model(Model::new(model_number));
                 #[allow(clippy::unwrap_used)]
-                (*pdb_pntr).models_mut().rev().next().unwrap()
+                (*pdb_pointer).models_mut().rev().next().unwrap()
             }
         };
 
