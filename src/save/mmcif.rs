@@ -150,11 +150,11 @@ _atom_site.pdbx_PDB_model_num"
             chain_index.to_string(), // Entity ID, using chain serial number
             residue.serial_number().to_string(), // Residue serial number
             residue.insertion_code().unwrap_or(".").to_string(), // Insertion code
-            atom.x().to_string(),    // X
-            atom.y().to_string(),    // Y
-            atom.z().to_string(),    // Z
-            atom.occupancy().to_string(), // OCC/Q
-            atom.b_factor().to_string(), // B
+            print_float(atom.x()),   // X
+            print_float(atom.y()),   // Y
+            print_float(atom.z()),   // Z
+            print_float(atom.occupancy()), // OCC/Q
+            print_float(atom.b_factor()), // B
             atom.charge().to_string(), // Charge
             model.serial_number().to_string(), // Model serial number
         ]);
@@ -220,4 +220,41 @@ _atom_site.pdbx_PDB_model_num"
     write!("#");
 
     sink.flush().unwrap();
+}
+
+/// Print a floating point with at least 1 decimal place and at max 5 decimals
+#[allow(clippy::cast_possible_truncation)]
+fn print_float(num: f64) -> String {
+    let rounded = (num * 100000.).round() / 100000.;
+    if (rounded.round() - rounded).abs() < std::f64::EPSILON {
+        format!("{}.0", rounded.trunc() as isize)
+    } else {
+        format!("{}", rounded)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[allow(clippy::excessive_precision)]
+    fn test_print_float() {
+        assert_eq!(print_float(1.), "1.0".to_string());
+        assert_eq!(print_float(128734.), "128734.0".to_string());
+        assert_eq!(print_float(0.1), "0.1".to_string());
+        assert_eq!(print_float(1.015), "1.015".to_string());
+        assert_eq!(print_float(2.015), "2.015".to_string());
+        assert_eq!(print_float(1.4235263), "1.42353".to_string());
+        println!("{}", 235617341053.235611341053); // Already printed as 235617341053.23563
+        assert_eq!(
+            print_float(235617341053.235611341053),
+            "235617341053.23563".to_string()
+        );
+        println!("{}", 23561753.235617341053); // Printed as 23561753.23561734
+        assert_eq!(
+            print_float(23561753.235617341053),
+            "23561753.23562".to_string()
+        );
+    }
 }
