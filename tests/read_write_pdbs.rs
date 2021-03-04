@@ -40,7 +40,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
     println!("Working on file: {}", file);
     let now = Instant::now();
 
-    let (pdb, errors) = open(file, StrictnessLevel::Loose).unwrap();
+    let (pdb, errors) = open(file, StrictnessLevel::Medium).unwrap();
 
     let time = now.elapsed();
 

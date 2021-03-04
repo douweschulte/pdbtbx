@@ -250,7 +250,7 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
         }
         if model.total_atom_count() - model.atom_count() != total_hetero_atoms {
             errors.push(PDBError::new(
-                ErrorLevel::LooseWarning,
+                ErrorLevel::GeneralWarning,
                 "Invalid Model",
                 &format!(
                     "Model {} does not have the same amount of HETATMs as the first model.",

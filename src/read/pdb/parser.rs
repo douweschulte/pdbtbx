@@ -612,7 +612,7 @@ fn lex_remark(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
             if line.len() > 11 {
                 if line.len() - 11 > 70 {
                     return Err(PDBError::new(
-                        ErrorLevel::LooseWarning,
+                        ErrorLevel::GeneralWarning,
                         "Remark too long",
                         "The REMARK is too long, the max is 70 characters.",
                         Context::line(linenumber, &line, 11, line.len() - 11),
