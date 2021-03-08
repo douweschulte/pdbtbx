@@ -285,7 +285,7 @@ impl Residue {
 }
 
 impl fmt::Display for Residue {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "RESIDUE Number:{}, InsertionCode:{:?}, Conformers:{}",

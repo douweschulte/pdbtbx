@@ -12,13 +12,13 @@ pub fn lex_cif(input: String) -> Result<DataBlock, PDBError> {
 }
 
 /// Parse a CIF file
-fn parse_main(input: &mut Position) -> Result<DataBlock, PDBError> {
+fn parse_main(input: &mut Position<'_>) -> Result<DataBlock, PDBError> {
     trim_comments_and_whitespace(input);
     parse_data_block(input)
 }
 
 /// Parse a data block, the main item of a CIF file
-fn parse_data_block(input: &mut Position) -> Result<DataBlock, PDBError> {
+fn parse_data_block(input: &mut Position<'_>) -> Result<DataBlock, PDBError> {
     if start_with(input, "data_").is_none() {
         return Err(PDBError::new(
             ErrorLevel::BreakingError,
@@ -43,7 +43,7 @@ fn parse_data_block(input: &mut Position) -> Result<DataBlock, PDBError> {
 }
 
 /// Parse a main loop item, a data item or a save frame
-fn parse_data_item_or_save_frame(input: &mut Position) -> Result<Item, PDBError> {
+fn parse_data_item_or_save_frame(input: &mut Position<'_>) -> Result<Item, PDBError> {
     let start = *input;
     if let Some(()) = start_with(input, "save_") {
         let mut frame = SaveFrame {
@@ -70,7 +70,7 @@ fn parse_data_item_or_save_frame(input: &mut Position) -> Result<Item, PDBError>
 }
 
 /// Parse a data item, a loop or a single item
-fn parse_data_item(input: &mut Position) -> Result<DataItem, PDBError> {
+fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
     let start = *input;
     trim_comments_and_whitespace(input);
     if let Some(()) = start_with(input, "loop_") {
@@ -134,7 +134,7 @@ fn parse_data_item(input: &mut Position) -> Result<DataItem, PDBError> {
 }
 
 /// Parse a value for a data item or inside a loop
-fn parse_value(input: &mut Position) -> Result<Value, PDBError> {
+fn parse_value(input: &mut Position<'_>) -> Result<Value, PDBError> {
     let start = *input;
     trim_comments_and_whitespace(input);
     if input.text.is_empty() {
@@ -159,7 +159,7 @@ fn parse_value(input: &mut Position) -> Result<Value, PDBError> {
         ))
     } else if input.text.starts_with('.') {
         // Technically there could be a number starting with a dot...
-        let mut branch: Position = *input;
+        let mut branch: Position<'_> = *input;
         if let Some(value) = parse_numeric(parse_identifier(&mut branch)) {
             input.text = branch.text;
             input.column = branch.column;
@@ -352,7 +352,7 @@ fn parse_identifier<'a>(input: &mut Position<'a>) -> &'a str {
 /// Check if the input starts with the given pattern, it is case insensitive by
 /// lowercasing the input string, so the pattern should be lowercase otherwise
 /// it can never match.
-fn start_with(input: &mut Position, pattern: &str) -> Option<()> {
+fn start_with(input: &mut Position<'_>, pattern: &str) -> Option<()> {
     if input.text.len() < pattern.len() {
         None
     } else {
@@ -368,7 +368,7 @@ fn start_with(input: &mut Position, pattern: &str) -> Option<()> {
 }
 
 /// Trim all allowed whitespace (including comments)
-fn trim_comments_and_whitespace(input: &mut Position) {
+fn trim_comments_and_whitespace(input: &mut Position<'_>) {
     loop {
         trim_whitespace(input);
         if input.text.is_empty() {
@@ -460,7 +460,7 @@ fn parse_multiline_string<'a>(input: &mut Position<'a>) -> &'a str {
 }
 
 /// Skip forward until the next eol, \r\n and \n\r are but consumed in full
-fn skip_to_eol(input: &mut Position) {
+fn skip_to_eol(input: &mut Position<'_>) {
     let mut chars_to_remove = 1;
     let mut iter = input.text.chars().skip(1).peekable();
 
@@ -493,7 +493,7 @@ fn skip_to_eol(input: &mut Position) {
 }
 
 /// Trim all whitespace (<space, \t, <eol>) from the start of the string
-fn trim_whitespace(input: &mut Position) {
+fn trim_whitespace(input: &mut Position<'_>) {
     let mut chars_to_remove = 0;
     let mut iter = input.text.chars().peekable();
 

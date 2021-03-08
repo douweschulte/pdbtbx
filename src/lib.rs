@@ -54,7 +54,8 @@
     trivial_casts,
     trivial_numeric_casts,
     missing_debug_implementations,
-    unused
+    unused,
+    rust_2018_idioms
 )]
 // Clippy lints
 #![deny(

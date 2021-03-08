@@ -80,7 +80,7 @@ impl Context {
 
     /// Creates a new context to highlight a certain position
     #[allow(clippy::unwrap_used)]
-    pub fn position(pos: &Position) -> Context {
+    pub fn position(pos: &Position<'_>) -> Context {
         if pos.text.is_empty() {
             Context::Line {
                 linenumber: pos.line,
@@ -99,7 +99,7 @@ impl Context {
     }
 
     /// Creates a new context from a start and end point within a single file
-    pub fn range(start: &Position, end: &Position) -> Context {
+    pub fn range(start: &Position<'_>, end: &Position<'_>) -> Context {
         if start.line == end.line {
             Context::Line {
                 linenumber: start.line,
