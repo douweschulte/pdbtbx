@@ -2,7 +2,7 @@
 //!
 //! A library to work with crystallographic Protein DataBank files. It can parse the main part
 //! of the PDB format (it is actively in development so more will follow). After parsing the
-//! structure is accessible with an API loosely based on CCTBX. The resulting structures can
+//! structure is accessible with an API loosely based on CCTBX [`Grosse-Kunstleve, R. W. et al`]. The resulting structures can
 //! be saved in a valid PDB file for use in other software.
 //!
 //! ## Goals
@@ -12,10 +12,11 @@
 //!
 //! ## Why
 //! As Rust is a very recent language there is not a lot of support for scientific work in Rust
-//! in comparison to languages that are used much longer (see Python). I think that using Rust
-//! would have huge benefits over other languages (especially Python) in bigger scientific
-//! projects. Writing a library that makes more scientific work with Rust possible makes it
-//! easier for scientists to start using Rust, which I want to support.
+//! in comparison to languages that are used much longer (like the ubiquitous Python). I think
+//! that using Rust would have huge benefits over other languages in bigger scientific
+//! projects. It is not just me, more scientists are turning to Rust [`Perkel, J. M.`]. To help support this
+//! movement writing this library that makes more scientific work with Rust possible I want to
+//! make it easier for scientists to start using Rust.
 //!
 //! ## How to use it
 //! The following example opens a pdb file (`1ubq.pdb`). Removes all `H` atoms. Calculates the
@@ -38,17 +39,29 @@
 //! ```
 //!
 //! ## PDB Hierarchy
-//! As explained in depth in the documentation of [CCTBX](https://cci.lbl.gov/cctbx_docs/iotbx/iotbx.pdb.html#iotbx-pdb-hierarchy)
+//! As explained in depth in the [documentation of CCTBX](https://cci.lbl.gov/cctbx_docs/iotbx/iotbx.pdb.html#iotbx-pdb-hierarchy)
 //! it can be quite hard to properly define a hierarchy for PDB files which works for all files.
 //! This library follows the hierarchy presented by CCTBX, but renames the `residue_group` and
-//! `atom_group` constructs. This gives the following hierarchy:
+//! `atom_group` constructs. This gives the following hierarchy, with the main identifying characteristics annotated per level.
 //!
-//! * PDB
-//!     * Model
-//!         * Chain
-//!             * Residue (analogous to `residue_group` in CCTBX)
-//!                 * Conformer (analogous to `atom_group` in CCTBX)
-//!                     * Atom
+//! * [PDB]
+//!     * [Model] \
+//!       Serial number
+//!         * [Chain] \
+//!           Id
+//!             * [Residue] (analogous to `residue_group` in CCTBX) \
+//!               Serial number \
+//!               Insertion code
+//!                 * [Conformer] (analogous to `atom_group` in CCTBX) \
+//!                   Name \
+//!                   Alternative location
+//!                     * [Atom] \
+//!                       Serial number \
+//!                       Name
+//!
+//! ## References
+//! 1. [`Grosse-Kunstleve, R. W. et al`] Grosse-Kunstleve, R. W., Sauter, N. K., Moriarty, N. W., & Adams, P. D. (2002). TheComputational Crystallography Toolbox: crystallographic algorithms in a reusable software framework. Journal of Applied Crystallography, 35(1), 126–136. [https://doi.org/10.1107/s0021889801017824](https://doi.org/10.1107/s0021889801017824)
+//! 1. [`Perkel, J. M.`] Perkel, J. M. (2020). Why scientists are turning to Rust. Nature, 588(7836), 185–186. [https://doi.org/10.1038/d41586-020-03382-2](https://doi.org/10.1038/d41586-020-03382-2)
 #![deny(
     missing_docs,
     trivial_casts,
