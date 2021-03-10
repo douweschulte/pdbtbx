@@ -292,7 +292,8 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                 for conformer in residue.conformers() {
                     for atom in conformer.atoms() {
                         write!(
-                            "ATOM  {}   {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}",
+                            "{}{}   {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}",
+                            if atom.hetero() { "HETATM" } else { "ATOM  " },
                             atom_line(atom, conformer, residue, chain),
                             atom.pos().0,
                             atom.pos().1,
@@ -337,47 +338,6 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                 last_residue.serial_number()
             );
         }
-        for chain in model.hetero_chains() {
-            for residue in chain.residues() {
-                for conformer in residue.conformers() {
-                    for atom in conformer.atoms() {
-                        write!(
-                            "HETATM{}   {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}",
-                            atom_line(atom, conformer, residue, chain),
-                            atom.pos().0,
-                            atom.pos().1,
-                            atom.pos().2,
-                            atom.occupancy(),
-                            atom.b_factor(),
-                            atom.element(),
-                            atom.pdb_charge()
-                        );
-                        #[allow(clippy::cast_possible_truncation)]
-                        if atom.anisotropic_temperature_factors().is_some() {
-                            write!(
-                                "ANSIOU{} {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}",
-                                atom_line(atom, conformer, residue, chain),
-                                (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[1][0] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0)
-                                    as isize,
-                                atom.element(),
-                                atom.pdb_charge()
-                            );
-                        }
-                    }
-                }
-            }
-        }
-
         if multiple_models {
             write!("ENDMDL");
         }

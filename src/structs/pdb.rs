@@ -126,7 +126,6 @@ impl PDB {
     }
 
     /// Get the amount of Chains making up this PDB.
-    /// Disregarding Hetero Chains.
     pub fn chain_count(&self) -> usize {
         if !self.models.is_empty() {
             self.models[0].chain_count()
@@ -136,7 +135,6 @@ impl PDB {
     }
 
     /// Get the amount of Residues making up this PDB.
-    /// Disregarding Hetero Residues.
     pub fn residue_count(&self) -> usize {
         if !self.models.is_empty() {
             self.models[0].residue_count()
@@ -146,7 +144,6 @@ impl PDB {
     }
 
     /// Get the amount of Conformers making up this PDB.
-    /// Disregarding Hetero Conformers.
     pub fn conformer_count(&self) -> usize {
         if !self.models.is_empty() {
             self.models[0].conformer_count()
@@ -156,7 +153,6 @@ impl PDB {
     }
 
     /// Get the amount of Atoms making up this PDB.
-    /// Disregarding Hetero Atoms.
     pub fn atom_count(&self) -> usize {
         if !self.models.is_empty() {
             self.models[0].atom_count()
@@ -165,36 +161,32 @@ impl PDB {
         }
     }
 
-    /// Get the amount of Chains making up this PDB.
-    /// Including Hetero Chains. Including all models.
+    /// Get the amount of Chains making up this PDB. Including all models.
     pub fn total_chain_count(&self) -> usize {
         self.models
             .iter()
-            .fold(0, |acc, item| acc + item.total_chain_count())
+            .fold(0, |acc, item| acc + item.chain_count())
     }
 
-    /// Get the amount of Residues making up this PDB.
-    /// Including Hetero Residues. Including all models.
+    /// Get the amount of Residues making up this PDB. Including all models.
     pub fn total_residue_count(&self) -> usize {
         self.models
             .iter()
-            .fold(0, |acc, item| acc + item.total_residue_count())
+            .fold(0, |acc, item| acc + item.residue_count())
     }
 
-    /// Get the amount of Conformer making up this PDB.
-    /// Including Hetero Conformer. Including all models.
+    /// Get the amount of Conformer making up this PDB. Including all models.
     pub fn total_conformer_count(&self) -> usize {
         self.models
             .iter()
-            .fold(0, |acc, item| acc + item.total_conformer_count())
+            .fold(0, |acc, item| acc + item.conformer_count())
     }
 
-    /// Get the amount of Atoms making up this PDB.
-    /// Including Hetero Atoms. Including all models.
+    /// Get the amount of Atoms making up this PDB. Including all models.
     pub fn total_atom_count(&self) -> usize {
         self.models
             .iter()
-            .fold(0, |acc, item| acc + item.total_atom_count())
+            .fold(0, |acc, item| acc + item.atom_count())
     }
 
     /// Get a specific Model from list of Models making up this PDB.
@@ -219,7 +211,7 @@ impl PDB {
         self.models.get_mut(index)
     }
 
-    /// Get a specific Chain from the Chains making up this PDB. Including Hetero Atoms.
+    /// Get a specific Chain from the Chains making up this PDB.
     ///
     /// ## Arguments
     /// * `index` - the index of the Chain
@@ -227,10 +219,10 @@ impl PDB {
     /// ## Fails
     /// It fails when the index is outside bounds.
     pub fn chain(&self, index: usize) -> Option<&Chain> {
-        self.all_chains().nth(index)
+        self.chains().nth(index)
     }
 
-    /// Get a specific Chain as a mutable reference from the Chains making up this PDB. Including Hetero Atoms.
+    /// Get a specific Chain as a mutable reference from the Chains making up this PDB.
     ///
     /// ## Arguments
     /// * `index` - the index of the Chain
@@ -238,10 +230,10 @@ impl PDB {
     /// ## Fails
     /// It fails when the index is outside bounds.
     pub fn chain_mut(&mut self, index: usize) -> Option<&mut Chain> {
-        self.all_chains_mut().nth(index)
+        self.chains_mut().nth(index)
     }
 
-    /// Get a specific Residue from the Residues making up this PDB. Including Hetero Atoms.
+    /// Get a specific Residue from the Residues making up this PDB.
     ///
     /// ## Arguments
     /// * `index` - the index of the Residue
@@ -249,10 +241,10 @@ impl PDB {
     /// ## Fails
     /// It fails when the index is outside bounds.
     pub fn residue(&self, index: usize) -> Option<&Residue> {
-        self.all_residues().nth(index)
+        self.residues().nth(index)
     }
 
-    /// Get a specific Residue as a mutable reference from the Residues making up this PDB. Including Hetero Atoms.
+    /// Get a specific Residue as a mutable reference from the Residues making up this PDB.
     ///
     /// ## Arguments
     /// * `index` - the index of the Residue
@@ -260,10 +252,10 @@ impl PDB {
     /// ## Fails
     /// It fails when the index is outside bounds.
     pub fn residue_mut(&mut self, index: usize) -> Option<&mut Residue> {
-        self.all_residues_mut().nth(index)
+        self.residues_mut().nth(index)
     }
 
-    /// Get a specific Conformer from the Conformers making up this PDB. Including Hetero Atoms.
+    /// Get a specific Conformer from the Conformers making up this PDB.
     ///
     /// ## Arguments
     /// * `index` - the index of the Conformer
@@ -271,10 +263,10 @@ impl PDB {
     /// ## Fails
     /// It fails when the index is outside bounds.
     pub fn conformer(&self, index: usize) -> Option<&Conformer> {
-        self.all_conformers().nth(index)
+        self.conformers().nth(index)
     }
 
-    /// Get a specific Conformer as a mutable reference from the Conformers making up this PDB. Including Hetero Atoms.
+    /// Get a specific Conformer as a mutable reference from the Conformers making up this PDB.
     ///
     /// ## Arguments
     /// * `index` - the index of the Conformer
@@ -282,10 +274,10 @@ impl PDB {
     /// ## Fails
     /// It fails when the index is outside bounds.
     pub fn conformer_mut(&mut self, index: usize) -> Option<&mut Conformer> {
-        self.all_conformers_mut().nth(index)
+        self.conformers_mut().nth(index)
     }
 
-    /// Get a specific Atom from the Atoms making up this PDB. Including Hetero Atoms.
+    /// Get a specific Atom from the Atoms making up this PDB.
     ///
     /// ## Arguments
     /// * `index` - the index of the Atom
@@ -293,10 +285,10 @@ impl PDB {
     /// ## Fails
     /// It fails when the index is outside bounds.
     pub fn atom(&self, index: usize) -> Option<&Atom> {
-        self.all_atoms().nth(index)
+        self.atoms().nth(index)
     }
 
-    /// Get a specific Atom as a mutable reference from the Atoms making up this PDB. Including Hetero Atoms.
+    /// Get a specific Atom as a mutable reference from the Atoms making up this PDB.
     ///
     /// ## Arguments
     /// * `index` - the index of the Atom
@@ -304,7 +296,7 @@ impl PDB {
     /// ## Fails
     /// It fails when the index is outside bounds.
     pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
-        self.all_atoms_mut().nth(index)
+        self.atoms_mut().nth(index)
     }
 
     /// Get the list of Models making up this PDB.
@@ -318,211 +310,87 @@ impl PDB {
     }
 
     /// Get the list of Chains making up this PDB.
-    /// This disregards all Hetero Chains.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
         self.models.iter().flat_map(|a| a.chains())
     }
 
     /// Get the list of Chains as mutable references making up this PDB.
-    /// This disregards all Hetero Chains.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
         self.models.iter_mut().flat_map(|a| a.chains_mut())
     }
 
     /// Get the list of Residues making up this PDB.
-    /// This disregards all Hetero Residues.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
         self.models.iter().flat_map(|a| a.residues())
     }
 
     /// Get the list of Residue as mutable references making up this PDB.
-    /// This disregards all Hetero Residues.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
         self.models.iter_mut().flat_map(|a| a.residues_mut())
     }
 
     /// Get the list of Conformers making up this PDB.
-    /// This disregards all Hetero Conformers.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
         self.models.iter().flat_map(|a| a.conformers())
     }
 
     /// Get the list of Conformers as mutable references making up this PDB.
-    /// This disregards all Hetero Conformers.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
         self.models.iter_mut().flat_map(|a| a.conformers_mut())
     }
 
     /// Get the list of Atom making up this PDB.
-    /// This disregards all Hetero Atom.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
         self.models.iter().flat_map(|a| a.atoms())
     }
 
     /// Get the list of Atom as mutable references making up this PDB.
-    /// This disregards all Hetero Atom.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.models.iter_mut().flat_map(|a| a.atoms_mut())
     }
 
-    /// Get the list of Chains making up this PDB.
-    /// This disregards all Normal Chains.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn hetero_chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
-        self.models.iter().flat_map(|a| a.hetero_chains())
-    }
-
-    /// Get the list of Chains as mutable references making up this PDB.
-    /// This disregards all Normal Chains.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn hetero_chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
-        self.models.iter_mut().flat_map(|a| a.hetero_chains_mut())
-    }
-
-    /// Get the list of Residues making up this PDB.
-    /// This disregards all Normal Residues.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn hetero_residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.models.iter().flat_map(|a| a.hetero_residues())
-    }
-
-    /// Get the list of Residues as mutable references making up this PDB.
-    /// This disregards all Normal Residues.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn hetero_residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
-        self.models.iter_mut().flat_map(|a| a.hetero_residues_mut())
-    }
-
-    /// Get the list of Conformers making up this PDB.
-    /// This disregards all Normal Conformers.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn hetero_conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
-        self.models.iter().flat_map(|a| a.hetero_conformers())
-    }
-
-    /// Get the list of Conformers as mutable references making up this PDB.
-    /// This disregards all Normal Conformers.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn hetero_conformers_mut(
-        &mut self,
-    ) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
-        self.models
-            .iter_mut()
-            .flat_map(|a| a.hetero_conformers_mut())
-    }
-
-    /// Get the list of Atoms making up this PDB.
-    /// This disregards all Normal Atoms.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn hetero_atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.models.iter().flat_map(|a| a.hetero_atoms())
-    }
-
-    /// Get the list of Atoms as mutable references making up this PDB.
-    /// This disregards all Normal Atoms.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn hetero_atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.models.iter_mut().flat_map(|a| a.hetero_atoms_mut())
-    }
-
-    /// Get the list of Chains making up this PDB.
-    /// This includes all Normal and Hetero Chains.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn all_chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
-        self.models.iter().flat_map(|a| a.all_chains())
-    }
-
-    /// Get the list of Chains as mutable references making up this PDB.
-    /// This includes all Normal and Hetero Chains.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn all_chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
-        self.models.iter_mut().flat_map(|a| a.all_chains_mut())
-    }
-
-    /// Get the list of Residues making up this PDB.
-    /// This includes all Normal and Hetero Residues.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn all_residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.models.iter().flat_map(|a| a.all_residues())
-    }
-
-    /// Get the list of Residues as mutable references making up this PDB.
-    /// This includes all Normal and Hetero Residues.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn all_residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
-        self.models.iter_mut().flat_map(|a| a.all_residues_mut())
-    }
-
-    /// Get the list of Conformers making up this PDB.
-    /// This includes all Normal and Hetero Conformers.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn all_conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
-        self.models.iter().flat_map(|a| a.all_conformers())
-    }
-
-    /// Get the list of Residues as mutable references making up this PDB.
-    /// This includes all Normal and Hetero Residues.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn all_conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
-        self.models.iter_mut().flat_map(|a| a.all_conformers_mut())
-    }
-
-    /// Get the list of Atoms making up this PDB.
-    /// This includes all Normal and Hetero Atoms.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn all_atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.models.iter().flat_map(|a| a.all_atoms())
-    }
-
-    /// Get the list of Atoms as mutable references making up this PDB.
-    /// This includes all Normal and Hetero Atoms.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn all_atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.models.iter_mut().flat_map(|a| a.all_atoms_mut())
-    }
-
-    /// Remove all Atoms matching the given predicate. The predicate will be run on all Atoms (Normal and Hetero).
+    /// Remove all Atoms matching the given predicate. The predicate will be run on all Atoms.
     /// As this is done in place this is the fastest way to remove Atoms from this PDB.
     pub fn remove_atoms_by<F>(&mut self, predicate: F)
     where
         F: Fn(&Atom) -> bool,
     {
-        for residue in self.all_residues_mut() {
+        for residue in self.residues_mut() {
             residue.remove_atoms_by(&predicate);
         }
     }
 
-    /// Remove all Conformers matching the given predicate. The predicate will be run on all Conformers (Normal and Hetero).
+    /// Remove all Conformers matching the given predicate. The predicate will be run on all Conformers.
     /// As this is done in place this is the fastest way to remove Conformers from this PDB.
     pub fn remove_conformers_by<F>(&mut self, predicate: F)
     where
         F: Fn(&Conformer) -> bool,
     {
-        for chain in self.all_chains_mut() {
+        for chain in self.chains_mut() {
             chain.remove_conformers_by(&predicate);
         }
     }
 
-    /// Remove all Residues matching the given predicate. The predicate will be run on all Residues (Normal and Hetero).
+    /// Remove all Residues matching the given predicate. The predicate will be run on all Residues.
     /// As this is done in place this is the fastest way to remove Residues from this PDB.
     pub fn remove_residues_by<F>(&mut self, predicate: F)
     where
         F: Fn(&Residue) -> bool,
     {
-        for chain in self.all_chains_mut() {
+        for chain in self.chains_mut() {
             chain.remove_residues_by(&predicate);
         }
     }
 
-    /// Remove all Residues matching the given predicate. The predicate will be run on all Residues (Normal and Hetero).
+    /// Remove all Residues matching the given predicate. The predicate will be run on all Residues.
     /// As this is done in place this is the fastest way to remove Residues from this PDB.
     pub fn remove_chains_by<F>(&mut self, predicate: F)
     where
@@ -533,7 +401,7 @@ impl PDB {
         }
     }
 
-    /// Remove all Chains matching the given predicate. The predicate will be run on all Chains (Normal and Hetero).
+    /// Remove all Chains matching the given predicate. The predicate will be run on all Chains.
     /// As this is done in place this is the fastest way to remove Chains from this PDB.
     pub fn remove_models_by<F>(&mut self, predicate: F)
     where
@@ -575,7 +443,7 @@ impl PDB {
     /// Remove all empty Models from this PDB, and all empty Chains from the Model, and all empty Residues from the Chains.
     pub fn remove_empty(&mut self) {
         self.models.iter_mut().for_each(|m| m.remove_empty());
-        self.models.retain(|m| m.total_chain_count() > 0);
+        self.models.retain(|m| m.chain_count() > 0);
     }
 
     /// This renumbers all numbered structs in the PDB.
@@ -587,27 +455,27 @@ impl PDB {
             model_counter += 1;
 
             let mut counter = 1;
-            for atom in model.all_atoms_mut() {
+            for atom in model.atoms_mut() {
                 atom.set_serial_number(counter);
                 counter += 1;
             }
             let mut counter_i = 1;
-            for residue in model.all_residues_mut() {
+            for residue in model.residues_mut() {
                 residue.set_serial_number(counter_i);
                 counter_i += 1;
             }
             counter = 0;
             #[allow(clippy::unwrap_used, clippy::cast_possible_truncation)]
-            for chain in model.all_chains_mut() {
+            for chain in model.chains_mut() {
                 chain.set_id(&number_to_base26(counter));
                 counter += 1;
             }
         }
     }
 
-    /// Apply a transformation to the position of all atoms (Normal and Hetero) making up this PDB, the new position is immediately set.
+    /// Apply a transformation to the position of all atoms making up this PDB, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
-        for atom in self.all_atoms_mut() {
+        for atom in self.atoms_mut() {
             atom.apply_transformation(transformation);
         }
     }

@@ -1,4 +1,4 @@
-![Compile & Test](https://github.com/nonnominandus/rust-pdb/workflows/Compile%20&%20Test/badge.svg)
+![Compile & Test](https://github.com/nonnominandus/rust-pdb/workflows/Compile%20&%20Test/badge.svg) [![Coverage Status](https://coveralls.io/repos/github/nonnominandus/pdbtbx/badge.svg?branch=master)](https://coveralls.io/github/nonnominandus/pdbtbx?branch=master)
 
 ## Description
 This is a Rust library helping to parse, edit and save crystallographic PDB/mmCIF files. It can read most atomic data from PDB/mmCIF files, some is missing but will be added over time. Its high level goal is to create a stable, efficient and easy to use interface to PDB/mmCIF files. 

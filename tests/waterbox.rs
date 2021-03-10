@@ -31,8 +31,8 @@ fn create_waterbox(size: (f64, f64, f64)) -> PDB {
 
     liquid.remove_atoms_by(|a| a.name() != "O");
     liquid.atoms_mut().for_each(|a| {
-        a.set_b_factor(50.0);
-        a.set_element("O");
+        a.set_b_factor(50.0).unwrap();
+        a.set_element("O").unwrap();
     });
 
     println!("Time to parse liquid.pdb {}ms", time.as_millis());

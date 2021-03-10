@@ -233,27 +233,30 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
 fn validate_models(pdb: &PDB) -> Vec<PDBError> {
     let mut errors = Vec::new();
     let total_atoms = pdb.model(0).unwrap().atom_count();
-    let total_hetero_atoms =
-        pdb.model(0).unwrap().total_atom_count() - pdb.model(0).unwrap().atom_count();
+    let normal_atoms = pdb
+        .model(0)
+        .unwrap()
+        .atoms()
+        .filter(|a| !a.hetero())
+        .count();
     for model in pdb.models().skip(1) {
         if model.atom_count() != total_atoms {
             errors.push(PDBError::new(
-                ErrorLevel::StrictWarning,
+                ErrorLevel::LooseWarning,
                 "Invalid Model",
                 &format!(
-                    "Model {} does not have the same amount of atoms as the first model.",
+                    "Model {} does not have the same amount of atoms (Normal + Hetero) as the first model.",
                     model.serial_number()
                 ),
                 Context::None,
             ));
             continue;
-        }
-        if model.total_atom_count() - model.atom_count() != total_hetero_atoms {
+        } else if model.atoms().filter(|a| !a.hetero()).count() != normal_atoms {
             errors.push(PDBError::new(
-                ErrorLevel::GeneralWarning,
+                ErrorLevel::StrictWarning,
                 "Invalid Model",
                 &format!(
-                    "Model {} does not have the same amount of HETATMs as the first model.",
+                    "Model {} does not have the same amount of atoms as the first model.",
                     model.serial_number()
                 ),
                 Context::None,
@@ -269,23 +272,6 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
                     "Atoms in Models not corresponding",
                     &format!(
                         "Atom {} in Model {} does not correspond to the respective Atom in the first model.",
-                        current_atom.serial_number(),
-                        model.serial_number()
-                    ),
-                    Context::None,
-                ));
-            }
-        }
-        for offset in 0..model.total_atom_count() - model.atom_count() {
-            let index = model.atom_count() + offset;
-            let current_atom = model.atom(index).unwrap();
-            let standard_atom = pdb.model(0).unwrap().atom(index).unwrap();
-            if !standard_atom.corresponds(current_atom) {
-                errors.push(PDBError::new(
-                    ErrorLevel::LooseWarning,
-                    "HETATMs in Models not corresponding",
-                    &format!(
-                        "HETATM {} in Model {} does not correspond to the respective Atom in the first model.",
                         current_atom.serial_number(),
                         model.serial_number()
                     ),

@@ -254,7 +254,21 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             }
         };
 
+        let mut hetero = false;
+        if atom_type == "ATOM" {
+            hetero = false;
+        } else if atom_type == "HETATM" {
+            hetero = true;
+        } else {
+            errors.push(PDBError::new(
+                ErrorLevel::InvalidatingError,
+                "Atom type not correct",
+                "The atom type should be ATOM or HETATM",
+                context.clone(),
+            ))
+        }
         if let Some(atom) = Atom::new(
+            hetero,
             serial_number,
             name,
             pos_x,
@@ -265,28 +279,12 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             element,
             charge,
         ) {
-            if atom_type == "ATOM" {
-                model.add_atom(
-                    atom,
-                    chain_name,
-                    (residue_number, insertion_code),
-                    (residue_name, alt_loc),
-                );
-            } else if atom_type == "HETATM" {
-                model.add_hetero_atom(
-                    atom,
-                    chain_name,
-                    (residue_number, insertion_code),
-                    (residue_name, alt_loc),
-                );
-            } else {
-                errors.push(PDBError::new(
-                    ErrorLevel::InvalidatingError,
-                    "Atom type not correct",
-                    "The atom type should be ATOM or HETATM",
-                    context.clone(),
-                ))
-            }
+            model.add_atom(
+                atom,
+                chain_name,
+                (residue_number, insertion_code),
+                (residue_name, alt_loc),
+            );
         } else {
             errors.push(PDBError::new(
                 ErrorLevel::InvalidatingError,

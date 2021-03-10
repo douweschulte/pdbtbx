@@ -7,6 +7,8 @@ use std::fmt;
 /// A struct to represent a single Atom in a protein
 #[derive(Debug)]
 pub struct Atom {
+    /// Determines if this atom is an hetero atom (true), a non standard atom, or a normal atom (false)
+    hetero: bool,
     /// The serial number of the Atom, should be unique within its model
     serial_number: usize,
     /// The name of the Atom, can only use the standard allowed characters
@@ -33,6 +35,7 @@ impl Atom {
     /// Create a new Atom
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        hetero: bool,
         serial_number: usize,
         atom_name: &str,
         x: f64,
@@ -45,6 +48,7 @@ impl Atom {
     ) -> Option<Atom> {
         if valid_identifier(atom_name) && valid_identifier(element) {
             Some(Atom {
+                hetero,
                 serial_number,
                 name: atom_name.trim().to_ascii_uppercase(),
                 x,
@@ -59,6 +63,16 @@ impl Atom {
         } else {
             None
         }
+    }
+
+    /// Get if this atom is an hetero atom (true), a non standard atom, or a normal atom (false)
+    pub fn hetero(&self) -> bool {
+        self.hetero
+    }
+
+    /// Set if this atom is an hetero atom (true), a non standard atom, or a normal atom (false)
+    pub fn set_hetero(&mut self, new_hetero: bool) {
+        self.hetero = new_hetero
     }
 
     /// Get the position of the atom as a tuple of f64, in the following order: (x, y, z)
@@ -436,6 +450,7 @@ impl fmt::Display for Atom {
 impl Clone for Atom {
     fn clone(&self) -> Self {
         let mut atom = Atom::new(
+            self.hetero,
             self.serial_number,
             &self.name,
             self.x,
@@ -475,7 +490,7 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn set_name() {
-        let mut a = Atom::new(0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
+        let mut a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         assert!(a.set_name("Å").is_err());
         assert!(a.set_name("ATOMS").is_ok());
         a.set_name("ATOM").unwrap();
@@ -488,7 +503,7 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn set_element() {
-        let mut a = Atom::new(0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
+        let mut a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         assert!(a.set_element("R̈").is_err());
         assert!(a.set_element("HOH").is_ok());
         a.set_element("RK").unwrap();
@@ -499,8 +514,8 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn distance() {
-        let a = Atom::new(0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
-        let b = Atom::new(0, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let a = Atom::new(false, 0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(false, 0, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
         let cell = UnitCell::new(10.0, 10.0, 10.0, 90.0, 90.0, 90.0);
         assert!(!a.overlaps(&b).unwrap());
         assert!(a.overlaps_wrapping(&b, &cell).unwrap());
@@ -511,8 +526,8 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn distance_all_axes() {
-        let a = Atom::new(0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
-        let b = Atom::new(0, "", 9.0, 9.0, 9.0, 0.0, 0.0, "C", 0).unwrap();
+        let a = Atom::new(false, 0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(false, 0, "", 9.0, 9.0, 9.0, 0.0, 0.0, "C", 0).unwrap();
         let cell = UnitCell::new(10.0, 10.0, 10.0, 90.0, 90.0, 90.0);
         assert!(!a.overlaps(&b).unwrap());
         assert!(a.overlaps_wrapping(&b, &cell).unwrap());

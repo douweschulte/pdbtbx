@@ -155,8 +155,9 @@ mod tests {
     #[test]
     fn equality() {
         let a = UnitCell::new(10.0, 10.0, 15.0, 90.0, 90.0, 87.0);
-        let b = UnitCell::new(12.0, 10.0, 15.0, 90.0, 90.0, 87.0);
-        assert_eq!(a, a);
-        assert_ne!(a, b);
+        let b = UnitCell::new(10.0, 10.0, 15.0, 90.0, 90.0, 87.0);
+        let c = UnitCell::new(12.0, 10.0, 15.0, 90.0, 90.0, 87.0);
+        assert_eq!(a, b);
+        assert_ne!(a, c);
     }
 }

@@ -96,28 +96,28 @@ where
                     element,
                     charge,
                 ) => {
-                    let atom = Atom::new(serial_number, &name, x, y, z, occ, b, &element, charge)
-                        .expect("Invalid characters in atom creation");
-
-                    if hetero {
-                        current_model.add_hetero_atom(
-                            atom,
-                            &chain_id,
-                            (residue_serial_number, insertion_code.as_deref()),
-                            (&residue_name, alt_loc.as_deref()),
-                        );
-                    } else {
-                        current_model.add_atom(
-                            atom,
-                            &chain_id,
-                            (residue_serial_number, insertion_code.as_deref()),
-                            (&residue_name, alt_loc.as_deref()),
-                        );
-                    }
+                    current_model.add_atom(
+                        Atom::new(
+                            hetero,
+                            serial_number,
+                            &name,
+                            x,
+                            y,
+                            z,
+                            occ,
+                            b,
+                            &element,
+                            charge,
+                        )
+                        .expect("Invalid characters in atom creation"),
+                        &chain_id,
+                        (residue_serial_number, insertion_code.as_deref()),
+                        (&residue_name, alt_loc.as_deref()),
+                    );
                 }
                 LexItem::Anisou(s, n, _, _r, _c, _rs, _, factors, _, _e, _ch) => {
                     let mut found = false;
-                    for atom in current_model.all_atoms_mut().rev() {
+                    for atom in current_model.atoms_mut().rev() {
                         if atom.serial_number() == s {
                             atom.set_anisotropic_temperature_factors(factors);
                             found = true;
@@ -233,7 +233,7 @@ where
                     _num_seq,
                 ) => {
                     // This has to be one of the last lines so push the current model
-                    if current_model.total_atom_count() > 0 {
+                    if current_model.atom_count() > 0 {
                         pdb.add_model(current_model);
                         current_model = Model::new(0);
                     }
@@ -285,7 +285,7 @@ where
                             PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
-                                &format!("The number of Atoms (Normal + Hetero) ({}) is different then posed in the MASTER Record ({})", pdb.total_atom_count(), num_coord),
+                                &format!("The number of Atoms ({}) is different then posed in the MASTER Record ({})", pdb.total_atom_count(), num_coord),
                                 context.clone()
                             )
                         );
@@ -297,7 +297,7 @@ where
             errors.push(line_result.unwrap_err())
         }
     }
-    if current_model.total_atom_count() > 0 {
+    if current_model.atom_count() > 0 {
         pdb.add_model(current_model);
     }
 
@@ -483,7 +483,7 @@ fn validate_seqres(
 
             if chain_sequence.len() != chain.residue_count() {
                 errors.push(PDBError::new(
-                    ErrorLevel::StrictWarning,
+                    ErrorLevel::LooseWarning,
                     "SEQRES residue total invalid",
                     &format!("The residue total ({}) for SEQRES chain \"{}\" does not match the total residues found in the chain ({}).", chain_sequence.len(), chain_id, chain.residue_count()),
                     context.clone()
