@@ -407,7 +407,7 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
     let mut end = *input;
     end.text = &input.text[chars_to_remove..];
     end.column += chars_to_remove;
-    return Err(PDBError::new(
+    Err(PDBError::new(
         ErrorLevel::BreakingError,
         "Invalid enclosing",
         &format!(
@@ -415,7 +415,7 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
             pat
         ),
         Context::range(input, &end),
-    ));
+    ))
 }
 
 /// Parse a multiline string <eol>; ...(text)... <eol>;, it assumes the first position is ';'
