@@ -147,3 +147,16 @@ impl Default for UnitCell {
         Self::new(0.0, 0.0, 0.0, 90.0, 90.0, 90.0)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn equality() {
+        let a = UnitCell::new(10.0, 10.0, 15.0, 90.0, 90.0, 87.0);
+        let b = UnitCell::new(12.0, 10.0, 15.0, 90.0, 90.0, 87.0);
+        assert_eq!(a, a);
+        assert_ne!(a, b);
+    }
+}

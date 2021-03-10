@@ -20,3 +20,16 @@ pub fn open(filename: &str, level: StrictnessLevel) -> Result<(PDB, Vec<PDBError
         )])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn open_invalid() {
+        assert!(open("file.png", StrictnessLevel::Medium).is_err());
+        assert!(open("file.mmcif", StrictnessLevel::Medium).is_err());
+        assert!(open("file.pdbml", StrictnessLevel::Medium).is_err());
+        assert!(open("file.pd", StrictnessLevel::Medium).is_err());
+    }
+}

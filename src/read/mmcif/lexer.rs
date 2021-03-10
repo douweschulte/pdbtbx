@@ -174,18 +174,11 @@ fn parse_value(input: &mut Position<'_>) -> Result<Value, PDBError> {
         input.column += 1;
         Ok(Value::Unknown)
     } else if input.text.starts_with('\'') {
-        match parse_enclosed(input, '\'') {
-            Ok(text) => Ok(Value::Text(text.to_string())),
-            Err(e) => Err(e),
-        }
+        parse_enclosed(input, '\'').map(|text| Value::Text(text.to_string()))
     } else if input.text.starts_with('\"') {
-        match parse_enclosed(input, '\"') {
-            Ok(text) => Ok(Value::Text(text.to_string())),
-            Err(e) => Err(e),
-        }
+        parse_enclosed(input, '\"').map(|text| Value::Text(text.to_string()))
     } else if input.text.starts_with(';') {
-        let text = parse_multiline_string(input);
-        Ok(Value::Text(text.to_string()))
+        parse_multiline_string(input).map(|text| Value::Text(text.to_string()))
     } else if is_ordinary(input.text.chars().next().unwrap()) {
         let text = parse_identifier(input);
         if let Some(value) = parse_numeric(text) {
@@ -411,14 +404,22 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
         }
     }
 
-    let trimmed = input.text;
-    input.text = "";
-    input.column += chars_to_remove;
-    Ok(trimmed)
+    let mut end = *input;
+    end.text = &input.text[chars_to_remove..];
+    end.column += chars_to_remove;
+    return Err(PDBError::new(
+        ErrorLevel::BreakingError,
+        "Invalid enclosing",
+        &format!(
+            "This element was enclosed by \'{}\' but the closing delimiter was not found.",
+            pat
+        ),
+        Context::range(input, &end),
+    ));
 }
 
 /// Parse a multiline string <eol>; ...(text)... <eol>;, it assumes the first position is ';'
-fn parse_multiline_string<'a>(input: &mut Position<'a>) -> &'a str {
+fn parse_multiline_string<'a>(input: &mut Position<'a>) -> Result<&'a str, PDBError> {
     let mut chars_to_remove = 1; //Assume the first position is ';'
     let mut eol = false;
     let mut iter = input.text.chars().skip(1).peekable();
@@ -428,7 +429,7 @@ fn parse_multiline_string<'a>(input: &mut Position<'a>) -> &'a str {
             let trimmed = &input.text[1..chars_to_remove];
             input.text = &input.text[(chars_to_remove + 1)..];
             input.column += 1;
-            return trimmed;
+            return Ok(trimmed);
         } else if c == '\n' {
             if let Some('\r') = (&mut iter).peek() {
                 chars_to_remove += 1;
@@ -454,9 +455,15 @@ fn parse_multiline_string<'a>(input: &mut Position<'a>) -> &'a str {
         }
     }
 
-    let trimmed = input.text;
-    input.text = "";
-    trimmed
+    let mut end = *input;
+    end.text = &input.text[chars_to_remove..];
+    end.column += chars_to_remove;
+    Err(PDBError::new(
+        ErrorLevel::BreakingError,
+        "Multiline string not finished",
+        "A multiline string has to be finished by \'<eol>;\'",
+        Context::range(input, &end),
+    ))
 }
 
 /// Skip forward until the next eol, \r\n and \n\r are but consumed in full
@@ -650,6 +657,19 @@ mod tests {
         assert_eq!(pos.text, "\r\na");
         assert_eq!(pos.line, 2);
         assert_eq!(pos.column, 1);
+    }
+
+    #[test]
+    fn skip_to_eol_test_end() {
+        let mut pos = Position {
+            text: "bla bla bla",
+            line: 1,
+            column: 1,
+        };
+        skip_to_eol(&mut pos);
+        assert_eq!(pos.text, "");
+        assert_eq!(pos.line, 1);
+        assert_eq!(pos.column, 12);
     }
 
     #[test]
@@ -864,29 +884,53 @@ mod tests {
     #[test]
     fn parse_char_string_single_quoted() {
         let mut pos = Position {
-            text: "\'hello hello\'hello",
+            text: "\'hello hello\' hello",
             line: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert_eq!(res, Ok(Value::Text("hello hello".to_string())));
-        assert_eq!(pos.text, "hello");
+        assert_eq!(pos.text, " hello");
         assert_eq!(pos.line, 1);
         assert_eq!(pos.column, 14);
     }
 
     #[test]
+    fn parse_char_string_single_missing_quote() {
+        let mut pos = Position {
+            text: "\'hello hello",
+            line: 1,
+            column: 1,
+        };
+        let res = parse_value(&mut pos);
+        assert!(res.is_err());
+        assert_eq!(res.unwrap_err().short_description(), "Invalid enclosing")
+    }
+
+    #[test]
     fn parse_char_string_double_quoted() {
         let mut pos = Position {
-            text: "\"hello hello\"hello",
+            text: "\"hello hello\" hello",
             line: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert_eq!(res, Ok(Value::Text("hello hello".to_string())));
-        assert_eq!(pos.text, "hello");
+        assert_eq!(pos.text, " hello");
         assert_eq!(pos.line, 1);
         assert_eq!(pos.column, 14);
+    }
+
+    #[test]
+    fn parse_char_string_double_missing_quote() {
+        let mut pos = Position {
+            text: "\"hello hello\n",
+            line: 1,
+            column: 1,
+        };
+        let res = parse_value(&mut pos);
+        assert!(res.is_err());
+        assert_eq!(res.unwrap_err().short_description(), "Invalid enclosing")
     }
 
     #[test]
@@ -954,6 +998,39 @@ mod tests {
         assert_eq!(pos.line, 3);
         assert_eq!(pos.column, 2);
     }
+    #[test]
+    fn parse_value_multiline_text_with_newlines() {
+        let mut pos = Position {
+            text: ";\n\tthis is\na tricky\rcomment\n\rof considerable\r\nlength!\n; hello",
+            line: 1,
+            column: 1,
+        };
+        let res = parse_value(&mut pos);
+        assert_eq!(
+            res,
+            Ok(Value::Text(
+                "\n\tthis is\na tricky\rcomment\n\rof considerable\r\nlength!\n".to_string()
+            ))
+        );
+        assert_eq!(pos.text, " hello");
+        assert_eq!(pos.line, 7);
+        assert_eq!(pos.column, 2);
+    }
+
+    #[test]
+    fn parse_value_multiline_text_missing_end() {
+        let mut pos = Position {
+            text: ";\n\tthis is\na tricky\rcomment\n\rof considerable\r\nlength!\n",
+            line: 1,
+            column: 1,
+        };
+        let res = parse_value(&mut pos);
+        assert!(res.is_err());
+        assert_eq!(
+            res.unwrap_err().short_description(),
+            "Multiline string not finished"
+        )
+    }
 
     #[test]
     fn classify_char_test() {
@@ -997,7 +1074,7 @@ mod tests {
     #[test]
     fn parse_data_single_item_numeric_no_leading_zero() {
         let mut pos = Position {
-            text: "_tag\n.16",
+            text: "_tag\n+.16",
             line: 1,
             column: 1,
         };
@@ -1011,7 +1088,7 @@ mod tests {
         );
         assert_eq!(pos.text, "");
         assert_eq!(pos.line, 2);
-        assert_eq!(pos.column, 4);
+        assert_eq!(pos.column, 5);
     }
 
     #[test]
@@ -1032,6 +1109,18 @@ mod tests {
         assert_eq!(pos.text, "");
         assert_eq!(pos.line, 1);
         assert_eq!(pos.column, 25);
+    }
+
+    #[test]
+    fn parse_data_single_missing_value() {
+        let mut pos = Position {
+            text: "_tag\t",
+            line: 1,
+            column: 1,
+        };
+        let res = parse_data_item(&mut pos);
+        assert!(res.is_err());
+        assert_eq!(res.unwrap_err().short_description(), "No valid Value")
     }
 
     #[test]
@@ -1093,6 +1182,21 @@ mod tests {
     }
 
     #[test]
+    fn parse_invalid_data_item_loop() {
+        let mut pos = Position {
+            text: "loop_\n\t_first\n\t_second\n\t_last\n. 23.2 #?\nHello 25.9 ?\nHey 30.3 N",
+            line: 1,
+            column: 1,
+        };
+        let res = parse_data_item(&mut pos);
+        assert!(res.is_err());
+        assert_eq!(
+            res.unwrap_err().short_description(),
+            "Loop has incorrect number of data items"
+        )
+    }
+
+    #[test]
     fn parse_data_item_or_save_frame_data_item() {
         let mut pos = Position {
             text: "_data ?",
@@ -1133,6 +1237,59 @@ mod tests {
         assert_eq!(pos.text, "");
         assert_eq!(pos.line, 1);
         assert_eq!(pos.column, 37);
+    }
+
+    #[test]
+    fn parse_invalid_save_frame() {
+        let mut pos = Position {
+            text: "save_something_to_save _data . safe_",
+            line: 1,
+            column: 1,
+        };
+        let res = parse_data_item_or_save_frame(&mut pos);
+        assert!(res.is_err());
+        assert_eq!(
+            res.unwrap_err().short_description(),
+            "No matching \'save_\' found"
+        )
+    }
+
+    #[test]
+    fn parse_data_block_test() {
+        let mut pos = Position {
+            text: "data_1UBQ\n#\n_entry.id   1UBQ",
+            line: 1,
+            column: 1,
+        };
+        let res = parse_data_block(&mut pos);
+        assert_eq!(
+            res,
+            Ok(DataBlock {
+                name: "1UBQ".to_string(),
+                items: vec![Item::DataItem(DataItem::Single(Single {
+                    name: "entry.id".to_string(),
+                    content: Value::Text("1UBQ".to_string())
+                }))]
+            })
+        );
+        assert_eq!(pos.text, "");
+        assert_eq!(pos.line, 3);
+        assert_eq!(pos.column, 17);
+    }
+
+    #[test]
+    fn parse_invalid_data_block_test() {
+        let mut pos = Position {
+            text: "1UBQ\n#\n_entry.id   1UBQ",
+            line: 1,
+            column: 1,
+        };
+        let res = parse_data_block(&mut pos);
+        assert!(res.is_err());
+        assert_eq!(
+            res.unwrap_err().short_description(),
+            "Data Block not opened"
+        )
     }
 
     fn close(a: f64, b: f64) -> bool {

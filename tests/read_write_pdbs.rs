@@ -13,7 +13,7 @@ fn run_pdbs() {
         .into_os_string()
         .into_string()
         .unwrap()
-        + "\\";
+        + &String::from(std::path::MAIN_SEPARATOR);
     let _ = fs::create_dir(dump_dir.clone());
     println!("{:?}", pdb_dir);
 

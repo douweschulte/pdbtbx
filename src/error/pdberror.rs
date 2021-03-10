@@ -48,6 +48,11 @@ impl PDBError {
     pub fn fails(&self, level: StrictnessLevel) -> bool {
         self.level.fails(level)
     }
+
+    /// Gives the short description or title for this error
+    pub fn short_description(&self) -> &str {
+        &self.short_description
+    }
 }
 
 impl fmt::Debug for PDBError {
@@ -71,3 +76,59 @@ impl fmt::Display for PDBError {
 }
 
 impl error::Error for PDBError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Position;
+
+    #[test]
+    fn create_empty_error() {
+        let a = PDBError::new(ErrorLevel::GeneralWarning, "test", "test", Context::none());
+        println!("{}", a);
+        assert_eq!(format!("{}", a), "GeneralWarning: test\n\ntest\n");
+        assert_eq!(a.level(), ErrorLevel::GeneralWarning);
+        assert!(!a.fails(StrictnessLevel::Loose));
+    }
+
+    #[test]
+    fn create_full_line_error() {
+        let a = PDBError::new(
+            ErrorLevel::StrictWarning,
+            "test",
+            "test",
+            Context::full_line(1, "testing line"),
+        );
+        println!("{}", a);
+        assert_eq!(
+            format!("{}", a),
+            "StrictWarning: test\n\n     |\n1    | testing line\n     |\n\ntest\n"
+        );
+        assert_eq!(a.level(), ErrorLevel::StrictWarning);
+        assert!(a.fails(StrictnessLevel::Strict));
+    }
+
+    #[test]
+    fn create_range_error() {
+        let pos1 = Position {
+            text: "hello world\nthis is a multiline\npiece of teXt",
+            line: 1,
+            column: 0,
+        };
+        let pos2 = Position {
+            text: "",
+            line: 4,
+            column: 13,
+        };
+        let a = PDBError::new(
+            ErrorLevel::LooseWarning,
+            "test",
+            "test error",
+            Context::range(&pos1, &pos2),
+        );
+        println!("{}", a);
+        assert_eq!(format!("{}", a), "LooseWarning: test\n\n     |\n1    | hello world\n2    | this is a multiline\n3    | piece of teXt\n     |\ntest error\n");
+        assert_eq!(a.level(), ErrorLevel::LooseWarning);
+        assert!(a.fails(StrictnessLevel::Strict));
+    }
+}
