@@ -2,6 +2,7 @@
 use super::unit_cell::*;
 use crate::reference_tables;
 use crate::transformation::*;
+use std::cmp::Ordering;
 
 #[derive(Debug, Clone)]
 /// A Space group of a crystal
@@ -86,6 +87,18 @@ impl PartialEq for Symmetry {
 }
 
 impl Eq for Symmetry {}
+
+impl Ord for Symmetry {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.index.cmp(&other.index)
+    }
+}
+
+impl PartialOrd for Symmetry {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 #[cfg(test)]
 mod tests {

@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 use crate::structs::*;
 use crate::transformation::*;
+use std::cmp::Ordering;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A Chain containing multiple Residues
 pub struct Chain {
     /// The identifier of this Chain
@@ -319,17 +320,14 @@ impl fmt::Display for Chain {
     }
 }
 
-impl Clone for Chain {
-    fn clone(&self) -> Self {
-        let mut chain = Chain::new(&self.id).expect("Invalid Chain id while cloning a Chain");
-
-        chain.residues = self.residues.clone();
-        chain
-    }
-}
-
 impl PartialEq for Chain {
     fn eq(&self, other: &Self) -> bool {
         self.id() == other.id() && self.residues == other.residues
+    }
+}
+
+impl PartialOrd for Chain {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.id().cmp(&other.id()))
     }
 }

@@ -112,11 +112,11 @@ fn do_something(file: &str, folder: &str, name: &str) {
     )
     .expect("Save not successful");
 
-    let (_saved_pdb, _) = open(
-        &(folder.to_string() + name + ".pdb"),
-        StrictnessLevel::Loose,
-    )
-    .unwrap();
+    //let (_saved_pdb, _) = open(
+    //    &(folder.to_string() + name + ".pdb"),
+    //    StrictnessLevel::Loose,
+    //)
+    //.unwrap();
     let (_saved_mmcif, _) = open(
         &(folder.to_string() + name + ".cif"),
         StrictnessLevel::Loose,

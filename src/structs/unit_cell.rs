@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 /// A unit cell of a crystal, containing its dimensions and angles
 pub struct UnitCell {
     /// a-axis dimension
@@ -129,15 +129,6 @@ impl UnitCell {
     /// Get the dimensions in a tuple (a, b, c)
     pub fn size(&self) -> (f64, f64, f64) {
         (self.a, self.b, self.c)
-    }
-}
-
-impl PartialEq for UnitCell {
-    fn eq(&self, other: &Self) -> bool {
-        self.size() == other.size()
-            && self.alpha == other.alpha
-            && self.beta == other.beta
-            && self.gamma == other.gamma
     }
 }
 

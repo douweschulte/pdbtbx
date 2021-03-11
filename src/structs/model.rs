@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use crate::structs::*;
 use crate::transformation::*;
+use std::cmp::Ordering;
 
 #[derive(Debug)]
 /// A Model containing multiple Chains
@@ -351,5 +352,11 @@ impl Clone for Model {
 impl PartialEq for Model {
     fn eq(&self, other: &Self) -> bool {
         self.serial_number == other.serial_number && self.chains == other.chains
+    }
+}
+
+impl PartialOrd for Model {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.serial_number.cmp(&other.serial_number))
     }
 }

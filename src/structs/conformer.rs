@@ -2,6 +2,7 @@
 use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
+use std::cmp::Ordering;
 use std::fmt;
 
 #[derive(Debug)]
@@ -265,5 +266,11 @@ impl Clone for Conformer {
 impl PartialEq for Conformer {
     fn eq(&self, other: &Self) -> bool {
         self.id() == other.id() && self.atoms == other.atoms
+    }
+}
+
+impl PartialOrd for Conformer {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.id().cmp(&other.id()))
     }
 }

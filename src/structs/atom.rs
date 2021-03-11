@@ -2,6 +2,7 @@
 use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
+use std::cmp::Ordering;
 use std::fmt;
 
 /// A struct to represent a single Atom in a protein
@@ -291,7 +292,7 @@ impl Atom {
     /// Get the charge in the PDB format [0-9][-+]
     #[allow(clippy::cast_possible_truncation)]
     pub fn pdb_charge(&self) -> String {
-        if self.charge == 0 {
+        if self.charge == 0 || self.charge < -9 || self.charge > 9 {
             String::new()
         } else {
             let mut sign = '+';
@@ -307,19 +308,8 @@ impl Atom {
     }
 
     /// Set the charge of this atom
-    /// ## Fails
-    /// It fails if the charge contains invalid characters (only ASCII graphic and space is allowed).
-    /// It also fails if the string is too ling, the max length is 2 characters.
-    pub fn set_charge(&mut self, new_charge: isize) -> Result<(), String> {
-        if new_charge < -9 || new_charge > 9 {
-            Err(format!(
-                "New charge is out of bounds, for Atom {}, with new charge {}",
-                self.serial_number, new_charge
-            ))
-        } else {
-            self.charge = new_charge;
-            Ok(())
-        }
+    pub fn set_charge(&mut self, new_charge: isize) {
+        self.charge = new_charge;
     }
 
     /// Get the anisotropic temperature factors, if available
@@ -482,6 +472,12 @@ impl PartialEq for Atom {
     }
 }
 
+impl PartialOrd for Atom {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.serial_number.cmp(&other.serial_number))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Atom;
@@ -531,5 +527,62 @@ mod tests {
         let cell = UnitCell::new(10.0, 10.0, 10.0, 90.0, 90.0, 90.0);
         assert!(!a.overlaps(&b).unwrap());
         assert!(a.overlaps_wrapping(&b, &cell).unwrap());
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn check_equality() {
+        let a = Atom::new(false, 0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(false, 0, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let c = Atom::new(false, 0, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        assert_ne!(a, b);
+        assert_eq!(b, c);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn invalid_new_values() {
+        let mut a = Atom::new(false, 0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
+        assert!(Atom::new(false, 0, "Rͦ", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).is_none());
+        assert!(a.set_x(f64::INFINITY).is_err());
+        assert!(a.set_x(f64::NAN).is_err());
+        assert!(a.set_x(f64::NEG_INFINITY).is_err());
+        assert!(a.set_y(f64::INFINITY).is_err());
+        assert!(a.set_z(f64::INFINITY).is_err());
+        assert!(a.set_pos((f64::INFINITY, 0., 0.)).is_err());
+        assert!(a.set_b_factor(f64::INFINITY).is_err());
+        assert!(a.set_occupancy(f64::INFINITY).is_err());
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn check_setters() {
+        let mut a = Atom::new(false, 0, "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
+        assert!(Atom::new(false, 0, "Rͦ", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).is_none());
+        assert!(a.set_x(2.0).is_ok());
+        assert_eq!(a.x(), 2.0);
+        assert!(a.set_y(2.0).is_ok());
+        assert_eq!(a.y(), 2.0);
+        assert!(a.set_z(2.0).is_ok());
+        assert_eq!(a.z(), 2.0);
+        assert!(a.set_pos((3.0, 3.0, 3.0)).is_ok());
+        assert_eq!(a.x(), 3.0);
+        assert_eq!(a.y(), 3.0);
+        assert_eq!(a.z(), 3.0);
+        assert!(a.set_b_factor(2.0).is_ok());
+        assert_eq!(a.b_factor(), 2.0);
+        assert!(a.set_occupancy(2.0).is_ok());
+        assert_eq!(a.occupancy(), 2.0);
+        a.set_hetero(true);
+        assert_eq!(a.hetero(), true);
+        a.set_serial_number(42);
+        assert_eq!(a.serial_number(), 42);
+        assert_eq!(a.atomic_number(), Some(6));
+        assert!(a.set_name("HOH").is_ok());
+        assert!(a.atomic_radius().is_none());
+        a.set_charge(-1);
+        assert_eq!(a.charge(), -1);
+        assert_eq!(a.pdb_charge(), "1-".to_string());
     }
 }

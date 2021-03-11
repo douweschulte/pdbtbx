@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::transformation::*;
+use std::cmp::Ordering;
 
 #[derive(Debug, Clone)]
 /// A transformation expressing non-crystallographic symmetry, used when transformations are required to generate the whole asymmetric subunit
@@ -32,6 +33,12 @@ impl PartialEq for MtriX {
         self.transformation == other.transformation
             && self.serial_number == other.serial_number
             && self.contained == other.contained
+    }
+}
+
+impl PartialOrd for MtriX {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.serial_number.cmp(&other.serial_number))
     }
 }
 
