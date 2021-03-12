@@ -3,7 +3,7 @@ use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A PDB file containing the 3D coordinates of many atoms making up the
 /// 3D structure of a protein, but it can also be used for other molecules.
 pub struct PDB {
@@ -506,20 +506,6 @@ use std::fmt;
 impl fmt::Display for PDB {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PDB Models: {}", self.models.len())
-    }
-}
-
-impl Clone for PDB {
-    fn clone(&self) -> Self {
-        let mut pdb = PDB::new();
-        pdb.remarks = self.remarks.clone();
-        pdb.scale = self.scale.clone();
-        pdb.origx = self.origx.clone();
-        pdb.mtrix = self.mtrix.clone();
-        pdb.symmetry = self.symmetry.clone();
-        pdb.unit_cell = self.unit_cell.clone();
-        pdb.models = self.models.clone();
-        pdb
     }
 }
 

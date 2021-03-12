@@ -331,3 +331,61 @@ impl PartialOrd for Chain {
         Some(self.id().cmp(&other.id()))
     }
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_id_validation() {
+        let mut a = Chain::new("A").unwrap();
+        assert_eq!(Chain::new("R̊"), None);
+        assert!(!a.set_id("Oͦ"));
+        assert_eq!(a.id(), "A");
+        a.set_id("atom");
+        assert_eq!(a.id(), "ATOM");
+    }
+
+    #[test]
+    fn ordering_and_equality() {
+        let a = Chain::new("A").unwrap();
+        let b = Chain::new("A").unwrap();
+        let c = Chain::new("B").unwrap();
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+        assert!(a < c);
+        assert!(b < c);
+    }
+
+    #[test]
+    fn test_empty_chain() {
+        let mut a = Chain::new("A").unwrap();
+        assert_eq!(a.database_reference(), None);
+        assert_eq!(a.database_reference_mut(), None);
+        assert_eq!(a.residue_count(), 0);
+        assert_eq!(a.conformer_count(), 0);
+        assert_eq!(a.atom_count(), 0);
+    }
+
+    #[test]
+    fn test_residue() {
+        let mut a = Chain::new("A").unwrap();
+        let mut r = Residue::new(1, None, None).unwrap();
+        a.add_residue(r.clone());
+        a.add_residue(Residue::new(13, None, None).unwrap());
+        assert_eq!(a.residue(0), Some(&r));
+        assert_eq!(a.residue_mut(0), Some(&mut r));
+        a.remove_residue(0);
+        assert!(a.remove_residue_by_id((13, None)));
+        assert_eq!(a.residue_count(), 0);
+        assert!(!a.remove_residue_by_id((13, None)));
+    }
+
+    #[test]
+    fn check_display() {
+        let a = Chain::new("A").unwrap();
+        format!("{:?}", a);
+        format!("{}", a);
+    }
+}

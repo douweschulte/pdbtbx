@@ -4,8 +4,8 @@ use crate::transformation::*;
 use std::cmp::Ordering;
 use std::fmt;
 
-#[derive(Debug)]
-/// A Residue containing multiple conformers
+#[derive(Debug, Clone)]
+/// A Residue containing multiple Residues
 pub struct Residue {
     /// The serial number of this Residue, can be negative as that is used sometimes. See https://proteopedia.org/wiki/index.php/Unusual_sequence_numbering.
     serial_number: isize,
@@ -297,15 +297,6 @@ impl fmt::Display for Residue {
     }
 }
 
-impl Clone for Residue {
-    fn clone(&self) -> Self {
-        let mut res = Residue::new(self.serial_number, self.insertion_code(), None)
-            .expect("Invalid properties while cloning a Residue");
-        res.conformers = self.conformers.clone();
-        res
-    }
-}
-
 impl PartialEq for Residue {
     fn eq(&self, other: &Self) -> bool {
         self.id() == other.id() && self.conformers == other.conformers
@@ -315,5 +306,71 @@ impl PartialEq for Residue {
 impl PartialOrd for Residue {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.id().cmp(&other.id()))
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_text_validation() {
+        let mut a = Residue::new(1, Some("A"), None).unwrap();
+        assert_eq!(Residue::new(2, Some("Rͦ"), None), None);
+        assert!(!a.set_insertion_code("Oͦ"));
+        assert_eq!(a.insertion_code(), Some("A"));
+        a.set_insertion_code("Conformer");
+        assert_eq!(a.insertion_code(), Some("CONFORMER"));
+    }
+
+    #[test]
+    fn ordering_and_equality() {
+        let a = Residue::new(1, None, None).unwrap();
+        let b = Residue::new(1, None, None).unwrap();
+        let c = Residue::new(2, None, None).unwrap();
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+        assert!(a < c);
+        assert!(b < c);
+    }
+
+    #[test]
+    fn test_empty() {
+        let a = Residue::new(1, None, None).unwrap();
+        assert_eq!(a.conformer_count(), 0);
+    }
+
+    #[test]
+    fn test_conformer() {
+        let mut a = Residue::new(1, None, None).unwrap();
+        let mut conformer1 = Conformer::new("A", None, None).unwrap();
+        a.add_conformer(conformer1.clone());
+        a.add_conformer(Conformer::new("B", None, None).unwrap());
+        assert_eq!(a.conformer(0), Some(&conformer1));
+        assert_eq!(a.conformer_mut(0), Some(&mut conformer1));
+        a.remove_conformer(0);
+        assert!(a.remove_conformer_by_id(("B", None)));
+        assert_eq!(a.conformer_count(), 0);
+    }
+
+    #[test]
+    fn test_join() {
+        let mut a = Residue::new(1, None, None).unwrap();
+        let mut b = Residue::new(1, None, None).unwrap();
+        let conformer1 = Conformer::new("A", None, None).unwrap();
+        b.add_conformer(conformer1.clone());
+
+        a.join(b);
+        a.extend(vec![conformer1]);
+
+        assert_eq!(a.conformer_count(), 2);
+    }
+
+    #[test]
+    fn check_display() {
+        let a = Residue::new(1, None, None).unwrap();
+        format!("{:?}", a);
+        format!("{}", a);
     }
 }

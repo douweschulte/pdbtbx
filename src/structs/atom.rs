@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 use std::fmt;
 
 /// A struct to represent a single Atom in a protein
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Atom {
     /// Determines if this atom is an hetero atom (true), a non standard atom, or a normal atom (false)
     hetero: bool,
@@ -437,28 +437,6 @@ impl fmt::Display for Atom {
     }
 }
 
-impl Clone for Atom {
-    fn clone(&self) -> Self {
-        let mut atom = Atom::new(
-            self.hetero,
-            self.serial_number,
-            &self.name,
-            self.x,
-            self.y,
-            self.z,
-            self.occupancy,
-            self.b_factor,
-            &self.element,
-            self.charge,
-        )
-        .expect("Invalid characters in generating a clone of the atom");
-
-        atom.atf = self.atf;
-
-        atom
-    }
-}
-
 impl PartialEq for Atom {
     fn eq(&self, other: &Self) -> bool {
         self.serial_number == other.serial_number
@@ -570,6 +548,7 @@ mod tests {
         assert_eq!(a.x(), 3.0);
         assert_eq!(a.y(), 3.0);
         assert_eq!(a.z(), 3.0);
+        assert_eq!(a.pos(), (3.0, 3.0, 3.0));
         assert!(a.set_b_factor(2.0).is_ok());
         assert_eq!(a.b_factor(), 2.0);
         assert!(a.set_occupancy(2.0).is_ok());
@@ -584,5 +563,13 @@ mod tests {
         a.set_charge(-1);
         assert_eq!(a.charge(), -1);
         assert_eq!(a.pdb_charge(), "1-".to_string());
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn check_display() {
+        let a = Atom::new(false, 0, "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
+        format!("{:?}", a);
+        format!("{}", a);
     }
 }

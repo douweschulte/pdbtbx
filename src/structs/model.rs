@@ -3,7 +3,7 @@ use crate::structs::*;
 use crate::transformation::*;
 use std::cmp::Ordering;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 /// A Model containing multiple Chains
 pub struct Model {
     /// The serial number of this Model
@@ -341,22 +341,56 @@ impl fmt::Display for Model {
     }
 }
 
-impl Clone for Model {
-    fn clone(&self) -> Self {
-        let mut model = Model::new(self.serial_number);
-        model.chains = self.chains.clone();
-        model
-    }
-}
-
-impl PartialEq for Model {
-    fn eq(&self, other: &Self) -> bool {
-        self.serial_number == other.serial_number && self.chains == other.chains
-    }
-}
-
 impl PartialOrd for Model {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.serial_number.cmp(&other.serial_number))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_equality() {
+        let a = Model::new(0);
+        let b = a.clone();
+        let c = Model::new(1);
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+        assert_ne!(b, c);
+        assert!(a < c);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_children() {
+        let mut a = Model::new(0);
+        a.add_chain(Chain::new("A").unwrap());
+        let mut iter = a.chains();
+        assert_eq!(iter.next(), Some(&Chain::new("A").unwrap()));
+        assert_eq!(iter.next(), None);
+        assert_eq!(a.chain_count(), 1);
+        assert_eq!(a.conformer_count(), 0);
+        assert_eq!(a.residue_count(), 0);
+        assert_eq!(a.atom_count(), 0);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_remove() {
+        let mut a = Model::new(0);
+        a.add_chain(Chain::new("A").unwrap());
+        a.add_chain(Chain::new("C").unwrap());
+        assert_eq!(a.remove_chain(0), Chain::new("A").unwrap());
+        a.remove_chain_by_id("C".to_string());
+        assert_eq!(a.chain_count(), 0);
+    }
+
+    #[test]
+    fn test_display() {
+        let a = Model::new(0);
+        format!("{:?}", a);
+        format!("{}", a);
     }
 }

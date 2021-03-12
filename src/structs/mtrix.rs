@@ -2,7 +2,7 @@
 use crate::transformation::*;
 use std::cmp::Ordering;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 /// A transformation expressing non-crystallographic symmetry, used when transformations are required to generate the whole asymmetric subunit
 pub struct MtriX {
     /// The serial number of this transformation
@@ -28,14 +28,6 @@ impl MtriX {
     }
 }
 
-impl PartialEq for MtriX {
-    fn eq(&self, other: &Self) -> bool {
-        self.transformation == other.transformation
-            && self.serial_number == other.serial_number
-            && self.contained == other.contained
-    }
-}
-
 impl PartialOrd for MtriX {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.serial_number.cmp(&other.serial_number))
@@ -45,5 +37,35 @@ impl PartialOrd for MtriX {
 impl Default for MtriX {
     fn default() -> Self {
         Self::new(0, TransformationMatrix::identity(), false)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_equality() {
+        let a = MtriX::default();
+        let b = MtriX::new(0, TransformationMatrix::identity(), false);
+        let c = MtriX::new(1, TransformationMatrix::identity(), true);
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+        assert_ne!(b, c);
+        assert!(a < c);
+    }
+
+    #[test]
+    fn test_accessors() {
+        let a = MtriX::default();
+        assert_eq!(a.contained, false);
+        assert_eq!(a.serial_number, 0);
+        assert_eq!(a.transformation, TransformationMatrix::identity());
+    }
+
+    #[test]
+    fn test_debug() {
+        let a = MtriX::default();
+        format!("{:?}", a);
     }
 }

@@ -2,3 +2,4 @@
 /dump
 .vscode
 default.profraw
+*.txt

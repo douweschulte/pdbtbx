@@ -1,6 +1,7 @@
 use super::Context;
 use super::ErrorLevel;
 use crate::StrictnessLevel;
+use std::cmp::Ordering;
 use std::error;
 use std::fmt;
 
@@ -67,15 +68,23 @@ impl fmt::Debug for PDBError {
 
 impl fmt::Display for PDBError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}: {}\n{}\n{}\n",
-            self.level, self.short_description, self.context, self.long_description
-        )
+        write!(f, "{:?}", self)
     }
 }
 
 impl error::Error for PDBError {}
+
+impl PartialOrd for PDBError {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for PDBError {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.level.cmp(&other.level)
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -130,5 +139,22 @@ mod tests {
         assert_eq!(format!("{}", a), "LooseWarning: test\n\n     |\n1    | hello world\n2    | this is a multiline\n3    | piece of teXt\n     |\ntest error\n");
         assert_eq!(a.level(), ErrorLevel::LooseWarning);
         assert!(a.fails(StrictnessLevel::Strict));
+        assert_eq!(pos2.text, "");
+        assert_eq!(pos2.line, 4);
+        assert_eq!(pos2.column, 13);
+    }
+
+    #[test]
+    fn ordering_and_equality() {
+        let a = PDBError::new(ErrorLevel::GeneralWarning, "test", "test", Context::none());
+        let b = PDBError::new(ErrorLevel::LooseWarning, "test", "test", Context::none());
+        let c = PDBError::new(ErrorLevel::LooseWarning, "test", "test", Context::none());
+        let d = PDBError::new(ErrorLevel::BreakingError, "test", "test", Context::none());
+        assert_ne!(a, b);
+        assert_eq!(b, c);
+        assert_ne!(c, d);
+        assert!(a > b);
+        assert!(c > d);
+        assert!(c < a);
     }
 }

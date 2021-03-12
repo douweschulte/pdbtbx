@@ -5,7 +5,7 @@ use crate::transformation::*;
 use std::cmp::Ordering;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A Conformer of a Conformer containing multiple atoms, analogous to 'atom_group' in cctbx
 pub struct Conformer {
     /// The name of this Conformer
@@ -254,15 +254,6 @@ impl fmt::Display for Conformer {
     }
 }
 
-impl Clone for Conformer {
-    fn clone(&self) -> Self {
-        let mut res = Conformer::new(&self.name, self.alternative_location(), None)
-            .expect("Invalid properties while cloning a Conformer");
-        res.atoms = self.atoms.clone();
-        res
-    }
-}
-
 impl PartialEq for Conformer {
     fn eq(&self, other: &Self) -> bool {
         self.id() == other.id() && self.atoms == other.atoms
@@ -272,5 +263,76 @@ impl PartialEq for Conformer {
 impl PartialOrd for Conformer {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.id().cmp(&other.id()))
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_text_validation() {
+        let mut a = Conformer::new("A", None, None).unwrap();
+        assert_eq!(Conformer::new("R̊", None, None), None);
+        assert!(!a.set_name("Oͦ"));
+        assert_eq!(a.name(), "A");
+        a.set_name("atom");
+        assert_eq!(a.name(), "ATOM");
+
+        assert!(a.set_alternative_location("A"));
+        assert!(!a.set_alternative_location("Aͦ"));
+        assert_eq!(a.alternative_location(), Some("A"));
+
+        assert!(a
+            .set_modification(("ALA".to_string(), "Alanine".to_string()))
+            .is_ok());
+        assert!(a
+            .set_modification(("ALAͦ".to_string(), "Alanine".to_string()))
+            .is_err());
+        assert!(a
+            .set_modification(("ALA".to_string(), "Aͦlanine".to_string()))
+            .is_err());
+    }
+
+    #[test]
+    fn ordering_and_equality() {
+        let a = Conformer::new("A", None, None).unwrap();
+        let b = Conformer::new("A", None, None).unwrap();
+        let c = Conformer::new("B", None, None).unwrap();
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+        assert!(a < c);
+        assert!(b < c);
+    }
+
+    #[test]
+    fn test_empty() {
+        let a = Conformer::new("A", None, None).unwrap();
+        assert_eq!(a.modification(), None);
+        assert_eq!(a.atom_count(), 0);
+    }
+
+    #[test]
+    fn test_atom() {
+        let mut a = Conformer::new("A", None, None).unwrap();
+        let mut atom1 = Atom::new(false, 12, "CB", 1.0, 1.0, 1.0, 1.0, 1.0, "C", 0).unwrap();
+        let atom2 = Atom::new(false, 13, "CB", 1.0, 1.0, 1.0, 1.0, 1.0, "C", 0).unwrap();
+        a.add_atom(atom1.clone());
+        a.add_atom(atom2.clone());
+        a.add_atom(atom2);
+        assert_eq!(a.atom(0), Some(&atom1));
+        assert_eq!(a.atom_mut(0), Some(&mut atom1));
+        a.remove_atom(0);
+        assert!(a.remove_atom_by_name("CB".to_string()));
+        assert!(a.remove_atom_by_serial_number(13));
+        assert_eq!(a.atom_count(), 0);
+    }
+
+    #[test]
+    fn check_display() {
+        let a = Conformer::new("A", None, None).unwrap();
+        format!("{:?}", a);
+        format!("{}", a);
     }
 }
