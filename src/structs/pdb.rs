@@ -462,10 +462,25 @@ impl PDB {
             let mut counter_i = 1;
             for residue in model.residues_mut() {
                 residue.set_serial_number(counter_i);
+                residue.remove_insertion_code();
                 counter_i += 1;
+
+                #[allow(clippy::comparison_chain)] // Using match here is kind of weird
+                if residue.conformer_count() > 1 {
+                    counter = 0;
+                    for conformer in residue.conformers_mut() {
+                        conformer.set_alternative_location(&number_to_base26(counter));
+                        counter += 1;
+                    }
+                } else if residue.conformer_count() == 1 {
+                    #[allow(clippy::unwrap_used)]
+                    residue
+                        .conformer_mut(0)
+                        .unwrap()
+                        .remove_alternative_location();
+                }
             }
             counter = 0;
-            #[allow(clippy::unwrap_used, clippy::cast_possible_truncation)]
             for chain in model.chains_mut() {
                 chain.set_id(&number_to_base26(counter));
                 counter += 1;

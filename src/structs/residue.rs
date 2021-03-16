@@ -75,6 +75,11 @@ impl Residue {
         }
     }
 
+    /// Set the insertion code of the Residue to None
+    pub fn remove_insertion_code(&mut self) {
+        self.insertion_code = None;
+    }
+
     /// Returns the uniquely identifying construct for this Residue.
     /// It consists of the serial number and the insertion code.
     pub fn id(&self) -> (isize, Option<&str>) {

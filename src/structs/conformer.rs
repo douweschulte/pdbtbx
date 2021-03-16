@@ -84,6 +84,11 @@ impl Conformer {
         }
     }
 
+    /// Set the alternative location of the Conformer to None
+    pub fn remove_alternative_location(&mut self) {
+        self.alternative_location = None;
+    }
+
     /// Returns the uniquely identifying construct for this Conformer.
     /// It consists of the name and the alternative location.
     pub fn id(&self) -> (&str, Option<&str>) {
