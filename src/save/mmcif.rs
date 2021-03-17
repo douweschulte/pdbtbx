@@ -103,8 +103,8 @@ _symmetry.space_group_name_H-M             '{}'
 _symmetry.pdbx_full_space_group_name_H-M   '{}'
 _symmetry.Int_Tables_number                {}",
             name,
-            symmetry.symbol(),
-            symmetry.symbol(),
+            symmetry.herman_mauguin_symbol(),
+            symmetry.herman_mauguin_symbol(),
             symmetry.index()
         );
     }

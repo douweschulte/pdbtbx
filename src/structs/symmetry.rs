@@ -7,32 +7,35 @@ use std::cmp::Ordering;
 #[derive(Debug, Clone)]
 /// A Space group of a crystal
 pub struct Symmetry {
-    /// The fully qualified Herman Mauguin symbol for the space group
-    symbol: String,
     /// The index of this symbol in Int. Crys. Handbook Vol A 2016
     index: usize,
 }
 
 impl Symmetry {
-    /// Create a new Symmetry based on a fully qualified Herman Mauguin symbol
+    /// Create a new Symmetry based on a fully qualified Herman Mauguin or Hall symbol
     pub fn new(symbol: &str) -> Option<Self> {
-        reference_tables::get_index_for_symbol(symbol.trim()).map(|index| Symmetry {
-            symbol: symbol.trim().to_string(),
-            index,
-        })
+        reference_tables::get_index_for_symbol(symbol.trim()).map(|index| Symmetry { index })
     }
 
     /// Create a new Symmetry based on the index of a symbol in Int. Crys. Handbook Vol A 2016
     pub fn from_index(index: usize) -> Option<Self> {
-        reference_tables::get_symbol_for_index(index).map(|s| Symmetry {
-            symbol: s.to_string(),
-            index,
-        })
+        if reference_tables::get_herman_mauguin_symbol_for_index(index).is_some() {
+            Some(Symmetry { index })
+        } else {
+            None
+        }
     }
 
     /// Get the fully qualified Herman Mauguin symbol for the space group
-    pub fn symbol(&self) -> &str {
-        self.symbol.as_str()
+    pub fn herman_mauguin_symbol(&self) -> &str {
+        reference_tables::get_herman_mauguin_symbol_for_index(self.index)
+            .expect("An invalid index was present in the definition of this symmetry")
+    }
+
+    /// Get the fully qualified Hall symbol for the space group
+    pub fn hall_symbol(&self) -> &str {
+        reference_tables::get_hall_symbol_for_index(self.index)
+            .expect("An invalid index was present in the definition of this symmetry")
     }
 
     /// Get the Z value, the number of polymeric sub units in a unit cell, for this space group
@@ -122,6 +125,8 @@ mod tests {
     #[allow(clippy::unwrap_used)]
     fn symbol_invariant() {
         let a = Symmetry::new("P 21 21 21").unwrap();
-        assert_eq!(a.symbol(), "P 21 21 21")
+        assert_eq!(a.herman_mauguin_symbol(), "P 21 21 21");
+        assert_eq!(a.hall_symbol(), "P 2ac 2ab");
+        assert_eq!(a.index(), 19);
     }
 }

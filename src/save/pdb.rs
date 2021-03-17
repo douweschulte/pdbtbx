@@ -177,7 +177,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
     // Cryst
     if let Some(unit_cell) = &pdb.unit_cell {
         let sym = if let Some(symmetry) = &pdb.symmetry {
-            format!("{:10}{:3}", symmetry.symbol(), symmetry.z(),)
+            format!("{:10}{:3}", symmetry.herman_mauguin_symbol(), symmetry.z(),)
         } else {
             "P 1         1".to_string()
         };
