@@ -159,7 +159,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                 for conformer in residue.conformers() {
                     if let Some((std_name, comment)) = conformer.modification() {
                         write!(
-                            "MODRES {:4} {:3} {} {:4}{} {:3}  {}",
+                            "MODRES {:4} {:3} {:1} {:4}{:1} {:3}  {}",
                             "    ",
                             conformer.name(),
                             chain.id(),
@@ -276,7 +276,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
 
         let atom_line = |atom: &Atom, conformer: &Conformer, residue: &Residue, chain: &Chain| {
             format!(
-                "{:5} {:^4}{}{:4}{}{:4}{}",
+                "{:5} {:^4}{:1}{:4}{:1}{:4}{:1}",
                 atom.serial_number(),
                 atom.name(),
                 conformer.alternative_location().unwrap_or(" "),
@@ -331,7 +331,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
             let last_residue = chain.residues().nth_back(0).unwrap();
             let last_conformer = chain.conformers().nth_back(0).unwrap();
             write!(
-                "TER{:5}      {:3} {}{:4}",
+                "TER{:5}      {:3} {:1}{:4}",
                 last_atom.serial_number(),
                 last_conformer.name(),
                 chain.id(),
