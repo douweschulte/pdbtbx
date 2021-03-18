@@ -210,10 +210,11 @@ impl Model {
         conformer_id: (&str, Option<&str>),
     ) {
         let mut found = false;
-        let mut new_chain = Chain::new(chain_id).expect("Invalid characters in chain creation");
+        let mut new_chain =
+            Chain::new(chain_id.trim()).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
         for chain in &mut self.chains {
-            if chain.id() == chain_id {
+            if chain.id() == chain_id.trim() {
                 current_chain = chain;
                 found = true;
                 break;
