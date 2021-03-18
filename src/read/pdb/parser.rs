@@ -400,13 +400,13 @@ fn validate_seqres(
             }
             if chain_sequence.len() != residues {
                 errors.push(PDBError::new(
-                    ErrorLevel::StrictWarning,
+                    ErrorLevel::LooseWarning,
                     "SEQRES residue total invalid",
                     &format!("The residue total for SEQRES chain \"{}\" does not match the total residues found in the seqres records.", chain_id),
                     context.clone()
                 ));
             }
-            let mut offset = 1;
+            let mut offset = 0;
             if let Some(db_ref) = chain.database_reference() {
                 offset = db_ref.pdb_position.start;
                 for dif in &db_ref.differences {
@@ -417,9 +417,9 @@ fn validate_seqres(
                 }
                 if db_ref.pdb_position.end - offset + 1 != residues as isize {
                     errors.push(PDBError::new(
-                        ErrorLevel::StrictWarning,
+                        ErrorLevel::LooseWarning,
                         "SEQRES residue total invalid",
-                        &format!("The residue total for SEQRES chain \"{}\" does not match the total residues found in the dbref record.", chain_id),
+                        &format!("The residue total ({}) for SEQRES chain \"{}\" does not match the total residues found in the dbref record ({}).", residues, chain_id, db_ref.pdb_position.end - offset + 1),
                         context.clone()
                     ));
                 }
@@ -432,22 +432,35 @@ fn validate_seqres(
             for (raw_index, seq) in chain_sequence.iter().enumerate() {
                 let index = raw_index as isize + offset;
                 if let Some(n) = next {
+                    println!(
+                        "At SEQRES {} seq {}, index {}, next iterator index {}, next iterator name {:?}",
+                        raw_index,
+                        seq,
+                        index,
+                        n.serial_number(),
+                        n.name()
+                    );
                     if index == n.serial_number() {
-                        if *seq
-                            != n.name()
-                                .expect("Multiple Conformers for a Residue in parsing of SEQRES")
-                        {
+                        if let Some(name) = n.name() {
+                            if *seq != name {
+                                errors.push(PDBError::new(
+                                ErrorLevel::LooseWarning,
+                                "SEQRES residue invalid",
+                                &format!("The residue index {} value \"{}\" for SEQRES chain \"{}\" does not match the residue in the chain, value \"{}\".", index, chain_sequence[raw_index], chain_id, name),
+                                context.clone()
+                            ));
+                            }
+                        } else {
                             errors.push(PDBError::new(
                                 ErrorLevel::StrictWarning,
-                                "SEQRES residue invalid",
-                                &format!("The residue index {} value \"{}\" for SEQRES chain \"{}\" does not match the residue in the chain value \"{:?}\".", index, chain_sequence[index as usize], chain_id, n.name()),
+                                "Multiple residues in SEQRES validation",
+                                &format!("The residue index {} in chain {} has no conformers or multiple with different names. The program cannot validate the SEQRES record in this way.", index, chain_id),
                                 context.clone()
                             ));
                         }
                         next = chain_res.next();
                     } else if index < n.serial_number() {
-                        chain.insert_residue(
-                            index as usize,
+                        chain.add_residue(
                             Residue::new(
                                 index,
                                 None,
@@ -458,15 +471,28 @@ fn validate_seqres(
                             )
                             .expect("Invalid characters in Residue generation"),
                         );
+                        chain.sort();
                     } else {
                         errors.push(PDBError::new(
-                            ErrorLevel::StrictWarning,
+                            ErrorLevel::LooseWarning,
                             "Chain residue invalid",
                             &format!("The residue index {} value \"{:?}\" for Chain \"{}\" is not sequentially increasing, value expected: {}.", n.serial_number(), n.name(), chain_id, index),
                             context.clone()
                         ));
+                        #[allow(clippy::while_let_on_iterator)]
+                        while let Some(n) = chain_res.next() {
+                            println!("Skipping a residue in the chain ({})", n.serial_number());
+                            if n.serial_number() == index {
+                                next = chain_res.next();
+                                break;
+                            }
+                        }
                     }
                 } else {
+                    println!(
+                        "Next iterator is None, raw index {}, seq {}",
+                        raw_index, seq
+                    );
                     chain.add_residue(
                         Residue::new(
                             index,
@@ -478,25 +504,21 @@ fn validate_seqres(
                         )
                         .expect("Invalid characters in Residue generation"),
                     );
+                    chain.sort();
                 }
             }
 
-            if chain_sequence.len() != chain.residue_count() {
+            let total_found = chain
+                .residues()
+                .filter(|r| !r.atoms().any(|a| a.hetero()))
+                .count();
+            if chain_sequence.len() != total_found {
                 errors.push(PDBError::new(
                     ErrorLevel::LooseWarning,
                     "SEQRES residue total invalid",
-                    &format!("The residue total ({}) for SEQRES chain \"{}\" does not match the total residues found in the chain ({}).", chain_sequence.len(), chain_id, chain.residue_count()),
+                    &format!("The residue total ({}) for SEQRES chain \"{}\" does not match the total residues found in the chain ({}).", chain_sequence.len(), chain_id, total_found),
                     context.clone()
                 ));
-            } else {
-                for (index, original_res) in chain.residues().enumerate() {
-                    if chain_sequence[index]
-                        != original_res
-                            .name()
-                            .expect("Multiple Conformers for a Residue in parsing of SEQRES")
-                    {
-                    }
-                }
             }
         }
     }
@@ -510,10 +532,11 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
         match item {
             LexItem::Modres(_, res_name, chain_id, seq_num, insertion_code, std_name, comment) => {
                 if let Some(chain) = pdb.chains_mut().find(|c| c.id() == chain_id) {
-                    if let Some(residue) = chain.residues_mut().find(|r| {
-                        r.serial_number() == seq_num
-                            && r.insertion_code() == insertion_code.as_deref()
-                    }) {
+                    if let Some(residue) = chain
+                        .residues_mut()
+                        .find(|r| r.id() == (seq_num, insertion_code.as_deref()))
+                    {
+                        println!("Residue {:?}", residue);
                         if let Some(conformer) =
                             residue.conformers_mut().find(|c| c.name() == res_name)
                         {
@@ -1198,7 +1221,7 @@ fn lex_seqres(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     let mut values = Vec::new();
     let mut index = 19;
     let max = cmp::min(chars.len(), 71);
-    while index + 3 < max {
+    while index + 3 <= max {
         let seq = chars[index..index + 3].iter().collect::<String>();
         if seq == "   " {
             break;

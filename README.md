@@ -24,10 +24,12 @@ Also because it is written in Rust it is much faster then anything written in Py
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Latest update
-### v0.5.1
-* Fixed bugs in `.remove_empty` to work better with hetero chains
-* Added support for negative residue sequence numbers
-* Standardised the precision of floating points in the mmCIF output, at least 1 and at most 5 decimals will be shown
-* Fixed an issue with the occupancy of atoms shared between multiple conformers, it will now add up to the original value 
+### v0.6.0 'Hetero atoms remastered'
+* Reworked the library to handle Hetero atoms as normal atoms (with the `atom.hetero()` function returning `true`) instead of saving them in `model.hetero_chains()`
+* Implemented the standard traits (Clone/PartialEq/Eq/PartialOrd/Ord) for most structures
+* Fixed conformers in `pdb.renumber()` they were disregarded before
+* The symmetry structure now also accepts and provides Hall symbols
+* Fixed multiple bugs
+* Added many more unit tests and started tracking test coverage
 
 Also see [changelog](https://github.com/nonnominandus/pdbtbx/blob/master/changelog.md).

@@ -6,11 +6,11 @@ pub struct SequencePosition {
     /// The starting position
     pub start: isize,
     /// Initial insertion code of the PDB sequence segment
-    pub start_insert: char,
+    pub start_insert: Option<String>,
     /// The ending position
     pub end: isize,
     /// Ending insertion code of the PDB sequence segment
-    pub end_insert: char,
+    pub end_insert: Option<String>,
 }
 
 impl SequencePosition {
@@ -18,20 +18,23 @@ impl SequencePosition {
     pub fn new(start: isize, start_insert: char, end: isize, end_insert: char) -> Self {
         SequencePosition {
             start,
-            start_insert,
+            start_insert: if start_insert == ' ' {
+                None
+            } else {
+                Some(String::from(start_insert))
+            },
             end,
-            end_insert,
+            end_insert: if end_insert == ' ' {
+                None
+            } else {
+                Some(String::from(end_insert))
+            },
         }
     }
 
     /// Create a new SequencePosition, from a tuple
     pub fn from_tuple((start, start_insert, end, end_insert): (isize, char, isize, char)) -> Self {
-        SequencePosition {
-            start,
-            start_insert,
-            end,
-            end_insert,
-        }
+        SequencePosition::new(start, start_insert, end, end_insert)
     }
 }
 
@@ -124,9 +127,9 @@ mod tests {
         assert_eq!(a, b);
         assert_ne!(a, c);
         assert_eq!(a.start, 10);
-        assert_eq!(a.start_insert, ' ');
+        assert_eq!(a.start_insert, None);
         assert_eq!(a.end, 12);
-        assert_eq!(a.end_insert, ' ');
+        assert_eq!(a.end_insert, None);
         format!("{:?}", a);
         assert!(a < c);
     }

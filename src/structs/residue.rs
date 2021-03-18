@@ -4,7 +4,7 @@ use crate::transformation::*;
 use std::cmp::Ordering;
 use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// A Residue containing multiple Residues
 pub struct Residue {
     /// The serial number of this Residue, can be negative as that is used sometimes. See https://proteopedia.org/wiki/index.php/Unusual_sequence_numbering.
@@ -288,6 +288,11 @@ impl Residue {
     pub fn extend<T: IntoIterator<Item = Conformer>>(&mut self, iter: T) {
         self.conformers.extend(iter);
     }
+
+    /// Sort the conformers of this Residue
+    pub fn sort(&mut self) {
+        self.conformers.sort();
+    }
 }
 
 impl fmt::Display for Residue {
@@ -302,15 +307,15 @@ impl fmt::Display for Residue {
     }
 }
 
-impl PartialEq for Residue {
-    fn eq(&self, other: &Self) -> bool {
-        self.id() == other.id() && self.conformers == other.conformers
-    }
-}
-
 impl PartialOrd for Residue {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.id().cmp(&other.id()))
+    }
+}
+
+impl Ord for Residue {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.id().cmp(&other.id())
     }
 }
 

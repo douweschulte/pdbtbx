@@ -12,6 +12,10 @@ use std::iter;
 /// Save the given PDB struct to the given file.
 /// It validates the PDB. It fails if the validation fails with the given `level`.
 /// If validation gives rise to problems use the `save_raw` function.
+///
+/// ## Known Problems
+/// Saving SEQRES lines is experimental, as there are many nitpicky things to consider
+/// when generating SEQRES records, which are not all implemented (yet).
 pub fn save_pdb(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
     let mut errors = validate(&pdb);
     errors.extend(validate_pdb(&pdb));
@@ -82,19 +86,31 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                 seqres = true;
                 write!(
                     "DBREF  {:4} {:1} {:4}{:1} {:4}{:1} {:6} {:8} {:12} {:5}{:1} {:5}{:1}",
-                    "    ",
+                    pdb.identifier.as_deref().unwrap_or(""),
                     chain.id(),
                     dbref.pdb_position.start,
-                    dbref.pdb_position.start_insert,
+                    match &dbref.pdb_position.start_insert {
+                        Some(insert) => insert.as_str(),
+                        None => "",
+                    },
                     dbref.pdb_position.end,
-                    dbref.pdb_position.end_insert,
+                    match &dbref.pdb_position.end_insert {
+                        Some(insert) => insert.as_str(),
+                        None => "",
+                    },
                     dbref.database.0,
                     dbref.database.1,
                     dbref.database.2,
                     dbref.database_position.start,
-                    dbref.database_position.start_insert,
+                    match &dbref.database_position.start_insert {
+                        Some(insert) => insert.as_str(),
+                        None => "",
+                    },
                     dbref.database_position.end,
-                    dbref.database_position.end_insert,
+                    match &dbref.pdb_position.end_insert {
+                        Some(insert) => insert.as_str(),
+                        None => "",
+                    },
                 )
             }
         }
@@ -127,28 +143,62 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         }
 
         // SEQRES
+        #[allow(clippy::filter_map)]
         if seqres {
             for chain in model.chains() {
-                for (index, chunk) in chain
-                    .residues()
-                    .map(|r| {
-                        format!(
-                            "{:3}",
-                            r.name()
-                                .expect("Residue has multiple conformers in SEQRES generation")
+                if let Some(dbref) = chain.database_reference() {
+                    for (index, chunk) in chain
+                        .residues()
+                        .skip_while(|r| {
+                            r.id()
+                                != (
+                                    dbref.pdb_position.start,
+                                    dbref.pdb_position.start_insert.as_deref(),
+                                )
+                        })
+                        .filter(|r| r.name() != Some("HOH"))
+                        .map(|r| {
+                            format!(
+                                "{:3}",
+                                r.name()
+                                    .expect("Residue has multiple conformers in SEQRES generation")
+                            )
+                        })
+                        .collect::<Vec<String>>()
+                        .chunks(13)
+                        .enumerate()
+                    {
+                        write!(
+                            "SEQRES {:3} {:1} {:4}  {}",
+                            index + 1,
+                            chain.id(),
+                            chain.residues().filter(|r| r.name() != Some("HOH")).count(),
+                            chunk.join(" ")
                         )
-                    })
-                    .collect::<Vec<String>>()
-                    .chunks(13)
-                    .enumerate()
-                {
-                    write!(
-                        "SEQRES {:3} {:1} {:4}  {}",
-                        index + 1,
-                        chain.id(),
-                        chain.residue_count(),
-                        chunk.join(" ")
-                    )
+                    }
+                } else {
+                    for (index, chunk) in chain
+                        .residues()
+                        .filter(|r| r.name() != Some("HOH"))
+                        .map(|r| {
+                            format!(
+                                "{:3}",
+                                r.name()
+                                    .expect("Residue has multiple conformers in SEQRES generation")
+                            )
+                        })
+                        .collect::<Vec<String>>()
+                        .chunks(13)
+                        .enumerate()
+                    {
+                        write!(
+                            "SEQRES {:3} {:1} {:4}  {}",
+                            index + 1,
+                            chain.id(),
+                            chain.residues().filter(|r| r.name() != Some("HOH")).count(),
+                            chunk.join(" ")
+                        )
+                    }
                 }
             }
         }

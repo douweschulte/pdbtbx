@@ -23,7 +23,7 @@
 //! average B factor (or temperature factor) and prints that. It also saves the resulting PDB
 //! to a file.
 //!
-//! ```
+//! ```rust
 //! use pdbtbx;
 //! let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Medium).unwrap();
 //! pdb.remove_atoms_by(|atom| atom.element() == "H"); // Remove all H atoms
@@ -58,6 +58,31 @@
 //!                     * [Atom] \
 //!                       Serial number \
 //!                       Name
+//!
+//! ## Iterating over the PDB Hierarchy
+//!
+//! ```rust
+//! # use pdbtbx;
+//! # let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Medium).unwrap();
+//! // Iterating over all levels
+//! for model in pdb.models() {
+//!     for chain in model.chains() {
+//!         for residue in chain.residues() {
+//!             for conformer in residue.conformers() {
+//!                 for atom in conformer.atoms() {
+//!                     // Do the calculations
+//!                 }
+//!             }
+//!         }
+//!     }
+//! }
+//! // Or only over a couple of levels (just like in the example above)
+//! for residue in pdb.residues() {
+//!     for atom in residue.atoms() {
+//!         // Do the calculations
+//!     }
+//! }
+//! ```
 //!
 //! ## References
 //! 1. [`Grosse-Kunstleve, R. W. et al`] Grosse-Kunstleve, R. W., Sauter, N. K., Moriarty, N. W., & Adams, P. D. (2002). TheComputational Crystallography Toolbox: crystallographic algorithms in a reusable software framework. Journal of Applied Crystallography, 35(1), 126–136. [https://doi.org/10.1107/s0021889801017824](https://doi.org/10.1107/s0021889801017824)

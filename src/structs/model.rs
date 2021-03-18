@@ -3,7 +3,7 @@ use crate::structs::*;
 use crate::transformation::*;
 use std::cmp::Ordering;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// A Model containing multiple Chains
 pub struct Model {
     /// The serial number of this Model
@@ -328,6 +328,11 @@ impl Model {
     pub fn extend<T: IntoIterator<Item = Chain>>(&mut self, iter: T) {
         self.chains.extend(iter);
     }
+
+    /// Sort the Chains of this Model
+    pub fn sort(&mut self) {
+        self.chains.sort();
+    }
 }
 
 use std::fmt;
@@ -345,6 +350,12 @@ impl fmt::Display for Model {
 impl PartialOrd for Model {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.serial_number.cmp(&other.serial_number))
+    }
+}
+
+impl Ord for Model {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.serial_number.cmp(&other.serial_number)
     }
 }
 

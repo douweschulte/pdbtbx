@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 use std::fmt;
 
 /// A struct to represent a single Atom in a protein
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Atom {
     /// Determines if this atom is an hetero atom (true), a non standard atom, or a normal atom (false)
     hetero: bool,
@@ -437,22 +437,19 @@ impl fmt::Display for Atom {
     }
 }
 
-impl PartialEq for Atom {
-    fn eq(&self, other: &Self) -> bool {
-        self.serial_number == other.serial_number
-            && self.name() == other.name()
-            && self.element() == other.element()
-            && self.charge() == other.charge()
-            && self.atf == other.atf
-            && self.pos() == other.pos()
-            && self.occupancy == other.occupancy
-            && self.b_factor == other.b_factor
-    }
-}
+/// As there are a lot of checks to make sure only 'normal' f64 values are used
+/// Atom satisfies the properties needed for Eq while having f64 values.
+impl Eq for Atom {}
 
 impl PartialOrd for Atom {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.serial_number.cmp(&other.serial_number))
+    }
+}
+
+impl Ord for Atom {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.serial_number.cmp(&other.serial_number)
     }
 }
 

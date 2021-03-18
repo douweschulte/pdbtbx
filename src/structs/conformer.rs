@@ -5,7 +5,7 @@ use crate::transformation::*;
 use std::cmp::Ordering;
 use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// A Conformer of a Conformer containing multiple atoms, analogous to 'atom_group' in cctbx
 pub struct Conformer {
     /// The name of this Conformer
@@ -246,6 +246,11 @@ impl Conformer {
     pub fn extend<T: IntoIterator<Item = Atom>>(&mut self, iter: T) {
         self.atoms.extend(iter);
     }
+
+    /// Sort the Atoms of this Conformer
+    pub fn sort(&mut self) {
+        self.atoms.sort();
+    }
 }
 
 impl fmt::Display for Conformer {
@@ -259,15 +264,15 @@ impl fmt::Display for Conformer {
     }
 }
 
-impl PartialEq for Conformer {
-    fn eq(&self, other: &Self) -> bool {
-        self.id() == other.id() && self.atoms == other.atoms
-    }
-}
-
 impl PartialOrd for Conformer {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.id().cmp(&other.id()))
+    }
+}
+
+impl Ord for Conformer {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.id().cmp(&other.id())
     }
 }
 

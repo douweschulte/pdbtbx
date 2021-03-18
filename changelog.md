@@ -1,6 +1,14 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/nonnominandus/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.6.0 'Hetero atoms remastered'
+* Reworked the library to handle Hetero atoms as normal atoms (with the `atom.hetero()` function returning `true`) instead of saving them in `model.hetero_chains()`
+* Implemented the standard traits (Clone/PartialEq/Eq/PartialOrd/Ord) for most structures
+* Fixed conformers in `pdb.renumber()` they were disregarded before
+* The symmetry structure now also accepts and provides Hall symbols
+* Fixed multiple bugs
+* Added many more unit tests and started tracking test coverage
+
 ### v0.5.1
 * Fixed bugs in `.remove_empty` to work better with hetero chains
 * Added support for negative residue sequence numbers

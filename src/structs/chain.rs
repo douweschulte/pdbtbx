@@ -3,7 +3,7 @@ use crate::structs::*;
 use crate::transformation::*;
 use std::cmp::Ordering;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// A Chain containing multiple Residues
 pub struct Chain {
     /// The identifier of this Chain
@@ -306,6 +306,11 @@ impl Chain {
     pub fn extend<T: IntoIterator<Item = Residue>>(&mut self, iter: T) {
         self.residues.extend(iter);
     }
+
+    /// Sort the residues of this chain
+    pub fn sort(&mut self) {
+        self.residues.sort();
+    }
 }
 
 use std::fmt;
@@ -320,15 +325,15 @@ impl fmt::Display for Chain {
     }
 }
 
-impl PartialEq for Chain {
-    fn eq(&self, other: &Self) -> bool {
-        self.id() == other.id() && self.residues == other.residues
-    }
-}
-
 impl PartialOrd for Chain {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.id().cmp(&other.id()))
+    }
+}
+
+impl Ord for Chain {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.id().cmp(&other.id())
     }
 }
 
