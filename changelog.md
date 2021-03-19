@@ -1,6 +1,9 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/nonnominandus/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.6.1 
+* Fixed a bug arbitrarily constraining the maximum value of atom serial numbers in PDB files
+
 ### v0.6.0 'Hetero atoms remastered'
 * Reworked the library to handle Hetero atoms as normal atoms (with the `atom.hetero()` function returning `true`) instead of saving them in `model.hetero_chains()`
 * Implemented the standard traits (Clone/PartialEq/Eq/PartialOrd/Ord) for most structures

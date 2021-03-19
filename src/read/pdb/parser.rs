@@ -909,8 +909,8 @@ fn lex_atom_basics(
         }
     };
     let serial_number = check(parse_number(
-        Context::line(linenumber, &line, 7, 4),
-        &chars[7..11],
+        Context::line(linenumber, &line, 6, 5),
+        &chars[6..11],
     ));
     let atom_name = chars[12..16].iter().collect::<String>();
     let alternate_location = chars[16];

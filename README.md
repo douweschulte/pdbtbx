@@ -24,12 +24,7 @@ Also because it is written in Rust it is much faster then anything written in Py
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 
 ## Latest update
-### v0.6.0 'Hetero atoms remastered'
-* Reworked the library to handle Hetero atoms as normal atoms (with the `atom.hetero()` function returning `true`) instead of saving them in `model.hetero_chains()`
-* Implemented the standard traits (Clone/PartialEq/Eq/PartialOrd/Ord) for most structures
-* Fixed conformers in `pdb.renumber()` they were disregarded before
-* The symmetry structure now also accepts and provides Hall symbols
-* Fixed multiple bugs
-* Added many more unit tests and started tracking test coverage
+### v0.6.1 
+* Fixed a bug arbitrarily constraining the maximum value of atom serial numbers in PDB files
 
 Also see [changelog](https://github.com/nonnominandus/pdbtbx/blob/master/changelog.md).

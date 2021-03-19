@@ -142,12 +142,12 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                                 Context::None,
                             ));
                         }
-                        if atom.serial_number() > 9999 {
+                        if atom.serial_number() > 99999 {
                             errors.push(PDBError::new(
                                 ErrorLevel::LooseWarning,
                                 "Atom serial number too high",
                                 &format!(
-                                    "Atom {} has a serial number which is too high, max is 9999.",
+                                    "Atom {} has a serial number which is too high, max is 99999.",
                                     atom.serial_number()
                                 ),
                                 Context::None,
@@ -169,7 +169,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ErrorLevel::LooseWarning,
                             "Atom occupancy out of bounds",
                             &format!(
-                                "Atom {} has a occupancy which is out of bounds, max is 999.99 min is 0.01.",
+                                "Atom {} has a occupancy which is out of bounds, max is 999.99 min is 0.00.",
                                 atom.serial_number()
                             ),
                             Context::None,
@@ -180,7 +180,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ErrorLevel::LooseWarning,
                             "Atom b factor out of bounds",
                             &format!(
-                                "Atom {} has a b factor which is out of bounds, max is 999.99 min is 0.01.",
+                                "Atom {} has a b factor which is out of bounds, max is 999.99 min is 0.00.",
                                 atom.serial_number()
                             ),
                             Context::None,
