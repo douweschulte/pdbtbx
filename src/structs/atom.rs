@@ -550,6 +550,8 @@ mod tests {
         assert_eq!(a.b_factor(), 2.0);
         assert!(a.set_occupancy(2.0).is_ok());
         assert_eq!(a.occupancy(), 2.0);
+        assert!(a.set_occupancy(0.0).is_ok());
+        assert!(a.set_b_factor(0.0).is_ok());
         a.set_hetero(true);
         assert_eq!(a.hetero(), true);
         a.set_serial_number(42);
