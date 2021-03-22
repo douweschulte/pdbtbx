@@ -164,7 +164,9 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                                 Context::None,
                             ));
                         }
-                        if atom.occupancy() > 999.99 || atom.occupancy() < 0.01 {
+                        if atom.occupancy() != 0.0
+                            && (atom.occupancy() > 999.99 || atom.occupancy() < 0.01)
+                        {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom occupancy out of bounds",
@@ -175,7 +177,9 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             Context::None,
                         ));
                         }
-                        if atom.b_factor() > 999.99 || atom.b_factor() < 0.01 {
+                        if atom.b_factor() != 0.0
+                            && (atom.b_factor() > 999.99 || atom.b_factor() < 0.01)
+                        {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom b factor out of bounds",
@@ -186,7 +190,11 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             Context::None,
                         ));
                         }
-                        if atom.x() > 9999.999 || atom.x().abs() < 0.001 || atom.x() < -999.999 {
+                        if atom.x() != 0.0
+                            && (atom.x() > 9999.999
+                                || atom.x().abs() < 0.001
+                                || atom.x() < -999.999)
+                        {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom x position out of bounds",
@@ -197,7 +205,11 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             Context::None,
                         ));
                         }
-                        if atom.y() > 9999.999 || atom.y().abs() < 0.001 || atom.y() < -999.999 {
+                        if atom.y() != 0.0
+                            && (atom.y() > 9999.999
+                                || atom.y().abs() < 0.001
+                                || atom.y() < -999.999)
+                        {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom y position out of bounds",
@@ -208,7 +220,11 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             Context::None,
                         ));
                         }
-                        if atom.z() > 9999.999 || atom.z().abs() < 0.001 || atom.z() < -999.999 {
+                        if atom.z() != 0.0
+                            && (atom.z() > 9999.999
+                                || atom.z().abs() < 0.001
+                                || atom.z() < -999.999)
+                        {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom z position out of bounds",
