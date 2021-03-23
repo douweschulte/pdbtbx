@@ -7,7 +7,7 @@ edition = "2018"
 description = "A library to open/edit/save (crystallographic) Protein Data Bank (PDB) files."
 repository = "https://github.com/nonnominandus/pdbtbx"
 readme = "README.md"
-keywords = ["pdb", "crystal", "protein", "pdb-parser"]
+keywords = ["pdb", "crystal", "protein", "mmcif", "bio"]
 categories = ["parser-implementations", "science"]
 include = ["src/**/*", "LICENSE", "README.md"]
 
