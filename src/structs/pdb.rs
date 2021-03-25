@@ -65,7 +65,7 @@ impl PDB {
     /// It panics if the text if too long, the text contains invalid characters or the remark-type-number is not valid (wwPDB v3.30).
     pub fn add_remark(&mut self, remark_type: usize, remark_text: String) {
         if !reference_tables::valid_remark_type_number(remark_type) {
-            panic!(format!("The given remark-type-number is not valid: {}, see wwPDB v3.30 for valid remark-type-numbers", remark_type));
+            panic!("The given remark-type-number is not valid, see wwPDB v3.30 for valid remark-type-numbers");
         }
         if !valid_text(&remark_text) {
             panic!("The given remark text contains invalid characters.");

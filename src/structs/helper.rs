@@ -38,13 +38,11 @@ pub fn prepare_identifier(text: &str) -> Option<String> {
 const ALPHABET: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 /// Converts a number into a base26 with only the alphabet as possible chars
+#[allow(clippy::unwrap_used)]
 pub fn number_to_base26(mut num: usize) -> String {
-    let mut output = Vec::new();
-    #[allow(clippy::unwrap_used)]
-    output.push(ALPHABET.chars().nth(num % 26).unwrap());
+    let mut output = vec![ALPHABET.chars().nth(num % 26).unwrap()];
     num /= 26;
     while num != 0 {
-        #[allow(clippy::unwrap_used)]
         output.push(ALPHABET.chars().nth(num % 26).unwrap());
         num /= 26;
     }

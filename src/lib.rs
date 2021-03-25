@@ -117,6 +117,8 @@
     clippy::similar_names,
     clippy::all
 )]
+// Allow PDB (and derived) names to be used
+#![allow(clippy::upper_case_acronyms)]
 
 /// To save and display errors
 mod error;
