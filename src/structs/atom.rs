@@ -252,10 +252,10 @@ impl Atom {
         }
     }
 
-    /// Get the atomic radius of this Atom in Å. The radius is defined up to Cm.
+    /// Get the atomic radius of this Atom in Å. The radius is defined up to 'Cm' or 96.
     /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96.
-    /// Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL:
-    /// http://doi.wiley.com/10.1002/chem.201602949, doi:10.1002/chem.201602949.
+    /// Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: http://doi.org/10.1002/chem.201602949.
+    /// Updated to the corrigendum: https://doi.org/10.1002/chem.201700610
     /// ## Fails
     /// It fails if the element name if this Atom is not defined (see `self.atomic_number()`).
     /// It also fails when the atomic radius is not defined for the given atomic number, so if the atomic
@@ -263,6 +263,37 @@ impl Atom {
     pub fn atomic_radius(&self) -> Option<f64> {
         if let Some(s) = self.atomic_number() {
             reference_tables::get_atomic_radius(s)
+        } else {
+            None
+        }
+    }
+
+    /// Gets the van der Waals radius for this Atom in Å.The radius is defined up until 'Es' or 99.
+    /// Source: Alvarez, S. (2013). A cartography of the van der Waals territories. Dalton Transactions, 42(24), 8617. https://doi.org/10.1039/c3dt50599e
+    /// ## Fails
+    /// It fails if the element name if this Atom is not defined (see `self.atomic_number()`).
+    /// It also fails when the atomic radius is not defined for the given atomic number, so if the atomic
+    /// number is higher than 99.
+    pub fn vanderwaals_radius(&self) -> Option<f64> {
+        if let Some(s) = self.atomic_number() {
+            reference_tables::get_vanderwaals_radius(s)
+        } else {
+            None
+        }
+    }
+
+    /// Gets the covalent bond radii for this Atom.
+    /// The result is the radius for a single, double and triple bond, where the last two are optional.
+    /// All values are given in picometers.
+    /// Sources:
+    ///  * P. Pyykkö; M. Atsumi (2009). "Molecular Single-Bond Covalent Radii for Elements 1-118". Chemistry: A European Journal. 15 (1): 186–197. doi:10.1002/chem.200800987
+    ///  * P. Pyykkö; M. Atsumi (2009). "Molecular Double-Bond Covalent Radii for Elements Li–E112". Chemistry: A European Journal. 15 (46): 12770–12779. doi:10.1002/chem.200901472
+    ///  * P. Pyykkö; S. Riedel; M. Patzschke (2005). "Triple-Bond Covalent Radii". Chemistry: A European Journal. 11 (12): 3511–3520. doi:10.1002/chem.200401299
+    /// ## Fails
+    /// It fails if the element name if this Atom is not defined (see `self.atomic_number()`).
+    pub fn covalent_bond_radii(&self) -> Option<(usize, Option<usize>, Option<usize>)> {
+        if let Some(s) = self.atomic_number() {
+            Some(reference_tables::get_covalent_bond_radii(s))
         } else {
             None
         }
@@ -454,12 +485,12 @@ impl Ord for Atom {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::Atom;
     use super::UnitCell;
 
     #[test]
-    #[allow(clippy::unwrap_used)]
     fn set_name() {
         let mut a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         assert!(a.set_name("Å").is_err());
@@ -472,7 +503,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::unwrap_used)]
     fn set_element() {
         let mut a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         assert!(a.set_element("R̈").is_err());
@@ -483,7 +513,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::unwrap_used)]
     fn distance() {
         let a = Atom::new(false, 0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
         let b = Atom::new(false, 0, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
@@ -495,7 +524,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::unwrap_used)]
     fn distance_all_axes() {
         let a = Atom::new(false, 0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
         let b = Atom::new(false, 0, "", 9.0, 9.0, 9.0, 0.0, 0.0, "C", 0).unwrap();
@@ -505,7 +533,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::unwrap_used)]
     fn check_equality() {
         let a = Atom::new(false, 0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
         let b = Atom::new(false, 0, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
@@ -516,7 +543,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::unwrap_used)]
     fn invalid_new_values() {
         let mut a = Atom::new(false, 0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
         assert!(Atom::new(false, 0, "Rͦ", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).is_none());
@@ -531,7 +557,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::unwrap_used)]
     fn check_setters() {
         let mut a = Atom::new(false, 0, "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         assert!(Atom::new(false, 0, "Rͦ", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).is_none());
@@ -559,13 +584,26 @@ mod tests {
         assert_eq!(a.atomic_number(), Some(6));
         assert!(a.set_name("HOH").is_ok());
         assert!(a.atomic_radius().is_none());
+        assert!(a.vanderwaals_radius().is_none());
+        assert!(a.covalent_bond_radii().is_none());
         a.set_charge(-1);
         assert_eq!(a.charge(), -1);
         assert_eq!(a.pdb_charge(), "1-".to_string());
     }
 
     #[test]
-    #[allow(clippy::unwrap_used)]
+    fn check_radii() {
+        let a = Atom::new(false, 0, "H", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
+        assert_eq!(a.atomic_radius(), Some(1.54));
+        assert_eq!(a.vanderwaals_radius(), Some(1.20));
+        assert_eq!(a.covalent_bond_radii(), Some((32, None, None)));
+        let a = Atom::new(false, 0, "Cl", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
+        assert_eq!(a.atomic_radius(), Some(2.06));
+        assert_eq!(a.vanderwaals_radius(), Some(1.82));
+        assert_eq!(a.covalent_bond_radii(), Some((99, Some(95), Some(93))));
+    }
+
+    #[test]
     fn check_display() {
         let a = Atom::new(false, 0, "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         format!("{:?}", a);
