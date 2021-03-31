@@ -14,8 +14,11 @@ fn low_b_factor_messages() {
         .unwrap();
 
     let (pdb, errors) = pdbtbx::open(&filename, StrictnessLevel::Strict).unwrap();
+    let pdb_errors = validate_pdb(&pdb);
     print!("{:?}", errors);
+    print!("{:?}", pdb_errors);
     assert_eq!(errors.len(), 0);
+    assert_eq!(pdb_errors.len(), 0);
     assert_eq!(pdb.atom(0).unwrap().b_factor(), 0.00);
     assert_eq!(pdb.atom(1).unwrap().b_factor(), 0.01);
     assert_eq!(pdb.atom(2).unwrap().b_factor(), 999.99);
