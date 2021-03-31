@@ -1,0 +1,25 @@
+use pdbtbx::*;
+use std::env;
+use std::path::Path;
+
+#[test]
+fn low_b_factor_messages() {
+    let filename = env::current_dir()
+        .unwrap()
+        .as_path()
+        .join(Path::new("example-pdbs"))
+        .join(Path::new("low_b.pdb"))
+        .into_os_string()
+        .into_string()
+        .unwrap();
+
+    let (pdb, errors) = pdbtbx::open(&filename, StrictnessLevel::Strict).unwrap();
+    print!("{:?}", errors);
+    assert_eq!(errors.len(), 0);
+    assert_eq!(pdb.atom(0).unwrap().b_factor(), 0.00);
+    assert_eq!(pdb.atom(1).unwrap().b_factor(), 0.01);
+    assert_eq!(pdb.atom(2).unwrap().b_factor(), 999.99);
+    assert_eq!(pdb.atom(3).unwrap().occupancy(), 0.00);
+    assert_eq!(pdb.atom(4).unwrap().occupancy(), 0.01);
+    assert_eq!(pdb.atom(5).unwrap().occupancy(), 999.99);
+}
