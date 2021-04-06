@@ -21,3 +21,35 @@ pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<
         )])
     }
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn invalid_name() {
+        let res = save(PDB::new(), "dump/save_test.name", StrictnessLevel::Loose);
+        assert!(res.is_err());
+        let err = res.unwrap_err();
+        assert_eq!(err.len(), 1);
+        assert_eq!(err[0].short_description(), "Incorrect extension")
+    }
+
+    #[test]
+    fn pdb_strict() {
+        let res = save(PDB::new(), "dump/save_test.pdb", StrictnessLevel::Strict);
+        assert!(res.is_ok());
+        let (_pdb, errors) = crate::open("dump/save_test.pdb", StrictnessLevel::Strict).unwrap();
+        assert_eq!(errors.len(), 0);
+    }
+
+    #[test]
+    fn mmcif_strict() {
+        let res = save(PDB::new(), "dump/save_test.cif", StrictnessLevel::Strict);
+        println!("{:?}", res);
+        assert!(res.is_ok());
+        let (_pdb, errors) = crate::open("dump/save_test.cif", StrictnessLevel::Strict).unwrap();
+        assert_eq!(errors.len(), 0);
+    }
+}

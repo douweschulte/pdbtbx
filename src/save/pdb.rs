@@ -394,10 +394,10 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
     }
     if level != StrictnessLevel::Loose {
         let mut xform = 0;
-        if pdb.origx.is_some() {
+        if pdb.origx.is_some() || level == StrictnessLevel::Strict {
             xform += 3;
         }
-        if pdb.scale.is_some() {
+        if pdb.scale.is_some() || (level == StrictnessLevel::Strict && pdb.unit_cell.is_some()) {
             xform += 3;
         }
         for _ in pdb.mtrix() {

@@ -99,13 +99,13 @@ fn do_something(file: &str, folder: &str, name: &str) {
         avg, avg_back, avg_side
     );
 
-    save_pdb(
+    save(
         pdb.clone(),
         &(folder.to_string() + name + ".pdb"),
         StrictnessLevel::Loose,
     )
     .expect("Save not successful");
-    save_mmcif(
+    save(
         pdb.clone(),
         &(folder.to_string() + name + ".cif"),
         StrictnessLevel::Loose,

@@ -163,30 +163,33 @@ _atom_site.pdbx_PDB_model_num"
             }
         }
     }
-    // Now align the table
-    let mut sizes = vec![1; lines[0].len()];
-    for line in &lines {
-        for index in 0..line.len() {
-            sizes[index] = std::cmp::max(sizes[index], line[index].len());
-        }
-    }
-    // Now write the table
-    for line in lines {
-        let mut output = String::new();
-        output.push_str(&line[0]);
-        output.push_str(&" ".repeat(sizes[0] - line[0].len()));
-        for index in 1..line.len() {
-            output.push(' ');
-            if line[index].trim() != "" {
-                output.push_str(&line[index]);
-                output.push_str(&" ".repeat(sizes[index] - line[index].len()));
-            } else {
-                output.push('?');
-                output.push_str(&" ".repeat(sizes[index] - 1));
+    if !lines.is_empty() {
+        // Now align the table
+        let mut sizes = vec![1; lines[0].len()];
+        for line in &lines {
+            for index in 0..line.len() {
+                sizes[index] = std::cmp::max(sizes[index], line[index].len());
             }
         }
-        output.push('\n');
-        sink.write_all(output.as_bytes()).unwrap();
+
+        // Now write the table
+        for line in lines {
+            let mut output = String::new();
+            output.push_str(&line[0]);
+            output.push_str(&" ".repeat(sizes[0] - line[0].len()));
+            for index in 1..line.len() {
+                output.push(' ');
+                if line[index].trim() != "" {
+                    output.push_str(&line[index]);
+                    output.push_str(&" ".repeat(sizes[index] - line[index].len()));
+                } else {
+                    output.push('?');
+                    output.push_str(&" ".repeat(sizes[index] - 1));
+                }
+            }
+            output.push('\n');
+            sink.write_all(output.as_bytes()).unwrap();
+        }
     }
 
     write!("#");
