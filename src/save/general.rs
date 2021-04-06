@@ -26,10 +26,20 @@ pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
+    use std::env;
+    use std::path::Path;
 
     #[test]
     fn invalid_name() {
-        let res = save(PDB::new(), "dump/save_test.name", StrictnessLevel::Loose);
+        let name = env::current_dir()
+            .unwrap()
+            .as_path()
+            .join(Path::new("dump"))
+            .join(Path::new("save_test.name"))
+            .into_os_string()
+            .into_string()
+            .unwrap();
+        let res = save(PDB::new(), &name, StrictnessLevel::Loose);
         assert!(res.is_err());
         let err = res.unwrap_err();
         assert_eq!(err.len(), 1);
@@ -38,18 +48,34 @@ mod tests {
 
     #[test]
     fn pdb_strict() {
-        let res = save(PDB::new(), "dump/save_test.pdb", StrictnessLevel::Strict);
+        let name = env::current_dir()
+            .unwrap()
+            .as_path()
+            .join(Path::new("dump"))
+            .join(Path::new("save_test.pdb"))
+            .into_os_string()
+            .into_string()
+            .unwrap();
+        let res = save(PDB::new(), &name, StrictnessLevel::Strict);
         assert!(res.is_ok());
-        let (_pdb, errors) = crate::open("dump/save_test.pdb", StrictnessLevel::Strict).unwrap();
+        let (_pdb, errors) = crate::open(&name, StrictnessLevel::Strict).unwrap();
         assert_eq!(errors.len(), 0);
     }
 
     #[test]
     fn mmcif_strict() {
-        let res = save(PDB::new(), "dump/save_test.cif", StrictnessLevel::Strict);
+        let name = env::current_dir()
+            .unwrap()
+            .as_path()
+            .join(Path::new("dump"))
+            .join(Path::new("save_test.cif"))
+            .into_os_string()
+            .into_string()
+            .unwrap();
+        let res = save(PDB::new(), &name, StrictnessLevel::Strict);
         println!("{:?}", res);
         assert!(res.is_ok());
-        let (_pdb, errors) = crate::open("dump/save_test.cif", StrictnessLevel::Strict).unwrap();
+        let (_pdb, errors) = crate::open(&name, StrictnessLevel::Strict).unwrap();
         assert_eq!(errors.len(), 0);
     }
 }
