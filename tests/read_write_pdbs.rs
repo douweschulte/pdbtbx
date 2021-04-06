@@ -17,6 +17,10 @@ fn run_pdbs() {
     let _ = fs::create_dir(dump_dir.clone());
     println!("{:?}", pdb_dir);
 
+    save_invalid_name();
+    save_pdb_strict();
+    save_mmcif_strict();
+
     for entry in fs::read_dir(pdb_dir).unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
@@ -128,7 +132,6 @@ fn do_something(file: &str, folder: &str, name: &str) {
     //assert_eq!(pdb, saved_mmcif);
 }
 
-#[test]
 fn save_invalid_name() {
     let name = env::current_dir()
         .unwrap()
@@ -145,7 +148,6 @@ fn save_invalid_name() {
     assert_eq!(err[0].short_description(), "Incorrect extension")
 }
 
-#[test]
 fn save_pdb_strict() {
     let name = env::current_dir()
         .unwrap()
@@ -161,7 +163,6 @@ fn save_pdb_strict() {
     assert_eq!(errors.len(), 0);
 }
 
-#[test]
 fn save_mmcif_strict() {
     let name = env::current_dir()
         .unwrap()
