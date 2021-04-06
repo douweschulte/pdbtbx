@@ -515,6 +515,28 @@ impl PDB {
     pub fn extend<T: IntoIterator<Item = Model>>(&mut self, iter: T) {
         self.models.extend(iter);
     }
+
+    /// Sort the Models of this PDB
+    pub fn sort(&mut self) {
+        self.models.sort();
+    }
+
+    /// Sort all structs in this PDB
+    pub fn full_sort(&mut self) {
+        self.sort();
+        for model in self.models_mut() {
+            model.sort();
+        }
+        for chain in self.chains_mut() {
+            chain.sort();
+        }
+        for residue in self.residues_mut() {
+            residue.sort();
+        }
+        for conformer in self.conformers_mut() {
+            conformer.sort();
+        }
+    }
 }
 
 use std::fmt;
@@ -527,5 +549,27 @@ impl fmt::Display for PDB {
 impl Default for PDB {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sort_atoms() {
+        let a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
+        let b = Atom::new(false, 1, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
+        let mut model = Model::new(0);
+        model.add_atom(b, "A", (0, None), ("LYS", None));
+        model.add_atom(a, "A", (0, None), ("LYS", None));
+        let mut pdb = PDB::new();
+        pdb.add_model(model);
+        assert_eq!(pdb.atom(0).unwrap().serial_number(), 1);
+        assert_eq!(pdb.atom(1).unwrap().serial_number(), 0);
+        pdb.full_sort();
+        assert_eq!(pdb.atom(0).unwrap().serial_number(), 0);
+        assert_eq!(pdb.atom(1).unwrap().serial_number(), 1);
     }
 }

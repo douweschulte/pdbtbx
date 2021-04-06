@@ -32,4 +32,12 @@ mod tests {
         assert!(open("file.pdbml", StrictnessLevel::Medium).is_err());
         assert!(open("file.pd", StrictnessLevel::Medium).is_err());
     }
+
+    #[test]
+    fn open_not_existing() {
+        let pdb = open("file.pdb", StrictnessLevel::Medium).unwrap_err();
+        assert_eq!(pdb[0].short_description(), "Could not open file");
+        let cif = open("file.cif", StrictnessLevel::Medium).unwrap_err();
+        assert_eq!(cif[0].short_description(), "Could not open file");
+    }
 }
