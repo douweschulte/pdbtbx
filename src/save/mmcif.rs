@@ -109,6 +109,9 @@ _symmetry.Int_Tables_number                {}",
         );
     }
 
+    let anisou = pdb
+        .atoms()
+        .any(|a| a.anisotropic_temperature_factors().is_some());
     write!(
         "loop_
 _atom_site.group_PDB 
@@ -127,7 +130,21 @@ _atom_site.Cartn_z
 _atom_site.occupancy 
 _atom_site.B_iso_or_equiv 
 _atom_site.pdbx_formal_charge 
-_atom_site.pdbx_PDB_model_num"
+_atom_site.pdbx_PDB_model_num{}",
+        if anisou {
+            "
+_atom_site.aniso_U[1][1]
+_atom_site.aniso_U[1][2]
+_atom_site.aniso_U[1][3]
+_atom_site.aniso_U[2][1]
+_atom_site.aniso_U[2][2]
+_atom_site.aniso_U[2][3]
+_atom_site.aniso_U[3][1]
+_atom_site.aniso_U[3][2]
+_atom_site.aniso_U[3][3]"
+        } else {
+            ""
+        }
     );
 
     let mut lines = Vec::new();
@@ -139,7 +156,7 @@ _atom_site.pdbx_PDB_model_num"
             for residue in chain.residues() {
                 for conformer in residue.conformers() {
                     for atom in conformer.atoms() {
-                        lines.push(vec![
+                        let mut data = vec![
                             (if atom.hetero() { "HETATM" } else { "ATOM" }).to_string(), // ATOM or HETATM
                             atom.serial_number().to_string(), // Serial number
                             atom.element().to_string(),       // Element
@@ -157,7 +174,36 @@ _atom_site.pdbx_PDB_model_num"
                             print_float(atom.b_factor()), // B
                             atom.charge().to_string(),    // Charge
                             model.serial_number().to_string(), // Model serial number
-                        ]);
+                        ];
+                        if anisou {
+                            if let Some(matrix) = atom.anisotropic_temperature_factors() {
+                                data.extend(vec![
+                                    print_float(matrix[0][0]),
+                                    print_float(matrix[0][1]),
+                                    print_float(matrix[0][2]),
+                                    print_float(matrix[1][0]),
+                                    print_float(matrix[1][1]),
+                                    print_float(matrix[1][2]),
+                                    print_float(matrix[2][0]),
+                                    print_float(matrix[2][1]),
+                                    print_float(matrix[2][2]),
+                                ]);
+                            } else {
+                                data.extend(vec![
+                                    ".".to_string(),
+                                    ".".to_string(),
+                                    ".".to_string(),
+                                    ".".to_string(),
+                                    ".".to_string(),
+                                    ".".to_string(),
+                                    ".".to_string(),
+                                    ".".to_string(),
+                                    ".".to_string(),
+                                ]);
+                            }
+                        }
+
+                        lines.push(data);
                     }
                 }
             }

@@ -820,13 +820,18 @@ fn lex_anisou(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
     let factors = [
         [
             (ai as f64) / 10000.0,
-            (bi as f64) / 10000.0,
-            (ci as f64) / 10000.0,
+            (di as f64) / 10000.0,
+            (ei as f64) / 10000.0,
         ],
         [
             (di as f64) / 10000.0,
+            (bi as f64) / 10000.0,
+            (fi as f64) / 10000.0,
+        ],
+        [
             (ei as f64) / 10000.0,
             (fi as f64) / 10000.0,
+            (ci as f64) / 10000.0,
         ],
     ];
 

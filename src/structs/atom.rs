@@ -29,7 +29,7 @@ pub struct Atom {
     /// The charge of the Atom
     charge: isize,
     /// The anisotropic temperature factors, if applicable
-    atf: Option<[[f64; 3]; 2]>,
+    atf: Option<[[f64; 3]; 3]>,
 }
 
 impl Atom {
@@ -344,12 +344,12 @@ impl Atom {
     }
 
     /// Get the anisotropic temperature factors, if available
-    pub fn anisotropic_temperature_factors(&self) -> Option<[[f64; 3]; 2]> {
+    pub fn anisotropic_temperature_factors(&self) -> Option<[[f64; 3]; 3]> {
         self.atf
     }
 
     /// Set the anisotropic temperature factors
-    pub fn set_anisotropic_temperature_factors(&mut self, factors: [[f64; 3]; 2]) {
+    pub fn set_anisotropic_temperature_factors(&mut self, factors: [[f64; 3]; 3]) {
         self.atf = Some(factors);
     }
 

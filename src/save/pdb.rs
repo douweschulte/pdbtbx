@@ -360,13 +360,13 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                                 atom_line(atom, conformer, residue, chain),
                                 (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0)
                                     as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0)
+                                    as isize,
+                                (atom.anisotropic_temperature_factors().unwrap()[2][2] * 10000.0)
+                                    as isize,
                                 (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0)
                                     as isize,
                                 (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[1][0] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0)
                                     as isize,
                                 (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0)
                                     as isize,

@@ -66,7 +66,7 @@ pub enum LexItem {
         String,
         isize,
         Option<String>,
-        [[f64; 3]; 2],
+        [[f64; 3]; 3],
         String,
         String,
         isize,

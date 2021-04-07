@@ -32,7 +32,7 @@ Also because it is written in Rust it is much faster then anything written in Py
 Also see [changelog](https://github.com/nonnominandus/pdbtbx/blob/master/changelog.md).
 
 ## Supported features
-As the main goal of this library is to allow access to the atomical data many meta data features of both PDB and mmCIF are unsupported.
+As the main goal of this library is to allow access to the atomical data many metadata features of both PDB and mmCIF are unsupported.
 
 ![supported features table](pictures/supported_features.png)
 
