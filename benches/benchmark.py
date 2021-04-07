@@ -61,6 +61,11 @@ def iteration(pdb):
     average = average / pdb.hierarchy.atoms_size()
 
 
+def iteration_build_in(pdb):
+    atoms = pdb.hierarchy.atoms()
+    average = atoms.extract_b().min_max_mean().mean
+
+
 def renumber(pdb):
     for chain in pdb.hierarchy.chains():
         chain.id = chain.id[0]
@@ -118,21 +123,22 @@ def time_function_multiple(fn, subjects, global_name):
 
 
 names = [
-    ("small", "1ubq.pdb"),
-    ("medium", "1yyf.pdb"),
-    ("big", "pTLS-6484.pdb"),
+    ("small", "example-pdbs/1ubq.pdb"),
+    ("medium", "example-pdbs/1yyf.pdb"),
+    ("big", "example-pdbs/pTLS-6484.pdb"),
 ]
 
 proteins = [
-    ("small", Hierarchy.input(file_name="1ubq.pdb")),
-    ("medium", Hierarchy.input(file_name="1yyf.pdb")),
-    ("big", Hierarchy.input(file_name="pTLS-6484.pdb")),
+    ("small", Hierarchy.input(file_name="example-pdbs/1ubq.pdb")),
+    ("medium", Hierarchy.input(file_name="example-pdbs/1yyf.pdb")),
+    ("big", Hierarchy.input(file_name="example-pdbs/pTLS-6484.pdb")),
 ]
 
 time_function_multiple(open_pdb, names, "open")
 time_function_multiple(transformation, proteins, "transformation")
 time_function_multiple(remove, proteins, "remove")
 time_function_multiple(iteration, proteins, "iteration")
+time_function_multiple(iteration_build_in, proteins, "iteration_build_in")
 time_function_multiple(renumber, proteins, "renumber")
 time_function_multiple(clone, proteins, "clone")
 time_function_multiple(save, proteins, "save")

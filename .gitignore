@@ -3,3 +3,4 @@
 .vscode
 default.profraw
 *.txt
+__pycache__
