@@ -30,3 +30,10 @@ Also because it is written in Rust it is much faster then anything written in Py
 * Added more atomic radii (vanderwaals and covalent bonds)
 
 Also see [changelog](https://github.com/nonnominandus/pdbtbx/blob/master/changelog.md).
+
+## Supported features
+As the main goal of this library is to allow access to the atomical data many meta data features of both PDB and mmCIF are unsupported.
+
+![supported features table](pictures/supported_features.png)
+
+The features where support is planned are planned to be included in the 1.0 release. The features where support is envisioned are candidates to be included, but not necessarily in the 1.0 release. The features which are planned are thought to be unnecessary for atomic data computations on theses files. If any of these are really needed for your use case please raise an issue then we can discuss its inclusion. Also if you need a feature that is 'planned' or 'envisioned' feel free to raise an issue to guide development to spots where it can make a real life impact.

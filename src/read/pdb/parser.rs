@@ -432,14 +432,6 @@ fn validate_seqres(
             for (raw_index, seq) in chain_sequence.iter().enumerate() {
                 let index = raw_index as isize + offset;
                 if let Some(n) = next {
-                    println!(
-                        "At SEQRES {} seq {}, index {}, next iterator index {}, next iterator name {:?}",
-                        raw_index,
-                        seq,
-                        index,
-                        n.serial_number(),
-                        n.name()
-                    );
                     if index == n.serial_number() {
                         if let Some(name) = n.name() {
                             if *seq != name {
@@ -481,7 +473,6 @@ fn validate_seqres(
                         ));
                         #[allow(clippy::while_let_on_iterator)]
                         while let Some(n) = chain_res.next() {
-                            println!("Skipping a residue in the chain ({})", n.serial_number());
                             if n.serial_number() == index {
                                 next = chain_res.next();
                                 break;
@@ -489,10 +480,6 @@ fn validate_seqres(
                         }
                     }
                 } else {
-                    println!(
-                        "Next iterator is None, raw index {}, seq {}",
-                        raw_index, seq
-                    );
                     chain.add_residue(
                         Residue::new(
                             index,
@@ -536,7 +523,6 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
                         .residues_mut()
                         .find(|r| r.id() == (seq_num, insertion_code.as_deref()))
                     {
-                        println!("Residue {:?}", residue);
                         if let Some(conformer) =
                             residue.conformers_mut().find(|c| c.name() == res_name)
                         {
