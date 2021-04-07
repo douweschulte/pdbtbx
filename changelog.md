@@ -1,6 +1,12 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/nonnominandus/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.6.3
+* Added Anisotropic temperature factor support for mmCIF files
+* Fixed an issue in the aniso matrix
+* Added a `full_sort` function on PDB
+* Fixed small bugs in the PDB saving logic
+
 ### v0.6.2
 * Fixed a bug in PDB b factor and occupancy validation which showed an error when the value was 0.00
 * Fixed a bug in `atom.atomic_radius()`, it used to give the radius of the previous atom in the periodic table
