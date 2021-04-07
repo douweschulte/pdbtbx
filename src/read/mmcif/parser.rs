@@ -149,6 +149,15 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         "atom_site.pdbx_PDB_model_num",
         "atom_site.label_alt_id",
         "atom_site.pdbx_PDB_ins_code",
+        "_atom_site.aniso_U[1][1]",
+        "_atom_site.aniso_U[1][2]",
+        "_atom_site.aniso_U[1][3]",
+        "_atom_site.aniso_U[2][1]",
+        "_atom_site.aniso_U[2][2]",
+        "_atom_site.aniso_U[2][3]",
+        "_atom_site.aniso_U[3][1]",
+        "_atom_site.aniso_U[3][2]",
+        "_atom_site.aniso_U[3][3]",
     ];
 
     let positions_: Vec<Result<usize, PDBError>> = COLUMNS
@@ -236,6 +245,62 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         let model_number = parse_optional!(get_usize, 0).unwrap_or(1);
         let alt_loc = parse_optional!(get_text, 1);
         let insertion_code = parse_optional!(get_text, 2);
+        let aniso_temp = [
+            [
+                parse_optional!(get_f64, 3),
+                parse_optional!(get_f64, 4),
+                parse_optional!(get_f64, 5),
+            ],
+            [
+                parse_optional!(get_f64, 6),
+                parse_optional!(get_f64, 7),
+                parse_optional!(get_f64, 8),
+            ],
+            [
+                parse_optional!(get_f64, 9),
+                parse_optional!(get_f64, 10),
+                parse_optional!(get_f64, 11),
+            ],
+        ];
+
+        let aniso = if aniso_temp
+            .iter()
+            .flat_map(|l| l.iter())
+            .all(|v| v.is_some())
+        {
+            #[allow(clippy::unwrap_used)]
+            Some([
+                [
+                    aniso_temp[0][0].unwrap(),
+                    aniso_temp[0][1].unwrap(),
+                    aniso_temp[0][2].unwrap(),
+                ],
+                [
+                    aniso_temp[1][0].unwrap(),
+                    aniso_temp[1][1].unwrap(),
+                    aniso_temp[1][2].unwrap(),
+                ],
+                [
+                    aniso_temp[2][0].unwrap(),
+                    aniso_temp[2][1].unwrap(),
+                    aniso_temp[2][2].unwrap(),
+                ],
+            ])
+        } else if aniso_temp
+            .iter()
+            .flat_map(|l| l.iter())
+            .any(|v| v.is_some())
+        {
+            errors.push(PDBError::new(
+                ErrorLevel::StrictWarning,
+                "Atom aniso U definition incomplete",
+                "For a valid anisotropic temperature factor definition all columns (1,1 up to and including 3,3) have to be defined.",
+                context.clone(),
+            ));
+            None
+        } else {
+            None
+        };
 
         let model = unsafe {
             // I could not find a way to make the borrow checker happy, but if no item
@@ -267,7 +332,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
                 context.clone(),
             ))
         }
-        if let Some(atom) = Atom::new(
+        if let Some(mut atom) = Atom::new(
             hetero,
             serial_number,
             name,
@@ -279,6 +344,10 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             element,
             charge,
         ) {
+            if let Some(matrix) = aniso {
+                atom.set_anisotropic_temperature_factors(matrix);
+            }
+
             model.add_atom(
                 atom,
                 chain_name,
