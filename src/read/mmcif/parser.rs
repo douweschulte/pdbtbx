@@ -74,20 +74,34 @@ fn parse_mmcif(
                         "cell.angle_gamma" => get_f64(&single.content, &context)
                             .map(|n| unit_cell.set_gamma(n.expect("UnitCell angle gamma should be provided")))
                             .err(),
-                        "Int_Tables_number" => {
+                        "symmetry.Int_Tables_number" | "space_group.IT_number" => {
                             if pdb.symmetry.is_none() {
                                 get_usize(&single.content, &context)
                                     .map(|n| pdb.symmetry = Symmetry::from_index(n.expect("Symmetry international tables number should be provided")))
                                     .err()
+                            } else if let Ok(Some(value)) = get_usize(&single.content, &context) {
+                                if pdb.symmetry != Symmetry::from_index(value) {
+                                    Some(PDBError::new(ErrorLevel::InvalidatingError, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
+                                }
+                                else {
+                                    None
+                                }
                             } else {
                                 None
                             }
                         }
-                        "space_group_name_H-M" => {
+                        "symmetry.space_group_name_H-M" | "symmetry.space_group_name_Hall" | "space_group.name_H-M_alt" | "space_group.name_Hall" => {
                             if pdb.symmetry.is_none() {
                                 get_text(&single.content, &context)
-                                    .map(|t| pdb.symmetry = Symmetry::new(t.expect("Symmetry space group name H-M should be provided")))
+                                    .map(|t| pdb.symmetry = Symmetry::new(t.expect("Symmetry space group name should be provided")))
                                     .err()
+                            } else if let Ok(Some(value)) = get_text(&single.content, &context) {
+                                if pdb.symmetry != Symmetry::new(value) {
+                                    Some(PDBError::new(ErrorLevel::InvalidatingError, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
+                                }
+                                else {
+                                    None
+                                }
                             } else {
                                 None
                             }
