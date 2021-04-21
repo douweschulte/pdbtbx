@@ -537,6 +537,18 @@ impl PDB {
             conformer.sort();
         }
     }
+
+    /// Create an R star tree which can be used for fast lookup of
+    /// spatial close atoms. See the crate rstar for documentation
+    /// on how to use the tree. (https://crates.io/crates/rstar)
+    ///
+    /// Keep in mind that this creates a tree that is separate from
+    /// the original PDB, so any changes to one of the data
+    /// structures is not seen in the other data structure (until
+    /// you generate a new tree of course).
+    pub fn create_rtree(&self) -> rstar::RTree<&Atom> {
+        rstar::RTree::bulk_load(self.atoms().collect::<Vec<&Atom>>())
+    }
 }
 
 use std::fmt;
@@ -571,5 +583,47 @@ mod tests {
         pdb.full_sort();
         assert_eq!(pdb.atom(0).unwrap().serial_number(), 0);
         assert_eq!(pdb.atom(1).unwrap().serial_number(), 1);
+    }
+
+    #[test]
+    fn spatial_lookup() {
+        let mut model = Model::new(0);
+        model.add_atom(
+            Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        model.add_atom(
+            Atom::new(false, 1, "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        model.add_atom(
+            Atom::new(false, 2, "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        let mut pdb = PDB::new();
+        pdb.add_model(model);
+        let tree = pdb.create_rtree();
+        assert_eq!(tree.size(), 3);
+        assert_eq!(
+            tree.nearest_neighbor(&[1.0, 1.0, 1.0])
+                .unwrap()
+                .serial_number(),
+            1
+        );
+        assert_eq!(
+            tree.locate_within_distance([1.0, 1.0, 1.0], 1.0)
+                .fold(0, |acc, _| acc + 1),
+            2
+        );
+        let mut neighbors = tree.nearest_neighbor_iter(&pdb.atom(0).unwrap().pos_array());
+        assert_eq!(neighbors.next().unwrap().serial_number(), 0);
+        assert_eq!(neighbors.next().unwrap().serial_number(), 2);
+        assert_eq!(neighbors.next().unwrap().serial_number(), 1);
     }
 }

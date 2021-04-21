@@ -82,6 +82,12 @@ impl Atom {
         (self.x, self.y, self.z)
     }
 
+    /// Get the position of the atom as an array of f64, in the following order: [x, y, z]
+    /// Returned in the units of the PDB file, which is defined to be orthogonal coordinate system in Å
+    pub fn pos_array(&self) -> [f64; 3] {
+        [self.x, self.y, self.z]
+    }
+
     /// Set the position of the atom as a tuple of f64, in the following order: (x, y, z)
     /// ## Panics
     /// It panics if one or more of the numbers are not finite (`f64.is_finite()`)
@@ -481,6 +487,23 @@ impl PartialOrd for Atom {
 impl Ord for Atom {
     fn cmp(&self, other: &Self) -> Ordering {
         self.serial_number.cmp(&other.serial_number)
+    }
+}
+
+use rstar::{PointDistance, RTreeObject, AABB};
+
+impl RTreeObject for &Atom {
+    type Envelope = AABB<[f64; 3]>;
+
+    fn envelope(&self) -> Self::Envelope {
+        AABB::from_point([self.x(), self.y(), self.z()])
+    }
+}
+
+impl PointDistance for &Atom {
+    fn distance_2(&self, other: &[f64; 3]) -> f64 {
+        // No square root as that is required by the package
+        (other[0] - self.x).powi(2) + (other[1] - self.y).powi(2) + (other[2] - self.z).powi(2)
     }
 }
 

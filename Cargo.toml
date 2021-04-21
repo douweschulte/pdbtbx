@@ -11,6 +11,9 @@ keywords = ["pdb", "crystal", "protein", "mmcif", "bio"]
 categories = ["parser-implementations", "science"]
 include = ["src/**/*", "LICENSE", "README.md"]
 
+[dependencies]
+rstar = "0.8.2"
+
 [profile.dev]
 opt-level = 3
 
