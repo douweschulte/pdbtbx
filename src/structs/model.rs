@@ -12,7 +12,7 @@ pub struct Model {
     chains: Vec<Chain>,
 }
 
-impl Model {
+impl<'a> Model {
     /// Create a new Model
     ///
     /// ## Arguments
@@ -144,6 +144,32 @@ impl Model {
         self.atoms_mut().nth(index)
     }
 
+    /// Get the specified atom, its uniqueness is guaranteed by including the
+    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// on binary search so it is faster than an exhaustive search, but the
+    /// full structure is assumed to be sorted. This assumption can be enforced
+    /// by using `pdb.full_sort()`.
+    pub fn binary_find_atom(
+        &'a self,
+        serial_number: usize,
+        alternative_location: Option<&str>,
+    ) -> Option<FullHierarchy<'a>> {
+        for chain in self.chains() {
+            if let Some(f) = chain.atoms().next() {
+                if let Some(b) = chain.atoms().next_back() {
+                    if f.serial_number() <= serial_number && serial_number <= b.serial_number() {
+                        if let Some((residue, conformer, atom)) =
+                            chain.binary_find_atom(serial_number, alternative_location)
+                        {
+                            return Some(FullHierarchy::new(chain, residue, conformer, atom));
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
     /// Get the list of Chains making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
@@ -190,6 +216,21 @@ impl Model {
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.chains.iter_mut().flat_map(|a| a.atoms_mut())
+    }
+
+    /// Returns a FullHierarchy struct for each atom in this model.
+    pub fn atoms_full_hierarchy(&'a self) -> impl Iterator<Item = FullHierarchy<'a>> + '_ {
+        self.chains()
+            .map(|ch| {
+                ch.residues().map(move |r| {
+                    r.conformers()
+                        .map(move |c| c.atoms().map(move |a| (ch, r, c, a)))
+                })
+            })
+            .flatten()
+            .flatten()
+            .flatten()
+            .map(FullHierarchy::from_tuple)
     }
 
     /// Add a new Atom to this Model. It finds if there already is a Chain with the given `chain_id` if there is it will add this atom to that Chain, otherwise it will create a new Chain and add that to the list of Chains making up this Model. It does the same for the Residue, so it will create a new one if there does not yet exist a Residue with the given serial number.

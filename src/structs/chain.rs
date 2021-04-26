@@ -146,6 +146,32 @@ impl Chain {
         self.atoms_mut().nth(index)
     }
 
+    /// Get the specified atom, its uniqueness is guaranteed by including the
+    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// on binary search so it is faster than an exhaustive search, but the
+    /// full structure is assumed to be sorted. This assumption can be enforced
+    /// by using `pdb.full_sort()`.
+    pub fn binary_find_atom(
+        &self,
+        serial_number: usize,
+        alternative_location: Option<&str>,
+    ) -> Option<(&Residue, &Conformer, &Atom)> {
+        for residue in self.residues() {
+            if let Some(f) = residue.atoms().next() {
+                if let Some(b) = residue.atoms().next_back() {
+                    if f.serial_number() <= serial_number && serial_number <= b.serial_number() {
+                        if let Some((conformer, atom)) =
+                            residue.binary_find_atom(serial_number, alternative_location)
+                        {
+                            return Some((residue, conformer, atom));
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
     /// Get the list of Residues making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {

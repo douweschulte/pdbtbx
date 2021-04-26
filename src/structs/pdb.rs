@@ -25,7 +25,7 @@ pub struct PDB {
     models: Vec<Model>,
 }
 
-impl PDB {
+impl<'a> PDB {
     /// Create an empty PDB struct
     pub fn new() -> PDB {
         PDB {
@@ -299,6 +299,23 @@ impl PDB {
         self.atoms_mut().nth(index)
     }
 
+    /// Get the specified atom, its uniqueness is guaranteed by including the
+    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// on binary search so it is faster than an exhaustive search, but the
+    /// full structure is assumed to be sorted. This assumption can be enforced
+    /// by using `pdb.full_sort()`.
+    pub fn binary_find_atom(
+        &'a self,
+        serial_number: usize,
+        alternative_location: Option<&str>,
+    ) -> Option<FullHierarchy<'a>> {
+        if let Some(model) = self.models().next() {
+            model.binary_find_atom(serial_number, alternative_location)
+        } else {
+            None
+        }
+    }
+
     /// Get the list of Models making up this PDB.
     pub fn models(&self) -> impl DoubleEndedIterator<Item = &Model> + '_ {
         self.models.iter()
@@ -549,6 +566,24 @@ impl PDB {
     pub fn create_rtree(&self) -> rstar::RTree<&Atom> {
         rstar::RTree::bulk_load(self.atoms().collect::<Vec<&Atom>>())
     }
+
+    /// Create an R star tree which can be used for fast lookup of
+    /// spatial close atoms. See the crate rstar for documentation
+    /// on how to use the tree. (https://crates.io/crates/rstar)
+    ///
+    /// Keep in mind that this creates a tree that is separate from
+    /// the original PDB, so any changes to one of the data
+    /// structures is not seen in the other data structure (until
+    /// you generate a new tree of course).
+    pub fn create_full_hierarchy_rtree(&'a self) -> Option<rstar::RTree<FullHierarchy<'a>>> {
+        if let Some(model) = self.models().next() {
+            Some(rstar::RTree::bulk_load(
+                model.atoms_full_hierarchy().collect(),
+            ))
+        } else {
+            None
+        }
+    }
 }
 
 use std::fmt;
@@ -625,5 +660,35 @@ mod tests {
         assert_eq!(neighbors.next().unwrap().serial_number(), 0);
         assert_eq!(neighbors.next().unwrap().serial_number(), 2);
         assert_eq!(neighbors.next().unwrap().serial_number(), 1);
+    }
+
+    #[test]
+    fn binary_lookup() {
+        let mut model = Model::new(0);
+        model.add_atom(
+            Atom::new(false, 1, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", Some("A")),
+        );
+        model.add_atom(
+            Atom::new(false, 1, "", 1.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", Some("B")),
+        );
+        model.add_atom(
+            Atom::new(false, 1, "", 2.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        let mut pdb = PDB::new();
+        pdb.add_model(model);
+        pdb.full_sort();
+
+        assert_eq!(pdb.binary_find_atom(1, Some("A")).unwrap().atom.x(), 0.0);
+        assert_eq!(pdb.binary_find_atom(1, Some("B")).unwrap().atom.x(), 1.0);
+        assert_eq!(pdb.binary_find_atom(1, None).unwrap().atom.x(), 2.0);
     }
 }
