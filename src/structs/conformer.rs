@@ -4,6 +4,7 @@ use crate::structs::*;
 use crate::transformation::*;
 use std::cmp::Ordering;
 use std::fmt;
+use rayon::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// A Conformer of a Conformer containing multiple atoms, analogous to 'atom_group' in cctbx
@@ -165,10 +166,20 @@ impl Conformer {
         self.atoms.iter()
     }
 
+    /// Get the list of atoms making up this Conformer in parallel.
+    pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
+        self.atoms.par_iter()
+    }
+
     /// Get the list of atoms as mutable references making up this Conformer.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.atoms.iter_mut()
+    }
+
+    /// Get the list of atoms as mutable references making up this Conformer in parallel.
+    pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
+        self.atoms.par_iter_mut()
     }
 
     /// Add a new atom to the list of atoms making up this Conformer.

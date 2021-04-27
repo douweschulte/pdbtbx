@@ -3,6 +3,7 @@ use crate::structs::*;
 use crate::transformation::*;
 use std::cmp::Ordering;
 use std::fmt;
+use rayon::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// A Residue containing multiple Residues
@@ -190,10 +191,20 @@ impl Residue {
         self.conformers.iter()
     }
 
+    /// Get the list of conformers making up this Residue in parallel.
+    pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
+        self.conformers.par_iter()
+    }
+
     /// Get the list of conformers as mutable references making up this Residue.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
         self.conformers.iter_mut()
+    }
+
+    /// Get the list of conformers as mutable references making up this Residue in parallel.
+    pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
+        self.conformers.par_iter_mut()
     }
 
     /// Get the list of Atoms making up this Residue.
@@ -202,10 +213,20 @@ impl Residue {
         self.conformers.iter().flat_map(|a| a.atoms())
     }
 
+    /// Get the list of Atoms making up this Residue in parallel.
+    pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
+        self.conformers.par_iter().flat_map(|a| a.par_atoms())
+    }
+
     /// Get the list of Atoms as mutable references making up this Residue.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.conformers.iter_mut().flat_map(|a| a.atoms_mut())
+    }
+
+    /// Get the list of Atoms as mutable references making up this Residue in parallel.
+    pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
+        self.conformers.par_iter_mut().flat_map(|a| a.par_atoms_mut())
     }
 
     /// Add a new conformer to the list of conformers making up this Residue.

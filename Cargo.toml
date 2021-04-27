@@ -13,6 +13,7 @@ include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
 rstar = "0.8.2"
+rayon = "1.5"
 
 [profile.dev]
 opt-level = 3

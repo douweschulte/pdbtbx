@@ -2,6 +2,7 @@
 use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
+use rayon::prelude::*;
 
 #[derive(Debug, Clone, PartialEq)]
 /// A PDB file containing the 3D coordinates of many atoms making up the
@@ -50,9 +51,19 @@ impl<'a> PDB {
         self.remarks.iter()
     }
 
+    /// Get the remarks in parallel, containing the remark-type-number and a line of free text
+    pub fn par_remarks(&self) -> impl ParallelIterator<Item = &(usize, String)> + '_ {
+        self.remarks.par_iter()
+    }
+
     /// Get the remarks as mutable references, containing the remark-type-number and a line of free text
     pub fn remarks_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut (usize, String)> + '_ {
         self.remarks.iter_mut()
+    }
+
+    /// Get the parallel remarks as mutable references, containing the remark-type-number and a line of free text
+    pub fn par_remarks_mut(&mut self) -> impl ParallelIterator<Item = &mut (usize, String)> + '_ {
+        self.remarks.par_iter_mut()
     }
 
     /// Add a remark
@@ -83,9 +94,19 @@ impl<'a> PDB {
         self.mtrix.iter()
     }
 
+    /// Get the parallel MtriX records for this PDB
+    pub fn par_mtrix(&self) -> impl ParallelIterator<Item = &MtriX> + '_ {
+        self.mtrix.par_iter()
+    }
+
     /// Get the MtriX records for this PDB, as mutable references
     pub fn mtrix_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut MtriX> + '_ {
         self.mtrix.iter_mut()
+    }
+
+    /// Get the parallel MtriX records for this PDB, as mutable references
+    pub fn par_mtrix_mut(&mut self) -> impl ParallelIterator<Item = &mut MtriX> + '_ {
+        self.mtrix.par_iter_mut()
     }
 
     /// Get a specific MtriX.
@@ -321,9 +342,19 @@ impl<'a> PDB {
         self.models.iter()
     }
 
+    /// Get the list of Models making up this PDB in parallel.
+    pub fn par_models(&self) -> impl ParallelIterator<Item = &Model> + '_ {
+        self.models.par_iter()
+    }
+
     /// Get the list of Models as mutable references making up this PDB.
     pub fn models_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Model> + '_ {
         self.models.iter_mut()
+    }
+
+    /// Get the list of Models as mutable references making up this PDB in parallel.
+    pub fn par_models_mut(&mut self) -> impl ParallelIterator<Item = &mut Model> + '_ {
+        self.models.par_iter_mut()
     }
 
     /// Get the list of Chains making up this PDB.
@@ -332,10 +363,20 @@ impl<'a> PDB {
         self.models.iter().flat_map(|a| a.chains())
     }
 
+    /// Get the list of Chains making up this PDB in parallel.
+    pub fn par_chains(&self) -> impl ParallelIterator<Item = &Chain> + '_ {
+        self.models.par_iter().flat_map(|a| a.par_chains())
+    }
+
     /// Get the list of Chains as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
         self.models.iter_mut().flat_map(|a| a.chains_mut())
+    }
+
+    /// Get the list of Chains as mutable references making up this PDB in parallel.
+    pub fn par_chains_mut(&mut self) -> impl ParallelIterator<Item = &mut Chain> + '_ {
+        self.models.par_iter_mut().flat_map(|a| a.par_chains_mut())
     }
 
     /// Get the list of Residues making up this PDB.
@@ -344,10 +385,25 @@ impl<'a> PDB {
         self.models.iter().flat_map(|a| a.residues())
     }
 
+    /// Get the list of Residues making up this PDB in parallel.
+    pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
+        self.models.par_iter().flat_map(|a| a.par_residues())
+    }
+
+    /// Get the list of Residues making up this PDB in parallel.
+    // pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
+    //     self.models.par_iter().flat_map(|a| a.residues())
+    // }
+
     /// Get the list of Residue as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
         self.models.iter_mut().flat_map(|a| a.residues_mut())
+    }
+
+    /// Get the list of Residue as mutable references making up this PDB in parallel.
+    pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
+        self.models.par_iter_mut().flat_map(|a| a.par_residues_mut())
     }
 
     /// Get the list of Conformers making up this PDB.
@@ -356,10 +412,20 @@ impl<'a> PDB {
         self.models.iter().flat_map(|a| a.conformers())
     }
 
+    /// Get the list of Conformers making up this PDB in parallel.
+    pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
+        self.models.par_iter().flat_map(|a| a.par_conformers())
+    }
+
     /// Get the list of Conformers as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
         self.models.iter_mut().flat_map(|a| a.conformers_mut())
+    }
+
+    /// Get the list of Conformers as mutable references making up this PDB in parallel.
+    pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
+        self.models.par_iter_mut().flat_map(|a| a.par_conformers_mut())
     }
 
     /// Get the list of Atom making up this PDB.
@@ -368,10 +434,20 @@ impl<'a> PDB {
         self.models.iter().flat_map(|a| a.atoms())
     }
 
+    /// Get the list of Atom making up this PDB in parallel.
+    pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
+        self.models.par_iter().flat_map(|a| a.par_atoms())
+    }
+
     /// Get the list of Atom as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.models.iter_mut().flat_map(|a| a.atoms_mut())
+    }
+
+    /// Get the list of Atom as mutable references making up this PDB in parallel.
+    pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
+        self.models.par_iter_mut().flat_map(|a| a.par_atoms_mut())
     }
 
     /// Remove all Atoms matching the given predicate. The predicate will be run on all Atoms.
