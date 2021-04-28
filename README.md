@@ -1,5 +1,7 @@
-![Compile & Test](https://github.com/nonnominandus/rust-pdb/workflows/Compile%20&%20Test/badge.svg) [![Coverage Status](https://coveralls.io/repos/github/nonnominandus/pdbtbx/badge.svg?branch=master)](https://coveralls.io/github/nonnominandus/pdbtbx?branch=master) [![DOI](https://zenodo.org/badge/325653824.svg)](https://zenodo.org/badge/latestdoi/325653824)
-
+![Compile & Test](https://github.com/nonnominandus/rust-pdb/workflows/Compile%20&%20Test/badge.svg) 
+[![Coverage Status](https://coveralls.io/repos/github/nonnominandus/pdbtbx/badge.svg?branch=master)](https://coveralls.io/github/nonnominandus/pdbtbx?branch=master) 
+[![Crates.io](https://img.shields.io/crates/v/pdbtbx.svg)](https://crates.io/crates/pdbtbx)
+[DOI: 10.5281/zenodo.4671032](https://doi.org/10.5281/zenodo.4671032)
 
 ## Description
 This is a Rust library helping to parse, edit and save crystallographic PDB/mmCIF files. It can read most atomic data from PDB/mmCIF files, some is missing but will be added over time. Its high level goal is to create a stable, efficient and easy to use interface to PDB/mmCIF files. 
