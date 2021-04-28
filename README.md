@@ -13,11 +13,10 @@ MIT, just use it if you can use it. If you use it for something cool I would lik
 ## Why
 Just for fun, to play with fancy abstractions. But at the same time I think that using Rust in scientific computing would be really cool and this library would be needed if I were to be doing my internship in Rust. So by creating it I hope to extend the usability of Rust a little bit more. Since Nature published an [article](https://www.nature.com/articles/d41586-020-03382-2) (technology feature) which laid out the benefits of using Rust and showed that Rust is used more and more, recently I am planning on working more with Rust in scientific projects. And I think that the best way to help Rust move forward (in the scientific community) is by creating more support for scientific projects in Rust.
 
-Also because it is written in Rust it is much faster then anything written in Python even if there is a C/C++ backend. Based on some benchmarks (details are in benches/benchmark_results.csv) PDBTBX is as fast in opening and saving PDB files while being on average 240 times faster in 'editing' tasks (iterating over atoms/renumbering a pdb file/cloning a pdb file/transforming atoms/removing atoms) compared to CCTBX. As Rust is a compiled language build for speed this was to be expected but still the effect size is quite big. If anything taking 24 hours could be sped up 240 times it would only take 6 minutes.
-
 ## Contributors
 * Douwe Schulte
 * [Tianyi Shi](https://github.com/TianyiShi2001)
+* [DocKDE](https://github.com/DocKDE)
 
 ## Supported features
 As the main goal of this library is to allow access to the atomical data many metadata features of both PDB and mmCIF are unsupported. For both file formats the most recent version (PDB v3.30 and mmcif v5.338) is used, but as both are quite stable file formats in the core atomical properties the exact version should not matter to end users.

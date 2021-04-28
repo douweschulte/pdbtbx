@@ -300,7 +300,7 @@ impl<'a> PDB {
     }
 
     /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// alternative_location, with its hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -308,7 +308,7 @@ impl<'a> PDB {
         &'a self,
         serial_number: usize,
         alternative_location: Option<&str>,
-    ) -> Option<FullHierarchy<'a>> {
+    ) -> Option<AtomWithHierarchy<'a>> {
         if let Some(model) = self.models().next() {
             model.binary_find_atom(serial_number, alternative_location)
         } else {
@@ -329,49 +329,57 @@ impl<'a> PDB {
     /// Get the list of Chains making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
-        self.models.iter().flat_map(|a| a.chains())
+        self.models().flat_map(|m| m.chains())
     }
 
     /// Get the list of Chains as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
-        self.models.iter_mut().flat_map(|a| a.chains_mut())
+        self.models_mut().flat_map(|m| m.chains_mut())
     }
 
     /// Get the list of Residues making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.models.iter().flat_map(|a| a.residues())
+        self.models().flat_map(|m| m.residues())
     }
 
     /// Get the list of Residue as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
-        self.models.iter_mut().flat_map(|a| a.residues_mut())
+        self.models_mut().flat_map(|m| m.residues_mut())
     }
 
     /// Get the list of Conformers making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
-        self.models.iter().flat_map(|a| a.conformers())
+        self.models().flat_map(|m| m.conformers())
     }
 
     /// Get the list of Conformers as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
-        self.models.iter_mut().flat_map(|a| a.conformers_mut())
+        self.models_mut().flat_map(|m| m.conformers_mut())
     }
 
     /// Get the list of Atom making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.models.iter().flat_map(|a| a.atoms())
+        self.models().flat_map(|m| m.atoms())
     }
 
     /// Get the list of Atom as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.models.iter_mut().flat_map(|a| a.atoms_mut())
+        self.models_mut().flat_map(|m| m.atoms_mut())
+    }
+
+    /// Get the list of Atoms with their hierarchies making up this PDB, including all models.
+    /// Double ended so iterating from the end is just as fast as from the start.
+    pub fn atoms_with_hierarchy(
+        &'a self,
+    ) -> impl DoubleEndedIterator<Item = AtomWithHierarchy<'a>> + '_ {
+        self.models().flat_map(|m| m.atoms_with_hierarchy())
     }
 
     /// Remove all Atoms matching the given predicate. The predicate will be run on all Atoms.
@@ -563,7 +571,7 @@ impl<'a> PDB {
     /// the original PDB, so any changes to one of the data
     /// structures is not seen in the other data structure (until
     /// you generate a new tree of course).
-    pub fn create_rtree(&self) -> rstar::RTree<&Atom> {
+    pub fn create_atom_rtree(&self) -> rstar::RTree<&Atom> {
         rstar::RTree::bulk_load(self.atoms().collect::<Vec<&Atom>>())
     }
 
@@ -575,10 +583,12 @@ impl<'a> PDB {
     /// the original PDB, so any changes to one of the data
     /// structures is not seen in the other data structure (until
     /// you generate a new tree of course).
-    pub fn create_full_hierarchy_rtree(&'a self) -> Option<rstar::RTree<FullHierarchy<'a>>> {
+    pub fn create_atom_with_hierarchy_rtree(
+        &'a self,
+    ) -> Option<rstar::RTree<AtomWithHierarchy<'a>>> {
         if let Some(model) = self.models().next() {
             Some(rstar::RTree::bulk_load(
-                model.atoms_full_hierarchy().collect(),
+                model.atoms_with_hierarchy().collect(),
             ))
         } else {
             None
@@ -643,7 +653,7 @@ mod tests {
         );
         let mut pdb = PDB::new();
         pdb.add_model(model);
-        let tree = pdb.create_rtree();
+        let tree = pdb.create_atom_rtree();
         assert_eq!(tree.size(), 3);
         assert_eq!(
             tree.nearest_neighbor(&[1.0, 1.0, 1.0])

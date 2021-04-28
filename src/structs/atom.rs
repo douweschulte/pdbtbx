@@ -47,7 +47,14 @@ impl Atom {
         element: &str,
         charge: isize,
     ) -> Option<Atom> {
-        if valid_identifier(atom_name) && valid_identifier(element) {
+        if valid_identifier(atom_name)
+            && valid_identifier(element)
+            && x.is_finite()
+            && y.is_finite()
+            && z.is_finite()
+            && occupancy.is_finite()
+            && b_factor.is_finite()
+        {
             Some(Atom {
                 hetero,
                 serial_number,

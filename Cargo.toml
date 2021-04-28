@@ -12,7 +12,7 @@ categories = ["parser-implementations", "science"]
 include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
-rstar = "0.8.2"
+rstar = "0.8.3"
 
 [profile.dev]
 opt-level = 3

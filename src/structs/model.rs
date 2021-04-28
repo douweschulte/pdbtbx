@@ -153,7 +153,7 @@ impl<'a> Model {
         &'a self,
         serial_number: usize,
         alternative_location: Option<&str>,
-    ) -> Option<FullHierarchy<'a>> {
+    ) -> Option<AtomWithHierarchy<'a>> {
         for chain in self.chains() {
             if let Some(f) = chain.atoms().next() {
                 if let Some(b) = chain.atoms().next_back() {
@@ -161,7 +161,7 @@ impl<'a> Model {
                         if let Some((residue, conformer, atom)) =
                             chain.binary_find_atom(serial_number, alternative_location)
                         {
-                            return Some(FullHierarchy::new(chain, residue, conformer, atom));
+                            return Some(AtomWithHierarchy::new(chain, residue, conformer, atom));
                         }
                     }
                 }
@@ -218,8 +218,10 @@ impl<'a> Model {
         self.chains.iter_mut().flat_map(|a| a.atoms_mut())
     }
 
-    /// Returns a FullHierarchy struct for each atom in this model.
-    pub fn atoms_full_hierarchy(&'a self) -> impl Iterator<Item = FullHierarchy<'a>> + '_ {
+    /// Returns all atom with their hierarchy struct for each atom in this model.
+    pub fn atoms_with_hierarchy(
+        &'a self,
+    ) -> impl DoubleEndedIterator<Item = AtomWithHierarchy<'a>> + '_ {
         self.chains()
             .map(|ch| {
                 ch.residues().map(move |r| {
@@ -230,7 +232,7 @@ impl<'a> Model {
             .flatten()
             .flatten()
             .flatten()
-            .map(FullHierarchy::from_tuple)
+            .map(AtomWithHierarchy::from_tuple)
     }
 
     /// Add a new Atom to this Model. It finds if there already is a Chain with the given `chain_id` if there is it will add this atom to that Chain, otherwise it will create a new Chain and add that to the list of Chains making up this Model. It does the same for the Residue, so it will create a new one if there does not yet exist a Residue with the given serial number.
