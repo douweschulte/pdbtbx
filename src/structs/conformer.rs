@@ -4,6 +4,7 @@ use crate::structs::*;
 use crate::transformation::*;
 use std::cmp::Ordering;
 use std::fmt;
+use rayon::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// A Conformer of a Conformer containing multiple atoms, analogous to 'atom_group' in cctbx
@@ -165,10 +166,20 @@ impl Conformer {
         self.atoms.iter()
     }
 
+    /// Get the list of atoms making up this Conformer in parallel.
+    pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
+        self.atoms.par_iter()
+    }
+
     /// Get the list of atoms as mutable references making up this Conformer.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.atoms.iter_mut()
+    }
+
+    /// Get the list of atoms as mutable references making up this Conformer in parallel.
+    pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
+        self.atoms.par_iter_mut()
     }
 
     /// Add a new atom to the list of atoms making up this Conformer.
@@ -225,6 +236,28 @@ impl Conformer {
     }
 
     /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
+    /// It removes the first matching Atom from the list. Matching is done in parallel.
+    ///
+    /// ## Arguments
+    /// * `serial_number` - the serial number of the Atom to remove
+    ///
+    /// ## Panics
+    /// It panics when the index is outside bounds.
+    pub fn par_remove_atom_by_serial_number(&mut self, serial_number: usize) -> bool {
+        let index = self
+            .atoms
+            .par_iter()
+            .position_first(|a| a.serial_number() == serial_number);
+
+        if let Some(i) = index {
+            self.remove_atom(i);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
     /// It removes the first matching Atom from the list.
     ///
     /// ## Arguments
@@ -243,11 +276,36 @@ impl Conformer {
         }
     }
 
+    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
+    /// It removes the first matching Atom from the list. Matching is done in parallel.
+    ///
+    /// ## Arguments
+    /// * `name` - the name of the Atom to remove
+    ///
+    /// ## Panics
+    /// It panics when the index is outside bounds.
+    pub fn par_remove_atom_by_name(&mut self, name: String) -> bool {
+        let index = self.atoms.par_iter().position_first(|a| a.name() == name);
+
+        if let Some(i) = index {
+            self.remove_atom(i);
+            true
+        } else {
+            false
+        }
+    }
+
     /// Apply a transformation to the position of all atoms making up this Conformer, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
         for atom in self.atoms_mut() {
             atom.apply_transformation(transformation);
         }
+    }
+
+    /// Apply a transformation to the position of all atoms making up this Conformer, the new position is immediately set.
+    /// This is done in parallel.
+    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        self.par_atoms_mut().for_each(|a| a.apply_transformation(transformation))
     }
 
     /// Join this Conformer with another Conformer, this moves all atoms from the other Conformer
@@ -264,6 +322,11 @@ impl Conformer {
     /// Sort the Atoms of this Conformer
     pub fn sort(&mut self) {
         self.atoms.sort();
+    }
+
+    /// Sort the Atoms of this Conformer in parallel
+    pub fn par_sort(&mut self) {
+        self.atoms.par_sort();
     }
 }
 

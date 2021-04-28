@@ -2,6 +2,7 @@
 use crate::structs::*;
 use crate::transformation::*;
 use std::cmp::Ordering;
+use rayon::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// A Chain containing multiple Residues
@@ -75,9 +76,19 @@ impl Chain {
             .fold(0, |sum, res| res.conformer_count() + sum)
     }
 
+    /// Get the amount of Conformers making up this Chain in parallel
+    pub fn par_conformer_count(&self) -> usize {
+        self.par_residues().map(|res| res.conformer_count()).sum()
+    }
+
     /// Get the amount of Atoms making up this Chain
     pub fn atom_count(&self) -> usize {
         self.residues().fold(0, |sum, res| res.atom_count() + sum)
+    }
+
+    /// Get the amount of Atoms making up this Chain in parallel
+    pub fn par_atom_count(&self) -> usize {
+        self.par_residues().map(|res| res.par_atom_count()).sum()
     }
 
     /// Get a specific Residue from list of Residues making up this Chain.
@@ -178,10 +189,20 @@ impl Chain {
         self.residues.iter()
     }
 
+    /// Get the list of Residues making up this Chain in parallel.
+    pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
+        self.residues.par_iter()
+    }
+
     /// Get the list of Residues as mutable references making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
         self.residues.iter_mut()
+    }
+
+    /// Get the list of Residues as mutable references making up this Chain in parallel.
+    pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
+        self.residues.par_iter_mut()
     }
 
     /// Get the list of Conformers making up this Chain.
@@ -190,10 +211,20 @@ impl Chain {
         self.residues.iter().flat_map(|a| a.conformers())
     }
 
+    /// Get the list of Conformers making up this Chain in parallel.
+    pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
+        self.residues.par_iter().flat_map(|a| a.par_conformers())
+    }
+
     /// Get the list of Conformers as mutable references making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
         self.residues.iter_mut().flat_map(|a| a.conformers_mut())
+    }
+
+    /// Get the list of Conformers as mutable references making up this Chain in parallel.
+    pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
+        self.residues.par_iter_mut().flat_map(|a| a.par_conformers_mut())
     }
 
     /// Get the list of Atoms making up this Chain.
@@ -202,10 +233,20 @@ impl Chain {
         self.residues.iter().flat_map(|a| a.atoms())
     }
 
+    /// Get the list of Atoms making up this Chain in parallel.
+    pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
+        self.residues.par_iter().flat_map(|a| a.par_atoms())
+    }
+
     /// Get the list of Atoms as mutable references making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.residues.iter_mut().flat_map(|a| a.atoms_mut())
+    }
+
+    /// Get the list of Atoms as mutable references making up this Chain in parallel.
+    pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
+        self.residues.par_iter_mut().flat_map(|a| a.par_atoms_mut())
     }
 
     /// Add a new Atom to this Chain. It finds if there already is a Residue with the given serial number if there is it will add this atom to that Residue, otherwise it will create a new Residue and add that to the list of Residues making up this Chain.
@@ -309,6 +350,22 @@ impl Chain {
         }
     }
 
+    /// Remove the Residue specified. It returns `true` if it found a matching Residue and removed it.
+    /// It removes the first matching Residue from the list.
+    ///
+    /// ## Arguments
+    /// * `id` - the id construct of the Residue to remove (see Residue.id())
+    pub fn par_remove_residue_by_id(&mut self, id: (isize, Option<&str>)) -> bool {
+        let index = self.residues.par_iter().position_first(|a| a.id() == id);
+
+        if let Some(i) = index {
+            self.remove_residue(i);
+            true
+        } else {
+            false
+        }
+    }
+
     /// Remove all empty Residues from this Chain, and all empty Conformers from the Residues.
     pub fn remove_empty(&mut self) {
         self.residues.iter_mut().for_each(|r| r.remove_empty());
@@ -320,6 +377,12 @@ impl Chain {
         for atom in self.atoms_mut() {
             atom.apply_transformation(transformation);
         }
+    }
+
+    /// Apply a transformation to the position of all atoms making up this Chain, the new position is immediately set.
+    /// Done in parallel.
+    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        self.par_atoms_mut().for_each(|atom| atom.apply_transformation(transformation))
     }
 
     /// Join this Chain with another Chain, this moves all atoms from the other Chain
@@ -336,6 +399,11 @@ impl Chain {
     /// Sort the residues of this chain
     pub fn sort(&mut self) {
         self.residues.sort();
+    }
+
+    /// Sort the residues of this chain in parallel
+    pub fn par_sort(&mut self) {
+        self.residues.par_sort();
     }
 }
 
