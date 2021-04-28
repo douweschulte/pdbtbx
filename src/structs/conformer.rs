@@ -236,6 +236,28 @@ impl Conformer {
     }
 
     /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
+    /// It removes the first matching Atom from the list. Matching is done in parallel.
+    ///
+    /// ## Arguments
+    /// * `serial_number` - the serial number of the Atom to remove
+    ///
+    /// ## Panics
+    /// It panics when the index is outside bounds.
+    pub fn par_remove_atom_by_serial_number(&mut self, serial_number: usize) -> bool {
+        let index = self
+            .atoms
+            .par_iter()
+            .position_first(|a| a.serial_number() == serial_number);
+
+        if let Some(i) = index {
+            self.remove_atom(i);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
     /// It removes the first matching Atom from the list.
     ///
     /// ## Arguments
@@ -254,11 +276,36 @@ impl Conformer {
         }
     }
 
+    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
+    /// It removes the first matching Atom from the list. Matching is done in parallel.
+    ///
+    /// ## Arguments
+    /// * `name` - the name of the Atom to remove
+    ///
+    /// ## Panics
+    /// It panics when the index is outside bounds.
+    pub fn par_remove_atom_by_name(&mut self, name: String) -> bool {
+        let index = self.atoms.par_iter().position_first(|a| a.name() == name);
+
+        if let Some(i) = index {
+            self.remove_atom(i);
+            true
+        } else {
+            false
+        }
+    }
+
     /// Apply a transformation to the position of all atoms making up this Conformer, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
         for atom in self.atoms_mut() {
             atom.apply_transformation(transformation);
         }
+    }
+
+    /// Apply a transformation to the position of all atoms making up this Conformer, the new position is immediately set.
+    /// This is done in parallel.
+    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        self.par_atoms_mut().for_each(|a| a.apply_transformation(transformation))
     }
 
     /// Join this Conformer with another Conformer, this moves all atoms from the other Conformer
@@ -275,6 +322,11 @@ impl Conformer {
     /// Sort the Atoms of this Conformer
     pub fn sort(&mut self) {
         self.atoms.sort();
+    }
+
+    /// Sort the Atoms of this Conformer in parallel
+    pub fn par_sort(&mut self) {
+        self.atoms.par_sort();
     }
 }
 

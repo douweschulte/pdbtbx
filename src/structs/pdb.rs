@@ -164,10 +164,28 @@ impl<'a> PDB {
         }
     }
 
+    /// Get the amount of Residues making up this PDB in parallel.
+    pub fn par_residue_count(&self) -> usize {
+        if !self.models.is_empty() {
+            self.models[0].par_residue_count()
+        } else {
+            0
+        }
+    }
+
     /// Get the amount of Conformers making up this PDB.
     pub fn conformer_count(&self) -> usize {
         if !self.models.is_empty() {
             self.models[0].conformer_count()
+        } else {
+            0
+        }
+    }
+
+    /// Get the amount of Conformers making up this PDB in parallel.
+    pub fn par_conformer_count(&self) -> usize {
+        if !self.models.is_empty() {
+            self.models[0].par_conformer_count()
         } else {
             0
         }
@@ -182,11 +200,25 @@ impl<'a> PDB {
         }
     }
 
+    /// Get the amount of Atoms making up this PDB in parallel.
+    pub fn par_atom_count(&self) -> usize {
+        if !self.models.is_empty() {
+            self.models[0].par_atom_count()
+        } else {
+            0
+        }
+    }
+
     /// Get the amount of Chains making up this PDB. Including all models.
     pub fn total_chain_count(&self) -> usize {
         self.models
             .iter()
             .fold(0, |acc, item| acc + item.chain_count())
+    }
+
+    /// Get the amount of Chains making up this PDB in parallel. Including all models.
+    pub fn par_total_chain_count(&self) -> usize {
+        self.models.par_iter().map(|model| model.chain_count()).sum()
     }
 
     /// Get the amount of Residues making up this PDB. Including all models.
@@ -196,6 +228,11 @@ impl<'a> PDB {
             .fold(0, |acc, item| acc + item.residue_count())
     }
 
+    /// Get the amount of Residues making up this PDB in parallel. Including all models.
+    pub fn par_total_residue_count(&self) -> usize {
+        self.models.par_iter().map(|model| model.par_residue_count()).sum()
+    }
+
     /// Get the amount of Conformer making up this PDB. Including all models.
     pub fn total_conformer_count(&self) -> usize {
         self.models
@@ -203,11 +240,21 @@ impl<'a> PDB {
             .fold(0, |acc, item| acc + item.conformer_count())
     }
 
+    /// Get the amount of Conformer making up this PDB in parallel. Including all models.
+    pub fn par_total_conformer_count(&self) -> usize {
+        self.models.par_iter().map(|model| model.par_conformer_count()).sum()
+    }
+
     /// Get the amount of Atoms making up this PDB. Including all models.
     pub fn total_atom_count(&self) -> usize {
         self.models
             .iter()
             .fold(0, |acc, item| acc + item.atom_count())
+    }
+
+    /// Get the amount of Atoms making up this PDB in parallel. Including all models.
+    pub fn par_total_atom_count(&self) -> usize {
+        self.models.par_iter().map(|model| model.par_atom_count()).sum()
     }
 
     /// Get a specific Model from list of Models making up this PDB.
@@ -533,9 +580,36 @@ impl<'a> PDB {
         }
     }
 
+    /// Remove the Model specified. It returns `true` if it found a matching Model and removed it.
+    /// It removes the first matching Model from the list.
+    /// Done in parallel.
+    ///
+    /// ## Arguments
+    /// * `serial_number` - the serial number of the Model to remove
+    pub fn par_remove_model_serial_number(&mut self, serial_number: usize) -> bool {
+        let index = self
+            .models
+            .par_iter()
+            .position_first(|a| a.serial_number() == serial_number);
+
+        if let Some(i) = index {
+            self.remove_model(i);
+            true
+        } else {
+            false
+        }
+    }
+
     /// Remove all empty Models from this PDB, and all empty Chains from the Model, and all empty Residues from the Chains.
     pub fn remove_empty(&mut self) {
         self.models.iter_mut().for_each(|m| m.remove_empty());
+        self.models.retain(|m| m.chain_count() > 0);
+    }
+
+    /// Remove all empty Models from this PDB, and all empty Chains from the Model, and all empty Residues from the Chains.
+    /// Done in parallel.
+    pub fn par_remove_empty(&mut self) {
+        self.models.par_iter_mut().for_each(|m| m.remove_empty());
         self.models.retain(|m| m.chain_count() > 0);
     }
 
@@ -588,6 +662,12 @@ impl<'a> PDB {
         }
     }
 
+    /// Apply a transformation to the position of all atoms making up this PDB, the new position is immediately set.
+    /// Done in parallel.
+    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        self.par_atoms_mut().for_each(|atom| atom.apply_transformation(transformation))
+    }
+
     /// Joins two PDBs. If one has multiple models it extends the models of this PDB with the models of the other PDB. If this PDB does
     /// not have any models it moves the models of the other PDB to this PDB. If both have one model it moves all chains/residues/atoms
     /// form the first model of the other PDB to the first model of this PDB. Effectively the same as calling join on those models.
@@ -614,6 +694,11 @@ impl<'a> PDB {
         self.models.sort();
     }
 
+    /// Sort the Models of this PDB in parallel
+    pub fn par_sort(&mut self) {
+        self.models.par_sort();
+    }
+
     /// Sort all structs in this PDB
     pub fn full_sort(&mut self) {
         self.sort();
@@ -631,6 +716,15 @@ impl<'a> PDB {
         }
     }
 
+    /// Sort all structs in this PDB in parallel
+    pub fn par_full_sort(&mut self) {
+        self.par_sort();
+        self.par_models_mut().for_each(|model| model.par_sort());
+        self.par_chains_mut().for_each(|chain| chain.par_sort());
+        self.par_residues_mut().for_each(|residue| residue.par_sort());
+        self.par_conformers_mut().for_each(|conformer| conformer.par_sort());
+    }
+
     /// Create an R star tree which can be used for fast lookup of
     /// spatial close atoms. See the crate rstar for documentation
     /// on how to use the tree. (https://crates.io/crates/rstar)
@@ -641,6 +735,11 @@ impl<'a> PDB {
     /// you generate a new tree of course).
     pub fn create_rtree(&self) -> rstar::RTree<&Atom> {
         rstar::RTree::bulk_load(self.atoms().collect::<Vec<&Atom>>())
+    }
+
+    /// Create an R star tree from parallel Iterator over atoms.
+    pub fn par_create_rtree(&self) -> rstar::RTree<&Atom> {
+        rstar::RTree::bulk_load(self.par_atoms().collect::<Vec<&Atom>>())
     }
 
     /// Create an R star tree which can be used for fast lookup of
@@ -655,6 +754,17 @@ impl<'a> PDB {
         if let Some(model) = self.models().next() {
             Some(rstar::RTree::bulk_load(
                 model.atoms_full_hierarchy().collect(),
+            ))
+        } else {
+            None
+        }
+    }
+
+    /// Create an R star Tree from parallel Iterator over full hierarchy struct.
+    pub fn par_create_full_hierarchy_rtree(&'a self) -> Option<rstar::RTree<FullHierarchy<'a>>> {
+        if let Some(model) = self.models().next() {
+            Some(rstar::RTree::bulk_load(
+                model.par_atoms_full_hierarchy().collect(),
             ))
         } else {
             None

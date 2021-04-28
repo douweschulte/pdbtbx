@@ -114,6 +114,11 @@ impl Residue {
         self.conformers().fold(0, |sum, res| res.atom_count() + sum)
     }
 
+    /// Get the amount of Atoms making up this Residue in parallel
+    pub fn par_atom_count(&self) -> usize {
+        self.par_conformers().map(|a| a.atom_count()).sum()
+    }
+
     /// Get a specific conformer from list of conformers making up this Residue.
     ///
     /// ## Arguments
@@ -284,9 +289,10 @@ impl Residue {
     where
         F: Fn(&Atom) -> bool,
     {
-        for conformer in self.conformers_mut() {
-            conformer.remove_atoms_by(&predicate);
-        }
+        // for conformer in self.conformers_mut() {
+        //     conformer.remove_atoms_by(&predicate);
+        // }
+        self.conformers_mut().for_each(|conformer| conformer.remove_atoms_by(&predicate))
     }
 
     /// Remove the conformer specified.
@@ -319,11 +325,36 @@ impl Residue {
         }
     }
 
+    /// Remove the conformer specified. It returns `true` if it found a matching conformer and removed it.
+    /// It removes the first matching conformer from the list. Searching is done in parallel
+    ///
+    /// ## Arguments
+    /// * `id` - the identifying construct of the Conformer to remove
+    ///
+    /// ## Panics
+    /// It panics when the index is outside bounds.
+    pub fn par_remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
+        let index = self.conformers.par_iter().position_first(|a| a.id() == id);
+
+        if let Some(i) = index {
+            self.remove_conformer(i);
+            true
+        } else {
+            false
+        }
+    }
+
     /// Apply a transformation to the position of all conformers making up this Residue, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
         for conformer in self.conformers_mut() {
             conformer.apply_transformation(transformation);
         }
+    }
+
+    /// Apply a transformation to the position of all conformers making up this Residue, the new position is immediately set.
+    /// Done in parallel
+    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        self.par_conformers_mut().for_each(|conformer| conformer.apply_transformation(transformation))
     }
 
     /// Join this Residue with another Residue, this moves all conformers from the other Residue
@@ -340,6 +371,11 @@ impl Residue {
     /// Sort the conformers of this Residue
     pub fn sort(&mut self) {
         self.conformers.sort();
+    }
+
+    /// Sort the conformers of this Residue in parallel
+    pub fn par_sort(&mut self) {
+        self.conformers.par_sort();
     }
 }
 

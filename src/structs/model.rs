@@ -46,15 +46,30 @@ impl<'a> Model {
             .fold(0, |sum, chain| chain.residue_count() + sum)
     }
 
+    /// Get the amount of Residues making up this Model in parallel.
+    pub fn par_residue_count(&self) -> usize {
+        self.par_chains().map(|chain| chain.residue_count()).sum()
+    }
+
     /// Get the amount of Conformers making up this Model.
     pub fn conformer_count(&self) -> usize {
         self.chains()
             .fold(0, |sum, chain| chain.conformer_count() + sum)
     }
 
+    /// Get the amount of Conformers making up this Model in parallel.
+    pub fn par_conformer_count(&self) -> usize {
+        self.par_chains().map(|chain| chain.par_conformer_count()).sum()
+    }
+
     /// Get the amount of Atoms making up this Model.
     pub fn atom_count(&self) -> usize {
         self.chains().fold(0, |sum, chain| chain.atom_count() + sum)
+    }
+
+    /// Get the amount of Atoms making up this Model in parallel.
+    pub fn par_atom_count(&self) -> usize {
+        self.par_chains().map(|chain| chain.par_atom_count()).sum()
     }
 
     /// Get a specific Chain from list of Chains making up this Model.
@@ -401,9 +416,32 @@ impl<'a> Model {
         }
     }
 
+    /// Remove the Chain specified. It returns `true` if it found a matching Chain and removed it.
+    /// It removes the first matching Chain from the list.
+    /// Done in parallel.
+    ///
+    /// ## Arguments
+    /// * `id` - the id of the Chain to remove
+    pub fn par_remove_chain_by_id(&mut self, id: String) -> bool {
+        let index = self.chains.par_iter().position_first(|a| a.id() == id);
+
+        if let Some(i) = index {
+            self.remove_chain(i);
+            true
+        } else {
+            false
+        }
+    }
+
     /// Remove all empty Chain from this Model, and all empty Residues from the Chains.
     pub fn remove_empty(&mut self) {
         self.chains.iter_mut().for_each(|c| c.remove_empty());
+        self.chains.retain(|c| c.residue_count() > 0);
+    }
+
+    /// Remove all empty Chain from this Model, and all empty Residues from the Chains in parallel.
+    pub fn par_remove_empty(&mut self) {
+        self.chains.par_iter_mut().for_each(|c| c.remove_empty());
         self.chains.retain(|c| c.residue_count() > 0);
     }
 
@@ -412,6 +450,12 @@ impl<'a> Model {
         for atom in self.atoms_mut() {
             atom.apply_transformation(transformation);
         }
+    }
+
+    /// Apply a transformation to the position of all atoms making up this Model, the new position is immediately set.
+    /// Done in parallel.
+    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        self.par_atoms_mut().for_each(|atom| atom.apply_transformation(transformation))
     }
 
     /// Join this Model with another Model, this moves all atoms from the other Model
@@ -429,6 +473,11 @@ impl<'a> Model {
     /// Sort the Chains of this Model
     pub fn sort(&mut self) {
         self.chains.sort();
+    }
+
+    /// Sort the Chains of this Model in parallel
+    pub fn par_sort(&mut self) {
+        self.chains.par_sort();
     }
 }
 

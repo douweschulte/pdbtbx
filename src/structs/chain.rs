@@ -76,9 +76,19 @@ impl Chain {
             .fold(0, |sum, res| res.conformer_count() + sum)
     }
 
+    /// Get the amount of Conformers making up this Chain in parallel
+    pub fn par_conformer_count(&self) -> usize {
+        self.par_residues().map(|res| res.conformer_count()).sum()
+    }
+
     /// Get the amount of Atoms making up this Chain
     pub fn atom_count(&self) -> usize {
         self.residues().fold(0, |sum, res| res.atom_count() + sum)
+    }
+
+    /// Get the amount of Atoms making up this Chain in parallel
+    pub fn par_atom_count(&self) -> usize {
+        self.par_residues().map(|res| res.par_atom_count()).sum()
     }
 
     /// Get a specific Residue from list of Residues making up this Chain.
@@ -340,6 +350,22 @@ impl Chain {
         }
     }
 
+    /// Remove the Residue specified. It returns `true` if it found a matching Residue and removed it.
+    /// It removes the first matching Residue from the list.
+    ///
+    /// ## Arguments
+    /// * `id` - the id construct of the Residue to remove (see Residue.id())
+    pub fn par_remove_residue_by_id(&mut self, id: (isize, Option<&str>)) -> bool {
+        let index = self.residues.par_iter().position_first(|a| a.id() == id);
+
+        if let Some(i) = index {
+            self.remove_residue(i);
+            true
+        } else {
+            false
+        }
+    }
+
     /// Remove all empty Residues from this Chain, and all empty Conformers from the Residues.
     pub fn remove_empty(&mut self) {
         self.residues.iter_mut().for_each(|r| r.remove_empty());
@@ -351,6 +377,12 @@ impl Chain {
         for atom in self.atoms_mut() {
             atom.apply_transformation(transformation);
         }
+    }
+
+    /// Apply a transformation to the position of all atoms making up this Chain, the new position is immediately set.
+    /// Done in parallel.
+    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        self.par_atoms_mut().for_each(|atom| atom.apply_transformation(transformation))
     }
 
     /// Join this Chain with another Chain, this moves all atoms from the other Chain
@@ -367,6 +399,11 @@ impl Chain {
     /// Sort the residues of this chain
     pub fn sort(&mut self) {
         self.residues.sort();
+    }
+
+    /// Sort the residues of this chain in parallel
+    pub fn par_sort(&mut self) {
+        self.residues.par_sort();
     }
 }
 
