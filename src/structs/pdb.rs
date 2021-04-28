@@ -3,6 +3,7 @@ use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 /// A PDB file containing the 3D coordinates of many atoms making up the
 /// 3D structure of a protein, but it can also be used for other molecules.
@@ -571,6 +572,7 @@ impl<'a> PDB {
     /// the original PDB, so any changes to one of the data
     /// structures is not seen in the other data structure (until
     /// you generate a new tree of course).
+    #[cfg(feature = "rstar")]
     pub fn create_atom_rtree(&self) -> rstar::RTree<&Atom> {
         rstar::RTree::bulk_load(self.atoms().collect::<Vec<&Atom>>())
     }
@@ -583,16 +585,9 @@ impl<'a> PDB {
     /// the original PDB, so any changes to one of the data
     /// structures is not seen in the other data structure (until
     /// you generate a new tree of course).
-    pub fn create_atom_with_hierarchy_rtree(
-        &'a self,
-    ) -> Option<rstar::RTree<AtomWithHierarchy<'a>>> {
-        if let Some(model) = self.models().next() {
-            Some(rstar::RTree::bulk_load(
-                model.atoms_with_hierarchy().collect(),
-            ))
-        } else {
-            None
-        }
+    #[cfg(feature = "rstar")]
+    pub fn create_atom_with_hierarchy_rtree(&'a self) -> rstar::RTree<AtomWithHierarchy<'a>> {
+        rstar::RTree::bulk_load(self.atoms_with_hierarchy().collect())
     }
 }
 
@@ -631,6 +626,37 @@ mod tests {
     }
 
     #[test]
+    fn binary_lookup() {
+        let mut model = Model::new(0);
+        model.add_atom(
+            Atom::new(false, 1, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", Some("A")),
+        );
+        model.add_atom(
+            Atom::new(false, 1, "", 1.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", Some("B")),
+        );
+        model.add_atom(
+            Atom::new(false, 1, "", 2.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        let mut pdb = PDB::new();
+        pdb.add_model(model);
+        pdb.full_sort();
+
+        assert_eq!(pdb.binary_find_atom(1, Some("A")).unwrap().atom.x(), 0.0);
+        assert_eq!(pdb.binary_find_atom(1, Some("B")).unwrap().atom.x(), 1.0);
+        assert_eq!(pdb.binary_find_atom(1, None).unwrap().atom.x(), 2.0);
+    }
+
+    #[test]
+    #[cfg(feature = "rstar")]
     fn spatial_lookup() {
         let mut model = Model::new(0);
         model.add_atom(
@@ -670,35 +696,88 @@ mod tests {
         assert_eq!(neighbors.next().unwrap().serial_number(), 0);
         assert_eq!(neighbors.next().unwrap().serial_number(), 2);
         assert_eq!(neighbors.next().unwrap().serial_number(), 1);
+        assert_eq!(neighbors.next(), None);
     }
 
     #[test]
-    fn binary_lookup() {
+    #[cfg(feature = "rstar")]
+    fn spatial_lookup_with_hierarchy() {
         let mut model = Model::new(0);
         model.add_atom(
-            Atom::new(false, 1, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
-            ("MET", Some("A")),
+            ("MET", None),
         );
         model.add_atom(
-            Atom::new(false, 1, "", 1.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 1, "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
-            ("MET", Some("B")),
+            ("MET", None),
         );
         model.add_atom(
-            Atom::new(false, 1, "", 2.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
-            "A",
+            Atom::new(false, 2, "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
+            "B",
             (0, None),
             ("MET", None),
         );
         let mut pdb = PDB::new();
         pdb.add_model(model);
-        pdb.full_sort();
+        let tree = pdb.create_atom_with_hierarchy_rtree();
+        assert_eq!(tree.size(), 3);
+        assert_eq!(
+            tree.nearest_neighbor(&[1.0, 1.0, 1.0])
+                .unwrap()
+                .atom
+                .serial_number(),
+            1
+        );
+        assert_eq!(
+            tree.locate_within_distance([1.0, 1.0, 1.0], 1.0)
+                .fold(0, |acc, _| acc + 1),
+            2
+        );
+        let mut neighbors = tree.nearest_neighbor_iter(&pdb.atom(0).unwrap().pos_array());
+        let a = neighbors.next().unwrap();
+        let b = neighbors.next().unwrap();
+        let c = neighbors.next().unwrap();
+        assert_eq!(neighbors.next(), None);
 
-        assert_eq!(pdb.binary_find_atom(1, Some("A")).unwrap().atom.x(), 0.0);
-        assert_eq!(pdb.binary_find_atom(1, Some("B")).unwrap().atom.x(), 1.0);
-        assert_eq!(pdb.binary_find_atom(1, None).unwrap().atom.x(), 2.0);
+        assert_eq!(a.atom.serial_number(), 0);
+        assert_eq!(b.atom.serial_number(), 2);
+        assert_eq!(c.atom.serial_number(), 1);
+        assert_eq!(a.chain.id(), "A");
+        assert_eq!(b.chain.id(), "B");
+        assert_eq!(c.chain.id(), "A");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialization() {
+        let mut model = Model::new(0);
+        model.add_atom(
+            Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        model.add_atom(
+            Atom::new(false, 1, "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        model.add_atom(
+            Atom::new(false, 2, "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
+            "B",
+            (0, None),
+            ("MET", None),
+        );
+        let pdb = PDB::new();
+
+        use serde_json;
+        let json = serde_json::to_string(&pdb).unwrap();
+        let parsed = serde_json::from_str(&json).unwrap();
+        assert_eq!(pdb, parsed);
     }
 }

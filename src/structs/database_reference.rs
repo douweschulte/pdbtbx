@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 /// The position of the sequence for a cross-reference of sequences.
 pub struct SequencePosition {
@@ -38,6 +39,7 @@ impl SequencePosition {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 /// A DatabaseReference containing the cross-reference to a corresponding database sequence for a Chain.
 pub struct DatabaseReference {
@@ -67,6 +69,7 @@ impl DatabaseReference {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 /// A difference between the sequence of the database and the pdb file
 pub struct SequenceDifference {

@@ -25,7 +25,11 @@
 //!
 //! ```rust
 //! use pdbtbx;
-//! let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Medium).unwrap();
+//! let (mut pdb, _errors) = pdbtbx::open(
+//!         "example-pdbs/1ubq.pdb",
+//!         pdbtbx::StrictnessLevel::Medium
+//!     ).unwrap();
+//!
 //! pdb.remove_atoms_by(|atom| atom.element() == "H"); // Remove all H atoms
 //!
 //! let mut avg_b_factor = 0.0;
@@ -82,11 +86,55 @@
 //!         // Do the calculations
 //!     }
 //! }
+//! // Or with access to the information with a single line
+//! for hierarchy in pdb.atoms_with_hierarchy() {
+//!     println!("Atom {} in Conformer {} in Residue {} in Chain {}",
+//!         hierarchy.atom.serial_number(),
+//!         hierarchy.conformer.name(),
+//!         hierarchy.residue.serial_number(),
+//!         hierarchy.chain.id(),
+//!     );
+//! }
 //! ```
 //!
-//! ## References
-//! 1. [`Grosse-Kunstleve, R. W. et al`] Grosse-Kunstleve, R. W., Sauter, N. K., Moriarty, N. W., & Adams, P. D. (2002). TheComputational Crystallography Toolbox: crystallographic algorithms in a reusable software framework. Journal of Applied Crystallography, 35(1), 126–136. [https://doi.org/10.1107/s0021889801017824](https://doi.org/10.1107/s0021889801017824)
-//! 1. [`Perkel, J. M.`] Perkel, J. M. (2020). Why scientists are turning to Rust. Nature, 588(7836), 185–186. [https://doi.org/10.1038/d41586-020-03382-2](https://doi.org/10.1038/d41586-020-03382-2)
+//! ## Serialization
+//! Enable the `serde` feature for [Serde](https://crates.io/crates/serde) support.
+//!
+//! ## Spatial lookup of atoms
+//! Enable the `rstar` feature for [rstar](https://crates.io/crates/rstar) support. This enables you to generate
+//! R*trees making it possible to do very fast lookup for atoms with spatial queries. So for example finding close
+//! atoms is very fast. See the documentation of this crate for more information on how to make use of all of its
+//! features.
+//!
+#![cfg_attr(
+    feature = "rstar",
+    doc = r##"
+```rust
+# use pdbtbx;
+# let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Medium).unwrap();
+// You can loop over all atoms within 12.5 Aͦ of a specific atom
+let tree = pdb.create_atom_rtree();
+for atom in tree.locate_within_distance(pdb.atom(42).unwrap().pos_array(), 12.5) {
+    println!("{}", atom);
+}
+
+// You can even get information about the hierarchy of these atoms 
+// (the chain, residue and conformer that contain this atom)
+let tree = pdb.create_atom_with_hierarchy_rtree();
+let mut total = 0;
+for hierarchy in tree.locate_within_distance(pdb.atom(42).unwrap().pos_array(), 12.5) {
+    if hierarchy.is_backbone() {
+        total += 1;
+    }
+}
+println!("There are {} backbone atoms within 12.5Aͦ of the atom at index 42", total);
+# assert_eq!(total, 4);
+```
+"##
+)]
+#![doc = "## References"]
+#![doc = "1. [`Grosse-Kunstleve, R. W. et al`] Grosse-Kunstleve, R. W., Sauter, N. K., Moriarty, N. W., & Adams, P. D. (2002). TheComputational Crystallography Toolbox: crystallographic algorithms in a reusable software framework. Journal of Applied Crystallography, 35(1), 126–136. [https://doi.org/10.1107/s0021889801017824](https://doi.org/10.1107/s0021889801017824)"]
+#![doc = "1. [`Perkel, J. M.`] Perkel, J. M. (2020). Why scientists are turning to Rust. Nature, 588(7836), 185–186. [https://doi.org/10.1038/d41586-020-03382-2](https://doi.org/10.1038/d41586-020-03382-2)"]
 #![deny(
     missing_docs,
     trivial_casts,

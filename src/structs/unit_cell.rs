@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 /// A unit cell of a crystal, containing its dimensions and angles
 pub struct UnitCell {

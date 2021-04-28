@@ -4,6 +4,7 @@ use crate::reference_tables;
 use crate::transformation::*;
 use std::cmp::Ordering;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 /// A Space group of a crystal
 pub struct Symmetry {

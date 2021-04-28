@@ -5,6 +5,7 @@ use crate::transformation::*;
 use std::cmp::Ordering;
 use std::fmt;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// A Conformer of a Conformer containing multiple atoms, analogous to 'atom_group' in cctbx
 pub struct Conformer {
@@ -179,7 +180,7 @@ impl Conformer {
     }
 
     /// Returns if this Conformer is an amino acid
-    pub fn amino_acid(&self) -> bool {
+    pub fn is_amino_acid(&self) -> bool {
         reference_tables::get_amino_acid_number(self.name()).is_some()
     }
 

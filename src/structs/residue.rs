@@ -4,6 +4,7 @@ use crate::transformation::*;
 use std::cmp::Ordering;
 use std::fmt;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// A Residue containing multiple Residues
 pub struct Residue {

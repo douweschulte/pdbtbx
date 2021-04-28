@@ -20,7 +20,7 @@ jobs:
       - name: Run tests
         run: |
           mkdir -p dump
-          cargo test --verbose
+          cargo test --all-features --verbose
 
   lints:
     name: Lints

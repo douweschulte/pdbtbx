@@ -75,18 +75,14 @@ fn do_something(file: &str, folder: &str, name: &str) {
 
     println!("Set values");
 
-    for residue in pdb.residues() {
-        for conformer in residue.conformers() {
-            for atom in conformer.atoms() {
-                avg += atom.b_factor();
-                if conformer.amino_acid() && atom.backbone() {
-                    total_back += 1;
-                    avg_back += atom.b_factor();
-                } else {
-                    total_side += 1;
-                    avg_side += atom.b_factor();
-                }
-            }
+    for hierarchy in pdb.atoms_with_hierarchy() {
+        avg += hierarchy.atom.b_factor();
+        if hierarchy.is_backbone() {
+            total_back += 1;
+            avg_back += hierarchy.atom.b_factor();
+        } else {
+            total_side += 1;
+            avg_side += hierarchy.atom.b_factor();
         }
     }
 

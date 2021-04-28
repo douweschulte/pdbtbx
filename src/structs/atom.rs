@@ -6,6 +6,7 @@ use std::cmp::Ordering;
 use std::fmt;
 
 /// A struct to represent a single Atom in a protein
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Atom {
     /// Determines if this atom is an hetero atom (true), a non standard atom, or a normal atom (false)
@@ -367,9 +368,8 @@ impl Atom {
     }
 
     /// Get if this atom is likely to be a part of the backbone of a protein
-    pub fn backbone(&self) -> bool {
-        let backbone_names = vec!["N", "CA", "C", "O"];
-        backbone_names.contains(&self.name())
+    pub fn is_backbone(&self) -> bool {
+        reference_tables::is_backbone(self.name())
     }
 
     /// Apply a transformation to the position of this atom, the new position is immediately set.
@@ -497,8 +497,10 @@ impl Ord for Atom {
     }
 }
 
+#[cfg(feature = "rstar")]
 use rstar::{PointDistance, RTreeObject, AABB};
 
+#[cfg(feature = "rstar")]
 impl RTreeObject for &Atom {
     type Envelope = AABB<[f64; 3]>;
 
@@ -507,6 +509,7 @@ impl RTreeObject for &Atom {
     }
 }
 
+#[cfg(feature = "rstar")]
 impl PointDistance for &Atom {
     fn distance_2(&self, other: &[f64; 3]) -> f64 {
         // No square root as that is required by the package
