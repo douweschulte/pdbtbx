@@ -268,8 +268,8 @@ impl Atom {
 
     /// Get the atomic radius of this Atom in Å. The radius is defined up to 'Cm' or 96.
     /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96.
-    /// Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: http://doi.org/10.1002/chem.201602949.
-    /// Updated to the corrigendum: https://doi.org/10.1002/chem.201700610
+    /// Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: <http://doi.org/10.1002/chem.201602949>.
+    /// Updated to the corrigendum: <https://doi.org/10.1002/chem.201700610>
     /// ## Fails
     /// It fails if the element name if this Atom is not defined (see `self.atomic_number()`).
     /// It also fails when the atomic radius is not defined for the given atomic number, so if the atomic
@@ -283,7 +283,7 @@ impl Atom {
     }
 
     /// Gets the van der Waals radius for this Atom in Å.The radius is defined up until 'Es' or 99.
-    /// Source: Alvarez, S. (2013). A cartography of the van der Waals territories. Dalton Transactions, 42(24), 8617. https://doi.org/10.1039/c3dt50599e
+    /// Source: Alvarez, S. (2013). A cartography of the van der Waals territories. Dalton Transactions, 42(24), 8617. <https://doi.org/10.1039/c3dt50599e>
     /// ## Fails
     /// It fails if the element name if this Atom is not defined (see `self.atomic_number()`).
     /// It also fails when the atomic radius is not defined for the given atomic number, so if the atomic

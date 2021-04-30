@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#[cfg(feature = "rayon")]
 use rayon::prelude::*;
 
 /// Gets the index (into Int. Crys. Handbook Vol A 2016) for the given symbol. First it is
@@ -17,6 +18,7 @@ pub fn get_index_for_symbol(symbol: &str) -> Option<usize> {
 /// Gets the index (into Int. Crys. Handbook Vol A 2016) for the given symbol in parallel. First it is
 /// interpreted as a Herman Mauguin symbol, if that is unsuccessful it is interpreted as a
 /// Hall symbol.
+#[cfg(feature = "rayon")]
 pub fn par_get_index_for_symbol(symbol: &str) -> Option<usize> {
     if let Some(index) = HERMANN_MAUGUIN_SYMBOL
         .par_iter()
@@ -69,7 +71,7 @@ pub fn get_atomic_number(element: &str) -> Option<usize> {
 
 /// Gets the atomic radius for the given atomic number (defined up until 'Cm' 96) in Å.
 /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96. Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: http://doi.org/10.1002/chem.201602949, doi:10.1002/chem.201602949.
-/// Updated to the corrigendum: https://doi.org/10.1002/chem.201700610
+/// Updated to the corrigendum: <https://doi.org/10.1002/chem.201700610>
 pub fn get_atomic_radius(atomic_number: usize) -> Option<f64> {
     match ELEMENT_ATOMIC_RADII.get(atomic_number - 1) {
         Some(n) => Some(*n),
@@ -78,7 +80,7 @@ pub fn get_atomic_radius(atomic_number: usize) -> Option<f64> {
 }
 
 /// Gets the van der Waals radius for the given atomic number (defined up until 'Es' 99) in Å.
-/// Source: Alvarez, S. (2013). A cartography of the van der Waals territories. Dalton Transactions, 42(24), 8617. https://doi.org/10.1039/c3dt50599e
+/// Source: Alvarez, S. (2013). A cartography of the van der Waals territories. Dalton Transactions, 42(24), 8617. <https://doi.org/10.1039/c3dt50599e>
 pub fn get_vanderwaals_radius(atomic_number: usize) -> Option<f64> {
     match ELEMENT_VANDERWAALS_RADII.get(atomic_number - 1) {
         Some(n) => Some(*n),

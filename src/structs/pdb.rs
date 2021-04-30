@@ -2,6 +2,8 @@
 use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
+use doc_cfg::doc_cfg;
+#[cfg(feature = "rayon")]
 use rayon::prelude::*;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -53,6 +55,7 @@ impl<'a> PDB {
     }
 
     /// Get the remarks in parallel, containing the remark-type-number and a line of free text
+    #[doc_cfg(feature = "rayon")]
     pub fn par_remarks(&self) -> impl ParallelIterator<Item = &(usize, String)> + '_ {
         self.remarks.par_iter()
     }
@@ -63,6 +66,7 @@ impl<'a> PDB {
     }
 
     /// Get the parallel remarks as mutable references, containing the remark-type-number and a line of free text
+    #[doc_cfg(feature = "rayon")]
     pub fn par_remarks_mut(&mut self) -> impl ParallelIterator<Item = &mut (usize, String)> + '_ {
         self.remarks.par_iter_mut()
     }
@@ -96,6 +100,7 @@ impl<'a> PDB {
     }
 
     /// Get the parallel MtriX records for this PDB
+    #[doc_cfg(feature = "rayon")]
     pub fn par_mtrix(&self) -> impl ParallelIterator<Item = &MtriX> + '_ {
         self.mtrix.par_iter()
     }
@@ -106,6 +111,7 @@ impl<'a> PDB {
     }
 
     /// Get the parallel MtriX records for this PDB, as mutable references
+    #[doc_cfg(feature = "rayon")]
     pub fn par_mtrix_mut(&mut self) -> impl ParallelIterator<Item = &mut MtriX> + '_ {
         self.mtrix.par_iter_mut()
     }
@@ -166,6 +172,7 @@ impl<'a> PDB {
     }
 
     /// Get the amount of Residues making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_residue_count(&self) -> usize {
         if !self.models.is_empty() {
             self.models[0].par_residue_count()
@@ -184,6 +191,7 @@ impl<'a> PDB {
     }
 
     /// Get the amount of Conformers making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_conformer_count(&self) -> usize {
         if !self.models.is_empty() {
             self.models[0].par_conformer_count()
@@ -202,6 +210,7 @@ impl<'a> PDB {
     }
 
     /// Get the amount of Atoms making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
         if !self.models.is_empty() {
             self.models[0].par_atom_count()
@@ -218,6 +227,7 @@ impl<'a> PDB {
     }
 
     /// Get the amount of Chains making up this PDB in parallel. Including all models.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_total_chain_count(&self) -> usize {
         self.models
             .par_iter()
@@ -233,6 +243,7 @@ impl<'a> PDB {
     }
 
     /// Get the amount of Residues making up this PDB in parallel. Including all models.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_total_residue_count(&self) -> usize {
         self.models
             .par_iter()
@@ -248,6 +259,7 @@ impl<'a> PDB {
     }
 
     /// Get the amount of Conformer making up this PDB in parallel. Including all models.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_total_conformer_count(&self) -> usize {
         self.models
             .par_iter()
@@ -263,6 +275,7 @@ impl<'a> PDB {
     }
 
     /// Get the amount of Atoms making up this PDB in parallel. Including all models.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_total_atom_count(&self) -> usize {
         self.models
             .par_iter()
@@ -403,6 +416,7 @@ impl<'a> PDB {
     }
 
     /// Get the list of Models making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_models(&self) -> impl ParallelIterator<Item = &Model> + '_ {
         self.models.par_iter()
     }
@@ -413,6 +427,7 @@ impl<'a> PDB {
     }
 
     /// Get the list of Models as mutable references making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_models_mut(&mut self) -> impl ParallelIterator<Item = &mut Model> + '_ {
         self.models.par_iter_mut()
     }
@@ -424,6 +439,7 @@ impl<'a> PDB {
     }
 
     /// Get the list of Chains making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_chains(&self) -> impl ParallelIterator<Item = &Chain> + '_ {
         self.par_models().flat_map(|a| a.par_chains())
     }
@@ -435,6 +451,7 @@ impl<'a> PDB {
     }
 
     /// Get the list of Chains as mutable references making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_chains_mut(&mut self) -> impl ParallelIterator<Item = &mut Chain> + '_ {
         self.par_models_mut().flat_map(|a| a.par_chains_mut())
     }
@@ -446,6 +463,7 @@ impl<'a> PDB {
     }
 
     /// Get the list of Residues making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
         self.par_models().flat_map(|a| a.par_residues())
     }
@@ -457,6 +475,7 @@ impl<'a> PDB {
     }
 
     /// Get the list of Residue as mutable references making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
         self.par_models_mut().flat_map(|a| a.par_residues_mut())
     }
@@ -468,6 +487,7 @@ impl<'a> PDB {
     }
 
     /// Get the list of Conformers making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
         self.par_models().flat_map(|a| a.par_conformers())
     }
@@ -479,6 +499,7 @@ impl<'a> PDB {
     }
 
     /// Get the list of Conformers as mutable references making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
         self.par_models_mut().flat_map(|a| a.par_conformers_mut())
     }
@@ -490,6 +511,7 @@ impl<'a> PDB {
     }
 
     /// Get the list of Atom making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
         self.par_models().flat_map(|a| a.par_atoms())
     }
@@ -501,6 +523,7 @@ impl<'a> PDB {
     }
 
     /// Get the list of Atom as mutable references making up this PDB in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.par_models_mut().flat_map(|a| a.par_atoms_mut())
     }
@@ -514,7 +537,7 @@ impl<'a> PDB {
     }
 
     /// Get the list of Atoms with their hierarchies making up this PDB, including all models.
-    /// Double ended so iterating from the end is just as fast as from the start.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_with_hierarchy(
         &'a self,
     ) -> impl ParallelIterator<Item = AtomWithHierarchy<'a>> + '_ {
@@ -610,6 +633,7 @@ impl<'a> PDB {
     ///
     /// ## Arguments
     /// * `serial_number` - the serial number of the Model to remove
+    #[doc_cfg(feature = "rayon")]
     pub fn par_remove_model_serial_number(&mut self, serial_number: usize) -> bool {
         let index = self
             .models
@@ -632,6 +656,7 @@ impl<'a> PDB {
 
     /// Remove all empty Models from this PDB, and all empty Chains from the Model, and all empty Residues from the Chains.
     /// Done in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_remove_empty(&mut self) {
         self.models.par_iter_mut().for_each(|m| m.remove_empty());
         self.models.retain(|m| m.chain_count() > 0);
@@ -688,6 +713,7 @@ impl<'a> PDB {
 
     /// Apply a transformation to the position of all atoms making up this PDB, the new position is immediately set.
     /// Done in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.par_atoms_mut()
             .for_each(|atom| atom.apply_transformation(transformation))
@@ -720,6 +746,7 @@ impl<'a> PDB {
     }
 
     /// Sort the Models of this PDB in parallel
+    #[doc_cfg(feature = "rayon")]
     pub fn par_sort(&mut self) {
         self.models.par_sort();
     }
@@ -742,6 +769,7 @@ impl<'a> PDB {
     }
 
     /// Sort all structs in this PDB in parallel
+    #[doc_cfg(feature = "rayon")]
     pub fn par_full_sort(&mut self) {
         self.par_sort();
         self.par_models_mut().for_each(|model| model.par_sort());
@@ -754,26 +782,26 @@ impl<'a> PDB {
 
     /// Create an R star tree which can be used for fast lookup of
     /// spatial close atoms. See the crate rstar for documentation
-    /// on how to use the tree. (https://crates.io/crates/rstar)
+    /// on how to use the tree. (<https://crates.io/crates/rstar>)
     ///
     /// Keep in mind that this creates a tree that is separate from
     /// the original PDB, so any changes to one of the data
     /// structures is not seen in the other data structure (until
     /// you generate a new tree of course).
-    #[cfg(feature = "rstar")]
+    #[doc_cfg(feature = "rstar")]
     pub fn create_atom_rtree(&self) -> rstar::RTree<&Atom> {
         rstar::RTree::bulk_load(self.atoms().collect::<Vec<&Atom>>())
     }
 
     /// Create an R star tree which can be used for fast lookup of
     /// spatial close atoms. See the crate rstar for documentation
-    /// on how to use the tree. (https://crates.io/crates/rstar)
+    /// on how to use the tree. (<https://crates.io/crates/rstar>)
     ///
     /// Keep in mind that this creates a tree that is separate from
     /// the original PDB, so any changes to one of the data
     /// structures is not seen in the other data structure (until
     /// you generate a new tree of course).
-    #[cfg(feature = "rstar")]
+    #[doc_cfg(feature = "rstar")]
     pub fn create_atom_with_hierarchy_rtree(&'a self) -> rstar::RTree<AtomWithHierarchy<'a>> {
         rstar::RTree::bulk_load(self.atoms_with_hierarchy().collect())
     }

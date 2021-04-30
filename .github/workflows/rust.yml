@@ -20,7 +20,7 @@ jobs:
       - name: Run tests
         run: |
           mkdir -p dump
-          cargo test --all-features --verbose
+          cargo test --features "rayon serde rstar" --verbose
 
   lints:
     name: Lints
@@ -47,3 +47,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
+          args: --features "rayon serde rstar" 

@@ -96,7 +96,9 @@
 //!     );
 //! }
 //! // Or the above example in parallel using Rayon
+//! # #[cfg(feature="rayon")]
 //! use rayon::prelude::*;
+//! # #[cfg(feature="rayon")]
 //! pdb.par_atoms_with_hierarchy().map(|hierarchy|
 //!     println!("Atom {} in Conformer {} in Residue {} in Chain {}",
 //!         hierarchy.atom.serial_number(),
@@ -110,7 +112,9 @@
 //! ## Parallelization
 //! [Rayon](https://crates.io/crates/rayon) is used to create parallel iterators for all logical candidates. Use
 //! the parallel version of an iterator by prefixing the name with `par_`. Among other the looping iterators,
-//! like `atoms()`, `residues()` and `atoms_with_hierarchy()` are implemented as parallel iterators.
+//! like `atoms()`, `residues()` and `atoms_with_hierarchy()` are implemented as parallel iterators. The Rayon
+//! implementations are gated behind the `rayon` [feature](https://doc.rust-lang.org/cargo/reference/features.html)
+//! which is enabled by default.
 //!
 //! ## Serialization
 //! Enable the `serde` feature for [Serde](https://crates.io/crates/serde) support.
@@ -182,6 +186,7 @@ println!("There are {} backbone atoms within 12.5Aͦ of the atom at index 42", t
 )]
 // Allow PDB (and derived) names to be used
 #![allow(clippy::upper_case_acronyms)]
+#![cfg_attr(feature = "unstable-doc-cfg", feature(doc_cfg))]
 
 /// To save and display errors
 mod error;

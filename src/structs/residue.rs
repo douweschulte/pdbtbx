@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 use crate::structs::*;
 use crate::transformation::*;
+use doc_cfg::doc_cfg;
+#[cfg(feature = "rayon")]
 use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::fmt;
@@ -9,7 +11,7 @@ use std::fmt;
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// A Residue containing multiple Residues
 pub struct Residue {
-    /// The serial number of this Residue, can be negative as that is used sometimes. See https://proteopedia.org/wiki/index.php/Unusual_sequence_numbering.
+    /// The serial number of this Residue, can be negative as that is used sometimes. See <https://proteopedia.org/wiki/index.php/Unusual_sequence_numbering>.
     serial_number: isize,
     /// The insertion code of this Residue, used in conjunction with the serial number to uniquely identify Residues.
     insertion_code: Option<String>,
@@ -116,6 +118,7 @@ impl Residue {
     }
 
     /// Get the amount of Atoms making up this Residue in parallel
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
         self.par_conformers().map(|a| a.atom_count()).sum()
     }
@@ -198,6 +201,7 @@ impl Residue {
     }
 
     /// Get the list of conformers making up this Residue in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
         self.conformers.par_iter()
     }
@@ -209,6 +213,7 @@ impl Residue {
     }
 
     /// Get the list of conformers as mutable references making up this Residue in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
         self.conformers.par_iter_mut()
     }
@@ -220,6 +225,7 @@ impl Residue {
     }
 
     /// Get the list of Atoms making up this Residue in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
         self.par_conformers().flat_map(|a| a.par_atoms())
     }
@@ -231,6 +237,7 @@ impl Residue {
     }
 
     /// Get the list of Atoms as mutable references making up this Residue in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.par_conformers_mut().flat_map(|a| a.par_atoms_mut())
     }
@@ -335,6 +342,7 @@ impl Residue {
     ///
     /// ## Panics
     /// It panics when the index is outside bounds.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
         let index = self.conformers.par_iter().position_first(|a| a.id() == id);
 
@@ -355,6 +363,7 @@ impl Residue {
 
     /// Apply a transformation to the position of all conformers making up this Residue, the new position is immediately set.
     /// Done in parallel
+    #[doc_cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.par_conformers_mut()
             .for_each(|conformer| conformer.apply_transformation(transformation))
@@ -377,6 +386,7 @@ impl Residue {
     }
 
     /// Sort the conformers of this Residue in parallel
+    #[doc_cfg(feature = "rayon")]
     pub fn par_sort(&mut self) {
         self.conformers.par_sort();
     }

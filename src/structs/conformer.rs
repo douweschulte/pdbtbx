@@ -2,6 +2,8 @@
 use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
+use doc_cfg::doc_cfg;
+#[cfg(feature = "rayon")]
 use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::fmt;
@@ -168,6 +170,7 @@ impl Conformer {
     }
 
     /// Get the list of atoms making up this Conformer in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
         self.atoms.par_iter()
     }
@@ -179,6 +182,7 @@ impl Conformer {
     }
 
     /// Get the list of atoms as mutable references making up this Conformer in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.atoms.par_iter_mut()
     }
@@ -243,6 +247,7 @@ impl Conformer {
     ///
     /// ## Panics
     /// It panics when the index is outside bounds.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_remove_atom_by_serial_number(&mut self, serial_number: usize) -> bool {
         let index = self
             .atoms
@@ -284,6 +289,7 @@ impl Conformer {
     ///
     /// ## Panics
     /// It panics when the index is outside bounds.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_remove_atom_by_name(&mut self, name: String) -> bool {
         let index = self.atoms.par_iter().position_first(|a| a.name() == name);
 
@@ -304,6 +310,7 @@ impl Conformer {
 
     /// Apply a transformation to the position of all atoms making up this Conformer, the new position is immediately set.
     /// This is done in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.par_atoms_mut()
             .for_each(|a| a.apply_transformation(transformation))
@@ -326,6 +333,7 @@ impl Conformer {
     }
 
     /// Sort the Atoms of this Conformer in parallel
+    #[doc_cfg(feature = "rayon")]
     pub fn par_sort(&mut self) {
         self.atoms.par_sort();
     }

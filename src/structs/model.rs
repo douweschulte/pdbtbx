@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 use crate::structs::*;
 use crate::transformation::*;
+use doc_cfg::doc_cfg;
+#[cfg(feature = "rayon")]
 use rayon::prelude::*;
 use std::cmp::Ordering;
 
@@ -48,6 +50,7 @@ impl<'a> Model {
     }
 
     /// Get the amount of Residues making up this Model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_residue_count(&self) -> usize {
         self.par_chains().map(|chain| chain.residue_count()).sum()
     }
@@ -59,6 +62,7 @@ impl<'a> Model {
     }
 
     /// Get the amount of Conformers making up this Model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_conformer_count(&self) -> usize {
         self.par_chains()
             .map(|chain| chain.par_conformer_count())
@@ -71,6 +75,7 @@ impl<'a> Model {
     }
 
     /// Get the amount of Atoms making up this Model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
         self.par_chains().map(|chain| chain.par_atom_count()).sum()
     }
@@ -196,6 +201,7 @@ impl<'a> Model {
     }
 
     /// Get the list of Chains making up this Model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_chains(&self) -> impl ParallelIterator<Item = &Chain> + '_ {
         self.chains.par_iter()
     }
@@ -207,6 +213,7 @@ impl<'a> Model {
     }
 
     /// Get the list of Chains as mutable references making up this Model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_chains_mut(&mut self) -> impl ParallelIterator<Item = &mut Chain> + '_ {
         self.chains.par_iter_mut()
     }
@@ -218,6 +225,7 @@ impl<'a> Model {
     }
 
     /// Get the list of Residues making up this Model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
         self.par_chains().flat_map(|a| a.par_residues())
     }
@@ -229,6 +237,7 @@ impl<'a> Model {
     }
 
     /// Get the list of Residues as mutable references making up this Model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
         self.par_chains_mut().flat_map(|a| a.par_residues_mut())
     }
@@ -240,6 +249,7 @@ impl<'a> Model {
     }
 
     /// Get the list of Conformers making up this Model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
         self.par_chains().flat_map(|a| a.par_conformers())
     }
@@ -251,6 +261,7 @@ impl<'a> Model {
     }
 
     /// Get the list of Conformers as mutable references making up this Model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
         self.par_chains_mut().flat_map(|a| a.par_conformers_mut())
     }
@@ -262,6 +273,7 @@ impl<'a> Model {
     }
 
     /// Get the list of Atoms making up this Model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
         self.par_chains().flat_map(|a| a.par_atoms())
     }
@@ -273,6 +285,7 @@ impl<'a> Model {
     }
 
     /// Get the list of Atoms as mutable references making up this Model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.par_chains_mut().flat_map(|a| a.par_atoms_mut())
     }
@@ -295,6 +308,7 @@ impl<'a> Model {
     }
 
     /// Returns all atom with their hierarchy struct for each atom in this model in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_with_hierarchy(
         &'a self,
     ) -> impl ParallelIterator<Item = AtomWithHierarchy<'a>> + '_ {
@@ -429,6 +443,7 @@ impl<'a> Model {
     ///
     /// ## Arguments
     /// * `id` - the id of the Chain to remove
+    #[doc_cfg(feature = "rayon")]
     pub fn par_remove_chain_by_id(&mut self, id: String) -> bool {
         let index = self.chains.par_iter().position_first(|a| a.id() == id);
 
@@ -447,6 +462,7 @@ impl<'a> Model {
     }
 
     /// Remove all empty Chain from this Model, and all empty Residues from the Chains in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_remove_empty(&mut self) {
         self.par_chains_mut().for_each(|c| c.remove_empty());
         self.chains.retain(|c| c.residue_count() > 0);
@@ -461,6 +477,7 @@ impl<'a> Model {
 
     /// Apply a transformation to the position of all atoms making up this Model, the new position is immediately set.
     /// Done in parallel.
+    #[doc_cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.par_atoms_mut()
             .for_each(|atom| atom.apply_transformation(transformation))
@@ -484,6 +501,7 @@ impl<'a> Model {
     }
 
     /// Sort the Chains of this Model in parallel
+    #[doc_cfg(feature = "rayon")]
     pub fn par_sort(&mut self) {
         self.chains.par_sort();
     }
