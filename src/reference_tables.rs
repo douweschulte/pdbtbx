@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use rayon::prelude::*;
 
 /// Gets the index (into Int. Crys. Handbook Vol A 2016) for the given symbol. First it is
 /// interpreted as a Herman Mauguin symbol, if that is unsuccessful it is interpreted as a
@@ -7,6 +8,19 @@ pub fn get_index_for_symbol(symbol: &str) -> Option<usize> {
     if let Some(index) = HERMANN_MAUGUIN_SYMBOL.iter().position(|i| *i == symbol) {
         Some(index + 1)
     } else if let Some(index) = HALL_SYMBOL.iter().position(|i| *i == symbol) {
+        Some(index + 1)
+    } else {
+        None
+    }
+}
+
+/// Gets the index (into Int. Crys. Handbook Vol A 2016) for the given symbol in parallel. First it is
+/// interpreted as a Herman Mauguin symbol, if that is unsuccessful it is interpreted as a
+/// Hall symbol.
+pub fn par_get_index_for_symbol(symbol: &str) -> Option<usize> {
+    if let Some(index) = HERMANN_MAUGUIN_SYMBOL.par_iter().position_any(|i| *i == symbol) {
+        Some(index + 1)
+    } else if let Some(index) = HALL_SYMBOL.par_iter().position_any(|i| *i == symbol) {
         Some(index + 1)
     } else {
         None

@@ -95,7 +95,22 @@
 //!         hierarchy.chain.id(),
 //!     );
 //! }
+//! // Or the above example in parallel using Rayon
+//! use rayon::prelude::*;
+//! pdb.par_atoms_with_hierarchy().map(|hierarchy|
+//!     println!("Atom {} in Conformer {} in Residue {} in Chain {}",
+//!         hierarchy.atom.serial_number(),
+//!         hierarchy.conformer.name(),
+//!         hierarchy.residue.serial_number(),
+//!         hierarchy.chain.id(),
+//!     )
+//! );
 //! ```
+//!
+//! ## Parallelization
+//! [Rayon](https://crates.io/crates/rayon) is used to create parallel iterators for all logical candidates. Use
+//! the parallel version of an iterator by prefixing the name with `par_`. Among other the looping iterators,
+//! like `atoms()`, `residues()` and `atoms_with_hierarchy()` are implemented as parallel iterators.
 //!
 //! ## Serialization
 //! Enable the `serde` feature for [Serde](https://crates.io/crates/serde) support.

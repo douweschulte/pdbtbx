@@ -3,6 +3,7 @@ use crate::structs::*;
 use crate::transformation::*;
 use std::cmp::Ordering;
 use std::fmt;
+use rayon::prelude::*;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -114,6 +115,11 @@ impl Residue {
         self.conformers().fold(0, |sum, res| res.atom_count() + sum)
     }
 
+    /// Get the amount of Atoms making up this Residue in parallel
+    pub fn par_atom_count(&self) -> usize {
+        self.par_conformers().map(|a| a.atom_count()).sum()
+    }
+
     /// Get a specific conformer from list of conformers making up this Residue.
     ///
     /// ## Arguments
@@ -191,22 +197,42 @@ impl Residue {
         self.conformers.iter()
     }
 
+    /// Get the list of conformers making up this Residue in parallel.
+    pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
+        self.conformers.par_iter()
+    }
+
     /// Get the list of conformers as mutable references making up this Residue.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
         self.conformers.iter_mut()
     }
 
+    /// Get the list of conformers as mutable references making up this Residue in parallel.
+    pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
+        self.conformers.par_iter_mut()
+    }
+
     /// Get the list of Atoms making up this Residue.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.conformers.iter().flat_map(|a| a.atoms())
+        self.conformers().flat_map(|a| a.atoms())
+    }
+
+    /// Get the list of Atoms making up this Residue in parallel.
+    pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
+        self.par_conformers().flat_map(|a| a.par_atoms())
     }
 
     /// Get the list of Atoms as mutable references making up this Residue.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.conformers.iter_mut().flat_map(|a| a.atoms_mut())
+        self.conformers_mut().flat_map(|a| a.atoms_mut())
+    }
+
+    /// Get the list of Atoms as mutable references making up this Residue in parallel.
+    pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
+        self.par_conformers_mut().flat_map(|a| a.par_atoms_mut())
     }
 
     /// Add a new conformer to the list of conformers making up this Residue.
@@ -264,9 +290,10 @@ impl Residue {
     where
         F: Fn(&Atom) -> bool,
     {
-        for conformer in self.conformers_mut() {
-            conformer.remove_atoms_by(&predicate);
-        }
+        // for conformer in self.conformers_mut() {
+        //     conformer.remove_atoms_by(&predicate);
+        // }
+        self.conformers_mut().for_each(|conformer| conformer.remove_atoms_by(&predicate))
     }
 
     /// Remove the conformer specified.
@@ -289,7 +316,26 @@ impl Residue {
     /// ## Panics
     /// It panics when the index is outside bounds.
     pub fn remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
-        let index = self.conformers.iter().position(|a| a.id() == id);
+        let index = self.conformers().position(|a| a.id() == id);
+
+        if let Some(i) = index {
+            self.remove_conformer(i);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Remove the conformer specified. It returns `true` if it found a matching conformer and removed it.
+    /// It removes the first matching conformer from the list. Searching is done in parallel
+    ///
+    /// ## Arguments
+    /// * `id` - the identifying construct of the Conformer to remove
+    ///
+    /// ## Panics
+    /// It panics when the index is outside bounds.
+    pub fn par_remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
+        let index = self.conformers.par_iter().position_first(|a| a.id() == id);
 
         if let Some(i) = index {
             self.remove_conformer(i);
@@ -306,6 +352,12 @@ impl Residue {
         }
     }
 
+    /// Apply a transformation to the position of all conformers making up this Residue, the new position is immediately set.
+    /// Done in parallel
+    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
+        self.par_conformers_mut().for_each(|conformer| conformer.apply_transformation(transformation))
+    }
+
     /// Join this Residue with another Residue, this moves all conformers from the other Residue
     /// to this Residue. All other (meta) data of this Residue will stay the same.
     pub fn join(&mut self, other: Residue) {
@@ -320,6 +372,11 @@ impl Residue {
     /// Sort the conformers of this Residue
     pub fn sort(&mut self) {
         self.conformers.sort();
+    }
+
+    /// Sort the conformers of this Residue in parallel
+    pub fn par_sort(&mut self) {
+        self.conformers.par_sort();
     }
 }
 
