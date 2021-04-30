@@ -223,8 +223,7 @@ impl Conformer {
     /// It panics when the index is outside bounds.
     pub fn remove_atom_by_serial_number(&mut self, serial_number: usize) -> bool {
         let index = self
-            .atoms
-            .iter()
+            .atoms()
             .position(|a| a.serial_number() == serial_number);
 
         if let Some(i) = index {
@@ -266,7 +265,7 @@ impl Conformer {
     /// ## Panics
     /// It panics when the index is outside bounds.
     pub fn remove_atom_by_name(&mut self, name: String) -> bool {
-        let index = self.atoms.iter().position(|a| a.name() == name);
+        let index = self.atoms().position(|a| a.name() == name);
 
         if let Some(i) = index {
             self.remove_atom(i);

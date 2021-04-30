@@ -215,23 +215,23 @@ impl Residue {
     /// Get the list of Atoms making up this Residue.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.conformers.iter().flat_map(|a| a.atoms())
+        self.conformers().flat_map(|a| a.atoms())
     }
 
     /// Get the list of Atoms making up this Residue in parallel.
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.conformers.par_iter().flat_map(|a| a.par_atoms())
+        self.par_conformers().flat_map(|a| a.par_atoms())
     }
 
     /// Get the list of Atoms as mutable references making up this Residue.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.conformers.iter_mut().flat_map(|a| a.atoms_mut())
+        self.conformers_mut().flat_map(|a| a.atoms_mut())
     }
 
     /// Get the list of Atoms as mutable references making up this Residue in parallel.
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.conformers.par_iter_mut().flat_map(|a| a.par_atoms_mut())
+        self.par_conformers_mut().flat_map(|a| a.par_atoms_mut())
     }
 
     /// Add a new conformer to the list of conformers making up this Residue.
@@ -315,7 +315,7 @@ impl Residue {
     /// ## Panics
     /// It panics when the index is outside bounds.
     pub fn remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
-        let index = self.conformers.iter().position(|a| a.id() == id);
+        let index = self.conformers().position(|a| a.id() == id);
 
         if let Some(i) = index {
             self.remove_conformer(i);

@@ -208,45 +208,45 @@ impl Chain {
     /// Get the list of Conformers making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
-        self.residues.iter().flat_map(|a| a.conformers())
+        self.residues().flat_map(|a| a.conformers())
     }
 
     /// Get the list of Conformers making up this Chain in parallel.
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
-        self.residues.par_iter().flat_map(|a| a.par_conformers())
+        self.par_residues().flat_map(|a| a.par_conformers())
     }
 
     /// Get the list of Conformers as mutable references making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
-        self.residues.iter_mut().flat_map(|a| a.conformers_mut())
+        self.residues_mut().flat_map(|a| a.conformers_mut())
     }
 
     /// Get the list of Conformers as mutable references making up this Chain in parallel.
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
-        self.residues.par_iter_mut().flat_map(|a| a.par_conformers_mut())
+        self.par_residues_mut().flat_map(|a| a.par_conformers_mut())
     }
 
     /// Get the list of Atoms making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.residues.iter().flat_map(|a| a.atoms())
+        self.residues().flat_map(|a| a.atoms())
     }
 
     /// Get the list of Atoms making up this Chain in parallel.
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.residues.par_iter().flat_map(|a| a.par_atoms())
+        self.par_residues().flat_map(|a| a.par_atoms())
     }
 
     /// Get the list of Atoms as mutable references making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.residues.iter_mut().flat_map(|a| a.atoms_mut())
+        self.residues_mut().flat_map(|a| a.atoms_mut())
     }
 
     /// Get the list of Atoms as mutable references making up this Chain in parallel.
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.residues.par_iter_mut().flat_map(|a| a.par_atoms_mut())
+        self.par_residues_mut().flat_map(|a| a.par_atoms_mut())
     }
 
     /// Add a new Atom to this Chain. It finds if there already is a Residue with the given serial number if there is it will add this atom to that Residue, otherwise it will create a new Residue and add that to the list of Residues making up this Chain.
@@ -368,7 +368,7 @@ impl Chain {
 
     /// Remove all empty Residues from this Chain, and all empty Conformers from the Residues.
     pub fn remove_empty(&mut self) {
-        self.residues.iter_mut().for_each(|r| r.remove_empty());
+        self.residues_mut().for_each(|r| r.remove_empty());
         self.residues.retain(|r| r.conformer_count() > 0);
     }
 

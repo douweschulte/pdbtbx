@@ -407,94 +407,89 @@ impl<'a> PDB {
     /// Get the list of Chains making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
-        self.models.iter().flat_map(|a| a.chains())
+        self.models().flat_map(|a| a.chains())
     }
 
     /// Get the list of Chains making up this PDB in parallel.
     pub fn par_chains(&self) -> impl ParallelIterator<Item = &Chain> + '_ {
-        self.models.par_iter().flat_map(|a| a.par_chains())
+        self.par_models().flat_map(|a| a.par_chains())
     }
 
     /// Get the list of Chains as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
-        self.models.iter_mut().flat_map(|a| a.chains_mut())
+        self.models_mut().flat_map(|a| a.chains_mut())
     }
 
     /// Get the list of Chains as mutable references making up this PDB in parallel.
     pub fn par_chains_mut(&mut self) -> impl ParallelIterator<Item = &mut Chain> + '_ {
-        self.models.par_iter_mut().flat_map(|a| a.par_chains_mut())
+        self.par_models_mut().flat_map(|a| a.par_chains_mut())
     }
 
     /// Get the list of Residues making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.models.iter().flat_map(|a| a.residues())
+        self.models().flat_map(|a| a.residues())
     }
 
     /// Get the list of Residues making up this PDB in parallel.
     pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
-        self.models.par_iter().flat_map(|a| a.par_residues())
+        self.par_models().flat_map(|a| a.par_residues())
     }
-
-    /// Get the list of Residues making up this PDB in parallel.
-    // pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
-    //     self.models.par_iter().flat_map(|a| a.residues())
-    // }
 
     /// Get the list of Residue as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
-        self.models.iter_mut().flat_map(|a| a.residues_mut())
+        self.models_mut().flat_map(|a| a.residues_mut())
     }
 
     /// Get the list of Residue as mutable references making up this PDB in parallel.
     pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
-        self.models.par_iter_mut().flat_map(|a| a.par_residues_mut())
+        self.par_models_mut().flat_map(|a| a.par_residues_mut())
     }
 
     /// Get the list of Conformers making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
-        self.models.iter().flat_map(|a| a.conformers())
+        self.models().flat_map(|a| a.conformers())
     }
 
     /// Get the list of Conformers making up this PDB in parallel.
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
-        self.models.par_iter().flat_map(|a| a.par_conformers())
+        self.par_models().flat_map(|a| a.par_conformers())
     }
 
     /// Get the list of Conformers as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
-        self.models.iter_mut().flat_map(|a| a.conformers_mut())
+        self.models_mut().flat_map(|a| a.conformers_mut())
     }
 
     /// Get the list of Conformers as mutable references making up this PDB in parallel.
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
-        self.models.par_iter_mut().flat_map(|a| a.par_conformers_mut())
+        self.par_models_mut().flat_map(|a| a.par_conformers_mut())
     }
 
     /// Get the list of Atom making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.models.iter().flat_map(|a| a.atoms())
+        self.models().flat_map(|a| a.atoms())
     }
 
     /// Get the list of Atom making up this PDB in parallel.
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.models.par_iter().flat_map(|a| a.par_atoms())
+        self.par_models().flat_map(|a| a.par_atoms())
     }
 
     /// Get the list of Atom as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.models.iter_mut().flat_map(|a| a.atoms_mut())
+        self.models_mut().flat_map(|a| a.atoms_mut())
     }
 
     /// Get the list of Atom as mutable references making up this PDB in parallel.
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.models.par_iter_mut().flat_map(|a| a.par_atoms_mut())
+        self.par_models_mut().flat_map(|a| a.par_atoms_mut())
     }
 
     /// Remove all Atoms matching the given predicate. The predicate will be run on all Atoms.
