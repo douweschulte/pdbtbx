@@ -143,7 +143,7 @@ for hierarchy in tree.locate_within_distance(pdb.atom(42).unwrap().pos_array(), 
     }
 }
 println!("There are {} backbone atoms within 12.5Aͦ of the atom at index 42", total);
-# assert_eq!(total, 4);
+# assert_eq!(total, 6);
 ```
 "##
 )]

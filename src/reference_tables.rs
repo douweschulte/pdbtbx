@@ -291,7 +291,9 @@ const AMINO_ACIDS: &[&str] = &[
 ];
 
 /// The names of atom in the backbone of proteins
-const BACKBONE_NAMES: &[&str] = &["N", "CA", "C", "O", "H", "H1", "H2", "H3", "HA", "HA2", "HA3"];
+const BACKBONE_NAMES: &[&str] = &[
+    "N", "CA", "C", "O", "H", "H1", "H2", "H3", "HA", "HA2", "HA3",
+];
 
 /// The list of Hermann Mauguin symbols in the same order as in the handbook
 const HERMANN_MAUGUIN_SYMBOL: &[&str] = &[
