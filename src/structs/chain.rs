@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 use crate::structs::*;
 use crate::transformation::*;
-use std::cmp::Ordering;
 use rayon::prelude::*;
+use std::cmp::Ordering;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -383,7 +383,8 @@ impl Chain {
     /// Apply a transformation to the position of all atoms making up this Chain, the new position is immediately set.
     /// Done in parallel.
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
-        self.par_atoms_mut().for_each(|atom| atom.apply_transformation(transformation))
+        self.par_atoms_mut()
+            .for_each(|atom| atom.apply_transformation(transformation))
     }
 
     /// Join this Chain with another Chain, this moves all atoms from the other Chain

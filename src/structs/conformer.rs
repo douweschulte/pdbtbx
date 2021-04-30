@@ -2,9 +2,9 @@
 use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
+use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::fmt;
-use rayon::prelude::*;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -305,7 +305,8 @@ impl Conformer {
     /// Apply a transformation to the position of all atoms making up this Conformer, the new position is immediately set.
     /// This is done in parallel.
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
-        self.par_atoms_mut().for_each(|a| a.apply_transformation(transformation))
+        self.par_atoms_mut()
+            .for_each(|a| a.apply_transformation(transformation))
     }
 
     /// Join this Conformer with another Conformer, this moves all atoms from the other Conformer

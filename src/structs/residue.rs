@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 use crate::structs::*;
 use crate::transformation::*;
+use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::fmt;
-use rayon::prelude::*;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -293,7 +293,8 @@ impl Residue {
         // for conformer in self.conformers_mut() {
         //     conformer.remove_atoms_by(&predicate);
         // }
-        self.conformers_mut().for_each(|conformer| conformer.remove_atoms_by(&predicate))
+        self.conformers_mut()
+            .for_each(|conformer| conformer.remove_atoms_by(&predicate))
     }
 
     /// Remove the conformer specified.
@@ -355,7 +356,8 @@ impl Residue {
     /// Apply a transformation to the position of all conformers making up this Residue, the new position is immediately set.
     /// Done in parallel
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
-        self.par_conformers_mut().for_each(|conformer| conformer.apply_transformation(transformation))
+        self.par_conformers_mut()
+            .for_each(|conformer| conformer.apply_transformation(transformation))
     }
 
     /// Join this Residue with another Residue, this moves all conformers from the other Residue
