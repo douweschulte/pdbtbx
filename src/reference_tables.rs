@@ -282,14 +282,18 @@ const ELEMENT_BOND_RADII: &[(usize, Option<usize>, Option<usize>)] = &[
     (157, None, None),
 ];
 
-/// All amino acids
+/// All amino acids. Includes Amber-specific naming conventions for (de-)protonated versions, CYS involved in
+/// disulfide bonding and the like.
 const AMINO_ACIDS: &[&str] = &[
-    "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS", "MET",
-    "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
+    "ALA", "ARG", "ASH", "ASN", "ASP", "CYS", "CYX", "GLH", "GLN", "GLU", "GLY", "HID", "HIE",
+    "HIM", "HIP", "HIS", "ILE", "LEU", "LYN", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP",
+    "TYR", "VAL",
 ];
 
 /// The names of atom in the backbone of proteins
-const BACKBONE_NAMES: &[&str] = &["N", "CA", "C", "O"];
+const BACKBONE_NAMES: &[&str] = &[
+    "N", "CA", "C", "O", "H", "H1", "H2", "H3", "HA", "HA2", "HA3",
+];
 
 /// The list of Hermann Mauguin symbols in the same order as in the handbook
 const HERMANN_MAUGUIN_SYMBOL: &[&str] = &[
