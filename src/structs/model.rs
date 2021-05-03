@@ -173,25 +173,52 @@ impl<'a> Model {
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
+    #[allow(clippy::unwrap_used)]
     pub fn binary_find_atom(
         &'a self,
         serial_number: usize,
         alternative_location: Option<&str>,
     ) -> Option<AtomWithHierarchy<'a>> {
-        for chain in self.chains() {
-            if let Some(f) = chain.atoms().next() {
-                if let Some(b) = chain.atoms().next_back() {
-                    if f.serial_number() <= serial_number && serial_number <= b.serial_number() {
-                        if let Some((residue, conformer, atom)) =
-                            chain.binary_find_atom(serial_number, alternative_location)
-                        {
-                            return Some(AtomWithHierarchy::new(chain, residue, conformer, atom));
-                        }
+        if self.chain_count() == 0 {
+            None
+        } else {
+            self.chains
+                .binary_search_by(|chain| {
+                    let low = chain.atoms().next().expect(
+                        "All chains should have at least a single atom for binary_find_atom",
+                    );
+                    let high = chain.atoms().next_back().expect(
+                        "All chains should have at least a single atom for binary_find_atom",
+                    );
+
+                    if low.serial_number() <= serial_number && serial_number <= high.serial_number()
+                    {
+                        Ordering::Equal
+                    } else if serial_number < low.serial_number() {
+                        Ordering::Less
+                    } else {
+                        Ordering::Greater
                     }
-                }
-            }
+                })
+                .ok()
+                .map(|index| {
+                    if let Some((residue, conformer, atom)) = self
+                        .chain(index)
+                        .unwrap()
+                        .binary_find_atom(serial_number, alternative_location)
+                    {
+                        Some(AtomWithHierarchy::new(
+                            self.chain(index).unwrap(),
+                            residue,
+                            conformer,
+                            atom,
+                        ))
+                    } else {
+                        None
+                    }
+                })
+                .flatten()
         }
-        None
     }
 
     /// Get the list of Chains making up this Model.

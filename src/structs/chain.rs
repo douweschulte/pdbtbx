@@ -167,25 +167,47 @@ impl Chain {
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
+    #[allow(clippy::unwrap_used)]
     pub fn binary_find_atom(
         &self,
         serial_number: usize,
         alternative_location: Option<&str>,
     ) -> Option<(&Residue, &Conformer, &Atom)> {
-        for residue in self.residues() {
-            if let Some(f) = residue.atoms().next() {
-                if let Some(b) = residue.atoms().next_back() {
-                    if f.serial_number() <= serial_number && serial_number <= b.serial_number() {
-                        if let Some((conformer, atom)) =
-                            residue.binary_find_atom(serial_number, alternative_location)
-                        {
-                            return Some((residue, conformer, atom));
-                        }
+        if self.residue_count() == 0 {
+            None
+        } else {
+            self.residues
+                .binary_search_by(|residue| {
+                    let low = residue.atoms().next().expect(
+                        "All residues should have at least a single atom for binary_find_atom",
+                    );
+                    let high = residue.atoms().next_back().expect(
+                        "All residues should have at least a single atom for binary_find_atom",
+                    );
+
+                    if low.serial_number() <= serial_number && serial_number <= high.serial_number()
+                    {
+                        Ordering::Equal
+                    } else if serial_number < low.serial_number() {
+                        Ordering::Less
+                    } else {
+                        Ordering::Greater
                     }
-                }
-            }
+                })
+                .ok()
+                .map(|index| {
+                    if let Some((conformer, atom)) = self
+                        .residue(index)
+                        .unwrap()
+                        .binary_find_atom(serial_number, alternative_location)
+                    {
+                        Some((self.residue(index).unwrap(), conformer, atom))
+                    } else {
+                        None
+                    }
+                })
+                .flatten()
         }
-        None
     }
 
     /// Get the list of Residues making up this Chain.
