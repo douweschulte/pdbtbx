@@ -4,11 +4,16 @@ use crate::structs::*;
 use crate::transformation::*;
 use std::cmp::Ordering;
 use std::fmt;
+use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
+
+static ATOM_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 /// A struct to represent a single Atom in a protein
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub struct Atom {
+    /// The unique serial number given to this atom
+    counter: usize,
     /// Determines if this atom is an hetero atom (true), a non standard atom, or a normal atom (false)
     hetero: bool,
     /// The serial number of the Atom, should be unique within its model
@@ -57,6 +62,7 @@ impl Atom {
             && b_factor.is_finite()
         {
             Some(Atom {
+                counter: ATOM_COUNTER.fetch_add(1, AtomicOrdering::SeqCst),
                 hetero,
                 serial_number,
                 name: atom_name.trim().to_ascii_uppercase(),
@@ -72,6 +78,11 @@ impl Atom {
         } else {
             None
         }
+    }
+
+    /// Get the unique immutable counter for this atom
+    pub(crate) fn counter(&self) -> usize {
+        self.counter
     }
 
     /// Get if this atom is an hetero atom (true), a non standard atom, or a normal atom (false)
@@ -306,11 +317,8 @@ impl Atom {
     /// ## Fails
     /// It fails if the element name if this Atom is not defined (see `self.atomic_number()`).
     pub fn covalent_bond_radii(&self) -> Option<(usize, Option<usize>, Option<usize>)> {
-        if let Some(s) = self.atomic_number() {
-            Some(reference_tables::get_covalent_bond_radii(s))
-        } else {
-            None
-        }
+        self.atomic_number()
+            .map(reference_tables::get_covalent_bond_radii)
     }
 
     /// Set the element of this atom. The element will be changed to uppercase as requested by PDB/PDBx standard.
@@ -434,15 +442,13 @@ impl Atom {
     /// ## Fails
     /// It fails if for any one of the two atoms the radius (`.atomic_radius()`) is not defined.
     pub fn overlaps(&self, other: &Atom) -> Option<bool> {
-        if let Some(self_rad) = self.atomic_radius() {
-            if let Some(other_rad) = other.atomic_radius() {
-                Some(self.distance(other) <= self_rad + other_rad)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+        self.atomic_radius()
+            .map(|self_rad| {
+                other
+                    .atomic_radius()
+                    .map(|other_rad| self.distance(other) <= self_rad + other_rad)
+            })
+            .flatten()
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the sphere defined as sitting at
@@ -451,15 +457,13 @@ impl Atom {
     /// ## Fails
     /// It fails if for any one of the two atoms the radius (`.atomic_radius()`) is not defined.
     pub fn overlaps_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
-        if let Some(self_rad) = self.atomic_radius() {
-            if let Some(other_rad) = other.atomic_radius() {
-                Some(self.distance_wrapping(other, cell) <= self_rad + other_rad)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+        self.atomic_radius()
+            .map(|self_rad| {
+                other
+                    .atomic_radius()
+                    .map(|other_rad| self.distance_wrapping(other, cell) <= self_rad + other_rad)
+            })
+            .flatten()
     }
 }
 
@@ -478,6 +482,40 @@ impl fmt::Display for Atom {
             self.b_factor(),
             self.atf.is_some()
         )
+    }
+}
+
+impl Clone for Atom {
+    /// The clone implementation needs to use the constructor to guarantee the uniqueness of the counter
+    fn clone(&self) -> Self {
+        let mut atom = Atom::new(
+            self.hetero,
+            self.serial_number,
+            &self.name,
+            self.x,
+            self.y,
+            self.z,
+            self.occupancy,
+            self.b_factor,
+            &self.element,
+            self.charge,
+        )
+        .expect("Invalid Atom properties in a clone");
+        atom.atf = self.atf;
+        atom
+    }
+}
+
+impl PartialEq for Atom {
+    fn eq(&self, other: &Self) -> bool {
+        self.serial_number == other.serial_number
+            && self.name() == other.name()
+            && self.element() == other.element()
+            && self.charge() == other.charge()
+            && self.atf == other.atf
+            && self.pos() == other.pos()
+            && self.occupancy == other.occupancy
+            && self.b_factor == other.b_factor
     }
 }
 

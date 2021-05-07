@@ -8,10 +8,8 @@ use rayon::prelude::*;
 pub fn get_index_for_symbol(symbol: &str) -> Option<usize> {
     if let Some(index) = HERMANN_MAUGUIN_SYMBOL.iter().position(|i| *i == symbol) {
         Some(index + 1)
-    } else if let Some(index) = HALL_SYMBOL.iter().position(|i| *i == symbol) {
-        Some(index + 1)
     } else {
-        None
+        HALL_SYMBOL.iter().position(|i| *i == symbol).map(|n| n + 1)
     }
 }
 
@@ -25,35 +23,27 @@ pub fn par_get_index_for_symbol(symbol: &str) -> Option<usize> {
         .position_any(|i| *i == symbol)
     {
         Some(index + 1)
-    } else if let Some(index) = HALL_SYMBOL.par_iter().position_any(|i| *i == symbol) {
-        Some(index + 1)
     } else {
-        None
+        HALL_SYMBOL
+            .par_iter()
+            .position_any(|i| *i == symbol)
+            .map(|n| n + 1)
     }
 }
 
 /// Gets the Herman Mauguin symbol for the given index (into Int. Crys. Handbook Vol A 2016)
 pub fn get_herman_mauguin_symbol_for_index(index: usize) -> Option<&'static str> {
-    match HERMANN_MAUGUIN_SYMBOL.get(index - 1) {
-        Some(n) => Some(*n),
-        None => None,
-    }
+    HERMANN_MAUGUIN_SYMBOL.get(index - 1).copied()
 }
 
 /// Gets the Hall symbol for the given index (into Int. Crys. Handbook Vol A 2016)
 pub fn get_hall_symbol_for_index(index: usize) -> Option<&'static str> {
-    match HALL_SYMBOL.get(index - 1) {
-        Some(n) => Some(*n),
-        None => None,
-    }
+    HALL_SYMBOL.get(index - 1).copied()
 }
 
 /// Gets the transformations given an index (into Int. Crys. Handbook Vol A 2016) for the given space group
 pub fn get_transformation(index: usize) -> Option<&'static [[[f64; 4]; 3]]> {
-    match SYMBOL_TRANSFORMATION.get(index - 1) {
-        Some(n) => Some(*n),
-        None => None,
-    }
+    SYMBOL_TRANSFORMATION.get(index - 1).copied()
 }
 
 /// Gets the atomic number for the given element. It is case insensitive for the element name.
@@ -73,19 +63,13 @@ pub fn get_atomic_number(element: &str) -> Option<usize> {
 /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96. Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: http://doi.org/10.1002/chem.201602949, doi:10.1002/chem.201602949.
 /// Updated to the corrigendum: <https://doi.org/10.1002/chem.201700610>
 pub fn get_atomic_radius(atomic_number: usize) -> Option<f64> {
-    match ELEMENT_ATOMIC_RADII.get(atomic_number - 1) {
-        Some(n) => Some(*n),
-        None => None,
-    }
+    ELEMENT_ATOMIC_RADII.get(atomic_number - 1).copied()
 }
 
 /// Gets the van der Waals radius for the given atomic number (defined up until 'Es' 99) in Å.
 /// Source: Alvarez, S. (2013). A cartography of the van der Waals territories. Dalton Transactions, 42(24), 8617. <https://doi.org/10.1039/c3dt50599e>
 pub fn get_vanderwaals_radius(atomic_number: usize) -> Option<f64> {
-    match ELEMENT_VANDERWAALS_RADII.get(atomic_number - 1) {
-        Some(n) => Some(*n),
-        None => None,
-    }
+    ELEMENT_VANDERWAALS_RADII.get(atomic_number - 1).copied()
 }
 
 /// Gets the covalent bond radii for the given atomic number (defined for all elements (<=118)).

@@ -157,6 +157,23 @@ pub enum LexItem {
         String,
         String,
     ),
+    /// A disulfide bond
+    /// * Residue name 1 (CYS)
+    /// * Residue serial number 1
+    /// * Insertion code 1
+    /// * Chain id 1
+    /// * Residue name 2 (CYS)
+    /// * Residue serial number 2
+    /// * Insertion code 2
+    /// * Chain id 2
+    /// * Symmetry operation residue 1
+    /// * Symmetry operation residue 2
+    /// * Bond length
+    SSBond(
+        (String, isize, Option<String>, String),
+        (String, isize, Option<String>, String),
+        Option<(String, String, f64)>,
+    ),
     /// ENDMODEL, end of the current model
     EndModel(),
     /// TER =, termination of ATOM lines to allow for HETATMs to be defined

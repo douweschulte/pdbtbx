@@ -7,7 +7,8 @@ All versions are properly annotated on [github](https://github.com/nonnominandus
 * Added support for serialization using [Serde](), this has to be opted in using the feature `serde`
 * Added a new struct `AtomWithHierarchy` to have access to the containing layers of an atom in an easy way
 * Added `binary_find_atom` to all hierarchies to find atoms in shorter time
-* Added more names for amino acids and backbone atoms (Thanks to DOCKDE)
+* Added more names for amino acids and backbone atoms (Thanks to DocKDE)
+* Added support for bonds (can only read Disulfide bonds from PDBs for now)
 * And many more small fixes
 
 ### v0.6.3

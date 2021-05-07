@@ -261,6 +261,13 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         );
     };
 
+    // OrigX
+    if let Some(origx) = &pdb.origx {
+        write_matrix("ORIGX", origx.matrix());
+    } else if level == StrictnessLevel::Strict {
+        write_matrix("ORIGX", TransformationMatrix::identity().matrix());
+    }
+
     // Scale
     if let Some(scale) = &pdb.scale {
         write_matrix("SCALE", scale.matrix());
@@ -276,13 +283,6 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                 .matrix(),
             );
         }
-    }
-
-    // OrigX
-    if let Some(origx) = &pdb.origx {
-        write_matrix("ORIGX", origx.matrix());
-    } else if level == StrictnessLevel::Strict {
-        write_matrix("ORIGX", TransformationMatrix::identity().matrix());
     }
 
     // MtriX

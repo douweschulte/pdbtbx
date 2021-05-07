@@ -50,6 +50,7 @@ where
     let mut sequence: HashMap<String, Vec<(usize, usize, Vec<String>)>> = HashMap::new();
     let mut database_references = Vec::new();
     let mut modifications = Vec::new();
+    let mut bonds = Vec::new();
     let mut temp_scale = BuildUpMatrix::empty();
     let mut temp_origx = BuildUpMatrix::empty();
     let mut temp_mtrix: Vec<(usize, BuildUpMatrix, bool)> = Vec::new();
@@ -70,7 +71,8 @@ where
                 context,
             )]);
         };
-        let line_result = lex_line(line, linenumber);
+        let line_result = lex_line(&line, linenumber);
+        let line_context = Context::FullLine { linenumber, line };
 
         // Then immediately add this lines information to the final PDB struct
         if let Ok((result, line_errors)) = line_result {
@@ -208,16 +210,12 @@ where
                             ErrorLevel::StrictWarning,
                             "Sequence Difference Database not found",
                             &format!("For this sequence difference (chain: {}) the corresponding database definition (DBREF) was not found, make sure the DBREF is located before the SEQADV", chain_id),
-                            context.clone()
+                            line_context.clone()
                         ))
                     }
                 }
-                item @ LexItem::Modres(..) => modifications.push((
-                    Context::Show {
-                        line: format!("{:?}", item.clone()),
-                    },
-                    item,
-                )),
+                item @ LexItem::Modres(..) => modifications.push((line_context.clone(), item)),
+                item @ LexItem::SSBond(..) => bonds.push((line_context.clone(), item)),
                 LexItem::Master(
                     num_remark,
                     num_empty,
@@ -244,7 +242,7 @@ where
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
                                 &format!("The number of REMARKS ({}) is different then posed in the MASTER Record ({})", pdb.remark_count(), num_remark),
-                                context.clone()
+                                line_context.clone()
                             )
                         );
                     }
@@ -254,7 +252,7 @@ where
                                 ErrorLevel::LooseWarning,
                                 "MASTER checksum failed",
                                 &format!("The empty checksum number is not empty (value: {}) while it is defined to be empty.", num_empty),
-                                context.clone()
+                                line_context.clone()
                             )
                         );
                     }
@@ -276,7 +274,7 @@ where
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
                                 &format!("The number of coordinate transformation records ({}) is different then posed in the MASTER Record ({})", xform, num_xform),
-                                context.clone()
+                                line_context.clone()
                             )
                         );
                     }
@@ -286,7 +284,7 @@ where
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
                                 &format!("The number of Atoms ({}) is different then posed in the MASTER Record ({})", pdb.total_atom_count(), num_coord),
-                                context.clone()
+                                line_context.clone()
                             )
                         );
                     }
@@ -349,6 +347,7 @@ where
 
     errors.extend(validate_seqres(&mut pdb, sequence, &context));
     errors.extend(add_modifications(&mut pdb, modifications));
+    errors.extend(add_bonds(&mut pdb, bonds));
 
     errors.extend(validate(&pdb));
 
@@ -552,8 +551,56 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
     errors
 }
 
+/// Adds all bonds to the PDB, has to be done after all Atoms are already in place
+#[allow(clippy::unwrap_used)]
+fn add_bonds(pdb: &mut PDB, bonds: Vec<(Context, LexItem)>) -> Vec<PDBError> {
+    let mut errors = Vec::new();
+    for (context, bond) in bonds {
+        match bond {
+            LexItem::SSBond(atom1, atom2, ..) => {
+                let find = |atom: (String, isize, Option<String>, String)| {
+                    pdb.chains()
+                        .find(|c| c.id() == atom.3)
+                        .map(|c| {
+                            c.residues()
+                                .find(|r| {
+                                    r.serial_number() == atom.1
+                                        && r.insertion_code() == atom.2.as_deref()
+                                })
+                                .map(|r| {
+                                    r.conformers().find(|c| c.name() == atom.0).map(|c| {
+                                        c.atoms().find(|a| a.name() == "SG").map(|a| a.counter())
+                                    })
+                                })
+                        })
+                        .flatten()
+                        .flatten()
+                        .flatten()
+                };
+                let ref1 = find(atom1);
+                let ref2 = find(atom2);
+
+                if let (Some(counter1), Some(counter2)) = (ref1, ref2) {
+                    pdb.add_bond_counters(counter1, counter2, Bond::Disulfide);
+                } else {
+                    errors.push(PDBError::new(
+                        ErrorLevel::InvalidatingError,
+                        "Could not find a bond partner",
+                        "One of the atoms could not be found while parsing a disulfide bond.",
+                        context,
+                    ));
+                }
+            }
+            _ => {
+                panic!("Found an invalid element in the bonds list, it is not a valid bond LexItem")
+            }
+        }
+    }
+    errors
+}
+
 /// Lex a full line. It returns a lexed item with errors if it can lex something, otherwise it will only return an error.
-fn lex_line(line: String, linenumber: usize) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_line(line: &str, linenumber: usize) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     if line.len() > 6 {
         match &line[..6] {
             "HEADER" => lex_header(linenumber, line),
@@ -577,6 +624,7 @@ fn lex_line(line: String, linenumber: usize) -> Result<(LexItem, Vec<PDBError>),
             "SEQRES" => Ok(lex_seqres(linenumber, line)),
             "SEQADV" => Ok(lex_seqadv(linenumber, line)),
             "MODRES" => Ok(lex_modres(linenumber, line)),
+            "SSBOND" => Ok(lex_ssbond(linenumber, line)),
             "ENDMDL" => Ok((LexItem::EndModel(), Vec::new())),
             "TER   " => Ok((LexItem::TER(), Vec::new())),
             "END   " => Ok((LexItem::End(), Vec::new())),
@@ -596,7 +644,7 @@ fn lex_line(line: String, linenumber: usize) -> Result<(LexItem, Vec<PDBError>),
 /// Lex a REMARK
 /// ## Fails
 /// It fails on incorrect numbers for the remark-type-number
-fn lex_remark(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_remark(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     let mut errors = Vec::new();
     let number = match parse_number(
         Context::line(linenumber, &line, 7, 3),
@@ -638,7 +686,7 @@ fn lex_remark(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
 }
 
 /// Lex a HEADER
-fn lex_header(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_header(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     if line.len() < 66 {
         Err(PDBError::new(
             ErrorLevel::LooseWarning,
@@ -667,7 +715,7 @@ fn lex_header(linenumber: usize, line: String) -> Result<(LexItem, Vec<PDBError>
 /// Lex a MODEL
 /// ## Fails
 /// It fails on incorrect numbers for the serial number
-fn lex_model(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
+fn lex_model(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let number = match parse_number(
         Context::line(linenumber, &line, 6, line.len() - 6),
@@ -692,7 +740,7 @@ fn lex_model(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
 /// It fails on incorrect numbers in the line
 fn lex_atom(
     linenumber: usize,
-    line: String,
+    line: &str,
     hetero: bool,
 ) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     let mut errors = Vec::new();
@@ -782,7 +830,7 @@ fn lex_atom(
 /// Lex an ANISOU
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_anisou(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
+fn lex_anisou(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let mut check = |item| match item {
         Ok(t) => t,
@@ -874,7 +922,7 @@ fn lex_anisou(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
 #[allow(clippy::type_complexity)]
 fn lex_atom_basics(
     linenumber: usize,
-    line: String,
+    line: &str,
 ) -> (
     (
         usize,
@@ -974,7 +1022,7 @@ fn lex_atom_basics(
 /// Lex a CRYST1
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_cryst(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
+fn lex_cryst(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1034,7 +1082,7 @@ fn lex_cryst(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
 /// Lex an SCALEn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_scale(linenumber: usize, line: String, row: usize) -> (LexItem, Vec<PDBError>) {
+fn lex_scale(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBError>) {
     let (data, errors) = lex_transformation(linenumber, line);
 
     (LexItem::Scale(row, data), errors)
@@ -1043,7 +1091,7 @@ fn lex_scale(linenumber: usize, line: String, row: usize) -> (LexItem, Vec<PDBEr
 /// Lex an ORIGXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_origx(linenumber: usize, line: String, row: usize) -> (LexItem, Vec<PDBError>) {
+fn lex_origx(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBError>) {
     let (data, errors) = lex_transformation(linenumber, line);
 
     (LexItem::OrigX(row, data), errors)
@@ -1052,7 +1100,7 @@ fn lex_origx(linenumber: usize, line: String, row: usize) -> (LexItem, Vec<PDBEr
 /// Lex an MTRIXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_mtrix(linenumber: usize, line: String, row: usize) -> (LexItem, Vec<PDBError>) {
+fn lex_mtrix(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1078,7 +1126,7 @@ fn lex_mtrix(linenumber: usize, line: String, row: usize) -> (LexItem, Vec<PDBEr
 }
 
 /// Lexes the general structure of a transformation record (ORIGXn, SCALEn, MTRIXn)
-fn lex_transformation(linenumber: usize, line: String) -> ([f64; 4], Vec<PDBError>) {
+fn lex_transformation(linenumber: usize, line: &str) -> ([f64; 4], Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1111,7 +1159,7 @@ fn lex_transformation(linenumber: usize, line: String) -> ([f64; 4], Vec<PDBErro
 /// Lex a MASTER
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_master(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
+fn lex_master(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1190,7 +1238,7 @@ fn lex_master(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
 }
 
 /// Lexes a SEQRES record
-fn lex_seqres(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
+fn lex_seqres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1227,7 +1275,7 @@ fn lex_seqres(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
 }
 
 /// Lexes a DBREF record
-fn lex_dbref(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
+fn lex_dbref(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1283,7 +1331,7 @@ fn lex_dbref(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
 }
 
 /// Lexes a SEQADV record
-fn lex_seqadv(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
+fn lex_seqadv(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1336,7 +1384,7 @@ fn lex_seqadv(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
 }
 
 /// Lexes a MODRES record
-fn lex_modres(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
+fn lex_modres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
     let mut check = |item| match item {
@@ -1370,6 +1418,59 @@ fn lex_modres(linenumber: usize, line: String) -> (LexItem, Vec<PDBError>) {
             },
             std_res,
             comment,
+        ),
+        errors,
+    )
+}
+
+/// Parse a SSBond line into the corresponding LexItem
+fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+    let mut errors = Vec::new();
+    let chars: Vec<char> = line.chars().collect();
+    // The Serial number field is ignored
+    let res_1 = chars[11..14].iter().collect::<String>();
+    let chain_1 = chars[15];
+    let res_seq_1: isize = parse_number(Context::line(linenumber, &line, 17, 4), &chars[17..21])
+        .unwrap_or_else(|err| {
+            errors.push(err);
+            0
+        });
+    let icode_1 = if chars[21] == ' ' {
+        None
+    } else {
+        Some(chars[21].to_string())
+    };
+    let res_2 = chars[25..28].iter().collect::<String>();
+    let chain_2 = chars[29];
+    let res_seq_2 = parse_number(Context::line(linenumber, &line, 31, 4), &chars[31..35])
+        .unwrap_or_else(|err| {
+            errors.push(err);
+            0
+        });
+    let icode_2 = if chars[35] == ' ' {
+        None
+    } else {
+        Some(chars[35].to_string())
+    };
+
+    let mut extra = None;
+
+    if chars.len() >= 78 {
+        let sym1 = chars[59..65].iter().collect::<String>();
+        let sym2 = chars[66..72].iter().collect::<String>();
+        let distance: f64 = parse_number(Context::line(linenumber, &line, 73, 5), &chars[73..78])
+            .unwrap_or_else(|err| {
+                errors.push(err);
+                0.0
+            });
+        extra = Some((sym1, sym2, distance));
+    }
+
+    (
+        LexItem::SSBond(
+            (res_1, res_seq_1, icode_1, chain_1.to_string()),
+            (res_2, res_seq_2, icode_2, chain_2.to_string()),
+            extra,
         ),
         errors,
     )

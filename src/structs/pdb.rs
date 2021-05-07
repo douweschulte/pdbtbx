@@ -27,6 +27,8 @@ pub struct PDB {
     pub symmetry: Option<Symmetry>,
     /// The Models making up this PDB
     models: Vec<Model>,
+    /// Bonds in this PDB
+    bonds: Vec<(usize, usize, Bond)>,
 }
 
 impl<'a> PDB {
@@ -41,6 +43,7 @@ impl<'a> PDB {
             unit_cell: None,
             symmetry: None,
             models: Vec::new(),
+            bonds: Vec::new(),
         }
     }
 
@@ -804,6 +807,47 @@ impl<'a> PDB {
     #[doc_cfg(feature = "rstar")]
     pub fn create_atom_with_hierarchy_rtree(&'a self) -> rstar::RTree<AtomWithHierarchy<'a>> {
         rstar::RTree::bulk_load(self.atoms_with_hierarchy().collect())
+    }
+
+    /// Get the bonds in this PDB file. Runtime O(bonds_count * 2 * atom_count) because it
+    /// has to iterate over all atoms to prevent borrow problems.
+    pub fn bonds(&self) -> impl DoubleEndedIterator<Item = (&Atom, &Atom, Bond)> + '_ {
+        self.bonds.iter().map(move |(a, b, bond)| {
+            (
+                self.atoms()
+                    .find(|atom| atom.counter() == *a)
+                    .expect("Could not find an atom in the bonds list"),
+                self.atoms()
+                    .find(|atom| atom.counter() == *b)
+                    .expect("Could not find an atom in the bonds list"),
+                *bond,
+            )
+        })
+    }
+
+    /// Add a bond of the given type to the list of bonds in this PDB.
+    /// The atoms are selected with the serial number and alternative location.
+    /// It uses `binary_find_atom` in the background so the PDB should be sorted.
+    /// If one of the atoms could not be found it returns `None` otherwise it
+    /// will return `Some(())`.
+    pub fn add_bond(
+        &mut self,
+        atom1: (usize, Option<&str>),
+        atom2: (usize, Option<&str>),
+        bond: Bond,
+    ) -> Option<()> {
+        self.bonds.push((
+            self.binary_find_atom(atom1.0, atom1.1)?.atom.counter(),
+            self.binary_find_atom(atom2.0, atom2.1)?.atom.counter(),
+            bond,
+        ));
+        Some(())
+    }
+
+    /// Add a bond of the given type to the list of bonds in this PDB.
+    /// The raw counters of the atoms are given.
+    pub(crate) fn add_bond_counters(&mut self, atom1: usize, atom2: usize, bond: Bond) {
+        self.bonds.push((atom1, atom2, bond));
     }
 }
 

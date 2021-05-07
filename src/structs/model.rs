@@ -169,7 +169,7 @@ impl<'a> Model {
     }
 
     /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// insertion_code, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -177,7 +177,7 @@ impl<'a> Model {
     pub fn binary_find_atom(
         &'a self,
         serial_number: usize,
-        alternative_location: Option<&str>,
+        insertion_code: Option<&str>,
     ) -> Option<AtomWithHierarchy<'a>> {
         if self.chain_count() == 0 {
             None
@@ -205,7 +205,7 @@ impl<'a> Model {
                     if let Some((residue, conformer, atom)) = self
                         .chain(index)
                         .unwrap()
-                        .binary_find_atom(serial_number, alternative_location)
+                        .binary_find_atom(serial_number, insertion_code)
                     {
                         Some(AtomWithHierarchy::new(
                             self.chain(index).unwrap(),

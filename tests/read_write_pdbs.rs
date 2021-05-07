@@ -99,32 +99,36 @@ fn do_something(file: &str, folder: &str, name: &str) {
         avg, avg_back, avg_side
     );
 
-    save(
-        pdb.clone(),
-        &(folder.to_string() + name + ".pdb"),
-        StrictnessLevel::Loose,
-    )
-    .expect("Save not successful");
+    if validate_pdb(&pdb)
+        .iter()
+        .all(|a| !a.fails(StrictnessLevel::Medium))
+    {
+        save(
+            pdb.clone(),
+            &(folder.to_string() + name + ".pdb"),
+            StrictnessLevel::Loose,
+        )
+        .expect("PDB resave not successful");
+        let (_saved_pdb, _) = open(
+            &(folder.to_string() + name + ".pdb"),
+            StrictnessLevel::Loose,
+        )
+        .expect("PDB reparse not successful");
+        //assert_eq!(pdb, saved_pdb);
+    }
     save(
         pdb.clone(),
         &(folder.to_string() + name + ".cif"),
         StrictnessLevel::Loose,
     )
-    .expect("Save not successful");
-
-    let (_saved_pdb, _) = open(
-        &(folder.to_string() + name + ".pdb"),
-        StrictnessLevel::Loose,
-    )
-    .unwrap();
+    .expect("mmCIF resave not successful");
     let (_saved_mmcif, _) = open(
         &(folder.to_string() + name + ".cif"),
         StrictnessLevel::Loose,
     )
-    .unwrap();
+    .expect("mmCIF reparse not successful");
 
     // These should be equal in the future
-    //assert_eq!(pdb, saved_pdb);
     //assert_eq!(pdb, saved_mmcif);
 }
 
