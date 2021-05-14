@@ -1,15 +1,15 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/nonnominandus/pdbtbx/releases) so there the source code for each version can be retrieved.
 
-### v0.7.0 [Unreleased] ''
-* Added parallel iterators based on [Rayon]() (Thanks to DocKDE)
-* Added support for generating r*trees from [Rstar](), this has to be opted in by using the feature `rstar`
-* Added support for serialization using [Serde](), this has to be opted in using the feature `serde`
-* Added a new struct `AtomWithHierarchy` to have access to the containing layers of an atom in an easy way
-* Added `binary_find_atom` to all hierarchies to find atoms in shorter time
+### v0.7.0 'Ecosystem integration'
+* Added parallel iterators based on [Rayon](https://crates.io/crates/rayon) (Thanks to DocKDE)
+* Added support for generating r*trees from [Rstar](https://crates.io/crates/rstar), this has to be opted in by using the feature `rstar`
+* Added support for serialization using [Serde](https://crates.io/crates/serde), this has to be opted in using the feature `serde`
+* Added a new struct `AtomWithHierarchy` to have access to the containing layers of an atom in an easy way and added functions to generate and work with this struct
+* Added `binary_find_atom` to all hierarchies to find atoms in less time
 * Added more names for amino acids and backbone atoms (Thanks to DocKDE)
 * Added support for bonds (can only read Disulfide bonds from PDBs for now)
-* And many more small fixes
+* And many more small fixes and docs updates
 
 ### v0.6.3
 * Added Anisotropic temperature factor support for mmCIF files
