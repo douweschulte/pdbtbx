@@ -1,22 +1,21 @@
 //! # pdbtbx (PDB Toolbox)
 //!
 //! A library to work with crystallographic Protein DataBank files. It can parse the main part
-//! of the PDB format (it is actively in development so more will follow). After parsing the
-//! structure is accessible with an API loosely based on CCTBX [`Grosse-Kunstleve, R. W. et al`]. The resulting structures can
-//! be saved in a valid PDB file for use in other software.
+//! of the PDB and mmCIF format (it is actively in development so more will follow). The resulting structure
+//! can be used to edit and interrogate the 3D structure of the protein. The changed structures can
+//! be saved in a PDB or mmCIF file for use in other software.
 //!
 //! ## Goals
 //! This library is designed to be a dependable, safe, stable and fast way of handling PDB files
 //! in idiomatic Rust. It is the goal to be very community driven, to make it into a project that
-//! is as useful to everyone as possible, while keeping true to its core principles.
+//! is as useful to everyone while keeping true to its core principles.
 //!
 //! ## Why
-//! As Rust is a very recent language there is not a lot of support for scientific work in Rust
-//! in comparison to languages that are used much longer (like the ubiquitous Python). I think
-//! that using Rust would have huge benefits over other languages in bigger scientific
-//! projects. It is not just me, more scientists are turning to Rust [`Perkel, J. M.`]. To help support this
-//! movement writing this library that makes more scientific work with Rust possible I want to
-//! make it easier for scientists to start using Rust.
+//! As Rust is a very recent language so there is not a lot of support for scientific work in Rust
+//! compared to languages that are used much longer (like the ubiquitous Python). I think
+//! that using Rust would have huge benefits over other languages in bigger scientific projects.
+//! It is not just me, more scientists are turning to Rust [`Perkel, J. M.`]. I want to make it
+//! easier for scientists to start using Rust by writing this library.
 //!
 //! ## How to use it
 //! The following example opens a pdb file (`1ubq.pdb`). Removes all `H` atoms. Calculates the
@@ -33,19 +32,19 @@
 //! pdb.remove_atoms_by(|atom| atom.element() == "H"); // Remove all H atoms
 //!
 //! let mut avg_b_factor = 0.0;
-//! for atom in pdb.atoms() { // Iterate over all atoms in the structure (not the HETATMs)
+//! for atom in pdb.atoms() { // Iterate over all atoms in the structure
 //!     avg_b_factor += atom.b_factor();
 //! }
 //! avg_b_factor /= pdb.atom_count() as f64;
 //!
 //! println!("The average B factor of the protein is: {}", avg_b_factor);
-//! pdbtbx::save(pdb, "dump/1ubq.pdb", pdbtbx::StrictnessLevel::Loose);
+//! pdbtbx::save(pdb, "dump/1ubq_no_hydrogens.pdb", pdbtbx::StrictnessLevel::Loose);
 //! ```
 //!
 //! ## PDB Hierarchy
 //! As explained in depth in the [documentation of CCTBX](https://cci.lbl.gov/cctbx_docs/iotbx/iotbx.pdb.html#iotbx-pdb-hierarchy)
 //! it can be quite hard to properly define a hierarchy for PDB files which works for all files.
-//! This library follows the hierarchy presented by CCTBX, but renames the `residue_group` and
+//! This library follows the hierarchy presented by CCTBX [`Grosse-Kunstleve, R. W. et al`], but renames the `residue_group` and
 //! `atom_group` constructs. This gives the following hierarchy, with the main identifying characteristics annotated per level.
 //!
 //! * [PDB]
