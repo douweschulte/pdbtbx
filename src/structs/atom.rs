@@ -232,11 +232,18 @@ impl Atom {
     }
 
     /// Set the occupancy or Q factor of the atom.
-    /// It fails if `new_occupancy` is not finite (`f64.is_finite()`).
+    /// It fails if `new_occupancy` is not finite (`f64.is_finite()`) or if it is negative.
     pub fn set_occupancy(&mut self, new_occupancy: f64) -> Result<(), String> {
         if new_occupancy.is_finite() {
-            self.occupancy = new_occupancy;
-            Ok(())
+            if new_occupancy >= 0.0 {
+                self.occupancy = new_occupancy;
+                Ok(())
+            } else {
+                Err(format!(
+                    "The value of the new occupancy is negative for atom {} value {}",
+                    self.serial_number, new_occupancy
+                ))
+            }
         } else {
             Err(format!(
                 "The value of the new occupancy is not finite for atom {} value {}",
@@ -636,20 +643,24 @@ mod tests {
     fn invalid_new_values() {
         let mut a = Atom::new(false, 0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
         assert!(Atom::new(false, 0, "Rͦ", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).is_none());
+        assert!(Atom::new(false, 0, "R", 1.0, 1.0, 1.0, 0.0, 0.0, "Cͦ", 0).is_none());
         assert!(a.set_x(f64::INFINITY).is_err());
         assert!(a.set_x(f64::NAN).is_err());
         assert!(a.set_x(f64::NEG_INFINITY).is_err());
         assert!(a.set_y(f64::INFINITY).is_err());
         assert!(a.set_z(f64::INFINITY).is_err());
         assert!(a.set_pos((f64::INFINITY, 0., 0.)).is_err());
+        assert!(a.set_pos((0., f64::INFINITY, 0.)).is_err());
+        assert!(a.set_pos((0., 0., f64::INFINITY)).is_err());
         assert!(a.set_b_factor(f64::INFINITY).is_err());
+        assert!(a.set_b_factor(-1.0).is_err());
         assert!(a.set_occupancy(f64::INFINITY).is_err());
+        assert!(a.set_occupancy(-1.).is_err());
     }
 
     #[test]
     fn check_setters() {
         let mut a = Atom::new(false, 0, "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
-        assert!(Atom::new(false, 0, "Rͦ", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).is_none());
         assert!(a.set_x(2.0).is_ok());
         assert_eq!(a.x(), 2.0);
         assert!(a.set_y(2.0).is_ok());
