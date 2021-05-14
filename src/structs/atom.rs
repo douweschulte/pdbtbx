@@ -2,6 +2,7 @@
 use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
+use doc_cfg::doc_cfg;
 use std::cmp::Ordering;
 use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
@@ -103,6 +104,9 @@ impl Atom {
 
     /// Get the position of the atom as an array of `f64`, in the following order: [x, y, z].
     /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
+    /// This function is only included for use with `Point` from rstar, so it will be removed
+    /// as soon as rstar implements `Point` for Tuples (https://github.com/georust/rstar/pull/57).
+    #[doc_cfg(feature = "rstar")]
     pub fn pos_array(&self) -> [f64; 3] {
         [self.x, self.y, self.z]
     }
@@ -125,6 +129,7 @@ impl Atom {
 
     /// Get the X position of the atom.
     /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
+    /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn x(&self) -> f64 {
         self.x
     }
@@ -145,6 +150,7 @@ impl Atom {
 
     /// Get the Y position of the atom.
     /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
+    /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn y(&self) -> f64 {
         self.y
     }
@@ -165,6 +171,7 @@ impl Atom {
 
     /// Get the Z position of the atom.
     /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
+    /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn z(&self) -> f64 {
         self.z
     }
@@ -183,14 +190,15 @@ impl Atom {
         }
     }
 
-    /// Get the serial number of the atom
-    /// This number is defined to be unique in the containing model, which is not enforced
+    /// Get the serial number of the atom.
+    /// This number combined with the alt_loc from the Conformer of this Atom is defined to be unique in the containing model, which is not enforced.
+    /// THe precision of this number is 5 digits in PDB files.
     pub fn serial_number(&self) -> usize {
         self.serial_number
     }
 
-    /// Set the serial number of the atom
-    /// This number is defined to be unique in the containing model, which is not enforced
+    /// Set the serial number of the atom.
+    /// This number combined with the alt_loc from the Conformer of this Atom is defined to be unique in the containing model, which is not enforced.
     pub fn set_serial_number(&mut self, new_serial_number: usize) {
         self.serial_number = new_serial_number;
     }
@@ -218,6 +226,7 @@ impl Atom {
     }
 
     /// Get the occupancy or Q factor of the atom. This indicates the fraction of unit cells in which this atom is present, in the normal case this will be one (1) and it can range between 1 and 0 (inclusive).
+    /// This number has a precision of 6.2 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn occupancy(&self) -> f64 {
         self.occupancy
     }
@@ -239,6 +248,7 @@ impl Atom {
     /// Get the B factor or temperature factor of the atom.
     /// This indicates the uncertainty in the position of the atom as seen over all unit cells in the whole crystal.
     /// A low uncertainty is modelled with a low B factor, with zero uncertainty being equal to a B factor of 0. A higher uncertainty is modelled by a high B factor.
+    /// This number has a precision of 6.2 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn b_factor(&self) -> f64 {
         self.b_factor
     }
@@ -265,6 +275,7 @@ impl Atom {
     }
 
     /// Get the element of this atom.
+    /// In PDB files the element can at most contain 2 characters.
     pub fn element(&self) -> &str {
         &self.element
     }
@@ -340,6 +351,7 @@ impl Atom {
     }
 
     /// Get the charge of the atom.
+    /// In PDB files the charge is one digit with a sign.
     pub fn charge(&self) -> isize {
         self.charge
     }
@@ -368,6 +380,7 @@ impl Atom {
     }
 
     /// Get the anisotropic temperature factors, if available.
+    /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn anisotropic_temperature_factors(&self) -> Option<[[f64; 3]; 3]> {
         self.atf
     }
