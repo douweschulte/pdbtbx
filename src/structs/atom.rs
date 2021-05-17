@@ -2,6 +2,7 @@
 use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
+use doc_cfg::doc_cfg;
 use std::cmp::Ordering;
 use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
@@ -85,31 +86,33 @@ impl Atom {
         self.counter
     }
 
-    /// Get if this atom is an hetero atom (true), a non standard atom, or a normal atom (false)
+    /// Get if this atom is an hetero atom (`true`), a non standard atom, or a normal atom (`false`)
     pub fn hetero(&self) -> bool {
         self.hetero
     }
 
-    /// Set if this atom is an hetero atom (true), a non standard atom, or a normal atom (false)
+    /// Set if this atom is an hetero atom (`true`), a non standard atom, or a normal atom (`false`)
     pub fn set_hetero(&mut self, new_hetero: bool) {
         self.hetero = new_hetero
     }
 
-    /// Get the position of the atom as a tuple of f64, in the following order: (x, y, z)
-    /// Returned in the units of the PDB file, which is defined to be orthogonal coordinate system in Å
+    /// Get the position of the atom as a tuple of `f64`, in the following order: (x, y, z).
+    /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
     pub fn pos(&self) -> (f64, f64, f64) {
         (self.x, self.y, self.z)
     }
 
-    /// Get the position of the atom as an array of f64, in the following order: [x, y, z]
-    /// Returned in the units of the PDB file, which is defined to be orthogonal coordinate system in Å
+    /// Get the position of the atom as an array of `f64`, in the following order: [x, y, z].
+    /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
+    /// This function is only included for use with `Point` from rstar, so it will be removed
+    /// as soon as rstar implements `Point` for Tuples (https://github.com/georust/rstar/pull/57).
+    #[doc_cfg(feature = "rstar")]
     pub fn pos_array(&self) -> [f64; 3] {
         [self.x, self.y, self.z]
     }
 
-    /// Set the position of the atom as a tuple of f64, in the following order: (x, y, z)
-    /// ## Panics
-    /// It panics if one or more of the numbers are not finite (`f64.is_finite()`)
+    /// Set the position of the atom as a tuple of `f64`, in the following order: (x, y, z).
+    /// It fails if one or more of the numbers is not finite (`f64.is_finite()`).
     pub fn set_pos(&mut self, new_pos: (f64, f64, f64)) -> Result<(), String> {
         if new_pos.0.is_finite() && new_pos.1.is_finite() && new_pos.2.is_finite() {
             self.x = new_pos.0;
@@ -124,15 +127,15 @@ impl Atom {
         }
     }
 
-    /// Get the X position of the atom
-    /// Returned in the units of the PDB file, which is defined to be orthogonal coordinate system in Å
+    /// Get the X position of the atom.
+    /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
+    /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn x(&self) -> f64 {
         self.x
     }
 
-    /// Set the X position of the atom
-    /// ## Panics
-    /// It panics if `new_pos` is not finite (`f64.is_finite()`)
+    /// Set the X position of the atom in Aͦ.
+    /// It fails if `new_pos` is not finite (`f64.is_finite()`).
     pub fn set_x(&mut self, new_pos: f64) -> Result<(), String> {
         if new_pos.is_finite() {
             self.x = new_pos;
@@ -145,15 +148,15 @@ impl Atom {
         }
     }
 
-    /// Get the Y position of the atom
-    /// Returned in the units of the PDB file, which is defined to be orthogonal coordinate system in Å
+    /// Get the Y position of the atom.
+    /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
+    /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn y(&self) -> f64 {
         self.y
     }
 
-    /// Set the Y position of the atom
-    /// ## Panics
-    /// It panics if `new_pos` is not finite (`f64.is_finite()`)
+    /// Set the Y position of the atom.
+    /// It fails if `new_pos` is not finite (`f64.is_finite()`).
     pub fn set_y(&mut self, new_pos: f64) -> Result<(), String> {
         if new_pos.is_finite() {
             self.y = new_pos;
@@ -166,15 +169,15 @@ impl Atom {
         }
     }
 
-    /// Get the Z position of the atom
-    /// Returned in the units of the PDB file, which is defined to be orthogonal coordinate system in Å
+    /// Get the Z position of the atom.
+    /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
+    /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn z(&self) -> f64 {
         self.z
     }
 
-    /// Set the Z position of the atom
-    /// ## Panics
-    /// It panics if `new_pos` is not finite (`f64.is_finite()`)
+    /// Set the Z position of the atom.
+    /// It fails if `new_pos` is not finite (`f64.is_finite()`).
     pub fn set_z(&mut self, new_pos: f64) -> Result<(), String> {
         if new_pos.is_finite() {
             self.z = new_pos;
@@ -187,28 +190,29 @@ impl Atom {
         }
     }
 
-    /// Get the serial number of the atom
-    /// This number is defined to be unique in the containing model, which is not enforced
+    /// Get the serial number of the atom.
+    /// This number combined with the alt_loc from the Conformer of this Atom is defined to be unique in the containing model, which is not enforced.
+    /// THe precision of this number is 5 digits in PDB files.
     pub fn serial_number(&self) -> usize {
         self.serial_number
     }
 
-    /// Set the serial number of the atom
-    /// This number is defined to be unique in the containing model, which is not enforced
+    /// Set the serial number of the atom.
+    /// This number combined with the alt_loc from the Conformer of this Atom is defined to be unique in the containing model, which is not enforced.
     pub fn set_serial_number(&mut self, new_serial_number: usize) {
         self.serial_number = new_serial_number;
     }
 
-    /// Get the name of the atom
-    /// The name is max 4 characters and is trimmed
+    /// Get the name of the atom. The name will be trimmed (whitespace removed) and changed to ASCII uppercase.
+    /// For PDB files the name is max 4 characters.
     pub fn name(&self) -> &str {
         &self.name
     }
 
-    /// Set the name of the atom. The name will be changed to uppercase as requested by PDB/PDBx standard.
+    /// Set the name of the atom. The name will be trimmed (whitespace removed) and changed to ASCII uppercase as requested by PDB/PDBx standard.
+    /// For PDB files the name can at most contain 4 characters.
     /// If the name is invalid an error message is provided.
-    /// ## Errors
-    /// The name can only contain valid characters, the ASCII graphic characters (char.is_ascii_graphic() || char == ' ')
+    /// The name can only contain valid characters, the ASCII graphic characters (`char.is_ascii_graphic() || char == ' '`).
     pub fn set_name(&mut self, new_name: &str) -> Result<(), String> {
         if !valid_identifier(new_name) {
             Err(format!(
@@ -221,18 +225,25 @@ impl Atom {
         }
     }
 
-    /// Get the occupancy of the atom
+    /// Get the occupancy or Q factor of the atom. This indicates the fraction of unit cells in which this atom is present, in the normal case this will be one (1) and it can range between 1 and 0 (inclusive).
+    /// This number has a precision of 6.2 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn occupancy(&self) -> f64 {
         self.occupancy
     }
 
-    /// Set the occupancy of the atom
-    /// ## Panics
-    /// It panics if `new_occupancy` is not finite (`f64.is_finite()`)
+    /// Set the occupancy or Q factor of the atom.
+    /// It fails if `new_occupancy` is not finite (`f64.is_finite()`) or if it is negative.
     pub fn set_occupancy(&mut self, new_occupancy: f64) -> Result<(), String> {
         if new_occupancy.is_finite() {
-            self.occupancy = new_occupancy;
-            Ok(())
+            if new_occupancy >= 0.0 {
+                self.occupancy = new_occupancy;
+                Ok(())
+            } else {
+                Err(format!(
+                    "The value of the new occupancy is negative for atom {} value {}",
+                    self.serial_number, new_occupancy
+                ))
+            }
         } else {
             Err(format!(
                 "The value of the new occupancy is not finite for atom {} value {}",
@@ -241,18 +252,27 @@ impl Atom {
         }
     }
 
-    /// Get the b-factor or temperature factor of the atom
+    /// Get the B factor or temperature factor of the atom.
+    /// This indicates the uncertainty in the position of the atom as seen over all unit cells in the whole crystal.
+    /// A low uncertainty is modelled with a low B factor, with zero uncertainty being equal to a B factor of 0. A higher uncertainty is modelled by a high B factor.
+    /// This number has a precision of 6.2 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn b_factor(&self) -> f64 {
         self.b_factor
     }
 
-    /// Set the b-factor of the atom
-    /// ## Panics
-    /// It panics if `new_b_factor` is not finite (`f64.is_finite()`)
+    /// Set the B factor or temperature factor of the atom.
+    /// It fails if `new_b_factor` is not finite (`f64.is_finite()`) or if it is negative.
     pub fn set_b_factor(&mut self, new_b_factor: f64) -> Result<(), String> {
         if new_b_factor.is_finite() {
-            self.b_factor = new_b_factor;
-            Ok(())
+            if new_b_factor >= 0.0 {
+                self.b_factor = new_b_factor;
+                Ok(())
+            } else {
+                Err(format!(
+                    "The value of the new b_factor is negative for atom {} value {}",
+                    self.serial_number, new_b_factor
+                ))
+            }
         } else {
             Err(format!(
                 "The value of the new b_factor is not finite for atom {} value {}",
@@ -261,70 +281,16 @@ impl Atom {
         }
     }
 
-    /// Get the element of this atom
+    /// Get the element of this atom.
+    /// In PDB files the element can at most contain 2 characters.
     pub fn element(&self) -> &str {
         &self.element
     }
 
-    /// Get the atomic number of this atom. If defined it uses `self.element()`, otherwise it uses `self.name()` of the atom.
-    /// ## Fails
-    /// It fails when the element() or name() is not a valid element name.
-    pub fn atomic_number(&self) -> Option<usize> {
-        if !self.element.is_empty() {
-            reference_tables::get_atomic_number(&self.element())
-        } else {
-            reference_tables::get_atomic_number(&self.name())
-        }
-    }
-
-    /// Get the atomic radius of this Atom in Å. The radius is defined up to 'Cm' or 96.
-    /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96.
-    /// Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: <http://doi.org/10.1002/chem.201602949>.
-    /// Updated to the corrigendum: <https://doi.org/10.1002/chem.201700610>
-    /// ## Fails
-    /// It fails if the element name if this Atom is not defined (see `self.atomic_number()`).
-    /// It also fails when the atomic radius is not defined for the given atomic number, so if the atomic
-    /// number is higher than 96.
-    pub fn atomic_radius(&self) -> Option<f64> {
-        if let Some(s) = self.atomic_number() {
-            reference_tables::get_atomic_radius(s)
-        } else {
-            None
-        }
-    }
-
-    /// Gets the van der Waals radius for this Atom in Å.The radius is defined up until 'Es' or 99.
-    /// Source: Alvarez, S. (2013). A cartography of the van der Waals territories. Dalton Transactions, 42(24), 8617. <https://doi.org/10.1039/c3dt50599e>
-    /// ## Fails
-    /// It fails if the element name if this Atom is not defined (see `self.atomic_number()`).
-    /// It also fails when the atomic radius is not defined for the given atomic number, so if the atomic
-    /// number is higher than 99.
-    pub fn vanderwaals_radius(&self) -> Option<f64> {
-        if let Some(s) = self.atomic_number() {
-            reference_tables::get_vanderwaals_radius(s)
-        } else {
-            None
-        }
-    }
-
-    /// Gets the covalent bond radii for this Atom.
-    /// The result is the radius for a single, double and triple bond, where the last two are optional.
-    /// All values are given in picometers.
-    /// Sources:
-    ///  * P. Pyykkö; M. Atsumi (2009). "Molecular Single-Bond Covalent Radii for Elements 1-118". Chemistry: A European Journal. 15 (1): 186–197. doi:10.1002/chem.200800987
-    ///  * P. Pyykkö; M. Atsumi (2009). "Molecular Double-Bond Covalent Radii for Elements Li–E112". Chemistry: A European Journal. 15 (46): 12770–12779. doi:10.1002/chem.200901472
-    ///  * P. Pyykkö; S. Riedel; M. Patzschke (2005). "Triple-Bond Covalent Radii". Chemistry: A European Journal. 11 (12): 3511–3520. doi:10.1002/chem.200401299
-    /// ## Fails
-    /// It fails if the element name if this Atom is not defined (see `self.atomic_number()`).
-    pub fn covalent_bond_radii(&self) -> Option<(usize, Option<usize>, Option<usize>)> {
-        self.atomic_number()
-            .map(reference_tables::get_covalent_bond_radii)
-    }
-
-    /// Set the element of this atom. The element will be changed to uppercase as requested by PDB/PDBx standard.
-    /// ## Fails
-    /// It fails if the element contains invalid characters (only ASCII graphic and space is allowed).
-    /// It also fails if the string is too ling, the max length is 2 characters.
+    /// Set the element of this atom. The element will be trimmed (whitespace removed) and changed to ASCII uppercase as requested by PDB/PDBx standard.
+    /// For PDB files the element can at most contain 2 characters.
+    /// If the element is invalid an error message is provided.
+    /// The element can only contain valid characters, the ASCII graphic characters (`char.is_ascii_graphic() || char == ' '`).
     pub fn set_element(&mut self, new_element: &str) -> Result<(), String> {
         if !valid_identifier(new_element) {
             Err(format!(
@@ -337,12 +303,72 @@ impl Atom {
         }
     }
 
-    /// Get the charge of the atom
+    /// Get the atomic number of this Atom. If defined it uses `self.element()`, otherwise it uses `self.name()`.
+    /// It fails when `self.element()` is not an element in the periodic table, or if `self.element()` is undefined and `self.name()` is not an element in the periodic table.
+    pub fn atomic_number(&self) -> Option<usize> {
+        if !self.element.is_empty() {
+            reference_tables::get_atomic_number(&self.element())
+        } else {
+            reference_tables::get_atomic_number(&self.name())
+        }
+    }
+
+    /// Get the atomic radius of this Atom in Å. The radius is defined up to element 'Cm' or atomic number 96.
+    /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96.
+    /// Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: <http://doi.org/10.1002/chem.201602949>.
+    /// Updated to the corrigendum: <https://doi.org/10.1002/chem.201700610>.
+    ///
+    /// It fails if the atomic number of this Atom is not defined (see `self.atomic_number()`).
+    /// It also fails when the atomic radius is not defined for the given atomic number, so if the atomic
+    /// number is higher than 96.
+    pub fn atomic_radius(&self) -> Option<f64> {
+        if let Some(s) = self.atomic_number() {
+            reference_tables::get_atomic_radius(s)
+        } else {
+            None
+        }
+    }
+
+    /// Get the van der Waals radius for this Atom in Å. The radius is defined up to element 'Es' or atomic number 99.
+    /// Source: Alvarez, S. (2013). A cartography of the van der Waals territories. Dalton Transactions, 42(24), 8617. <https://doi.org/10.1039/c3dt50599e>.
+    ///
+    /// It fails if the atomic number of this Atom is not defined (see `self.atomic_number()`).
+    /// It also fails when the atomic radius is not defined for the given atomic number, so if the atomic
+    /// number is higher than 99.
+    pub fn vanderwaals_radius(&self) -> Option<f64> {
+        if let Some(s) = self.atomic_number() {
+            reference_tables::get_vanderwaals_radius(s)
+        } else {
+            None
+        }
+    }
+
+    /// Gets the covalent bond radii for this Atom.
+    /// The result is the radius for a single, double and triple bond, where the last two are optional. If the radius for a double bond is unknown the radius for a triple bond is also unknown.
+    /// All values are given in picometers.
+    /// Sources:
+    ///  * P. Pyykkö; M. Atsumi (2009). "Molecular Single-Bond Covalent Radii for Elements 1-118". Chemistry: A European Journal. 15 (1): 186–197. <https://doi.org/10.1002/chem.200800987>
+    ///  * P. Pyykkö; M. Atsumi (2009). "Molecular Double-Bond Covalent Radii for Elements Li–E112". Chemistry: A European Journal. 15 (46): 12770–12779. <https://doi.org/10.1002/chem.200901472>
+    ///  * P. Pyykkö; S. Riedel; M. Patzschke (2005). "Triple-Bond Covalent Radii". Chemistry: A European Journal. 11 (12): 3511–3520. <https://doi.org/10.1002/chem.200401299>
+    ///
+    /// It fails if the atomic number of this Atom is not defined (see `self.atomic_number()`).
+    pub fn covalent_bond_radii(&self) -> Option<(usize, Option<usize>, Option<usize>)> {
+        self.atomic_number()
+            .map(reference_tables::get_covalent_bond_radii)
+    }
+
+    /// Get the charge of the atom.
+    /// In PDB files the charge is one digit with a sign.
     pub fn charge(&self) -> isize {
         self.charge
     }
 
-    /// Get the charge in the PDB format [0-9][-+]
+    /// Set the charge of this atom.
+    pub fn set_charge(&mut self, new_charge: isize) {
+        self.charge = new_charge;
+    }
+
+    /// Get the charge in the PDB format `[0-9][-+]`. If the charge is 0 or outside bounds (below -9 or above 9) it returns an empty string.
     #[allow(clippy::cast_possible_truncation)]
     pub fn pdb_charge(&self) -> String {
         if self.charge == 0 || self.charge < -9 || self.charge > 9 {
@@ -360,22 +386,19 @@ impl Atom {
         }
     }
 
-    /// Set the charge of this atom
-    pub fn set_charge(&mut self, new_charge: isize) {
-        self.charge = new_charge;
-    }
-
-    /// Get the anisotropic temperature factors, if available
+    /// Get the anisotropic temperature factors, if available.
+    /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
     pub fn anisotropic_temperature_factors(&self) -> Option<[[f64; 3]; 3]> {
         self.atf
     }
 
-    /// Set the anisotropic temperature factors
+    /// Set the anisotropic temperature factors.
     pub fn set_anisotropic_temperature_factors(&mut self, factors: [[f64; 3]; 3]) {
         self.atf = Some(factors);
     }
 
-    /// Get if this atom is likely to be a part of the backbone of a protein
+    /// Get if this atom is likely to be a part of the backbone of a protein.
+    /// This is based on this Atom only, for a more precise definition use [AtomWithHierarchy]`.is_backbone()`.
     pub fn is_backbone(&self) -> bool {
         reference_tables::is_backbone(self.name())
     }
@@ -398,7 +421,15 @@ impl Atom {
                 || (self.atf.is_some() && other.atf.is_some()))
     }
 
-    /// Gives the distance between the centers of two atoms. Wrapping around the unit cell if needed.
+    /// Gives the distance between the centers of two atoms in Aͦ.
+    pub fn distance(&self, other: &Atom) -> f64 {
+        ((other.x - self.x).powi(2) + (other.y - self.y).powi(2) + (other.z - self.z).powi(2))
+            .sqrt()
+    }
+
+    /// Gives the distance between the centers of two atoms in Aͦ.
+    /// Wrapping around the unit cell if needed.
+    /// Meaning it will give the shortest distance between the two atoms or any of their copies given a crystal of the size of the given unit cell stretching out to all sides.
     pub fn distance_wrapping(&self, other: &Atom, cell: &UnitCell) -> f64 {
         let mut x = other.x;
         if (self.x - other.x).abs() > cell.a() / 2.0 {
@@ -430,17 +461,10 @@ impl Atom {
         ((x - self.x).powi(2) + (y - self.y).powi(2) + (z - self.z).powi(2)).sqrt()
     }
 
-    /// Gives the distance between the centers of two atoms.
-    pub fn distance(&self, other: &Atom) -> f64 {
-        ((other.x - self.x).powi(2) + (other.y - self.y).powi(2) + (other.z - self.z).powi(2))
-            .sqrt()
-    }
-
-    /// Checks if this Atom overlaps with the given atom. It overlaps if the sphere defined as sitting at
-    /// the atom position with a radius of the atomic radius (`atom.atomic_radius()`) intersect with this
-    /// sphere from the other Atom.
-    /// ## Fails
-    /// It fails if for any one of the two atoms the radius (`.atomic_radius()`) is not defined.
+    /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
+    /// less then the sum of the radius from this atom and the other atom. The used radius is (`atom.atomic_radius()`).
+    ///
+    /// It fails if for any one of the two atoms the radius (`atom.atomic_radius()`) is not defined.
     pub fn overlaps(&self, other: &Atom) -> Option<bool> {
         self.atomic_radius()
             .map(|self_rad| {
@@ -451,11 +475,13 @@ impl Atom {
             .flatten()
     }
 
-    /// Checks if this Atom overlaps with the given atom. It overlaps if the sphere defined as sitting at
-    /// the atom position with a radius of the atomic radius (`atom.atomic_radius()`) intersect with this
-    /// sphere from the other Atom. Wrapping around the unit cell if needed.
-    /// ## Fails
-    /// It fails if for any one of the two atoms the radius (`.atomic_radius()`) is not defined.
+    /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
+    /// less then the sum of the radius from this atom and the other atom. The used radius is (`atom.atomic_radius()`).
+    /// Wrapping around the unit cell if needed. Meaning it will give the shortest distance between the two
+    /// atoms or any of their copies given a crystal of the size of the given unit cell stretching out to
+    /// all sides.
+    ///
+    /// It fails if for any one of the two atoms the radius (`atom.atomic_radius()`) is not defined.
     pub fn overlaps_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
         self.atomic_radius()
             .map(|self_rad| {
@@ -617,20 +643,24 @@ mod tests {
     fn invalid_new_values() {
         let mut a = Atom::new(false, 0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
         assert!(Atom::new(false, 0, "Rͦ", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).is_none());
+        assert!(Atom::new(false, 0, "R", 1.0, 1.0, 1.0, 0.0, 0.0, "Cͦ", 0).is_none());
         assert!(a.set_x(f64::INFINITY).is_err());
         assert!(a.set_x(f64::NAN).is_err());
         assert!(a.set_x(f64::NEG_INFINITY).is_err());
         assert!(a.set_y(f64::INFINITY).is_err());
         assert!(a.set_z(f64::INFINITY).is_err());
         assert!(a.set_pos((f64::INFINITY, 0., 0.)).is_err());
+        assert!(a.set_pos((0., f64::INFINITY, 0.)).is_err());
+        assert!(a.set_pos((0., 0., f64::INFINITY)).is_err());
         assert!(a.set_b_factor(f64::INFINITY).is_err());
+        assert!(a.set_b_factor(-1.0).is_err());
         assert!(a.set_occupancy(f64::INFINITY).is_err());
+        assert!(a.set_occupancy(-1.).is_err());
     }
 
     #[test]
     fn check_setters() {
         let mut a = Atom::new(false, 0, "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
-        assert!(Atom::new(false, 0, "Rͦ", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).is_none());
         assert!(a.set_x(2.0).is_ok());
         assert_eq!(a.x(), 2.0);
         assert!(a.set_y(2.0).is_ok());
