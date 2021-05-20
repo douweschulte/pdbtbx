@@ -105,7 +105,7 @@ impl Atom {
     /// Get the position of the atom as an array of `f64`, in the following order: [x, y, z].
     /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
     /// This function is only included for use with `Point` from rstar, so it will be removed
-    /// as soon as rstar implements `Point` for Tuples (https://github.com/georust/rstar/pull/57).
+    /// as soon as rstar implements `Point` for Tuples (<https://github.com/georust/rstar/pull/57>).
     #[doc_cfg(feature = "rstar")]
     pub fn pos_array(&self) -> [f64; 3] {
         [self.x, self.y, self.z]
