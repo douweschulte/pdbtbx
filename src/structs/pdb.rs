@@ -52,7 +52,9 @@ pub struct PDB {
     bonds: Vec<(usize, usize, Bond)>,
 }
 
-impl<'a> PDB {
+/// # Creators
+/// Creator functions for a PDB file
+impl PDB {
     /// Create an empty PDB struct.
     pub fn new() -> PDB {
         PDB {
@@ -67,7 +69,11 @@ impl<'a> PDB {
             bonds: Vec::new(),
         }
     }
+}
 
+/// # Remarks
+/// Functionality for working with remarks.
+impl PDB {
     /// Get the number of remark records in the PDB file.
     pub fn remark_count(&self) -> usize {
         self.remarks.len()
@@ -125,7 +131,13 @@ impl<'a> PDB {
     {
         self.remarks.retain(|r| !predicate(r))
     }
+}
 
+/// # MtriX
+/// Functionality for working with the MtriX records form the PDB. The MtriX are needed
+/// to transform the Models to the full asymmetric subunit, if needed to contain the
+/// non-crystallographic symmetry.
+impl PDB {
     /// Get the MtriX records for this PDB.
     pub fn mtrix(&self) -> impl DoubleEndedIterator<Item = &MtriX> + '_ {
         self.mtrix.iter()
@@ -137,44 +149,32 @@ impl<'a> PDB {
         self.mtrix.par_iter()
     }
 
-    /// Get the MtriX records for this PDB, as mutable references
+    /// Get the MtriX records for this PDB, as mutable references.
     pub fn mtrix_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut MtriX> + '_ {
         self.mtrix.iter_mut()
     }
 
-    /// Get the parallel MtriX records for this PDB, as mutable references
+    /// Get the parallel MtriX records for this PDB, as mutable references.
     #[doc_cfg(feature = "rayon")]
     pub fn par_mtrix_mut(&mut self) -> impl ParallelIterator<Item = &mut MtriX> + '_ {
         self.mtrix.par_iter_mut()
     }
 
-    /// Get a specific MtriX.
-    ///
-    /// ## Arguments
-    /// * `index` - the index of the MtriX to return
-    ///
-    /// ## Fails
-    /// It fails when the index is out of bounds.
-    pub fn get_mtrix(&self, index: usize) -> Option<&MtriX> {
-        self.mtrix.get(index)
-    }
-
-    /// Get a specific MtriX as a mutable reference.
-    ///
-    /// ## Arguments
-    /// * `index` - the index of the MtriX to return
-    ///
-    /// ## Fails
-    /// It fails when the index is out of bounds.
-    pub fn get_mtrix_mut(&mut self, index: usize) -> Option<&mut MtriX> {
-        self.mtrix.get_mut(index)
-    }
-
-    /// Add a MtriX to this PDB
+    /// Add a MtriX to this PDB.
     pub fn add_mtrix(&mut self, mtrix: MtriX) {
         self.mtrix.push(mtrix);
     }
 
+    /// Delete the MtriX matching the given predicate.
+    pub fn delete_mtrix_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&MtriX) -> bool,
+    {
+        self.mtrix.retain(|m| !predicate(m))
+    }
+}
+
+impl<'a> PDB {
     /// Adds a Model to this PDB
     pub fn add_model(&mut self, new_model: Model) {
         self.models.push(new_model);
