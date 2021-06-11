@@ -20,7 +20,7 @@ pub fn validate(pdb: &PDB) -> Vec<PDBError> {
         errors.push(PDBError::new(
             ErrorLevel::BreakingError,
             "No Atoms parsed", 
-            "No Atoms could be parsed from the given file. Please make sure it is a valid PDB/mmCIF file", 
+            "No Atoms could be parsed from the given file. Please make sure it is a valid PDB/mmCIF file.", 
             Context::None)
         )
     }
