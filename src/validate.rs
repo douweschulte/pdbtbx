@@ -15,6 +15,15 @@ pub fn validate(pdb: &PDB) -> Vec<PDBError> {
     if pdb.model_count() > 1 {
         errors.append(&mut validate_models(pdb));
     }
+
+    if pdb.atoms().next().is_none() {
+        errors.push(PDBError::new(
+            ErrorLevel::BreakingError,
+            "No Atoms parsed", 
+            "No Atoms could be parsed from the given file. Please make sure it is a valid PDB/mmCIF file", 
+            Context::None)
+        )
+    }
     errors
 }
 
