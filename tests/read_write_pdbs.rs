@@ -157,7 +157,14 @@ fn save_pdb_strict() {
         .into_os_string()
         .into_string()
         .unwrap();
-    let res = save(PDB::new(), &name, StrictnessLevel::Strict);
+
+    let atom = Atom::new(false, 0, "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
+    let mut model = Model::new(0);
+    model.add_atom(atom, "A", (0, None), ("LYS", None));
+    let mut pdb = PDB::new();
+    pdb.add_model(model);
+
+    let res = save(pdb, &name, StrictnessLevel::Strict);
     assert!(res.is_ok());
     let (_pdb, errors) = crate::open(&name, StrictnessLevel::Strict).unwrap();
     assert_eq!(errors.len(), 0);
@@ -172,7 +179,14 @@ fn save_mmcif_strict() {
         .into_os_string()
         .into_string()
         .unwrap();
-    let res = save(PDB::new(), &name, StrictnessLevel::Strict);
+
+    let atom = Atom::new(false, 0, "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
+    let mut model = Model::new(0);
+    model.add_atom(atom, "A", (0, None), ("LYS", None));
+    let mut pdb = PDB::new();
+    pdb.add_model(model);
+
+    let res = save(pdb, &name, StrictnessLevel::Strict);
     println!("{:?}", res);
     assert!(res.is_ok());
     let (_pdb, errors) = crate::open(&name, StrictnessLevel::Strict).unwrap();
