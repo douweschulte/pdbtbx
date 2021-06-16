@@ -1,6 +1,7 @@
 #![allow(clippy::missing_docs_in_private_items)]
 mod atom;
 mod atom_with_hierarchy;
+mod atom_with_hierarchy_mut;
 mod bond;
 mod chain;
 mod conformer;
@@ -15,6 +16,7 @@ mod unit_cell;
 
 pub use atom::Atom;
 pub use atom_with_hierarchy::AtomWithHierarchy;
+pub use atom_with_hierarchy_mut::AtomWithHierarchyMut;
 pub use bond::Bond;
 pub use chain::Chain;
 pub use conformer::Conformer;

@@ -5,6 +5,7 @@ use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
 use std::cmp::Ordering;
+use std::cell::RefCell;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -317,7 +318,7 @@ impl<'a> Model {
         self.par_chains_mut().flat_map(|a| a.par_atoms_mut())
     }
 
-    /// Returns all atom with their hierarchy struct for each atom in this model.
+    /// Returns all atoms with their hierarchy struct for each atom in this model.
     pub fn atoms_with_hierarchy(
         &'a self,
     ) -> impl DoubleEndedIterator<Item = AtomWithHierarchy<'a>> + '_ {
@@ -332,6 +333,23 @@ impl<'a> Model {
             .flatten()
             .flatten()
             .map(AtomWithHierarchy::from_tuple)
+    }
+
+    /// Returns all atoms as mutable with their hierarchy struct for each atom in this model.
+    pub fn atoms_with_hierarchy_mut(
+        &'a self,
+    ) -> impl DoubleEndedIterator<Item = AtomWithHierarchyMut<'a>> + '_ {
+        self.chains()
+            .map(|ch| {
+                ch.residues().map(move |r| {
+                    r.conformers()
+                        .map(move |c| c.atoms().map(move |a| (ch, r, c, RefCell::new(a))))
+                })
+            })
+            .flatten()
+            .flatten()
+            .flatten()
+            .map(AtomWithHierarchyMut::from_tuple)
     }
 
     /// Returns all atom with their hierarchy struct for each atom in this model in parallel.
