@@ -1,5 +1,5 @@
 use super::*;
-use std::cell::RefCell;
+// use std::cell::RefCell;
 
 /// A structure containing references to the full hierarchy for a single Atom which is wrapped in a RefCell
 /// to provide interior mutability.
@@ -12,13 +12,13 @@ pub struct AtomWithHierarchyMut<'a> {
     /// The Conformer containing this Atom
     pub conformer: &'a Conformer,
     /// This Atom
-    pub atom: RefCell<&'a Atom>,
+    pub atom: Atom,
 }
 
 impl<'a> AtomWithHierarchyMut<'a> {
     /// Create an AtomWithHierarchyMut from a Tuple containing all needed references
     pub fn from_tuple(
-        hierarchy: (&'a Chain, &'a Residue, &'a Conformer, RefCell<&'a Atom>),
+        hierarchy: (&'a Chain, &'a Residue, &'a Conformer, Atom),
     ) -> AtomWithHierarchyMut<'a> {
         AtomWithHierarchyMut {
             chain: hierarchy.0,
@@ -32,7 +32,7 @@ impl<'a> AtomWithHierarchyMut<'a> {
         chain: &'a Chain,
         residue: &'a Residue,
         conformer: &'a Conformer,
-        atom: RefCell<&'a Atom>,
+        atom: Atom,
     ) -> AtomWithHierarchyMut<'a> {
         AtomWithHierarchyMut {
             chain,
@@ -44,12 +44,12 @@ impl<'a> AtomWithHierarchyMut<'a> {
 
     /// Tests if this atom is part of the protein backbone
     pub fn is_backbone(&self) -> bool {
-        self.conformer.is_amino_acid() && self.atom.borrow().is_backbone()
+        self.conformer.is_amino_acid() && self.atom.is_backbone()
     }
 
     /// Tests if this atom is part of a side chain of an amino acid
     pub fn is_side_chain(&self) -> bool {
-        self.conformer.is_amino_acid() && !self.atom.borrow().hetero()
+        self.conformer.is_amino_acid() && !self.atom.hetero()
     }
 }
 
@@ -60,7 +60,7 @@ impl<'a> PartialEq for AtomWithHierarchyMut<'a> {
         // By definition the combination of serial number and alternative location should be
         // unique across the whole PDB, this does not account for the fact that there could
         // be multiple models, but that is impossible to check anyway without Model information.
-        self.atom.borrow().serial_number() == other.atom.borrow().serial_number()
+        self.atom.serial_number() == other.atom.serial_number()
             && self.conformer.alternative_location() == other.conformer.alternative_location()
     }
 }
