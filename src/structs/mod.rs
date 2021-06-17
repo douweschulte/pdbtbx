@@ -14,7 +14,7 @@ mod symmetry;
 mod unit_cell;
 
 pub use atom::Atom;
-pub use atom_with_hierarchy::AtomWithHierarchy;
+pub use atom_with_hierarchy::{AtomWithHierarchy, AtomWithHierarchyMut};
 pub use bond::Bond;
 pub use chain::Chain;
 pub use conformer::Conformer;

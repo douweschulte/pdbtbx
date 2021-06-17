@@ -334,6 +334,27 @@ impl<'a> Model {
             .map(AtomWithHierarchy::from_tuple)
     }
 
+    /// Returns all atom with their hierarchy struct for each atom in this model.
+    #[allow(clippy::unwrap_used)]
+    pub fn atoms_with_hierarchy_mut(&'a mut self) -> Vec<AtomWithHierarchyMut<'a>> {
+        let mut output = Vec::new();
+        unsafe {
+            for ch in self.chains_mut() {
+                let chain: *mut Chain = ch;
+                for r in chain.as_mut().unwrap().residues_mut() {
+                    let residue: *mut Residue = r;
+                    for c in residue.as_mut().unwrap().conformers_mut() {
+                        let conformer: *mut Conformer = c;
+                        for atom in conformer.as_mut().unwrap().atoms_mut() {
+                            output.push(AtomWithHierarchyMut::new(chain, residue, conformer, atom));
+                        }
+                    }
+                }
+            }
+        }
+        output
+    }
+
     /// Returns all atom with their hierarchy struct for each atom in this model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_with_hierarchy(
@@ -603,5 +624,29 @@ mod tests {
         let a = Model::new(0);
         format!("{:?}", a);
         format!("{}", a);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_hierarchy_mut() {
+        let mut a = Model::new(0);
+        a.add_chain(Chain::new("A").unwrap());
+        a.add_atom(
+            Atom::new(false, 0, "ATOM", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap(),
+            "A",
+            (0, None),
+            ("ALA", None),
+        );
+        for mut hierarchy in a.atoms_with_hierarchy_mut() {
+            hierarchy.residue().serial_number();
+            hierarchy.chain_mut().set_id("B");
+            hierarchy.residue().serial_number();
+            hierarchy.residue_mut().set_serial_number(1);
+            hierarchy.chain_mut().set_id("C");
+        }
+        assert_eq!(a.chain(0).unwrap().id(), "C");
+        assert_eq!(a.residue(0).unwrap().serial_number(), 1);
+        assert_eq!(a.conformer(0).unwrap().name(), "ALA");
+        assert_eq!(a.atom(0).unwrap().serial_number(), 0);
     }
 }
