@@ -335,7 +335,7 @@ impl<'a> Model {
             .map(AtomWithHierarchy::from_tuple)
     }
 
-    /// Returns all atom with their hierarchy struct for each atom in this model.
+    /// Returns all atoms with their hierarchy struct for each atom in this model as mutable.
     pub fn atoms_with_hierarchy_mut(
         &'a self,
     ) -> impl DoubleEndedIterator<Item = AtomWithHierarchyMut<'a>> + '_ {
@@ -368,6 +368,24 @@ impl<'a> Model {
             .flatten()
             .flatten()
             .map(AtomWithHierarchy::from_tuple)
+    }
+
+    /// Returns all atoms with their hierarchy struct for each atom in this model in parallel as mutable in parallel.
+    #[doc_cfg(feature = "rayon")]
+    pub fn par_atoms_with_hierarchy_mut(
+        &'a self,
+    ) -> impl ParallelIterator<Item = AtomWithHierarchyMut<'a>> + '_ {
+        self.par_chains()
+            .map(|ch| {
+                ch.par_residues().map(move |r| {
+                    r.par_conformers()
+                        .map(move |c| c.par_atoms().map(move |a| (ch, r, c, RefCell::new(a.clone()))))
+                })
+            })
+            .flatten()
+            .flatten()
+            .flatten()
+            .map(AtomWithHierarchyMut::from_tuple)
     }
 
     /// Add a new Atom to this Model. It finds if there already is a Chain with the given `chain_id` if there is it will add this atom to that Chain, otherwise it will create a new Chain and add that to the list of Chains making up this Model. It does the same for the Residue, so it will create a new one if there does not yet exist a Residue with the given serial number.

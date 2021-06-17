@@ -65,21 +65,21 @@ impl<'a> PartialEq for AtomWithHierarchyMut<'a> {
     }
 }
 
-#[cfg(feature = "rstar")]
-use rstar::{PointDistance, RTreeObject, AABB};
+// #[cfg(feature = "rstar")]
+// use rstar::{PointDistance, RTreeObject, AABB};
 
-#[cfg(feature = "rstar")]
-impl<'a> RTreeObject for AtomWithHierarchyMut<'a> {
-    type Envelope = AABB<[f64; 3]>;
+// #[cfg(feature = "rstar")]
+// impl<'a> RTreeObject for AtomWithHierarchyMut<'a> {
+//     type Envelope = AABB<[f64; 3]>;
 
-    fn envelope(&self) -> Self::Envelope {
-        self.atom.envelope()
-    }
-}
+//     fn envelope(&self) -> Self::Envelope {
+//         self.atom.borrow().envelope()
+//     }
+// }
 
-#[cfg(feature = "rstar")]
-impl<'a> PointDistance for AtomWithHierarchyMut<'a> {
-    fn distance_2(&self, other: &[f64; 3]) -> f64 {
-        self.atom.distance_2(other)
-    }
-}
+// #[cfg(feature = "rstar")]
+// impl<'a> PointDistance for AtomWithHierarchyMut<'a> {
+//     fn distance_2(&self, other: &[f64; 3]) -> f64 {
+//         self.atom.borrow().distance_2(other)
+//     }
+// }
