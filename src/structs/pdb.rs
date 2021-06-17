@@ -568,7 +568,7 @@ impl<'a> PDB {
         self.models().flat_map(|m| m.atoms_with_hierarchy())
     }
 
-    /// Get the list of mutable Atoms with their hierarchies making up this PDB, including all models.
+    /// Get the list of Atoms with their hierarchies making up this PDB, including all models.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_with_hierarchy_mut(
         &'a self,

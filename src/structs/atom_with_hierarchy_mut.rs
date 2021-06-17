@@ -1,8 +1,7 @@
 use super::*;
-// use std::cell::RefCell;
+use std::cell::RefCell;
 
-/// A structure containing references to the full hierarchy for a single Atom which is wrapped in a RefCell
-/// to provide interior mutability.
+/// A structure containing references to the full hierarchy for a single Atom
 #[derive(Debug, Clone)]
 pub struct AtomWithHierarchyMut<'a> {
     /// The Chain containing this Atom
@@ -12,13 +11,13 @@ pub struct AtomWithHierarchyMut<'a> {
     /// The Conformer containing this Atom
     pub conformer: &'a Conformer,
     /// This Atom
-    pub atom: Atom,
+    pub atom: RefCell<&'a Atom>,
 }
 
 impl<'a> AtomWithHierarchyMut<'a> {
     /// Create an AtomWithHierarchyMut from a Tuple containing all needed references
     pub fn from_tuple(
-        hierarchy: (&'a Chain, &'a Residue, &'a Conformer, Atom),
+        hierarchy: (&'a Chain, &'a Residue, &'a Conformer, RefCell<&'a Atom>),
     ) -> AtomWithHierarchyMut<'a> {
         AtomWithHierarchyMut {
             chain: hierarchy.0,
@@ -32,7 +31,7 @@ impl<'a> AtomWithHierarchyMut<'a> {
         chain: &'a Chain,
         residue: &'a Residue,
         conformer: &'a Conformer,
-        atom: Atom,
+        atom: RefCell<&'a Atom>,
     ) -> AtomWithHierarchyMut<'a> {
         AtomWithHierarchyMut {
             chain,
@@ -44,12 +43,12 @@ impl<'a> AtomWithHierarchyMut<'a> {
 
     /// Tests if this atom is part of the protein backbone
     pub fn is_backbone(&self) -> bool {
-        self.conformer.is_amino_acid() && self.atom.is_backbone()
+        self.conformer.is_amino_acid() && self.atom.borrow().is_backbone()
     }
 
     /// Tests if this atom is part of a side chain of an amino acid
     pub fn is_side_chain(&self) -> bool {
-        self.conformer.is_amino_acid() && !self.atom.hetero()
+        self.conformer.is_amino_acid() && !self.atom.borrow().hetero()
     }
 }
 
@@ -60,7 +59,34 @@ impl<'a> PartialEq for AtomWithHierarchyMut<'a> {
         // By definition the combination of serial number and alternative location should be
         // unique across the whole PDB, this does not account for the fact that there could
         // be multiple models, but that is impossible to check anyway without Model information.
-        self.atom.serial_number() == other.atom.serial_number()
+        self.atom.borrow().serial_number() == other.atom.borrow().serial_number()
             && self.conformer.alternative_location() == other.conformer.alternative_location()
+    }
+}
+
+impl<'a> std::ops::Deref for AtomWithHierarchyMut<'a> {
+    type Target = RefCell<&'a Atom>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.atom
+    }
+}
+
+#[cfg(feature = "rstar")]
+use rstar::{PointDistance, RTreeObject, AABB};
+
+#[cfg(feature = "rstar")]
+impl<'a> RTreeObject for AtomWithHierarchyMut<'a> {
+    type Envelope = AABB<[f64; 3]>;
+
+    fn envelope(&self) -> Self::Envelope {
+        self.atom.envelope()
+    }
+}
+
+#[cfg(feature = "rstar")]
+impl<'a> PointDistance for AtomWithHierarchyMut<'a> {
+    fn distance_2(&self, other: &[f64; 3]) -> f64 {
+        self.atom.distance_2(other)
     }
 }

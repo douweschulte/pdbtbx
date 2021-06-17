@@ -4,6 +4,7 @@ use crate::transformation::*;
 use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
+use std::cell::RefCell;
 use std::cmp::Ordering;
 // use std::cell::RefCell;
 
@@ -318,7 +319,7 @@ impl<'a> Model {
         self.par_chains_mut().flat_map(|a| a.par_atoms_mut())
     }
 
-    /// Returns all atoms with their hierarchy struct for each atom in this model.
+    /// Returns all atom with their hierarchy struct for each atom in this model.
     pub fn atoms_with_hierarchy(
         &'a self,
     ) -> impl DoubleEndedIterator<Item = AtomWithHierarchy<'a>> + '_ {
@@ -335,7 +336,7 @@ impl<'a> Model {
             .map(AtomWithHierarchy::from_tuple)
     }
 
-    /// Returns all atoms as mutable with their hierarchy struct for each atom in this model.
+    /// Returns all atom with their hierarchy struct for each atom in this model.
     pub fn atoms_with_hierarchy_mut(
         &'a self,
     ) -> impl DoubleEndedIterator<Item = AtomWithHierarchyMut<'a>> + '_ {
@@ -343,7 +344,7 @@ impl<'a> Model {
             .map(|ch| {
                 ch.residues().map(move |r| {
                     r.conformers()
-                        .map(move |c| c.atoms().map(move |a| (ch, r, c, a.clone())))
+                        .map(move |c| c.atoms().map(move |a| (ch, r, c, RefCell::new(a))))
                 })
             })
             .flatten()
