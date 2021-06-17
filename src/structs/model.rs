@@ -6,7 +6,6 @@ use doc_cfg::doc_cfg;
 use rayon::prelude::*;
 use std::cell::RefCell;
 use std::cmp::Ordering;
-// use std::cell::RefCell;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -344,7 +343,7 @@ impl<'a> Model {
             .map(|ch| {
                 ch.residues().map(move |r| {
                     r.conformers()
-                        .map(move |c| c.atoms().map(move |a| (ch, r, c, RefCell::new(a))))
+                        .map(move |c| c.atoms().map(move |a| (ch, r, c, RefCell::new(a.clone()))))
                 })
             })
             .flatten()

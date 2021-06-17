@@ -2,7 +2,7 @@ use super::*;
 use std::cell::RefCell;
 
 /// A structure containing references to the full hierarchy for a single Atom
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct AtomWithHierarchyMut<'a> {
     /// The Chain containing this Atom
     pub chain: &'a Chain,
@@ -11,13 +11,14 @@ pub struct AtomWithHierarchyMut<'a> {
     /// The Conformer containing this Atom
     pub conformer: &'a Conformer,
     /// This Atom
-    pub atom: RefCell<&'a Atom>,
+    // pub atom: RefCell<&'a Atom>,
+    pub atom: RefCell<Atom>,
 }
 
 impl<'a> AtomWithHierarchyMut<'a> {
     /// Create an AtomWithHierarchyMut from a Tuple containing all needed references
     pub fn from_tuple(
-        hierarchy: (&'a Chain, &'a Residue, &'a Conformer, RefCell<&'a Atom>),
+        hierarchy: (&'a Chain, &'a Residue, &'a Conformer, RefCell<Atom>),
     ) -> AtomWithHierarchyMut<'a> {
         AtomWithHierarchyMut {
             chain: hierarchy.0,
@@ -31,7 +32,7 @@ impl<'a> AtomWithHierarchyMut<'a> {
         chain: &'a Chain,
         residue: &'a Residue,
         conformer: &'a Conformer,
-        atom: RefCell<&'a Atom>,
+        atom: RefCell<Atom>,
     ) -> AtomWithHierarchyMut<'a> {
         AtomWithHierarchyMut {
             chain,
@@ -61,14 +62,6 @@ impl<'a> PartialEq for AtomWithHierarchyMut<'a> {
         // be multiple models, but that is impossible to check anyway without Model information.
         self.atom.borrow().serial_number() == other.atom.borrow().serial_number()
             && self.conformer.alternative_location() == other.conformer.alternative_location()
-    }
-}
-
-impl<'a> std::ops::Deref for AtomWithHierarchyMut<'a> {
-    type Target = RefCell<&'a Atom>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.atom
     }
 }
 
