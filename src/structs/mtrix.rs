@@ -59,7 +59,7 @@ mod tests {
     #[test]
     fn test_accessors() {
         let a = MtriX::default();
-        assert_eq!(a.contained, false);
+        assert!(!a.contained);
         assert_eq!(a.serial_number, 0);
         assert_eq!(a.transformation, TransformationMatrix::identity());
     }

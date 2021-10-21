@@ -61,9 +61,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
         time.as_millis()
     );
 
-    if pdb.total_atom_count() == 0 {
-        panic!("No atoms found");
-    }
+    assert!(!(pdb.total_atom_count() == 0), "No atoms found");
 
     println!("PDB parsed");
 
@@ -88,9 +86,9 @@ fn do_something(file: &str, folder: &str, name: &str) {
 
     println!("Counted for averages");
 
-    avg = avg / ((total_back + total_side) as f64);
-    avg_back = avg_back / (total_back as f64);
-    avg_side = avg_side / (total_side as f64);
+    avg /= ((total_back + total_side) as f64);
+    avg_back /= (total_back as f64);
+    avg_side /= (total_side as f64);
 
     println!("Found averages");
 
@@ -117,7 +115,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
         //assert_eq!(pdb, saved_pdb);
     }
     save(
-        pdb.clone(),
+        pdb,
         &(folder.to_string() + name + ".cif"),
         StrictnessLevel::Loose,
     )

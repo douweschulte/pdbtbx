@@ -143,7 +143,6 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         }
 
         // SEQRES
-        #[allow(clippy::filter_map)]
         if seqres {
             for chain in model.chains() {
                 if let Some(dbref) = chain.database_reference() {
