@@ -54,6 +54,8 @@ where
     let mut temp_scale = BuildUpMatrix::empty();
     let mut temp_origx = BuildUpMatrix::empty();
     let mut temp_mtrix: Vec<(usize, BuildUpMatrix, bool)> = Vec::new();
+    let mut last_residue_serial_number = 0;
+    let mut residue_serial_addition = 0;
 
     for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
@@ -98,6 +100,9 @@ where
                     element,
                     charge,
                 ) => {
+                    if residue_serial_number == 0 && last_residue_serial_number == 9999 {
+                        residue_serial_addition += 10000;
+                    }
                     current_model.add_atom(
                         Atom::new(
                             hetero,
@@ -113,9 +118,13 @@ where
                         )
                         .expect("Invalid characters in atom creation"),
                         &chain_id,
-                        (residue_serial_number, insertion_code.as_deref()),
+                        (
+                            residue_serial_number + residue_serial_addition,
+                            insertion_code.as_deref(),
+                        ),
                         (&residue_name, alt_loc.as_deref()),
                     );
+                    last_residue_serial_number = residue_serial_number;
                 }
                 LexItem::Anisou(s, n, _, _r, _c, _rs, _, factors, _, _e, _ch) => {
                     let mut found = false;
