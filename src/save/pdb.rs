@@ -4,6 +4,7 @@ use crate::StrictnessLevel;
 use crate::TransformationMatrix;
 use crate::{validate, validate_pdb};
 
+use std::cmp;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufWriter;
@@ -51,7 +52,25 @@ pub fn save_pdb(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), 
 /// * Does not save the MASTER record
 #[allow(clippy::unwrap_used)]
 pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: StrictnessLevel) {
-    let mut finish_line = |mut line: String| {
+    let get_line = |fields: Vec<(usize, &str)>| {
+        let mut line = String::with_capacity(70);
+        for (length, text) in fields {
+            if length > 0 {
+                let cell = &text[text.len() - cmp::min(length, text.len())..];
+                let trimmed = cell.trim_start_matches('0');
+                if !cell.is_empty() && trimmed.is_empty() {
+                    line.push_str(&format!("{0:1$}", "0", length));
+                } else {
+                    line.push_str(&format!("{0:1$}", trimmed, length));
+                }
+            } else {
+                line += text;
+            }
+        }
+        line
+    };
+    let mut print_line = |fields: Vec<(usize, &str)>| {
+        let mut line = get_line(fields);
         if level != StrictnessLevel::Loose && line.len() < 70 {
             let dif = 70 - line.len();
             line.reserve(dif);
@@ -60,22 +79,31 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         sink.write_all(line.as_bytes()).unwrap();
         sink.write_all(b"\n").unwrap();
     };
-    macro_rules! write {
-        ($($arg:tt)*) => {
-            finish_line(format!($($arg)*));
-        }
+    macro_rules! get_option {
+        ($option:expr) => {
+            $option.as_deref().unwrap_or("")
+        };
     }
 
     if let Some(name) = &pdb.identifier {
-        write!(
-            "HEADER                                                        {}",
-            name
-        )
+        print_line(vec![
+            (
+                0,
+                "HEADER                                                        ",
+            ),
+            (0, name),
+        ]);
     }
 
     // Remarks
     for line in pdb.remarks() {
-        write!("REMARK {:3} {}", line.0, line.1);
+        print_line(vec![
+            (6, "REMARK"),
+            (0, " "),
+            (3, &line.0.to_string()),
+            (0, " "),
+            (0, &line.1),
+        ]);
     }
 
     if let Some(model) = pdb.models().next() {
@@ -84,34 +112,31 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         for chain in model.chains() {
             if let Some(dbref) = chain.database_reference() {
                 seqres = true;
-                write!(
-                    "DBREF  {:4} {:1} {:4}{:1} {:4}{:1} {:6} {:8} {:12} {:5}{:1} {:5}{:1}",
-                    pdb.identifier.as_deref().unwrap_or(""),
-                    chain.id(),
-                    dbref.pdb_position.start,
-                    match &dbref.pdb_position.start_insert {
-                        Some(insert) => insert.as_str(),
-                        None => "",
-                    },
-                    dbref.pdb_position.end,
-                    match &dbref.pdb_position.end_insert {
-                        Some(insert) => insert.as_str(),
-                        None => "",
-                    },
-                    dbref.database.0,
-                    dbref.database.1,
-                    dbref.database.2,
-                    dbref.database_position.start,
-                    match &dbref.database_position.start_insert {
-                        Some(insert) => insert.as_str(),
-                        None => "",
-                    },
-                    dbref.database_position.end,
-                    match &dbref.pdb_position.end_insert {
-                        Some(insert) => insert.as_str(),
-                        None => "",
-                    },
-                )
+                print_line(vec![
+                    (6, "DBREF"),
+                    (0, "  "),
+                    (4, pdb.identifier.as_deref().unwrap_or("")),
+                    (0, " "),
+                    (1, chain.id()),
+                    (0, " "),
+                    (4, &dbref.pdb_position.start.to_string()),
+                    (1, get_option!(dbref.pdb_position.start_insert)),
+                    (0, " "),
+                    (4, &dbref.pdb_position.end.to_string()),
+                    (1, get_option!(dbref.pdb_position.end_insert)),
+                    (0, " "),
+                    (6, &dbref.database.0),
+                    (0, " "),
+                    (8, &dbref.database.1),
+                    (0, " "),
+                    (12, &dbref.database.2),
+                    (0, " "),
+                    (5, &dbref.database_position.start.to_string()),
+                    (1, get_option!(dbref.database_position.start_insert)),
+                    (0, " "),
+                    (5, &dbref.database_position.end.to_string()),
+                    (1, get_option!(dbref.pdb_position.end_insert)),
+                ]);
             }
         }
 
@@ -119,25 +144,38 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         for chain in model.chains() {
             if let Some(dbref) = chain.database_reference() {
                 for dif in &dbref.differences {
-                    write!(
-                        "SEQADV {:4} {:3} {:1} {:4}{:1} {:4} {:9} {:3} {:5} {}",
-                        pdb.identifier.as_deref().unwrap_or(""),
-                        dif.residue.0,
-                        chain.id(),
-                        dif.residue.1,
-                        " ",
-                        dbref.database.0,
-                        dbref.database.1,
-                        match &dif.database_residue {
-                            Some((name, _)) => name.as_str(),
-                            None => "",
-                        },
-                        match dif.database_residue {
-                            Some((_, seq)) => seq,
-                            None => 0,
-                        },
-                        dif.comment
-                    )
+                    print_line(vec![
+                        (6, "SEQADV"),
+                        (4, pdb.identifier.as_deref().unwrap_or("")),
+                        (0, " "),
+                        (3, &dif.residue.0),
+                        (0, " "),
+                        (1, chain.id()),
+                        (0, " "),
+                        (4, &dif.residue.1.to_string()),
+                        (0, "  "), // includes always empty field
+                        (4, &dbref.database.0),
+                        (0, " "),
+                        (9, &dbref.database.1),
+                        (0, " "),
+                        (
+                            3,
+                            (&dif.database_residue)
+                                .as_ref()
+                                .map_or("", |(a, _)| a.as_str()),
+                        ),
+                        (0, " "),
+                        (
+                            5,
+                            (&dif.database_residue)
+                                .as_ref()
+                                .map_or(&0, |(_, a)| a)
+                                .to_string()
+                                .as_str(),
+                        ),
+                        (0, " "),
+                        (0, &dif.comment),
+                    ]);
                 }
             }
         }
@@ -167,13 +205,25 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                         .chunks(13)
                         .enumerate()
                     {
-                        write!(
-                            "SEQRES {:3} {:1} {:4}  {}",
-                            index + 1,
-                            chain.id(),
-                            chain.residues().filter(|r| r.name() != Some("HOH")).count(),
-                            chunk.join(" ")
-                        )
+                        print_line(vec![
+                            (6, "SEQRES"),
+                            (0, " "),
+                            (3, (index + 1).to_string().as_str()),
+                            (0, " "),
+                            (1, chain.id()),
+                            (0, " "),
+                            (
+                                4,
+                                chain
+                                    .residues()
+                                    .filter(|r| r.name() != Some("HOH"))
+                                    .count()
+                                    .to_string()
+                                    .as_str(),
+                            ),
+                            (0, "  "),
+                            (0, &chunk.join(" ")),
+                        ]);
                     }
                 } else {
                     for (index, chunk) in chain
@@ -190,13 +240,25 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                         .chunks(13)
                         .enumerate()
                     {
-                        write!(
-                            "SEQRES {:3} {:1} {:4}  {}",
-                            index + 1,
-                            chain.id(),
-                            chain.residues().filter(|r| r.name() != Some("HOH")).count(),
-                            chunk.join(" ")
-                        )
+                        print_line(vec![
+                            (6, "SEQRES"),
+                            (0, " "),
+                            (3, (index + 1).to_string().as_str()),
+                            (0, " "),
+                            (1, chain.id()),
+                            (0, " "),
+                            (
+                                4,
+                                chain
+                                    .residues()
+                                    .filter(|r| r.name() != Some("HOH"))
+                                    .count()
+                                    .to_string()
+                                    .as_str(),
+                            ),
+                            (0, "  "),
+                            (0, &chunk.join(" ")),
+                        ]);
                     }
                 }
             }
@@ -207,22 +269,25 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
             for residue in chain.residues() {
                 for conformer in residue.conformers() {
                     if let Some((std_name, comment)) = conformer.modification() {
-                        write!(
-                            "MODRES {:4} {:3} {:1} {:4}{:1} {:3}  {}",
-                            "    ",
-                            conformer.name(),
-                            chain.id(),
-                            residue.serial_number(),
-                            residue.insertion_code().unwrap_or(" "),
-                            std_name,
-                            comment
-                        );
+                        print_line(vec![
+                            (6, "MODRES"),
+                            (0, "     "), // includes empty field
+                            (3, conformer.name()),
+                            (0, " "),
+                            (1, chain.id()),
+                            (0, " "),
+                            (4, residue.serial_number().to_string().as_str()),
+                            (1, residue.insertion_code().unwrap_or(" ")),
+                            (0, " "),
+                            (3, std_name),
+                            (0, "  "),
+                            (0, comment),
+                        ]);
                     }
                 }
             }
         }
     }
-
     // Cryst
     if let Some(unit_cell) = &pdb.unit_cell {
         let sym = if let Some(symmetry) = &pdb.symmetry {
@@ -230,34 +295,50 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         } else {
             "P 1         1".to_string()
         };
-        write!(
-            "CRYST1{:9.3}{:9.3}{:9.3}{:7.2}{:7.2}{:7.2} {}",
-            unit_cell.a(),
-            unit_cell.b(),
-            unit_cell.c(),
-            unit_cell.alpha(),
-            unit_cell.beta(),
-            unit_cell.gamma(),
-            sym
-        );
+        print_line(vec![
+            (6, "CRYST1"),
+            (9, &format!("{:9.3}", unit_cell.a())),
+            (9, &format!("{:9.3}", unit_cell.b())),
+            (9, &format!("{:9.3}", unit_cell.c())),
+            (7, &format!("{:7.2}", unit_cell.alpha())),
+            (7, &format!("{:7.2}", unit_cell.beta())),
+            (7, &format!("{:7.2}", unit_cell.gamma())),
+            (0, "  "),
+            (0, &sym),
+        ]);
     }
 
     let mut write_matrix = |name, matrix: [[f64; 4]; 3]| {
-        write!(
-            "{}1    {:10.6}{:10.6}{:10.6}     {:10.5}",
-            name,
-            matrix[0][0], matrix[0][1], matrix[0][2], matrix[0][3],
-        );
-        write!(
-            "{}2    {:10.6}{:10.6}{:10.6}     {:10.5}",
-            name,
-            matrix[1][0], matrix[1][1], matrix[1][2], matrix[1][3],
-        );
-        write!(
-            "{}3    {:10.6}{:10.6}{:10.6}     {:10.5}",
-            name,
-            matrix[2][0], matrix[2][1], matrix[2][2], matrix[2][3],
-        );
+        print_line(vec![
+            (5, name),
+            (0, "1"),
+            (0, "    "),
+            (10, &format!("{:10.6}", matrix[0][0])),
+            (10, &format!("{:10.6}", matrix[0][1])),
+            (10, &format!("{:10.6}", matrix[0][2])),
+            (0, "     "),
+            (10, &format!("{:10.5}", matrix[0][3])),
+        ]);
+        print_line(vec![
+            (5, name),
+            (0, "2"),
+            (0, "    "),
+            (10, &format!("{:10.6}", matrix[1][0])),
+            (10, &format!("{:10.6}", matrix[1][1])),
+            (10, &format!("{:10.6}", matrix[1][2])),
+            (0, "     "),
+            (10, &format!("{:10.5}", matrix[1][3])),
+        ]);
+        print_line(vec![
+            (5, name),
+            (0, "3"),
+            (0, "    "),
+            (10, &format!("{:10.6}", matrix[2][0])),
+            (10, &format!("{:10.6}", matrix[2][1])),
+            (10, &format!("{:10.6}", matrix[2][2])),
+            (0, "     "),
+            (10, &format!("{:10.5}", matrix[2][3])),
+        ]);
     };
 
     // OrigX
@@ -287,91 +368,98 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
     // MtriX
     for mtrix in pdb.mtrix() {
         let m = mtrix.transformation.matrix();
-        write!(
-            "MTRIX1 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}",
-            mtrix.serial_number,
-            m[0][0],
-            m[0][1],
-            m[0][2],
-            m[0][3],
-            if mtrix.contained { '1' } else { ' ' },
-        );
-        write!(
-            "MTRIX2 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}",
-            mtrix.serial_number,
-            m[1][0],
-            m[1][1],
-            m[1][2],
-            m[1][3],
-            if mtrix.contained { '1' } else { ' ' },
-        );
-        write!(
-            "MTRIX3 {:3}{:10.6}{:10.6}{:10.6}     {:10.5}    {}",
-            mtrix.serial_number,
-            m[2][0],
-            m[2][1],
-            m[2][2],
-            m[2][3],
-            if mtrix.contained { '1' } else { ' ' },
-        );
+        print_line(vec![
+            (0, "MTRIX1"),
+            (3, mtrix.serial_number.to_string().as_str()),
+            (10, &format!("{:10.6}", m[0][0])),
+            (10, &format!("{:10.6}", m[0][1])),
+            (10, &format!("{:10.6}", m[0][2])),
+            (0, "     "),
+            (10, &format!("{:10.5}", m[0][3])),
+            (0, "    "),
+            (0, if mtrix.contained { "1" } else { " " }),
+        ]);
+        print_line(vec![
+            (0, "MTRIX2"),
+            (3, mtrix.serial_number.to_string().as_str()),
+            (10, &format!("{:10.6}", m[1][0])),
+            (10, &format!("{:10.6}", m[1][1])),
+            (10, &format!("{:10.6}", m[1][2])),
+            (0, "     "),
+            (10, &format!("{:10.5}", m[1][3])),
+            (0, "    "),
+            (0, if mtrix.contained { "1" } else { " " }),
+        ]);
+        print_line(vec![
+            (0, "MTRIX3"),
+            (3, mtrix.serial_number.to_string().as_str()),
+            (10, &format!("{:10.6}", m[2][0])),
+            (10, &format!("{:10.6}", m[2][1])),
+            (10, &format!("{:10.6}", m[2][2])),
+            (0, "     "),
+            (10, &format!("{:10.5}", m[2][3])),
+            (0, "    "),
+            (0, if mtrix.contained { "1" } else { " " }),
+        ]);
     }
 
     // Models
     let multiple_models = pdb.models().size_hint().0 > 1;
     for model in pdb.models() {
         if multiple_models {
-            write!("MODEL        {}", model.serial_number());
+            print_line(vec![
+                (0, "MODEL        "),
+                (0, model.serial_number().to_string().as_str()),
+            ]);
         }
 
         let atom_line = |atom: &Atom, conformer: &Conformer, residue: &Residue, chain: &Chain| {
-            format!(
-                "{:5} {:^4}{:1}{:4}{:1}{:4}{:1}",
-                atom.serial_number(),
-                atom.name(),
-                conformer.alternative_location().unwrap_or(" "),
-                conformer.name(),
-                chain.id(),
-                residue.serial_number(),
-                residue.insertion_code().unwrap_or(" ")
-            )
+            get_line(vec![
+                (5, atom.serial_number().to_string().as_str()),
+                (0, " "),
+                (4, atom.name()),
+                (1, conformer.alternative_location().unwrap_or(" ")),
+                (4, conformer.name()),
+                (1, chain.id()),
+                (4, residue.serial_number().to_string().as_str()),
+                (1, residue.insertion_code().unwrap_or(" ")),
+            ])
         };
 
         for chain in model.chains() {
             for residue in chain.residues() {
                 for conformer in residue.conformers() {
                     for atom in conformer.atoms() {
-                        write!(
-                            "{}{}   {:8.3}{:8.3}{:8.3}{:6.2}{:6.2}          {:>2}{}",
-                            if atom.hetero() { "HETATM" } else { "ATOM  " },
-                            atom_line(atom, conformer, residue, chain),
-                            atom.pos().0,
-                            atom.pos().1,
-                            atom.pos().2,
-                            atom.occupancy(),
-                            atom.b_factor(),
-                            atom.element(),
-                            atom.pdb_charge(),
-                        );
+                        print_line(vec![
+                            (6, if atom.hetero() { "HETATM" } else { "ATOM  " }),
+                            (0, &atom_line(atom, conformer, residue, chain)),
+                            (0, "   "),
+                            (8, &format!("{:8.3}", atom.pos().0)),
+                            (8, &format!("{:8.3}", atom.pos().1)),
+                            (8, &format!("{:8.3}", atom.pos().2)),
+                            (6, &format!("{:6.2}", atom.occupancy())),
+                            (6, &format!("{:6.2}", atom.b_factor())),
+                            (0, "          "),
+                            (2, atom.element()),
+                            (0, &atom.pdb_charge()),
+                        ]);
                         #[allow(clippy::cast_possible_truncation)]
                         if atom.anisotropic_temperature_factors().is_some() {
-                            write!(
-                                "ANSIOU{} {:7}{:7}{:7}{:7}{:7}{:7}      {:>2}{}",
-                                atom_line(atom, conformer, residue, chain),
-                                (atom.anisotropic_temperature_factors().unwrap()[0][0] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[1][1] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[2][2] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[0][1] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[0][2] * 10000.0)
-                                    as isize,
-                                (atom.anisotropic_temperature_factors().unwrap()[1][2] * 10000.0)
-                                    as isize,
-                                atom.element(),
-                                atom.pdb_charge(),
-                            );
+                            let f = atom.anisotropic_temperature_factors().unwrap();
+                            print_line(vec![
+                                (6, "ANISOU"),
+                                (0, &atom_line(atom, conformer, residue, chain)),
+                                (0, " "),
+                                (7, &format!("{:8.3}", (f[0][0] * 10000.0) as isize)),
+                                (7, &format!("{:8.3}", (f[1][1] * 10000.0) as isize)),
+                                (7, &format!("{:8.3}", (f[2][2] * 10000.0) as isize)),
+                                (7, &format!("{:8.3}", (f[0][1] * 10000.0) as isize)),
+                                (7, &format!("{:8.3}", (f[0][2] * 10000.0) as isize)),
+                                (7, &format!("{:8.3}", (f[1][2] * 10000.0) as isize)),
+                                (0, "      "),
+                                (2, atom.element()),
+                                (0, &atom.pdb_charge()),
+                            ]);
                         }
                     }
                 }
@@ -379,16 +467,18 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
             let last_atom = chain.atoms().nth_back(0).unwrap();
             let last_residue = chain.residues().nth_back(0).unwrap();
             let last_conformer = chain.conformers().nth_back(0).unwrap();
-            write!(
-                "TER{:5}      {:3} {:1}{:4}",
-                last_atom.serial_number(),
-                last_conformer.name(),
-                chain.id(),
-                last_residue.serial_number()
-            );
+            print_line(vec![
+                (0, "TER"),
+                (5, last_atom.serial_number().to_string().as_str()),
+                (0, "      "),
+                (3, last_conformer.name()),
+                (0, " "),
+                (1, chain.id()),
+                (4, last_residue.serial_number().to_string().as_str()),
+            ]);
         }
         if multiple_models {
-            write!("ENDMDL");
+            print_line(vec![(0, "ENDMDL")]);
         }
     }
     if level != StrictnessLevel::Loose {
@@ -402,23 +492,23 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         for _ in pdb.mtrix() {
             xform += 3;
         }
-        write!(
-            "MASTER    {:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}{:5}",
-            pdb.remark_count(),
-            0, //defined to be empty
-            0, //numHet
-            0, //numHelix
-            0, //numSheet
-            0, //numTurn (deprecated)
-            0, //numSite
-            xform,
-            pdb.total_atom_count(),
-            pdb.model_count(),
-            0, //numConnect
-            0, //numSeq
-        );
+        print_line(vec![
+            (0, "MASTER    "),
+            (5, pdb.remark_count().to_string().as_str()),
+            (5, "0"), //defined to be empty
+            (5, "0"), //numHet
+            (5, "0"), //numHelix
+            (5, "0"), //numSheet
+            (5, "0"), //numTurn (deprecated)
+            (5, "0"), //numSite
+            (5, xform.to_string().as_str()),
+            (5, pdb.total_atom_count().to_string().as_str()),
+            (5, pdb.model_count().to_string().as_str()),
+            (5, "0"), //numConnect
+            (5, "0"), //numSeq
+        ]);
     }
-    write!("END");
+    print_line(vec![(0, "END")]);
 
     sink.flush().unwrap();
 }

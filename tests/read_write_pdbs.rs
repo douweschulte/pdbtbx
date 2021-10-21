@@ -86,9 +86,9 @@ fn do_something(file: &str, folder: &str, name: &str) {
 
     println!("Counted for averages");
 
-    avg /= ((total_back + total_side) as f64);
-    avg_back /= (total_back as f64);
-    avg_side /= (total_side as f64);
+    avg /= (total_back + total_side) as f64;
+    avg_back /= total_back as f64;
+    avg_side /= total_side as f64;
 
     println!("Found averages");
 
