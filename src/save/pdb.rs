@@ -114,7 +114,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                 seqres = true;
                 print_line(vec![
                     (6, "DBREF"),
-                    (0, "  "),
+                    (0, " "),
                     (4, pdb.identifier.as_deref().unwrap_or("")),
                     (0, " "),
                     (1, chain.id()),
@@ -146,6 +146,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                 for dif in &dbref.differences {
                     print_line(vec![
                         (6, "SEQADV"),
+                        (0, " "),
                         (4, pdb.identifier.as_deref().unwrap_or("")),
                         (0, " "),
                         (3, &dif.residue.0),
@@ -271,7 +272,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                     if let Some((std_name, comment)) = conformer.modification() {
                         print_line(vec![
                             (6, "MODRES"),
-                            (0, "     "), // includes empty field
+                            (0, "      "), // includes empty field
                             (3, conformer.name()),
                             (0, " "),
                             (1, chain.id()),
