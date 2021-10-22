@@ -43,4 +43,4 @@ Also see [changelog](https://github.com/nonnominandus/pdbtbx/blob/master/changel
 ## Repository organisation
 Automatically updated on all pushes to the master branch. For more information see this [blogpost](https://next.github.com/projects/repo-visualization).
 
-![Visualization of the codebase](./diagram.svg)
+[![Visualization of the codebase](./diagram.svg)](https://octo-repo-visualization.vercel.app/?repo=nonnominandus%2Fpdbtbx)
