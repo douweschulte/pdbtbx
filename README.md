@@ -2,7 +2,6 @@
 [![Coverage Status](https://coveralls.io/repos/github/nonnominandus/pdbtbx/badge.svg?branch=master)](https://coveralls.io/github/nonnominandus/pdbtbx?branch=master) 
 [![Crates.io](https://img.shields.io/crates/v/pdbtbx.svg)](https://crates.io/crates/pdbtbx)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4671031.svg)](https://doi.org/10.5281/zenodo.4671031)
-![Visualization of the codebase](./diagram.svg)
 
 ## Description
 This is a Rust library helping to parse, edit and save crystallographic PDB/mmCIF files. It can read most atomic data from PDB/mmCIF files, some is missing but will be added over time. Its high level goal is to create a stable, efficient and easy to use interface to PDB/mmCIF files. 
@@ -40,3 +39,8 @@ The features where support is planned are planned to be included in the 1.0 rele
 * And many more small fixes and docs updates
 
 Also see [changelog](https://github.com/nonnominandus/pdbtbx/blob/master/changelog.md).
+
+## Repository organisation
+Automatically updated on all pushes to the master branch. For more information see this [blogpost](https://next.github.com/projects/repo-visualization).
+
+![Visualization of the codebase](./diagram.svg)

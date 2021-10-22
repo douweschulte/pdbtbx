@@ -1,9 +1,8 @@
 name: Create diagram
 on:
-  workflow_dispatch: {}
   push:
-    branches:
-      - main
+    branches: [master]
+
 jobs:
   get_data:
     runs-on: ubuntu-latest
