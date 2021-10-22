@@ -79,6 +79,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         sink.write_all(line.as_bytes()).unwrap();
         sink.write_all(b"\n").unwrap();
     };
+    /// Get the inner str of an Option<&str> or "" if the option is None
     macro_rules! get_option {
         ($option:expr) => {
             $option.as_deref().unwrap_or("")

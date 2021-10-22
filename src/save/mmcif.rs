@@ -45,6 +45,7 @@ pub fn save_mmcif(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<()
 /// This function is unstable and unfinished!
 #[allow(clippy::unwrap_used)]
 pub fn save_mmcif_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
+    /// Write a piece of text to the file, has the same structure as format!
     macro_rules! write {
         ($($arg:tt)*) => {
             sink.write_fmt(format_args!($($arg)*)).unwrap();
