@@ -6,25 +6,32 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: '0'
+  RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+  RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Create Temporary Dir
         run: mkdir -p dump
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
           override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clean
       - name: Run tests
         run: cargo test --features "rayon serde rstar" --verbose
-        env:
-          CARGO_INCREMENTAL: '0'
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
       - id: coverage  
         uses: actions-rs/grcov@v0.1
+        width:
+          config: .github/workflows/grcov.yml
       - name: Coveralls upload
         uses: coverallsapp/github-action@master
         with:
