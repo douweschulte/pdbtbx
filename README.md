@@ -41,6 +41,4 @@ The features where support is planned are planned to be included in the 1.0 rele
 Also see [changelog](https://github.com/nonnominandus/pdbtbx/blob/master/changelog.md).
 
 ## Repository organisation
-Automatically updated on all pushes to the master branch. For more information see this [blogpost](https://next.github.com/projects/repo-visualization).
-
-[![Visualization of the codebase](./diagram.svg)](https://octo-repo-visualization.vercel.app/?repo=nonnominandus%2Fpdbtbx)
+Open [this link](https://octo-repo-visualization.vercel.app/?repo=nonnominandus%2Fpdbtbx) to see an overview of the organisation of this repo. For more information see this [blogpost](https://next.github.com/projects/repo-visualization).
