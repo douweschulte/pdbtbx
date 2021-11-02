@@ -6,7 +6,7 @@ fn insertion_codes() {
         pdbtbx::open("example-pdbs/insertion_codes.pdb", StrictnessLevel::Strict).unwrap();
     let pdb_errors = save(
         pdb.clone(),
-        &("dump/insertion_codes.pdb"),
+        "dump/insertion_codes.pdb",
         StrictnessLevel::Loose,
     );
     let (pdb2, _) = pdbtbx::open("dump/insertion_codes.pdb", StrictnessLevel::Strict).unwrap();
