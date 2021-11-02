@@ -30,8 +30,8 @@ jobs:
         run: cargo test --features "rayon serde rstar" --verbose
       - id: coverage  
         uses: actions-rs/grcov@v0.1
-        width:
-          config: .github/workflows/grcov.yml
+        with:
+          config: config/grcov.yml
       - name: Coveralls upload
         uses: coverallsapp/github-action@master
         with:
