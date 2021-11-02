@@ -12,7 +12,7 @@ fn clipped() {
     print!("{:?}", pdb_errors);
     let file = File::open("dump/large.pdb").unwrap();
     let mut buffer = BufReader::new(file).lines();
-    let target = "ATOM  8662  H2   WAT  5372       7.739  79.053  26.313  1.00  0.00          H";
+    let target = "ATOM  8662  H2   WAT C5372       7.739  79.053  26.313  1.00  0.00          H";
     let target_line = buffer.find(|l| {
         if let Ok(line) = l {
             line.trim() == target

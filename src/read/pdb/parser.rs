@@ -58,6 +58,7 @@ where
     let mut residue_serial_addition = 0;
     let mut last_atom_serial_number = 0;
     let mut atom_serial_addition = 0;
+    let mut chain_counter = b'A';
 
     for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
@@ -90,7 +91,7 @@ where
                     name,
                     alt_loc,
                     residue_name,
-                    chain_id,
+                    mut chain_id,
                     residue_serial_number,
                     insertion_code,
                     x,
@@ -109,6 +110,11 @@ where
                     if residue_serial_number == 0 && last_residue_serial_number == 9999 {
                         residue_serial_addition += 10000;
                     }
+
+                    if chain_id.trim().is_empty() {
+                        chain_id = (chain_counter as char).to_string()
+                    }
+
                     current_model.add_atom(
                         Atom::new(
                             hetero,
@@ -306,6 +312,7 @@ where
                         );
                     }
                 }
+                LexItem::TER() => chain_counter += 1,
                 _ => (),
             }
         } else {
