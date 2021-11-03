@@ -1,6 +1,11 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/nonnominandus/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.8.0
+* Added support for residue serial numbers over 9999 and atom serial numbers over 99999 for PDB files
+* Changed argument type of `save_pdb` from `PDB` to `&PDB`
+* Allow lack of chain name in mmCIF files
+
 ### v0.7.0 'Ecosystem integration'
 * Added parallel iterators based on [Rayon](https://crates.io/crates/rayon) (Thanks to DocKDE)
 * Added support for generating r*trees from [Rstar](https://crates.io/crates/rstar), this has to be opted in by using the feature `rstar`
