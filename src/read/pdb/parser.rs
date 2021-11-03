@@ -58,7 +58,7 @@ where
     let mut residue_serial_addition = 0;
     let mut last_atom_serial_number = 0;
     let mut atom_serial_addition = 0;
-    let mut chain_counter = b'A';
+    let mut chain_counter: u8 = 0;
 
     for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
@@ -112,7 +112,11 @@ where
                     }
 
                     if chain_id.trim().is_empty() {
-                        chain_id = (chain_counter as char).to_string()
+                        // Ensures a chain ID pool of A-Z with wraparound after Z
+                        // chain_id = ((65 + (chain_counter % 26)) as char).to_string()
+                        chain_id = std::str::from_utf8(&[65 + (chain_counter % 26)])
+                            .expect("Couldn't parse UTF8 from byte.")
+                            .to_string()
                     }
 
                     current_model.add_atom(
