@@ -58,8 +58,7 @@ where
     let mut residue_serial_addition = 0;
     let mut last_atom_serial_number = 0;
     let mut atom_serial_addition = 0;
-    // Range is end-exclusive and '[' comes after 'Z'
-    let mut chain_iter = ('A'..'[').cycle();
+    let mut chain_iter = ('A'..='Z').cycle();
     // Initialize chain_id value
     let mut chain_id_new = chain_iter.next();
 
