@@ -58,7 +58,9 @@ where
     let mut residue_serial_addition = 0;
     let mut last_atom_serial_number = 0;
     let mut atom_serial_addition = 0;
-    let mut chain_counter: u8 = 0;
+    let mut chain_iter = ('A'..='Z').cycle();
+    // Initialize chain_id value
+    let mut chain_id_new = chain_iter.next();
 
     for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
@@ -112,11 +114,9 @@ where
                     }
 
                     if chain_id.trim().is_empty() {
-                        // Ensures a chain ID pool of A-Z with wraparound after Z
-                        // chain_id = ((65 + (chain_counter % 26)) as char).to_string()
-                        chain_id = std::str::from_utf8(&[65 + (chain_counter % 26)])
-                            .expect("Couldn't parse UTF8 from byte.")
-                            .to_string()
+                        chain_id = chain_id_new
+                            .expect("Chain ID iterator is exhausted")
+                            .to_string();
                     }
 
                     current_model.add_atom(
@@ -316,7 +316,7 @@ where
                         );
                     }
                 }
-                LexItem::TER() => chain_counter += 1,
+                LexItem::TER() => chain_id_new = chain_iter.next(),
                 _ => (),
             }
         } else {
