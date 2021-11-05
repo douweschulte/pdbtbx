@@ -1,4 +1,4 @@
-name: Compile & Test
+name: Cargo
 
 on:
   push:
@@ -11,6 +11,7 @@ env:
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -19,7 +20,7 @@ jobs:
         run: cargo build --verbose
 
   lint:
-    name: Lints
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -46,6 +47,7 @@ jobs:
           args: --features "rayon serde rstar" 
   
   test:
+    name: Test
     runs-on: ubuntu-latest
 
     steps:
@@ -56,6 +58,7 @@ jobs:
           cargo test --features "rayon serde rstar" --verbose
 
   examples:
+    name: Example
     runs-on: ubuntu-latest
 
     steps:
