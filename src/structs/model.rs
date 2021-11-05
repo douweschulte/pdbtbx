@@ -643,10 +643,12 @@ mod tests {
             hierarchy.residue().serial_number();
             hierarchy.residue_mut().set_serial_number(1);
             hierarchy.chain_mut().set_id("C");
+            hierarchy.conformer_mut().set_name("D");
+            hierarchy.atom_mut().set_serial_number(123);
         }
         assert_eq!(a.chain(0).unwrap().id(), "C");
         assert_eq!(a.residue(0).unwrap().serial_number(), 1);
-        assert_eq!(a.conformer(0).unwrap().name(), "ALA");
-        assert_eq!(a.atom(0).unwrap().serial_number(), 0);
+        assert_eq!(a.conformer(0).unwrap().name(), "D");
+        assert_eq!(a.atom(0).unwrap().serial_number(), 123);
     }
 }

@@ -78,6 +78,7 @@ pub struct AtomWithHierarchyMut<'a> {
     phantom: PhantomData<&'a usize>,
 }
 
+#[allow(clippy::unwrap_used)]
 impl<'a, 'b> AtomWithHierarchyMut<'a> {
     pub(crate) fn new(
         chain: *mut Chain,
@@ -107,28 +108,44 @@ impl<'a, 'b> AtomWithHierarchyMut<'a> {
         }
     }
 
-    #[allow(clippy::unwrap_used)]
     /// Get a reference to the chain
     pub fn chain(&'b self) -> &'b Chain {
         unsafe { self.chain.as_ref().unwrap() }
     }
 
-    #[allow(clippy::unwrap_used)]
     /// Get the chain with a mutable reference
     pub fn chain_mut(&'b mut self) -> &'b mut Chain {
         unsafe { self.chain.as_mut().unwrap() }
     }
 
-    #[allow(clippy::unwrap_used)]
     /// Get a reference to the residue
     pub fn residue(&'b self) -> &'b Residue {
         unsafe { self.residue.as_ref().unwrap() }
     }
 
-    #[allow(clippy::unwrap_used)]
     /// Get the residue with a mutable reference
     pub fn residue_mut(&'b mut self) -> &'b mut Residue {
         unsafe { self.residue.as_mut().unwrap() }
+    }
+
+    /// Get a reference to the conformer
+    pub fn conformer(&'b self) -> &'b Conformer {
+        unsafe { self.conformer.as_ref().unwrap() }
+    }
+
+    /// Get the conformer with a mutable reference
+    pub fn conformer_mut(&'b mut self) -> &'b mut Conformer {
+        unsafe { self.conformer.as_mut().unwrap() }
+    }
+
+    /// Get a reference to the atom
+    pub fn atom(&'b self) -> &'b Atom {
+        unsafe { self.atom.as_ref().unwrap() }
+    }
+
+    /// Get the atom with a mutable reference
+    pub fn atom_mut(&'b mut self) -> &'b mut Atom {
+        unsafe { self.atom.as_mut().unwrap() }
     }
 }
 
