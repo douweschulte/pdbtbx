@@ -147,6 +147,19 @@ impl<'a, 'b> AtomWithHierarchyMut<'a> {
     pub fn atom_mut(&'b mut self) -> &'b mut Atom {
         unsafe { self.atom.as_mut().unwrap() }
     }
+
+    /// Convert this AtomWithHierarchyMut into an AtomWithHierarchy.
+    /// It consumes the original to satisfy the Rust borrow rules.
+    pub fn without_mut(self) -> AtomWithHierarchy<'a> {
+        unsafe {
+            AtomWithHierarchy::new(
+                self.chain.as_ref().unwrap(),
+                self.residue.as_ref().unwrap(),
+                self.conformer.as_ref().unwrap(),
+                self.atom.as_ref().unwrap(),
+            )
+        }
+    }
 }
 
 #[cfg(feature = "rstar")]

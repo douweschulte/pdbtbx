@@ -629,6 +629,7 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn test_hierarchy_mut() {
+        // Create the struct to use
         let mut a = Model::new(0);
         a.add_chain(Chain::new("A").unwrap());
         a.add_atom(
@@ -637,15 +638,21 @@ mod tests {
             (0, None),
             ("ALA", None),
         );
+        // Test if changing properties for each element of the hierarchy is possible
         for mut hierarchy in a.atoms_with_hierarchy_mut() {
             hierarchy.residue().serial_number();
             hierarchy.chain_mut().set_id("B");
-            hierarchy.residue().serial_number();
+            hierarchy.residue().serial_number(); // Show that multiple borrows is valid, as long as they do not overlap
             hierarchy.residue_mut().set_serial_number(1);
             hierarchy.chain_mut().set_id("C");
             hierarchy.conformer_mut().set_name("D");
             hierarchy.atom_mut().set_serial_number(123);
         }
+        // Test that casting it to a 'normal' hierarchy works (needs some 'magic' to get an owned variant)
+        let hierarchy = a.atoms_with_hierarchy_mut().into_iter().next().unwrap();
+        assert_eq!(hierarchy.without_mut().chain.id(), "C");
+
+        // Test that all changes were properly executed
         assert_eq!(a.chain(0).unwrap().id(), "C");
         assert_eq!(a.residue(0).unwrap().serial_number(), 1);
         assert_eq!(a.conformer(0).unwrap().name(), "D");
