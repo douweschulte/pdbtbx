@@ -13,7 +13,7 @@ fn main() {
         .into_string()
         .unwrap();
     save_pdb(
-        create_waterbox((25.0, 25.0, 25.0)),
+        &create_waterbox((25.0, 25.0, 25.0)),
         &filename,
         StrictnessLevel::Loose,
     )

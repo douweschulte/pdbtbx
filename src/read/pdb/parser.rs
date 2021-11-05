@@ -56,6 +56,11 @@ where
     let mut temp_mtrix: Vec<(usize, BuildUpMatrix, bool)> = Vec::new();
     let mut last_residue_serial_number = 0;
     let mut residue_serial_addition = 0;
+    let mut last_atom_serial_number = 0;
+    let mut atom_serial_addition = 0;
+    let mut chain_iter = ('A'..='Z').cycle();
+    // Initialize chain_id value
+    let mut chain_id_new = chain_iter.next();
 
     for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
@@ -88,7 +93,7 @@ where
                     name,
                     alt_loc,
                     residue_name,
-                    chain_id,
+                    mut chain_id,
                     residue_serial_number,
                     insertion_code,
                     x,
@@ -100,13 +105,25 @@ where
                     element,
                     charge,
                 ) => {
+                    if serial_number == 0 && last_atom_serial_number == 99_999 {
+                        atom_serial_addition += 100_000
+                    }
+
                     if residue_serial_number == 0 && last_residue_serial_number == 9999 {
                         residue_serial_addition += 10000;
                     }
+
+                    if chain_id.trim().is_empty() {
+                        chain_id = chain_id_new
+                            .expect("Chain ID iterator is exhausted")
+                            .to_string();
+                    }
+
                     current_model.add_atom(
                         Atom::new(
                             hetero,
-                            serial_number,
+                            // serial_number,
+                            serial_number + atom_serial_addition,
                             &name,
                             x,
                             y,
@@ -125,6 +142,7 @@ where
                         (&residue_name, alt_loc.as_deref()),
                     );
                     last_residue_serial_number = residue_serial_number;
+                    last_atom_serial_number = serial_number;
                 }
                 LexItem::Anisou(s, n, _, _r, _c, _rs, _, factors, _, _e, _ch) => {
                     let mut found = false;
@@ -298,6 +316,7 @@ where
                         );
                     }
                 }
+                LexItem::TER() => chain_id_new = chain_iter.next(),
                 _ => (),
             }
         } else {

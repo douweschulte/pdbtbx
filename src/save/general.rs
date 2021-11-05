@@ -9,9 +9,9 @@ use crate::StrictnessLevel;
 /// type (pdb or mmCIF/PDBx) will be determined based on the extension of the file.
 pub fn save(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
     if filename.ends_with(".pdb") {
-        save_pdb(pdb, filename, level)
+        save_pdb(&pdb, filename, level)
     } else if filename.ends_with(".cif") {
-        save_mmcif(pdb, filename, level)
+        save_mmcif(&pdb, filename, level)
     } else {
         Err(vec![PDBError::new(
             ErrorLevel::BreakingError,

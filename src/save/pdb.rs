@@ -17,9 +17,9 @@ use std::iter;
 /// ## Known Problems
 /// Saving SEQRES lines is experimental, as there are many nitpicky things to consider
 /// when generating SEQRES records, which are not all implemented (yet).
-pub fn save_pdb(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
-    let mut errors = validate(&pdb);
-    errors.extend(validate_pdb(&pdb));
+pub fn save_pdb(pdb: &PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
+    let mut errors = validate(pdb);
+    errors.extend(validate_pdb(pdb));
     for error in &errors {
         if error.fails(level) {
             return Err(errors);
@@ -39,7 +39,7 @@ pub fn save_pdb(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), 
         }
     };
 
-    save_pdb_raw(&pdb, BufWriter::new(file), level);
+    save_pdb_raw(pdb, BufWriter::new(file), level);
     Ok(())
 }
 
