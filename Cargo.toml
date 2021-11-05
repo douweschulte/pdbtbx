@@ -1,6 +1,6 @@
 [package]
 name = "pdbtbx"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Douwe Schulte <d.schulte@uu.nl>"]
 license = "MIT"
 edition = "2018"
@@ -12,7 +12,7 @@ categories = ["parser-implementations", "science"]
 include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
-rstar = { version = "0.8.3", optional = true}
+rstar = { version = "0.9", optional = true}
 serde = { version = "1.0", optional = true, features = ["derive"] }
 rayon = {version = "1.5", optional = true}
 doc-cfg = "0.1"

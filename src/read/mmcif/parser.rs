@@ -212,6 +212,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             .collect();
         let context = Context::show(&format!("Main atomic data loop row: {}", index));
 
+        /// Parse a column given the function to use and the column index
         macro_rules! parse_column {
             ($type:tt, $index:tt) => {
                 match $type(values[$index], &context) {
@@ -224,6 +225,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             };
         }
 
+        /// Parse a value from an optional column, if in place, with the same format as parse_column!
         macro_rules! parse_optional {
             ($type:tt, $index:tt) => {
                 if let Some(value) = optional_values[$index] {

@@ -54,6 +54,13 @@ where
     let mut temp_scale = BuildUpMatrix::empty();
     let mut temp_origx = BuildUpMatrix::empty();
     let mut temp_mtrix: Vec<(usize, BuildUpMatrix, bool)> = Vec::new();
+    let mut last_residue_serial_number = 0;
+    let mut residue_serial_addition = 0;
+    let mut last_atom_serial_number = 0;
+    let mut atom_serial_addition = 0;
+    let mut chain_iter = ('A'..='Z').cycle();
+    // Initialize chain_id value
+    let mut chain_id_new = chain_iter.next();
 
     for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
@@ -86,7 +93,7 @@ where
                     name,
                     alt_loc,
                     residue_name,
-                    chain_id,
+                    mut chain_id,
                     residue_serial_number,
                     insertion_code,
                     x,
@@ -98,10 +105,25 @@ where
                     element,
                     charge,
                 ) => {
+                    if serial_number == 0 && last_atom_serial_number == 99_999 {
+                        atom_serial_addition += 100_000
+                    }
+
+                    if residue_serial_number == 0 && last_residue_serial_number == 9999 {
+                        residue_serial_addition += 10000;
+                    }
+
+                    if chain_id.trim().is_empty() {
+                        chain_id = chain_id_new
+                            .expect("Chain ID iterator is exhausted")
+                            .to_string();
+                    }
+
                     current_model.add_atom(
                         Atom::new(
                             hetero,
-                            serial_number,
+                            // serial_number,
+                            serial_number + atom_serial_addition,
                             &name,
                             x,
                             y,
@@ -113,9 +135,14 @@ where
                         )
                         .expect("Invalid characters in atom creation"),
                         &chain_id,
-                        (residue_serial_number, insertion_code.as_deref()),
+                        (
+                            residue_serial_number + residue_serial_addition,
+                            insertion_code.as_deref(),
+                        ),
                         (&residue_name, alt_loc.as_deref()),
                     );
+                    last_residue_serial_number = residue_serial_number;
+                    last_atom_serial_number = serial_number;
                 }
                 LexItem::Anisou(s, n, _, _r, _c, _rs, _, factors, _, _e, _ch) => {
                     let mut found = false;
@@ -289,6 +316,7 @@ where
                         );
                     }
                 }
+                LexItem::TER() => chain_id_new = chain_iter.next(),
                 _ => (),
             }
         } else {
@@ -647,7 +675,7 @@ fn lex_line(line: &str, linenumber: usize) -> Result<(LexItem, Vec<PDBError>), P
 fn lex_remark(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     let mut errors = Vec::new();
     let number = match parse_number(
-        Context::line(linenumber, &line, 7, 3),
+        Context::line(linenumber, line, 7, 3),
         &line.chars().collect::<Vec<char>>()[7..10],
     ) {
         Ok(n) => n,
@@ -661,7 +689,7 @@ fn lex_remark(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>),
             ErrorLevel::StrictWarning,
             "Remark type number invalid",
             "The remark-type-number is not valid, see wwPDB v3.30 for all valid numbers.",
-            Context::line(linenumber, &line, 7, 3),
+            Context::line(linenumber, line, 7, 3),
         ));
     }
     Ok((
@@ -673,7 +701,7 @@ fn lex_remark(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>),
                         ErrorLevel::GeneralWarning,
                         "Remark too long",
                         "The REMARK is too long, the max is 70 characters.",
-                        Context::line(linenumber, &line, 11, line.len() - 11),
+                        Context::line(linenumber, line, 11, line.len() - 11),
                     ));
                 }
                 line[11..].trim_end().to_string()
@@ -692,7 +720,7 @@ fn lex_header(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>),
             ErrorLevel::LooseWarning,
             "Header too short",
             "The HEADER is too short, the min is 66 characters.",
-            Context::line(linenumber, &line, 11, line.len() - 11),
+            Context::line(linenumber, line, 11, line.len() - 11),
         ))
     } else {
         Ok((
@@ -718,7 +746,7 @@ fn lex_header(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>),
 fn lex_model(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let number = match parse_number(
-        Context::line(linenumber, &line, 6, line.len() - 6),
+        Context::line(linenumber, line, 6, line.len() - 6),
         &line.chars().collect::<Vec<char>>()[6..]
             .iter()
             .collect::<String>()
@@ -750,7 +778,7 @@ fn lex_atom(
             ErrorLevel::BreakingError,
             "Atom line too short",
             "This line is too short to contain all necessary elements (up to `z` at least).",
-            Context::full_line(linenumber, &line),
+            Context::full_line(linenumber, line),
         ));
     };
     let mut check = |item| match item {
@@ -761,28 +789,28 @@ fn lex_atom(
         }
     };
     let x = check(parse_number(
-        Context::line(linenumber, &line, 30, 8),
+        Context::line(linenumber, line, 30, 8),
         &chars[30..38],
     ));
     let y = check(parse_number(
-        Context::line(linenumber, &line, 38, 8),
+        Context::line(linenumber, line, 38, 8),
         &chars[38..46],
     ));
     let z = check(parse_number(
-        Context::line(linenumber, &line, 46, 8),
+        Context::line(linenumber, line, 46, 8),
         &chars[46..54],
     ));
     let mut occupancy = 1.0;
     if chars.len() >= 60 {
         occupancy = check(parse_number(
-            Context::line(linenumber, &line, 54, 6),
+            Context::line(linenumber, line, 54, 6),
             &chars[54..60],
         ));
     }
     let mut b_factor = 0.0;
     if chars.len() >= 66 {
         b_factor = check(parse_number(
-            Context::line(linenumber, &line, 60, 6),
+            Context::line(linenumber, line, 60, 6),
             &chars[60..66],
         ));
     }
@@ -841,27 +869,27 @@ fn lex_anisou(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     };
     let chars: Vec<char> = line.chars().collect();
     let ai: isize = check(parse_number(
-        Context::line(linenumber, &line, 28, 7),
+        Context::line(linenumber, line, 28, 7),
         &chars[28..35],
     ));
     let bi: isize = check(parse_number(
-        Context::line(linenumber, &line, 35, 7),
+        Context::line(linenumber, line, 35, 7),
         &chars[35..42],
     ));
     let ci: isize = check(parse_number(
-        Context::line(linenumber, &line, 42, 7),
+        Context::line(linenumber, line, 42, 7),
         &chars[42..49],
     ));
     let di: isize = check(parse_number(
-        Context::line(linenumber, &line, 49, 7),
+        Context::line(linenumber, line, 49, 7),
         &chars[49..56],
     ));
     let ei: isize = check(parse_number(
-        Context::line(linenumber, &line, 56, 7),
+        Context::line(linenumber, line, 56, 7),
         &chars[56..63],
     ));
     let fi: isize = check(parse_number(
-        Context::line(linenumber, &line, 63, 7),
+        Context::line(linenumber, line, 63, 7),
         &chars[63..70],
     ));
     #[allow(clippy::cast_precision_loss)]
@@ -948,7 +976,7 @@ fn lex_atom_basics(
         }
     };
     let serial_number = check(parse_number(
-        Context::line(linenumber, &line, 6, 5),
+        Context::line(linenumber, line, 6, 5),
         &chars[6..11],
     ));
     let atom_name = chars[12..16].iter().collect::<String>();
@@ -956,7 +984,7 @@ fn lex_atom_basics(
     let residue_name = chars[17..20].iter().collect::<String>();
     let chain_id = String::from(chars[21]);
     let residue_serial_number =
-        parse_number(Context::line(linenumber, &line, 22, 4), &chars[22..26]).unwrap_or_else(|e| {
+        parse_number(Context::line(linenumber, line, 22, 4), &chars[22..26]).unwrap_or_else(|e| {
             errors.push(e);
             0
         });
@@ -977,14 +1005,14 @@ fn lex_atom_basics(
                 ErrorLevel::InvalidatingError,
                 "Atom charge is not correct",
                 "The charge is not numeric, it is defined to be [0-9][+-], so two characters in total.",
-                Context::line(linenumber, &line, 78, 1),
+                Context::line(linenumber, line, 78, 1),
             ));
         } else if chars[79] != '-' && chars[79] != '+' {
             errors.push(PDBError::new(
                 ErrorLevel::InvalidatingError,
                 "Atom charge is not correct",
                 "The charge is not properly signed, it is defined to be [0-9][+-], so two characters in total.",
-                Context::line(linenumber, &line, 79, 1),
+                Context::line(linenumber, line, 79, 1),
             ));
         } else {
             charge = isize::try_from(chars[78].to_digit(10).unwrap()).unwrap();
@@ -1033,27 +1061,27 @@ fn lex_cryst(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
         }
     };
     let a = check(parse_number(
-        Context::line(linenumber, &line, 6, 9),
+        Context::line(linenumber, line, 6, 9),
         &chars[6..15],
     ));
     let b = check(parse_number(
-        Context::line(linenumber, &line, 15, 9),
+        Context::line(linenumber, line, 15, 9),
         &chars[15..24],
     ));
     let c = check(parse_number(
-        Context::line(linenumber, &line, 24, 9),
+        Context::line(linenumber, line, 24, 9),
         &chars[24..33],
     ));
     let alpha = check(parse_number(
-        Context::line(linenumber, &line, 33, 7),
+        Context::line(linenumber, line, 33, 7),
         &chars[33..40],
     ));
     let beta = check(parse_number(
-        Context::line(linenumber, &line, 40, 7),
+        Context::line(linenumber, line, 40, 7),
         &chars[40..47],
     ));
     let gamma = check(parse_number(
-        Context::line(linenumber, &line, 47, 7),
+        Context::line(linenumber, line, 47, 7),
         &chars[47..54],
     ));
     let spacegroup = chars[55..std::cmp::min(66, chars.len())]
@@ -1062,7 +1090,7 @@ fn lex_cryst(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut z = 1;
     if chars.len() > 66 {
         z = match parse_number(
-            Context::line(linenumber, &line, 66, line.len() - 66),
+            Context::line(linenumber, line, 66, line.len() - 66),
             &chars[66..],
         ) {
             Ok(value) => value,
@@ -1111,7 +1139,7 @@ fn lex_mtrix(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBErro
         }
     };
     let ser = check(parse_number(
-        Context::line(linenumber, &line, 7, 4),
+        Context::line(linenumber, line, 7, 4),
         &chars[7..10],
     ));
     let (data, transformation_errors) = lex_transformation(linenumber, line);
@@ -1137,19 +1165,19 @@ fn lex_transformation(linenumber: usize, line: &str) -> ([f64; 4], Vec<PDBError>
         }
     };
     let a = check(parse_number(
-        Context::line(linenumber, &line, 10, 10),
+        Context::line(linenumber, line, 10, 10),
         &chars[10..20],
     ));
     let b = check(parse_number(
-        Context::line(linenumber, &line, 20, 10),
+        Context::line(linenumber, line, 20, 10),
         &chars[20..30],
     ));
     let c = check(parse_number(
-        Context::line(linenumber, &line, 30, 10),
+        Context::line(linenumber, line, 30, 10),
         &chars[30..40],
     ));
     let d = check(parse_number(
-        Context::line(linenumber, &line, 45, 10),
+        Context::line(linenumber, line, 45, 10),
         &chars[45..55],
     ));
 
@@ -1170,51 +1198,51 @@ fn lex_master(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
         }
     };
     let num_remark = check(parse_number(
-        Context::line(linenumber, &line, 10, 5),
+        Context::line(linenumber, line, 10, 5),
         &chars[10..15],
     ));
     let num_empty = check(parse_number(
-        Context::line(linenumber, &line, 15, 5),
+        Context::line(linenumber, line, 15, 5),
         &chars[15..20],
     ));
     let num_het = check(parse_number(
-        Context::line(linenumber, &line, 20, 5),
+        Context::line(linenumber, line, 20, 5),
         &chars[20..25],
     ));
     let num_helix = check(parse_number(
-        Context::line(linenumber, &line, 25, 5),
+        Context::line(linenumber, line, 25, 5),
         &chars[25..30],
     ));
     let num_sheet = check(parse_number(
-        Context::line(linenumber, &line, 30, 5),
+        Context::line(linenumber, line, 30, 5),
         &chars[30..35],
     ));
     let num_turn = check(parse_number(
-        Context::line(linenumber, &line, 35, 5),
+        Context::line(linenumber, line, 35, 5),
         &chars[35..40],
     ));
     let num_site = check(parse_number(
-        Context::line(linenumber, &line, 40, 5),
+        Context::line(linenumber, line, 40, 5),
         &chars[40..45],
     ));
     let num_xform = check(parse_number(
-        Context::line(linenumber, &line, 45, 5),
+        Context::line(linenumber, line, 45, 5),
         &chars[45..50],
     ));
     let num_coord = check(parse_number(
-        Context::line(linenumber, &line, 50, 5),
+        Context::line(linenumber, line, 50, 5),
         &chars[50..55],
     ));
     let num_ter = check(parse_number(
-        Context::line(linenumber, &line, 55, 5),
+        Context::line(linenumber, line, 55, 5),
         &chars[55..60],
     ));
     let num_connect = check(parse_number(
-        Context::line(linenumber, &line, 60, 5),
+        Context::line(linenumber, line, 60, 5),
         &chars[60..65],
     ));
     let num_seq = check(parse_number(
-        Context::line(linenumber, &line, 65, 5),
+        Context::line(linenumber, line, 65, 5),
         &chars[65..70],
     ));
 
@@ -1249,12 +1277,12 @@ fn lex_seqres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
         }
     };
     let ser_num = check(parse_number(
-        Context::line(linenumber, &line, 7, 3),
+        Context::line(linenumber, line, 7, 3),
         &chars[7..10],
     ));
     let chain_id = chars[11];
     let num_res = check(parse_number(
-        Context::line(linenumber, &line, 13, 4),
+        Context::line(linenumber, line, 13, 4),
         &chars[13..17],
     ));
     let mut values = Vec::new();
@@ -1288,12 +1316,12 @@ fn lex_dbref(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let id_code = [chars[7], chars[8], chars[9], chars[10]];
     let chain_id = chars[12];
     let seq_begin = check(parse_number(
-        Context::line(linenumber, &line, 14, 4),
+        Context::line(linenumber, line, 14, 4),
         &chars[14..18],
     ));
     let insert_begin = chars[18];
     let seq_end = check(parse_number(
-        Context::line(linenumber, &line, 21, 4),
+        Context::line(linenumber, line, 21, 4),
         &chars[21..24],
     ));
     let insert_end = chars[24];
@@ -1301,12 +1329,12 @@ fn lex_dbref(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let database_accession = chars[33..41].iter().collect::<String>().trim().to_string();
     let database_id_code = chars[42..54].iter().collect::<String>().trim().to_string();
     let database_seq_begin = check(parse_number(
-        Context::line(linenumber, &line, 55, 5),
+        Context::line(linenumber, line, 55, 5),
         &chars[55..60],
     ));
     let database_insert_begin = chars[60];
     let database_seq_end = check(parse_number(
-        Context::line(linenumber, &line, 62, 5),
+        Context::line(linenumber, line, 62, 5),
         &chars[62..67],
     ));
     let database_insert_end = chars[67];
@@ -1345,7 +1373,7 @@ fn lex_seqadv(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let res_name = chars[12..15].iter().collect::<String>().trim().to_string();
     let chain_id = chars[16];
     let seq_num = check(parse_number(
-        Context::line(linenumber, &line, 18, 4),
+        Context::line(linenumber, line, 18, 4),
         &chars[18..22],
     ));
     let insert = chars[22];
@@ -1356,7 +1384,7 @@ fn lex_seqadv(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     if !chars[39..48].iter().all(|c| *c == ' ') {
         let db_res_name = chars[39..42].iter().collect::<String>().trim().to_string();
         let db_seq_num = check(parse_number(
-            Context::line(linenumber, &line, 43, 5),
+            Context::line(linenumber, line, 43, 5),
             &chars[43..48],
         ));
         db_pos = Some((db_res_name, db_seq_num));
@@ -1398,7 +1426,7 @@ fn lex_modres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let res_name = chars[12..15].iter().collect::<String>();
     let chain_id = chars[16];
     let seq_num = check(parse_number(
-        Context::line(linenumber, &line, 18, 4),
+        Context::line(linenumber, line, 18, 4),
         &chars[18..22],
     ));
     let insert = chars[22];
@@ -1430,7 +1458,7 @@ fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     // The Serial number field is ignored
     let res_1 = chars[11..14].iter().collect::<String>();
     let chain_1 = chars[15];
-    let res_seq_1: isize = parse_number(Context::line(linenumber, &line, 17, 4), &chars[17..21])
+    let res_seq_1: isize = parse_number(Context::line(linenumber, line, 17, 4), &chars[17..21])
         .unwrap_or_else(|err| {
             errors.push(err);
             0
@@ -1442,7 +1470,7 @@ fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     };
     let res_2 = chars[25..28].iter().collect::<String>();
     let chain_2 = chars[29];
-    let res_seq_2 = parse_number(Context::line(linenumber, &line, 31, 4), &chars[31..35])
+    let res_seq_2 = parse_number(Context::line(linenumber, line, 31, 4), &chars[31..35])
         .unwrap_or_else(|err| {
             errors.push(err);
             0
@@ -1458,7 +1486,7 @@ fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     if chars.len() >= 78 {
         let sym1 = chars[59..65].iter().collect::<String>();
         let sym2 = chars[66..72].iter().collect::<String>();
-        let distance: f64 = parse_number(Context::line(linenumber, &line, 73, 5), &chars[73..78])
+        let distance: f64 = parse_number(Context::line(linenumber, line, 73, 5), &chars[73..78])
             .unwrap_or_else(|err| {
                 errors.push(err);
                 0.0

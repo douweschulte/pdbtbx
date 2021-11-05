@@ -307,9 +307,9 @@ impl Atom {
     /// It fails when `self.element()` is not an element in the periodic table, or if `self.element()` is undefined and `self.name()` is not an element in the periodic table.
     pub fn atomic_number(&self) -> Option<usize> {
         if !self.element.is_empty() {
-            reference_tables::get_atomic_number(&self.element())
+            reference_tables::get_atomic_number(self.element())
         } else {
-            reference_tables::get_atomic_number(&self.name())
+            reference_tables::get_atomic_number(self.name())
         }
     }
 
@@ -679,7 +679,7 @@ mod tests {
         assert!(a.set_occupancy(0.0).is_ok());
         assert!(a.set_b_factor(0.0).is_ok());
         a.set_hetero(true);
-        assert_eq!(a.hetero(), true);
+        assert!(a.hetero());
         a.set_serial_number(42);
         assert_eq!(a.serial_number(), 42);
         assert_eq!(a.atomic_number(), Some(6));

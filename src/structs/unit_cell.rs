@@ -53,27 +53,30 @@ impl UnitCell {
     /// ## Panics
     /// It panics if the new value is not finite
     pub fn set_a(&mut self, new_a: f64) {
-        if !new_a.is_finite() {
-            panic!("The new a value of this UnitCell is not finite");
-        }
+        assert!(
+            new_a.is_finite(),
+            "The new a value of this UnitCell is not finite"
+        );
         self.a = new_a;
     }
     /// Set the b-axis dimension
     /// ## Panics
     /// It panics if the new value is not finite
     pub fn set_b(&mut self, new_b: f64) {
-        if !new_b.is_finite() {
-            panic!("The new b value of this UnitCell is not finite");
-        }
+        assert!(
+            new_b.is_finite(),
+            "The new b value of this UnitCell is not finite"
+        );
         self.b = new_b;
     }
     /// Set the c-axis dimension
     /// ## Panics
     /// It panics if the new value is not finite
     pub fn set_c(&mut self, new_c: f64) {
-        if !new_c.is_finite() {
-            panic!("The new c value of this UnitCell is not finite");
-        }
+        assert!(
+            new_c.is_finite(),
+            "The new c value of this UnitCell is not finite"
+        );
         self.c = new_c;
     }
     /// Get the alpha angle in degrees
@@ -85,9 +88,10 @@ impl UnitCell {
     /// It panics if the new value is not finite.
     /// It also panics if the alpha value is outside of bounds [0, 360)
     pub fn set_alpha(&mut self, new_alpha: f64) {
-        if !new_alpha.is_finite() {
-            panic!("The new alpha value of this UnitCell is not finite");
-        }
+        assert!(
+            new_alpha.is_finite(),
+            "The new alpha value of this UnitCell is not finite"
+        );
         if !(0.0..360.0).contains(&new_alpha) {
             panic!("The new alpha value of this UnitCell is out of bounds [0, 360).")
         }
@@ -102,9 +106,10 @@ impl UnitCell {
     /// It panics if the new value is not finite.
     /// It also panics if the beta value is outside of bounds [0, 360)
     pub fn set_beta(&mut self, new_beta: f64) {
-        if !new_beta.is_finite() {
-            panic!("The new beta value of this UnitCell is not finite");
-        }
+        assert!(
+            new_beta.is_finite(),
+            "The new beta value of this UnitCell is not finite"
+        );
         if !(0.0..360.0).contains(&new_beta) {
             panic!("The new beta value of this UnitCell is out of bounds [0, 360).")
         }
@@ -119,9 +124,10 @@ impl UnitCell {
     /// It panics if the new value is not finite.
     /// It also panics if the gamma value is outside of bounds [0, 360)
     pub fn set_gamma(&mut self, new_gamma: f64) {
-        if !new_gamma.is_finite() {
-            panic!("The new gamma value of this UnitCell is not finite");
-        }
+        assert!(
+            new_gamma.is_finite(),
+            "The new gamma value of this UnitCell is not finite"
+        );
         if !(0.0..360.0).contains(&new_gamma) {
             panic!("The new gamma value of this UnitCell is out of bounds [0, 360).")
         }

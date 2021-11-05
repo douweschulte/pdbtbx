@@ -27,7 +27,7 @@ impl Chain {
     /// ## Fails
     /// It fails if the identifier is an invalid character.
     pub fn new(id: &str) -> Option<Chain> {
-        if !valid_identifier(&id) {
+        if !valid_identifier(id) {
             return None;
         }
         Some(Chain {
@@ -45,7 +45,7 @@ impl Chain {
     /// Set the ID of the Chain, returns `false` if the new id is an invalid character.
     /// The ID will be changed to uppercase as requested by PDB/PDBx standard.
     pub fn set_id(&mut self, new_id: &str) -> bool {
-        if valid_identifier(&new_id) {
+        if valid_identifier(new_id) {
             self.id = new_id.trim().to_ascii_uppercase();
             true
         } else {
@@ -458,13 +458,13 @@ impl fmt::Display for Chain {
 
 impl PartialOrd for Chain {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.id().cmp(&other.id()))
+        Some(self.id().cmp(other.id()))
     }
 }
 
 impl Ord for Chain {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.id().cmp(&other.id())
+        self.id().cmp(other.id())
     }
 }
 

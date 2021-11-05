@@ -12,8 +12,8 @@ use std::io::BufWriter;
 /// If validation gives rise to problems use the `save_raw` function.
 /// ## Warning
 /// This function is unstable and unfinished!
-pub fn save_mmcif(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
-    let mut errors = validate(&pdb);
+pub fn save_mmcif(pdb: &PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
+    let mut errors = validate(pdb);
     for error in &errors {
         if error.fails(level) {
             return Err(errors);
@@ -33,7 +33,7 @@ pub fn save_mmcif(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<()
         }
     };
 
-    save_mmcif_raw(&pdb, BufWriter::new(file));
+    save_mmcif_raw(pdb, BufWriter::new(file));
     Ok(())
 }
 
@@ -45,6 +45,7 @@ pub fn save_mmcif(pdb: PDB, filename: &str, level: StrictnessLevel) -> Result<()
 /// This function is unstable and unfinished!
 #[allow(clippy::unwrap_used)]
 pub fn save_mmcif_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
+    /// Write a piece of text to the file, has the same structure as format!
     macro_rules! write {
         ($($arg:tt)*) => {
             sink.write_fmt(format_args!($($arg)*)).unwrap();

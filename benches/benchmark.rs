@@ -83,7 +83,7 @@ fn bench_renumber(mut pdb: PDB) {
 }
 
 fn bench_clone(pdb: PDB) {
-    let _copy = pdb.clone();
+    let _copy = pdb;
 }
 
 fn bench_save_pdb(pdb: PDB) {
@@ -103,7 +103,7 @@ fn measure_multiple<T: Clone>(
     for (name, item) in subjects {
         output.push(measure(
             function,
-            &item,
+            item,
             &format!("{} - {}", description, name),
         ));
     }
