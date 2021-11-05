@@ -5,6 +5,7 @@ All versions are properly annotated on [github](https://github.com/nonnominandus
 * Added support for residue serial numbers over 9999 and atom serial numbers over 99999 for PDB files.
 * Changed argument type of `save_pdb` from `PDB` to `&PDB`
 * Allow lack of chain name in PDB files
+* Added `AtomWithHierarchyMut` to extend the use of `AtomWithHierarchy`
 
 ### v0.7.0 'Ecosystem integration'
 * Added parallel iterators based on [Rayon](https://crates.io/crates/rayon) (Thanks to DocKDE)
