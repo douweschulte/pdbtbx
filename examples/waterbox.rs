@@ -3,8 +3,7 @@ use std::env;
 use std::path::Path;
 use std::time::Instant;
 
-#[test]
-fn simple_waterbox() {
+fn main() {
     let filename = env::current_dir()
         .unwrap()
         .as_path()

@@ -54,3 +54,13 @@ jobs:
         run: |
           mkdir -p dump
           cargo test --features "rayon serde rstar" --verbose
+
+  examples:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run examples
+        run: |
+          mkdir -p dump
+          cargo run --example waterbox
