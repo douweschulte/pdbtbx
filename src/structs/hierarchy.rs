@@ -1,7 +1,34 @@
-//! # Atom With Hierarchy
+//! # Atoms with containing Hierarchy
 //!
 //! Defines structs to contain a piece of Hierarchy within the PDB structure. It also defines mutable
 //! counterparts to these to allow for mutable access to one level in the hierarchy at the same time.
+//!
+//! Using the traits you can write more generic functions.
+//! ```rust
+//! use pdbtbx::*;
+//! use pdbtbx::hierarchy::*;
+//! let (mut pdb, _errors) = pdbtbx::open(
+//!     "example-pdbs/1ubq.pdb",
+//!     pdbtbx::StrictnessLevel::Medium
+//! ).unwrap();
+//!
+//! // Return the X Y coordinates if the conformer name is "HOH"
+//! fn find_position(hierarchy: impl ContainsAtomConformer) -> Option<(f64, f64)> {
+//!     if hierarchy.conformer().name() == "HOH" {
+//!         Some((hierarchy.atom().x(), hierarchy.atom().y()))
+//!     } else {
+//!         None
+//!     }
+//! }
+//!
+//! // Translate the Y position of all atoms and return all HOH X Y coordinates
+//! pdb.atoms_with_hierarchy_mut().filter_map(|mut hierarchy| {
+//!     let new_y = hierarchy.atom().y() - 150.0;
+//!     hierarchy.atom_mut().set_y(new_y);
+//!     find_position(hierarchy)
+//! });
+//!
+//! ```
 //!
 //! ## Crate supporters
 //!

@@ -11,7 +11,7 @@
 //! is as useful to everyone while keeping true to its core principles.
 //!
 //! ## Why
-//! As Rust is a very recent language so there is not a lot of support for scientific work in Rust
+//! As Rust is a recent language so there is not a lot of support for scientific work in Rust
 //! compared to languages that are used much longer (like the ubiquitous Python). I think
 //! that using Rust would have huge benefits over other languages in bigger scientific projects.
 //! It is not just me, more scientists are turning to Rust [`Perkel, J. M.`]. I want to make it
@@ -66,7 +66,11 @@
 //!
 //! ```rust
 //! use pdbtbx;
-//! let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Medium).unwrap();
+//! let (mut pdb, _errors) = pdbtbx::open(
+//!     "example-pdbs/1ubq.pdb",
+//!     pdbtbx::StrictnessLevel::Medium
+//! ).unwrap();
+//!
 //! // Iterating over all levels
 //! for model in pdb.models() {
 //!     for chain in model.chains() {
@@ -88,11 +92,12 @@
 //! // Or with access to the information with a single line
 //! use pdbtbx::hierarchy::*;
 //! for hierarchy in pdb.atoms_with_hierarchy() {
-//!     println!("Atom {} in Conformer {} in Residue {} in Chain {}",
+//!     println!("Atom {} in Conformer {} in Residue {} in Chain {} in Model {}",
 //!         hierarchy.atom().serial_number(),
 //!         hierarchy.conformer().name(),
 //!         hierarchy.residue().serial_number(),
 //!         hierarchy.chain().id(),
+//!         hierarchy.model().serial_number()
 //!     );
 //! }
 //! // Or with mutable access to the members of the hierarchy
