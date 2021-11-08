@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 use crate::reference_tables;
 use crate::structs::*;
-use crate::transformation::*;
 use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
@@ -122,33 +121,6 @@ impl Conformer {
         }
     }
 
-    /// The amount of atoms making up this Conformer
-    pub fn atom_count(&self) -> usize {
-        self.atoms.len()
-    }
-
-    /// Get a specific atom from list of atoms making up this Conformer.
-    ///
-    /// ## Arguments
-    /// * `index` - the index of the atom
-    ///
-    /// ## Fails
-    /// It fails when the index is outside bounds.
-    pub fn atom(&self, index: usize) -> Option<&Atom> {
-        self.atoms.get(index)
-    }
-
-    /// Get a specific atom as a mutable reference from list of atoms making up this Conformer.
-    ///
-    /// ## Arguments
-    /// * `index` - the index of the atom
-    ///
-    /// ## Fails
-    /// It fails when the index is outside bounds.
-    pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
-        self.atoms.get_mut(index)
-    }
-
     /// Get a specific Atom specified by its serial number, which is defined to be unique
     /// within a single conformer. It does this using binary search so the underlying vector
     /// is assumed to be sorted, this can be enforced by using `conformer.sort()` beforehand.
@@ -177,30 +149,6 @@ impl Conformer {
         }
     }
 
-    /// Get the list of atoms making up this Conformer.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.atoms.iter()
-    }
-
-    /// Get the list of atoms making up this Conformer in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.atoms.par_iter()
-    }
-
-    /// Get the list of atoms as mutable references making up this Conformer.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.atoms.iter_mut()
-    }
-
-    /// Get the list of atoms as mutable references making up this Conformer in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.atoms.par_iter_mut()
-    }
-
     /// Add a new atom to the list of atoms making up this Conformer.
     /// ## Arguments
     /// * `new_atom` - the new Atom to add
@@ -213,8 +161,55 @@ impl Conformer {
         reference_tables::get_amino_acid_number(self.name()).is_some()
     }
 
+    /// Join this Conformer with another Conformer, this moves all atoms from the other Conformer
+    /// to this Conformer. All other (meta) data of this Conformer will stay the same.
+    pub fn join(&mut self, other: Conformer) {
+        self.atoms.extend(other.atoms);
+    }
+
+    /// Extend the Atoms on this Conformer by the given iterator.
+    pub fn extend<T: IntoIterator<Item = Atom>>(&mut self, iter: T) {
+        self.atoms.extend(iter);
+    }
+}
+
+impl ContainsAtoms for Conformer {
+    fn atom_count(&self) -> usize {
+        self.atoms.len()
+    }
+
+    fn atom(&self, index: usize) -> Option<&Atom> {
+        self.atoms.get(index)
+    }
+
+    fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
+        self.atoms.get_mut(index)
+    }
+
+    fn atoms(&self) -> Box<dyn DoubleEndedIterator<Item = &Atom> + '_> {
+        Box::new(self.atoms.iter())
+    }
+
+    /// Get the list of atoms making up this Conformer in parallel.
+    #[doc_cfg(feature = "rayon")]
+    fn par_atoms(&self) -> rayon::slice::Iter<'_, Atom> {
+        self.atoms.par_iter()
+    }
+
+    /// Get the list of atoms as mutable references making up this Conformer.
+    /// Double ended so iterating from the end is just as fast as from the start.
+    fn atoms_mut(&mut self) -> Box<dyn DoubleEndedIterator<Item = &mut Atom> + '_> {
+        Box::new(self.atoms.iter_mut())
+    }
+
+    /// Get the list of atoms as mutable references making up this Conformer in parallel.
+    #[doc_cfg(feature = "rayon")]
+    fn par_atoms_mut(&mut self) -> rayon::slice::IterMut<'_, Atom> {
+        self.atoms.par_iter_mut()
+    }
+
     /// Remove all Atoms matching the given predicate. As this is done in place this is the fastest way to remove Atoms from this Conformer.
-    pub fn remove_atoms_by<F>(&mut self, predicate: F)
+    fn remove_atoms_by<F>(&mut self, predicate: F)
     where
         F: Fn(&Atom) -> bool,
     {
@@ -228,127 +223,18 @@ impl Conformer {
     ///
     /// ## Panics
     /// It panics when the index is outside bounds.
-    pub fn remove_atom(&mut self, index: usize) {
+    fn remove_atom(&mut self, index: usize) {
         self.atoms.remove(index);
     }
 
-    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
-    /// It removes the first matching Atom from the list.
-    ///
-    /// ## Arguments
-    /// * `serial_number` - the serial number of the Atom to remove
-    ///
-    /// ## Panics
-    /// It panics when the index is outside bounds.
-    pub fn remove_atom_by_serial_number(&mut self, serial_number: usize) -> bool {
-        let index = self
-            .atoms()
-            .position(|a| a.serial_number() == serial_number);
-
-        if let Some(i) = index {
-            self.remove_atom(i);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
-    /// It removes the first matching Atom from the list. Matching is done in parallel.
-    ///
-    /// ## Arguments
-    /// * `serial_number` - the serial number of the Atom to remove
-    ///
-    /// ## Panics
-    /// It panics when the index is outside bounds.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_atom_by_serial_number(&mut self, serial_number: usize) -> bool {
-        let index = self
-            .atoms
-            .par_iter()
-            .position_first(|a| a.serial_number() == serial_number);
-
-        if let Some(i) = index {
-            self.remove_atom(i);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
-    /// It removes the first matching Atom from the list.
-    ///
-    /// ## Arguments
-    /// * `name` - the name of the Atom to remove
-    ///
-    /// ## Panics
-    /// It panics when the index is outside bounds.
-    pub fn remove_atom_by_name(&mut self, name: String) -> bool {
-        let index = self.atoms().position(|a| a.name() == name);
-
-        if let Some(i) = index {
-            self.remove_atom(i);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
-    /// It removes the first matching Atom from the list. Matching is done in parallel.
-    ///
-    /// ## Arguments
-    /// * `name` - the name of the Atom to remove
-    ///
-    /// ## Panics
-    /// It panics when the index is outside bounds.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_atom_by_name(&mut self, name: String) -> bool {
-        let index = self.atoms.par_iter().position_first(|a| a.name() == name);
-
-        if let Some(i) = index {
-            self.remove_atom(i);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Apply a transformation to the position of all atoms making up this Conformer, the new position is immediately set.
-    pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
-        for atom in self.atoms_mut() {
-            atom.apply_transformation(transformation);
-        }
-    }
-
-    /// Apply a transformation to the position of all atoms making up this Conformer, the new position is immediately set.
-    /// This is done in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
-        self.par_atoms_mut()
-            .for_each(|a| a.apply_transformation(transformation))
-    }
-
-    /// Join this Conformer with another Conformer, this moves all atoms from the other Conformer
-    /// to this Conformer. All other (meta) data of this Conformer will stay the same.
-    pub fn join(&mut self, other: Conformer) {
-        self.atoms.extend(other.atoms);
-    }
-
-    /// Extend the Atoms on this Conformer by the given iterator.
-    pub fn extend<T: IntoIterator<Item = Atom>>(&mut self, iter: T) {
-        self.atoms.extend(iter);
-    }
-
     /// Sort the Atoms of this Conformer
-    pub fn sort(&mut self) {
+    fn sort(&mut self) {
         self.atoms.sort();
     }
 
     /// Sort the Atoms of this Conformer in parallel
     #[doc_cfg(feature = "rayon")]
-    pub fn par_sort(&mut self) {
+    fn par_sort(&mut self) {
         self.atoms.par_sort();
     }
 }

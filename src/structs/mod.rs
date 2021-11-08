@@ -11,6 +11,7 @@ mod mtrix;
 mod pdb;
 mod residue;
 mod symmetry;
+mod traits;
 mod unit_cell;
 
 pub use atom::Atom;
@@ -24,4 +25,5 @@ pub use mtrix::MtriX;
 pub use pdb::PDB;
 pub use residue::Residue;
 pub use symmetry::Symmetry;
+pub use traits::*;
 pub use unit_cell::UnitCell;
