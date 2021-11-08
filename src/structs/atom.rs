@@ -398,7 +398,7 @@ impl Atom {
     }
 
     /// Get if this atom is likely to be a part of the backbone of a protein.
-    /// This is based on this Atom only, for a more precise definition use [AtomWithHierarchy]`.is_backbone()`.
+    /// This is based on this Atom only, for a more precise definition use [hierarchy::ContainsAtomConformer]`.is_backbone()`.
     pub fn is_backbone(&self) -> bool {
         reference_tables::is_backbone(self.name())
     }

@@ -21,7 +21,7 @@ doc-cfg = "0.1"
 serde_json = "1.0"
 
 [features]
-default = ["rayon"]
+default = ["rayon", "rstar", "serde"]
 unstable-doc-cfg = []
 
 [package.metadata.docs.rs]

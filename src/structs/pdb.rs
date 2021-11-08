@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::reference_tables;
+use crate::structs::hierarchy::*;
 use crate::structs::*;
 use crate::transformation::*;
 use doc_cfg::doc_cfg;
@@ -433,12 +434,34 @@ impl<'a> PDB {
         &'a self,
         serial_number: usize,
         alternative_location: Option<&str>,
-    ) -> Option<AtomWithHierarchy<'a>> {
-        if let Some(model) = self.models().next() {
-            model.binary_find_atom(serial_number, alternative_location)
-        } else {
-            None
-        }
+    ) -> Option<AtomConformerResidueChainModel<'a>> {
+        self.models()
+            .next()
+            .map(|m| {
+                m.binary_find_atom(serial_number, alternative_location)
+                    .map(|res| res.extend(m))
+            })
+            .flatten()
+    }
+
+    /// Get the specified atom, its uniqueness is guaranteed by including the
+    /// alternative_location, with its hierarchy. The algorithm is based
+    /// on binary search so it is faster than an exhaustive search, but the
+    /// full structure is assumed to be sorted. This assumption can be enforced
+    /// by using `pdb.full_sort()`.
+    pub fn binary_find_atom_mut(
+        &'a mut self,
+        serial_number: usize,
+        alternative_location: Option<&str>,
+    ) -> Option<AtomConformerResidueChainModelMut<'a>> {
+        self.models_mut()
+            .next()
+            .map(|m| {
+                let model: *mut Model = m;
+                m.binary_find_atom_mut(serial_number, alternative_location)
+                    .map(|res| res.extend(model))
+            })
+            .flatten()
     }
 
     /// Get the list of Models making up this PDB.
@@ -559,20 +582,23 @@ impl<'a> PDB {
         self.par_models_mut().flat_map(|a| a.par_atoms_mut())
     }
 
-    /// Get the list of Atoms with their hierarchies making up this PDB, including all models.
-    /// Double ended so iterating from the end is just as fast as from the start.
+    /// Returns all atom with their hierarchy struct for each atom in this chain.
     pub fn atoms_with_hierarchy(
         &'a self,
-    ) -> impl DoubleEndedIterator<Item = AtomWithHierarchy<'a>> + '_ {
-        self.models().flat_map(|m| m.atoms_with_hierarchy())
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModel<'a>> + '_ {
+        self.models()
+            .flat_map(|m| m.atoms_with_hierarchy().map(move |h| h.extend(m)))
     }
 
-    /// Get the list of Atoms with their hierarchies making up this PDB, including all models.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atoms_with_hierarchy(
-        &'a self,
-    ) -> impl ParallelIterator<Item = AtomWithHierarchy<'a>> + '_ {
-        self.par_models().flat_map(|m| m.par_atoms_with_hierarchy())
+    /// Returns all atom with their hierarchy struct for each atom in this chain.
+    pub fn atoms_with_hierarchy_mut(
+        &'a mut self,
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModelMut<'a>> + '_
+    {
+        self.models_mut().flat_map(|m| {
+            let model: *mut Model = m;
+            m.atoms_with_hierarchy_mut().map(move |h| h.extend(model))
+        })
     }
 
     /// Remove all Atoms matching the given predicate. The predicate will be run on all Atoms.
@@ -833,7 +859,9 @@ impl<'a> PDB {
     /// structures is not seen in the other data structure (until
     /// you generate a new tree of course).
     #[doc_cfg(feature = "rstar")]
-    pub fn create_atom_with_hierarchy_rtree(&'a self) -> rstar::RTree<AtomWithHierarchy<'a>> {
+    pub fn create_hierarchy_rtree(
+        &'a self,
+    ) -> rstar::RTree<hierarchy::AtomConformerResidueChainModel<'a>> {
         rstar::RTree::bulk_load(self.atoms_with_hierarchy().collect())
     }
 
@@ -865,8 +893,8 @@ impl<'a> PDB {
         bond: Bond,
     ) -> Option<()> {
         self.bonds.push((
-            self.binary_find_atom(atom1.0, atom1.1)?.atom.counter(),
-            self.binary_find_atom(atom2.0, atom2.1)?.atom.counter(),
+            self.binary_find_atom(atom1.0, atom1.1)?.atom().counter(),
+            self.binary_find_atom(atom2.0, atom2.1)?.atom().counter(),
             bond,
         ));
         Some(())
@@ -938,9 +966,9 @@ mod tests {
         pdb.add_model(model);
         pdb.full_sort();
 
-        assert_eq!(pdb.binary_find_atom(1, Some("A")).unwrap().atom.x(), 0.0);
-        assert_eq!(pdb.binary_find_atom(1, Some("B")).unwrap().atom.x(), 1.0);
-        assert_eq!(pdb.binary_find_atom(1, None).unwrap().atom.x(), 2.0);
+        assert_eq!(pdb.binary_find_atom(1, Some("A")).unwrap().atom().x(), 0.0);
+        assert_eq!(pdb.binary_find_atom(1, Some("B")).unwrap().atom().x(), 1.0);
+        assert_eq!(pdb.binary_find_atom(1, None).unwrap().atom().x(), 2.0);
     }
 
     #[test]
@@ -1011,12 +1039,12 @@ mod tests {
         );
         let mut pdb = PDB::new();
         pdb.add_model(model);
-        let tree = pdb.create_atom_with_hierarchy_rtree();
+        let tree = pdb.create_hierarchy_rtree();
         assert_eq!(tree.size(), 3);
         assert_eq!(
             tree.nearest_neighbor(&[1.0, 1.0, 1.0])
                 .unwrap()
-                .atom
+                .atom()
                 .serial_number(),
             1
         );
@@ -1031,12 +1059,12 @@ mod tests {
         let c = neighbors.next().unwrap();
         assert_eq!(neighbors.next(), None);
 
-        assert_eq!(a.atom.serial_number(), 0);
-        assert_eq!(b.atom.serial_number(), 2);
-        assert_eq!(c.atom.serial_number(), 1);
-        assert_eq!(a.chain.id(), "A");
-        assert_eq!(b.chain.id(), "B");
-        assert_eq!(c.chain.id(), "A");
+        assert_eq!(a.atom().serial_number(), 0);
+        assert_eq!(b.atom().serial_number(), 2);
+        assert_eq!(c.atom().serial_number(), 1);
+        assert_eq!(a.chain().id(), "A");
+        assert_eq!(b.chain().id(), "B");
+        assert_eq!(c.chain().id(), "A");
     }
 
     #[test]

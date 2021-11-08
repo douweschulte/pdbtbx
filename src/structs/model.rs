@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use crate::structs::hierarchy::*;
 use crate::structs::*;
 use crate::transformation::*;
 use doc_cfg::doc_cfg;
@@ -178,7 +179,7 @@ impl<'a> Model {
         &'a self,
         serial_number: usize,
         insertion_code: Option<&str>,
-    ) -> Option<AtomWithHierarchy<'a>> {
+    ) -> Option<AtomConformerResidueChain<'a>> {
         if self.chain_count() == 0 {
             None
         } else {
@@ -202,20 +203,54 @@ impl<'a> Model {
                 })
                 .ok()
                 .map(|index| {
-                    if let Some((residue, conformer, atom)) = self
-                        .chain(index)
+                    self.chain(index)
                         .unwrap()
                         .binary_find_atom(serial_number, insertion_code)
+                        .map(|h| h.extend(self.chain(index).unwrap()))
+                })
+                .flatten()
+        }
+    }
+
+    /// Get the specified atom, its uniqueness is guaranteed by including the
+    /// insertion_code, with its full hierarchy. The algorithm is based
+    /// on binary search so it is faster than an exhaustive search, but the
+    /// full structure is assumed to be sorted. This assumption can be enforced
+    /// by using `pdb.full_sort()`.
+    #[allow(clippy::unwrap_used)]
+    pub fn binary_find_atom_mut(
+        &'a mut self,
+        serial_number: usize,
+        insertion_code: Option<&str>,
+    ) -> Option<AtomConformerResidueChainMut<'a>> {
+        if self.chain_count() == 0 {
+            None
+        } else {
+            self.chains
+                .binary_search_by(|chain| {
+                    let low = chain.atoms().next().expect(
+                        "All chains should have at least a single atom for binary_find_atom",
+                    );
+                    let high = chain.atoms().next_back().expect(
+                        "All chains should have at least a single atom for binary_find_atom",
+                    );
+
+                    if low.serial_number() <= serial_number && serial_number <= high.serial_number()
                     {
-                        Some(AtomWithHierarchy::new(
-                            self.chain(index).unwrap(),
-                            residue,
-                            conformer,
-                            atom,
-                        ))
+                        Ordering::Equal
+                    } else if serial_number < low.serial_number() {
+                        Ordering::Less
                     } else {
-                        None
+                        Ordering::Greater
                     }
+                })
+                .ok()
+                .map(move |index| {
+                    let chain: *mut Chain = self.chain_mut(index).unwrap();
+                    self.chain_mut(index)
+                        .unwrap()
+                        .binary_find_atom_mut(serial_number, insertion_code)
+                        .map(|h| h.extend(chain))
                 })
                 .flatten()
         }
@@ -317,60 +352,22 @@ impl<'a> Model {
         self.par_chains_mut().flat_map(|a| a.par_atoms_mut())
     }
 
-    /// Returns all atom with their hierarchy struct for each atom in this model.
+    /// Returns all atom with their hierarchy struct for each atom in this chain.
     pub fn atoms_with_hierarchy(
         &'a self,
-    ) -> impl DoubleEndedIterator<Item = AtomWithHierarchy<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChain<'a>> + '_ {
         self.chains()
-            .map(|ch| {
-                ch.residues().map(move |r| {
-                    r.conformers()
-                        .map(move |c| c.atoms().map(move |a| (ch, r, c, a)))
-                })
-            })
-            .flatten()
-            .flatten()
-            .flatten()
-            .map(AtomWithHierarchy::from_tuple)
+            .flat_map(|c| c.atoms_with_hierarchy().map(move |h| h.extend(c)))
     }
 
-    /// Returns all atom with their hierarchy struct for each atom in this model.
-    #[allow(clippy::unwrap_used)]
-    pub fn atoms_with_hierarchy_mut(&'a mut self) -> Vec<AtomWithHierarchyMut<'a>> {
-        let mut output = Vec::new();
-        unsafe {
-            for ch in self.chains_mut() {
-                let chain: *mut Chain = ch;
-                for r in chain.as_mut().unwrap().residues_mut() {
-                    let residue: *mut Residue = r;
-                    for c in residue.as_mut().unwrap().conformers_mut() {
-                        let conformer: *mut Conformer = c;
-                        for atom in conformer.as_mut().unwrap().atoms_mut() {
-                            output.push(AtomWithHierarchyMut::new(chain, residue, conformer, atom));
-                        }
-                    }
-                }
-            }
-        }
-        output
-    }
-
-    /// Returns all atom with their hierarchy struct for each atom in this model in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atoms_with_hierarchy(
-        &'a self,
-    ) -> impl ParallelIterator<Item = AtomWithHierarchy<'a>> + '_ {
-        self.par_chains()
-            .map(|ch| {
-                ch.par_residues().map(move |r| {
-                    r.par_conformers()
-                        .map(move |c| c.par_atoms().map(move |a| (ch, r, c, a)))
-                })
-            })
-            .flatten()
-            .flatten()
-            .flatten()
-            .map(AtomWithHierarchy::from_tuple)
+    /// Returns all atom with their hierarchy struct for each atom in this chain.
+    pub fn atoms_with_hierarchy_mut(
+        &'a mut self,
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainMut<'a>> + '_ {
+        self.chains_mut().flat_map(|c| {
+            let chain: *mut Chain = c;
+            c.atoms_with_hierarchy_mut().map(move |h| h.extend(chain))
+        })
     }
 
     /// Add a new Atom to this Model. It finds if there already is a Chain with the given `chain_id` if there is it will add this atom to that Chain, otherwise it will create a new Chain and add that to the list of Chains making up this Model. It does the same for the Residue, so it will create a new one if there does not yet exist a Residue with the given serial number.
@@ -650,7 +647,7 @@ mod tests {
         }
         // Test that casting it to a 'normal' hierarchy works (needs some 'magic' to get an owned variant)
         let hierarchy = a.atoms_with_hierarchy_mut().into_iter().next().unwrap();
-        assert_eq!(hierarchy.without_mut().chain.id(), "C");
+        assert_eq!(hierarchy.without_mut().chain().id(), "C");
 
         // Test that all changes were properly executed
         assert_eq!(a.chain(0).unwrap().id(), "C");

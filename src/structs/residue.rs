@@ -19,7 +19,7 @@ pub struct Residue {
     conformers: Vec<Conformer>,
 }
 
-impl Residue {
+impl<'a> Residue {
     /// Create a new Residue
     ///
     /// ## Arguments
@@ -173,10 +173,10 @@ impl Residue {
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
     pub fn binary_find_atom(
-        &self,
+        &'a self,
         serial_number: usize,
         alternative_location: Option<&str>,
-    ) -> Option<(&Conformer, &Atom)> {
+    ) -> Option<hierarchy::AtomConformer<'a>> {
         for conformer in self.conformers() {
             if conformer.alternative_location() == alternative_location {
                 if let Some(f) = conformer.atoms().next() {
@@ -184,7 +184,7 @@ impl Residue {
                         if f.serial_number() <= serial_number && serial_number <= b.serial_number()
                         {
                             if let Some(atom) = conformer.binary_find_atom(serial_number) {
-                                return Some((conformer, atom));
+                                return Some(hierarchy::AtomConformer::new(atom, conformer));
                             }
                         }
                     }
@@ -192,6 +192,41 @@ impl Residue {
             }
         }
         None
+    }
+
+    /// Get the specified atom, its uniqueness is guaranteed by including the
+    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// on binary search so it is faster than an exhaustive search, but the
+    /// full structure is assumed to be sorted. This assumption can be enforced
+    /// by using `pdb.full_sort()`.
+    #[allow(clippy::unwrap_used)]
+    pub fn binary_find_atom_mut(
+        &'a mut self,
+        serial_number: usize,
+        alternative_location: Option<&str>,
+    ) -> Option<hierarchy::AtomConformerMut<'a>> {
+        unsafe {
+            for c in self.conformers_mut() {
+                let c_ptr: *mut Conformer = c;
+                let conformer = c_ptr.as_mut().unwrap();
+                if conformer.alternative_location() == alternative_location {
+                    if let Some(f) = conformer.atoms().next() {
+                        if let Some(b) = conformer.atoms().next_back() {
+                            if f.serial_number() <= serial_number
+                                && serial_number <= b.serial_number()
+                            {
+                                if let Some(atom) =
+                                    c_ptr.as_mut().unwrap().binary_find_atom_mut(serial_number)
+                                {
+                                    return Some(hierarchy::AtomConformerMut::new(atom, c_ptr));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            None
+        }
     }
 
     /// Get the list of conformers making up this Residue.
@@ -240,6 +275,28 @@ impl Residue {
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.par_conformers_mut().flat_map(|a| a.par_atoms_mut())
+    }
+
+    /// Returns all atom with their hierarchy struct for each atom in this residue.
+    pub fn atoms_with_hierarchy(
+        &'a self,
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformer<'a>> + '_ {
+        self.conformers()
+            .flat_map(|c| c.atoms().map(move |a| (a, c)))
+            .map(hierarchy::AtomConformer::form_tuple)
+    }
+
+    /// Returns all atom with their hierarchy struct for each atom in this residue.
+    #[allow(trivial_casts)]
+    pub fn atoms_with_hierarchy_mut(
+        &'a mut self,
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerMut<'a>> + '_ {
+        self.conformers_mut()
+            .flat_map(|c| {
+                let conformer: *mut Conformer = c;
+                c.atoms_mut().map(move |a| (a as *mut Atom, conformer))
+            })
+            .map(hierarchy::AtomConformerMut::form_tuple)
     }
 
     /// Add a new conformer to the list of conformers making up this Residue.

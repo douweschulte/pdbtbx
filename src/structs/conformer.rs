@@ -163,6 +163,20 @@ impl Conformer {
         }
     }
 
+    /// Get a specific Atom specified by its serial number, which is defined to be unique
+    /// within a single conformer. It does this using binary search so the underlying vector
+    /// is assumed to be sorted, this can be enforced by using `conformer.sort()` beforehand.
+    pub fn binary_find_atom_mut(&mut self, serial_number: usize) -> Option<&mut Atom> {
+        if let Ok(i) = self
+            .atoms
+            .binary_search_by(|a| a.serial_number().cmp(&serial_number))
+        {
+            unsafe { Some(self.atoms.get_unchecked_mut(i)) }
+        } else {
+            None
+        }
+    }
+
     /// Get the list of atoms making up this Conformer.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {

@@ -65,8 +65,8 @@
 //! ## Iterating over the PDB Hierarchy
 //!
 //! ```rust
-//! # use pdbtbx;
-//! # let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Medium).unwrap();
+//! use pdbtbx;
+//! let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Medium).unwrap();
 //! // Iterating over all levels
 //! for model in pdb.models() {
 //!     for chain in model.chains() {
@@ -86,26 +86,20 @@
 //!     }
 //! }
 //! // Or with access to the information with a single line
+//! use pdbtbx::hierarchy::*;
 //! for hierarchy in pdb.atoms_with_hierarchy() {
 //!     println!("Atom {} in Conformer {} in Residue {} in Chain {}",
-//!         hierarchy.atom.serial_number(),
-//!         hierarchy.conformer.name(),
-//!         hierarchy.residue.serial_number(),
-//!         hierarchy.chain.id(),
+//!         hierarchy.atom().serial_number(),
+//!         hierarchy.conformer().name(),
+//!         hierarchy.residue().serial_number(),
+//!         hierarchy.chain().id(),
 //!     );
 //! }
-//! // Or the above example in parallel using Rayon
-//! # #[cfg(feature="rayon")]
-//! use rayon::prelude::*;
-//! # #[cfg(feature="rayon")]
-//! pdb.par_atoms_with_hierarchy().map(|hierarchy|
-//!     println!("Atom {} in Conformer {} in Residue {} in Chain {}",
-//!         hierarchy.atom.serial_number(),
-//!         hierarchy.conformer.name(),
-//!         hierarchy.residue.serial_number(),
-//!         hierarchy.chain.id(),
-//!     )
-//! );
+//! // Or with mutable access to the members of the hierarchy
+//! for mut hierarchy in pdb.atoms_with_hierarchy_mut() {
+//!     let new_x = hierarchy.atom().x() * 1.5;
+//!     hierarchy.atom_mut().set_x(new_x);
+//! }
 //! ```
 //!
 //! ## Parallelization
@@ -128,8 +122,9 @@
     feature = "rstar",
     doc = r##"
 ```rust
-# use pdbtbx;
-# let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Medium).unwrap();
+use pdbtbx;
+use pdbtbx::hierarchy::*;
+let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Medium).unwrap();
 // You can loop over all atoms within 3.5 Aͦ of a specific atom
 // Note: The `locate_within_distance` method takes a squared distance
 let tree = pdb.create_atom_rtree();
@@ -139,7 +134,7 @@ for atom in tree.locate_within_distance(pdb.atom(42).unwrap().pos_array(), 3.5 *
 
 // You can even get information about the hierarchy of these atoms 
 // (the chain, residue and conformer that contain this atom)
-let tree = pdb.create_atom_with_hierarchy_rtree();
+let tree = pdb.create_hierarchy_rtree();
 let mut total = 0;
 for hierarchy in tree.locate_within_distance(pdb.atom(42).unwrap().pos_array(), 3.5 * 3.5) {
     if hierarchy.is_backbone() {

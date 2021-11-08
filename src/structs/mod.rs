@@ -1,11 +1,11 @@
 #![allow(clippy::missing_docs_in_private_items)]
 mod atom;
-mod atom_with_hierarchy;
 mod bond;
 mod chain;
 mod conformer;
 mod database_reference;
 mod helper;
+pub mod hierarchy;
 mod model;
 mod mtrix;
 mod pdb;
@@ -14,7 +14,6 @@ mod symmetry;
 mod unit_cell;
 
 pub use atom::Atom;
-pub use atom_with_hierarchy::{AtomWithHierarchy, AtomWithHierarchyMut};
 pub use bond::Bond;
 pub use chain::Chain;
 pub use conformer::Conformer;

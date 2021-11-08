@@ -18,7 +18,7 @@ pub struct Chain {
     database_reference: Option<DatabaseReference>,
 }
 
-impl Chain {
+impl<'a> Chain {
     /// Create a new Chain
     ///
     /// ## Arguments
@@ -169,10 +169,10 @@ impl Chain {
     /// by using `pdb.full_sort()`.
     #[allow(clippy::unwrap_used)]
     pub fn binary_find_atom(
-        &self,
+        &'a self,
         serial_number: usize,
         alternative_location: Option<&str>,
-    ) -> Option<(&Residue, &Conformer, &Atom)> {
+    ) -> Option<hierarchy::AtomConformerResidue<'a>> {
         if self.residue_count() == 0 {
             None
         } else {
@@ -196,15 +196,54 @@ impl Chain {
                 })
                 .ok()
                 .map(|index| {
-                    if let Some((conformer, atom)) = self
-                        .residue(index)
+                    self.residue(index)
                         .unwrap()
                         .binary_find_atom(serial_number, alternative_location)
+                        .map(|h| h.extend(self.residue(index).unwrap()))
+                })
+                .flatten()
+        }
+    }
+
+    /// Get the specified atom, its uniqueness is guaranteed by including the
+    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// on binary search so it is faster than an exhaustive search, but the
+    /// full structure is assumed to be sorted. This assumption can be enforced
+    /// by using `pdb.full_sort()`.
+    #[allow(clippy::unwrap_used)]
+    pub fn binary_find_atom_mut(
+        &'a mut self,
+        serial_number: usize,
+        alternative_location: Option<&str>,
+    ) -> Option<hierarchy::AtomConformerResidueMut<'a>> {
+        if self.residue_count() == 0 {
+            None
+        } else {
+            self.residues
+                .binary_search_by(|residue| {
+                    let low = residue.atoms().next().expect(
+                        "All residues should have at least a single atom for binary_find_atom",
+                    );
+                    let high = residue.atoms().next_back().expect(
+                        "All residues should have at least a single atom for binary_find_atom",
+                    );
+
+                    if low.serial_number() <= serial_number && serial_number <= high.serial_number()
                     {
-                        Some((self.residue(index).unwrap(), conformer, atom))
+                        Ordering::Equal
+                    } else if serial_number < low.serial_number() {
+                        Ordering::Less
                     } else {
-                        None
+                        Ordering::Greater
                     }
+                })
+                .ok()
+                .map(move |index| {
+                    let residue: *mut Residue = self.residue_mut(index).unwrap();
+                    self.residue_mut(index)
+                        .unwrap()
+                        .binary_find_atom_mut(serial_number, alternative_location)
+                        .map(|h| h.extend(residue))
                 })
                 .flatten()
         }
@@ -280,6 +319,24 @@ impl Chain {
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.par_residues_mut().flat_map(|a| a.par_atoms_mut())
+    }
+
+    /// Returns all atom with their hierarchy struct for each atom in this chain.
+    pub fn atoms_with_hierarchy(
+        &'a self,
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidue<'a>> + '_ {
+        self.residues()
+            .flat_map(|r| r.atoms_with_hierarchy().map(move |h| h.extend(r)))
+    }
+
+    /// Returns all atom with their hierarchy struct for each atom in this chain.
+    pub fn atoms_with_hierarchy_mut(
+        &'a mut self,
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueMut<'a>> + '_ {
+        self.residues_mut().flat_map(|r| {
+            let residue: *mut Residue = r;
+            r.atoms_with_hierarchy_mut().map(move |h| h.extend(residue))
+        })
     }
 
     /// Add a new Atom to this Chain. It finds if there already is a Residue with the given serial number if there is it will add this atom to that Residue, otherwise it will create a new Residue and add that to the list of Residues making up this Chain.

@@ -1,3 +1,4 @@
+use pdbtbx::hierarchy::*;
 use pdbtbx::*;
 use std::path::Path;
 use std::time::Instant;
@@ -74,13 +75,13 @@ fn do_something(file: &str, folder: &str, name: &str) {
     println!("Set values");
 
     for hierarchy in pdb.atoms_with_hierarchy() {
-        avg += hierarchy.atom.b_factor();
+        avg += hierarchy.atom().b_factor();
         if hierarchy.is_backbone() {
             total_back += 1;
-            avg_back += hierarchy.atom.b_factor();
+            avg_back += hierarchy.atom().b_factor();
         } else {
             total_side += 1;
-            avg_side += hierarchy.atom.b_factor();
+            avg_side += hierarchy.atom().b_factor();
         }
     }
 
