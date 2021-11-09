@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 use crate::structs::*;
-use crate::transformation::*;
 use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
@@ -107,66 +106,6 @@ impl<'a> Residue {
         }
     }
 
-    /// The amount of Conformers making up this Residue
-    pub fn conformer_count(&self) -> usize {
-        self.conformers.len()
-    }
-
-    /// Get the amount of Atoms making up this Residue
-    pub fn atom_count(&self) -> usize {
-        self.conformers().fold(0, |sum, res| res.atom_count() + sum)
-    }
-
-    /// Get the amount of Atoms making up this Residue in parallel
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atom_count(&self) -> usize {
-        self.par_conformers().map(|a| a.atom_count()).sum()
-    }
-
-    /// Get a specific conformer from list of conformers making up this Residue.
-    ///
-    /// ## Arguments
-    /// * `index` - the index of the conformer
-    ///
-    /// ## Fails
-    /// It fails when the index is outside bounds.
-    pub fn conformer(&self, index: usize) -> Option<&Conformer> {
-        self.conformers.get(index)
-    }
-
-    /// Get a specific conformer as a mutable reference from list of conformers making up this Residue.
-    ///
-    /// ## Arguments
-    /// * `index` - the index of the conformer
-    ///
-    /// ## Fails
-    /// It fails when the index is outside bounds.
-    pub fn conformer_mut(&mut self, index: usize) -> Option<&mut Conformer> {
-        self.conformers.get_mut(index)
-    }
-
-    /// Get a specific Atom from list of Atoms making up this Residue.
-    ///
-    /// ## Arguments
-    /// * `index` - the index of the Atom
-    ///
-    /// ## Fails
-    /// It fails when the index is outside bounds.
-    pub fn atom(&self, index: usize) -> Option<&Atom> {
-        self.atoms().nth(index)
-    }
-
-    /// Get a specific Atom as a mutable reference from list of Atoms making up this Residue.
-    ///
-    /// ## Arguments
-    /// * `index` - the index of the Atom
-    ///
-    /// ## Fails
-    /// It fails when the index is outside bounds.
-    pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
-        self.atoms_mut().nth(index)
-    }
-
     /// Get the specified atom, its uniqueness is guaranteed by including the
     /// alternative_location, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
@@ -227,54 +166,6 @@ impl<'a> Residue {
             }
             None
         }
-    }
-
-    /// Get the list of conformers making up this Residue.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
-        self.conformers.iter()
-    }
-
-    /// Get the list of conformers making up this Residue in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
-        self.conformers.par_iter()
-    }
-
-    /// Get the list of conformers as mutable references making up this Residue.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
-        self.conformers.iter_mut()
-    }
-
-    /// Get the list of conformers as mutable references making up this Residue in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
-        self.conformers.par_iter_mut()
-    }
-
-    /// Get the list of Atoms making up this Residue.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.conformers().flat_map(|a| a.atoms())
-    }
-
-    /// Get the list of Atoms making up this Residue in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.par_conformers().flat_map(|a| a.par_atoms())
-    }
-
-    /// Get the list of Atoms as mutable references making up this Residue.
-    /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.conformers_mut().flat_map(|a| a.atoms_mut())
-    }
-
-    /// Get the list of Atoms as mutable references making up this Residue in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.par_conformers_mut().flat_map(|a| a.par_atoms_mut())
     }
 
     /// Returns all atom with their hierarchy struct for each atom in this residue.
@@ -341,91 +232,6 @@ impl<'a> Residue {
         self.conformers.retain(|c| c.atom_count() > 0);
     }
 
-    /// Remove all conformers matching the given predicate. As this is done in place this is the fastest way to remove conformers from this Residue.
-    pub fn remove_conformers_by<F>(&mut self, predicate: F)
-    where
-        F: Fn(&Conformer) -> bool,
-    {
-        self.conformers.retain(|conformer| !predicate(conformer));
-    }
-
-    /// Remove all atoms matching the given predicate. As this is done in place this is the fastest way to remove atoms from this Residue.
-    pub fn remove_atoms_by<F>(&mut self, predicate: F)
-    where
-        F: Fn(&Atom) -> bool,
-    {
-        // for conformer in self.conformers_mut() {
-        //     conformer.remove_atoms_by(&predicate);
-        // }
-        self.conformers_mut()
-            .for_each(|conformer| conformer.remove_atoms_by(&predicate))
-    }
-
-    /// Remove the conformer specified.
-    ///
-    /// ## Arguments
-    /// * `index` - the index of the conformer to remove
-    ///
-    /// ## Panics
-    /// It panics when the index is outside bounds.
-    pub fn remove_conformer(&mut self, index: usize) {
-        self.conformers.remove(index);
-    }
-
-    /// Remove the conformer specified. It returns `true` if it found a matching conformer and removed it.
-    /// It removes the first matching conformer from the list.
-    ///
-    /// ## Arguments
-    /// * `id` - the identifying construct of the Conformer to remove
-    ///
-    /// ## Panics
-    /// It panics when the index is outside bounds.
-    pub fn remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
-        let index = self.conformers().position(|a| a.id() == id);
-
-        if let Some(i) = index {
-            self.remove_conformer(i);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Remove the conformer specified. It returns `true` if it found a matching conformer and removed it.
-    /// It removes the first matching conformer from the list. Searching is done in parallel
-    ///
-    /// ## Arguments
-    /// * `id` - the identifying construct of the Conformer to remove
-    ///
-    /// ## Panics
-    /// It panics when the index is outside bounds.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
-        let index = self.conformers.par_iter().position_first(|a| a.id() == id);
-
-        if let Some(i) = index {
-            self.remove_conformer(i);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Apply a transformation to the position of all conformers making up this Residue, the new position is immediately set.
-    pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
-        for conformer in self.conformers_mut() {
-            conformer.apply_transformation(transformation);
-        }
-    }
-
-    /// Apply a transformation to the position of all conformers making up this Residue, the new position is immediately set.
-    /// Done in parallel
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
-        self.par_conformers_mut()
-            .for_each(|conformer| conformer.apply_transformation(transformation))
-    }
-
     /// Join this Residue with another Residue, this moves all conformers from the other Residue
     /// to this Residue. All other (meta) data of this Residue will stay the same.
     pub fn join(&mut self, other: Residue) {
@@ -436,16 +242,97 @@ impl<'a> Residue {
     pub fn extend<T: IntoIterator<Item = Conformer>>(&mut self, iter: T) {
         self.conformers.extend(iter);
     }
+}
 
-    /// Sort the conformers of this Residue
-    pub fn sort(&mut self) {
+impl<'a> ContainsAtoms<'a> for Residue {
+    type ParallelAtom =
+        rayon::iter::FlatMap<rayon::slice::Iter<'a, Conformer>, dyn Fn(&Atom) -> ()>;
+    type ParallelAtomMut = usize;
+
+    fn atom_count(&self) -> usize {
+        self.conformers().fold(0, |sum, res| res.atom_count() + sum)
+    }
+
+    fn atom(&self, index: usize) -> Option<&Atom> {
+        self.atoms().nth(index)
+    }
+
+    fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
+        self.atoms_mut().nth(index)
+    }
+
+    fn atoms(&self) -> Box<dyn DoubleEndedIterator<Item = &Atom> + '_> {
+        Box::new(self.conformers().flat_map(|a| a.atoms()))
+    }
+
+    #[doc_cfg(feature = "rayon")]
+    fn par_atoms(&'a self) -> Self::ParallelAtom {
+        self.par_conformers().flat_map(|a| a.par_atoms())
+    }
+
+    fn atoms_mut(&mut self) -> Box<dyn DoubleEndedIterator<Item = &mut Atom> + '_> {
+        Box::new(self.conformers_mut().flat_map(|a| a.atoms_mut()))
+    }
+
+    #[doc_cfg(feature = "rayon")]
+    fn par_atoms_mut(&'a mut self) -> Self::ParallelAtomMut {
+        self.par_conformers_mut().flat_map(|a| a.par_atoms_mut())
+    }
+
+    fn remove_atoms_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Atom) -> bool,
+    {
+        self.conformers_mut()
+            .for_each(|conformer| conformer.remove_atoms_by(&predicate))
+    }
+
+    fn sort(&mut self) {
         self.conformers.sort();
     }
 
-    /// Sort the conformers of this Residue in parallel
     #[doc_cfg(feature = "rayon")]
-    pub fn par_sort(&mut self) {
+    fn par_sort(&mut self) {
         self.conformers.par_sort();
+    }
+}
+
+impl<'a> ContainsConformers<'a> for Residue {
+    type ParallelConformer = rayon::slice::Iter<'a, Conformer>;
+    type ParallelConformerMut = rayon::slice::IterMut<'a, Conformer>;
+
+    fn conformer_count(&self) -> usize {
+        self.conformers.len()
+    }
+    fn conformer(&self, index: usize) -> Option<&Conformer> {
+        self.conformers.get(index)
+    }
+    fn conformer_mut(&mut self, index: usize) -> Option<&mut Conformer> {
+        self.conformers.get_mut(index)
+    }
+    fn conformers(&self) -> Box<dyn DoubleEndedIterator<Item = &Conformer> + '_> {
+        Box::new(self.conformers.iter())
+    }
+
+    #[doc_cfg(feature = "rayon")]
+    fn par_conformers(&'a self) -> Self::ParallelConformer {
+        self.conformers.par_iter()
+    }
+
+    fn conformers_mut(&mut self) -> Box<dyn DoubleEndedIterator<Item = &mut Conformer> + '_> {
+        Box::new(self.conformers.iter_mut())
+    }
+
+    #[doc_cfg(feature = "rayon")]
+    fn par_conformers_mut(&'a mut self) -> Self::ParallelConformerMut {
+        self.conformers.par_iter_mut()
+    }
+
+    fn remove_conformers_by<F>(&mut self, predicate: F)
+    where
+        F: Fn(&Conformer) -> bool,
+    {
+        self.conformers.retain(|conformer| !predicate(conformer));
     }
 }
 
@@ -513,8 +400,7 @@ mod tests {
         a.add_conformer(Conformer::new("B", None, None).unwrap());
         assert_eq!(a.conformer(0), Some(&conformer1));
         assert_eq!(a.conformer_mut(0), Some(&mut conformer1));
-        a.remove_conformer(0);
-        assert!(a.remove_conformer_by_id(("B", None)));
+        a.remove_conformer_by_id(("B", None));
         assert_eq!(a.conformer_count(), 0);
     }
 

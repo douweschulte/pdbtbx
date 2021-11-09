@@ -173,7 +173,10 @@ impl Conformer {
     }
 }
 
-impl ContainsAtoms for Conformer {
+impl<'a> ContainsAtoms<'a> for Conformer {
+    type ParallelAtom = rayon::slice::Iter<'a, Atom>;
+    type ParallelAtomMut = rayon::slice::IterMut<'a, Atom>;
+
     fn atom_count(&self) -> usize {
         self.atoms.len()
     }
@@ -192,7 +195,7 @@ impl ContainsAtoms for Conformer {
 
     /// Get the list of atoms making up this Conformer in parallel.
     #[doc_cfg(feature = "rayon")]
-    fn par_atoms(&self) -> rayon::slice::Iter<'_, Atom> {
+    fn par_atoms(&'a self) -> Self::ParallelAtom {
         self.atoms.par_iter()
     }
 
@@ -204,7 +207,7 @@ impl ContainsAtoms for Conformer {
 
     /// Get the list of atoms as mutable references making up this Conformer in parallel.
     #[doc_cfg(feature = "rayon")]
-    fn par_atoms_mut(&mut self) -> rayon::slice::IterMut<'_, Atom> {
+    fn par_atoms_mut(&'a mut self) -> Self::ParallelAtomMut {
         self.atoms.par_iter_mut()
     }
 
@@ -214,17 +217,6 @@ impl ContainsAtoms for Conformer {
         F: Fn(&Atom) -> bool,
     {
         self.atoms.retain(|atom| !predicate(atom));
-    }
-
-    /// Remove the Atom specified.
-    ///
-    /// ## Arguments
-    /// * `index` - the index of the atom to remove
-    ///
-    /// ## Panics
-    /// It panics when the index is outside bounds.
-    fn remove_atom(&mut self, index: usize) {
-        self.atoms.remove(index);
     }
 
     /// Sort the Atoms of this Conformer
@@ -319,9 +311,8 @@ mod tests {
         a.add_atom(atom2);
         assert_eq!(a.atom(0), Some(&atom1));
         assert_eq!(a.atom_mut(0), Some(&mut atom1));
-        a.remove_atom(0);
-        assert!(a.remove_atom_by_name("CB".to_string()));
-        assert!(a.remove_atom_by_serial_number(13));
+        a.remove_atom_by_name("CB".to_string());
+        a.remove_atom_by_serial_number(13);
         assert_eq!(a.atom_count(), 0);
     }
 
