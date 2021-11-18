@@ -214,7 +214,7 @@ macro_rules! impl_hierarchy {
     ($($type:ty,)*) => {
         $(#[cfg(feature = "rstar")]
         impl<'a> RTreeObject for $type {
-            type Envelope = AABB<[f64; 3]>;
+            type Envelope = AABB<(f64, f64, f64)>;
 
             fn envelope(&self) -> Self::Envelope {
                 self.atom().envelope()
@@ -223,7 +223,7 @@ macro_rules! impl_hierarchy {
 
         #[cfg(feature = "rstar")]
         impl<'a> PointDistance for $type {
-            fn distance_2(&self, other: &[f64; 3]) -> f64 {
+            fn distance_2(&self, other: &(f64, f64, f64)) -> f64 {
                 self.atom().distance_2(other)
             }
         }

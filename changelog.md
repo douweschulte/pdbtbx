@@ -5,7 +5,8 @@ All versions are properly annotated on [github](https://github.com/nonnominandus
 * Added support for residue serial numbers over 9999 and atom serial numbers over 99999 for PDB files.
 * Changed argument type of `save_pdb` from `PDB` to `&PDB`
 * Allow lack of chain name in PDB files
-* Added `AtomWithHierarchyMut` to extend the use of `AtomWithHierarchy`
+* Added mutable structs to extend the use of `AtomWithHierarchy` alongside a refactor which created a struct for every hierarchy level. See the docs for more information.
+* Removed `Atom.pos_array()` and moved the `rstar::rtree` to use `(f64, f64, f64)` instead of `[f64; 3]`. This was made possible by the adoption of tuples as points in rstar. 
 
 ### v0.7.0 'Ecosystem integration'
 * Added parallel iterators based on [Rayon](https://crates.io/crates/rayon) (Thanks to DocKDE)

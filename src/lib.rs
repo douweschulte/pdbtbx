@@ -133,7 +133,7 @@ let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::Strictnes
 // You can loop over all atoms within 3.5 Aͦ of a specific atom
 // Note: The `locate_within_distance` method takes a squared distance
 let tree = pdb.create_atom_rtree();
-for atom in tree.locate_within_distance(pdb.atom(42).unwrap().pos_array(), 3.5 * 3.5) {
+for atom in tree.locate_within_distance(pdb.atom(42).unwrap().pos(), 3.5 * 3.5) {
     println!("{}", atom);
 }
 
@@ -141,7 +141,7 @@ for atom in tree.locate_within_distance(pdb.atom(42).unwrap().pos_array(), 3.5 *
 // (the chain, residue and conformer that contain this atom)
 let tree = pdb.create_hierarchy_rtree();
 let mut total = 0;
-for hierarchy in tree.locate_within_distance(pdb.atom(42).unwrap().pos_array(), 3.5 * 3.5) {
+for hierarchy in tree.locate_within_distance(pdb.atom(42).unwrap().pos(), 3.5 * 3.5) {
     if hierarchy.is_backbone() {
         total += 1;
     }

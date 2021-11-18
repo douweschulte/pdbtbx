@@ -998,17 +998,17 @@ mod tests {
         let tree = pdb.create_atom_rtree();
         assert_eq!(tree.size(), 3);
         assert_eq!(
-            tree.nearest_neighbor(&[1.0, 1.0, 1.0])
+            tree.nearest_neighbor(&(1.0, 1.0, 1.0))
                 .unwrap()
                 .serial_number(),
             1
         );
         assert_eq!(
-            tree.locate_within_distance([1.0, 1.0, 1.0], 1.0)
+            tree.locate_within_distance((1.0, 1.0, 1.0), 1.0)
                 .fold(0, |acc, _| acc + 1),
             2
         );
-        let mut neighbors = tree.nearest_neighbor_iter(&pdb.atom(0).unwrap().pos_array());
+        let mut neighbors = tree.nearest_neighbor_iter(&pdb.atom(0).unwrap().pos());
         assert_eq!(neighbors.next().unwrap().serial_number(), 0);
         assert_eq!(neighbors.next().unwrap().serial_number(), 2);
         assert_eq!(neighbors.next().unwrap().serial_number(), 1);
@@ -1042,18 +1042,18 @@ mod tests {
         let tree = pdb.create_hierarchy_rtree();
         assert_eq!(tree.size(), 3);
         assert_eq!(
-            tree.nearest_neighbor(&[1.0, 1.0, 1.0])
+            tree.nearest_neighbor(&(1.0, 1.0, 1.0))
                 .unwrap()
                 .atom()
                 .serial_number(),
             1
         );
         assert_eq!(
-            tree.locate_within_distance([1.0, 1.0, 1.0], 1.0)
+            tree.locate_within_distance((1.0, 1.0, 1.0), 1.0)
                 .fold(0, |acc, _| acc + 1),
             2
         );
-        let mut neighbors = tree.nearest_neighbor_iter(&pdb.atom(0).unwrap().pos_array());
+        let mut neighbors = tree.nearest_neighbor_iter(&pdb.atom(0).unwrap().pos());
         let a = neighbors.next().unwrap();
         let b = neighbors.next().unwrap();
         let c = neighbors.next().unwrap();

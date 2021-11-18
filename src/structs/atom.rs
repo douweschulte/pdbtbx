@@ -2,7 +2,6 @@
 use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::*;
-use doc_cfg::doc_cfg;
 use std::cmp::Ordering;
 use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
@@ -100,15 +99,6 @@ impl Atom {
     /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
     pub fn pos(&self) -> (f64, f64, f64) {
         (self.x, self.y, self.z)
-    }
-
-    /// Get the position of the atom as an array of `f64`, in the following order: [x, y, z].
-    /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
-    /// This function is only included for use with `Point` from rstar, so it will be removed
-    /// as soon as rstar implements `Point` for Tuples (<https://github.com/georust/rstar/pull/57>).
-    #[doc_cfg(feature = "rstar")]
-    pub fn pos_array(&self) -> [f64; 3] {
-        [self.x, self.y, self.z]
     }
 
     /// Set the position of the atom as a tuple of `f64`, in the following order: (x, y, z).
@@ -566,18 +556,18 @@ use rstar::{PointDistance, RTreeObject, AABB};
 
 #[cfg(feature = "rstar")]
 impl RTreeObject for &Atom {
-    type Envelope = AABB<[f64; 3]>;
+    type Envelope = AABB<(f64, f64, f64)>;
 
     fn envelope(&self) -> Self::Envelope {
-        AABB::from_point([self.x(), self.y(), self.z()])
+        AABB::from_point(self.pos())
     }
 }
 
 #[cfg(feature = "rstar")]
 impl PointDistance for &Atom {
-    fn distance_2(&self, other: &[f64; 3]) -> f64 {
+    fn distance_2(&self, other: &(f64, f64, f64)) -> f64 {
         // No square root as that is required by the package
-        (other[0] - self.x).powi(2) + (other[1] - self.y).powi(2) + (other[2] - self.z).powi(2)
+        (other.0 - self.x).powi(2) + (other.1 - self.y).powi(2) + (other.2 - self.z).powi(2)
     }
 }
 
