@@ -65,7 +65,7 @@
 //! ## Iterating over the PDB Hierarchy
 //!
 //! ```rust
-//! use pdbtbx;
+//! use pdbtbx::*;
 //! let (mut pdb, _errors) = pdbtbx::open(
 //!     "example-pdbs/1ubq.pdb",
 //!     pdbtbx::StrictnessLevel::Medium
@@ -90,7 +90,6 @@
 //!     }
 //! }
 //! // Or with access to the information with a single line
-//! use pdbtbx::hierarchy::*;
 //! for hierarchy in pdb.atoms_with_hierarchy() {
 //!     println!("Atom {} in Conformer {} in Residue {} in Chain {} in Model {}",
 //!         hierarchy.atom().serial_number(),
@@ -127,8 +126,7 @@
     feature = "rstar",
     doc = r##"
 ```rust
-use pdbtbx;
-use pdbtbx::hierarchy::*;
+use pdbtbx::*;
 let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb", pdbtbx::StrictnessLevel::Medium).unwrap();
 // You can loop over all atoms within 3.5 Aͦ of a specific atom
 // Note: The `locate_within_distance` method takes a squared distance

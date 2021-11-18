@@ -6,7 +6,6 @@
 //! Using the traits you can write more generic functions.
 //! ```rust
 //! use pdbtbx::*;
-//! use pdbtbx::hierarchy::*;
 //! let (mut pdb, _errors) = pdbtbx::open(
 //!     "example-pdbs/1ubq.pdb",
 //!     pdbtbx::StrictnessLevel::Medium

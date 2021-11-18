@@ -1,4 +1,3 @@
-use pdbtbx::hierarchy::*;
 use pdbtbx::*;
 use std::path::Path;
 use std::time::Instant;
