@@ -1,4 +1,4 @@
-![Compile & Test](https://github.com/nonnominandus/rust-pdb/workflows/Compile%20&%20Test/badge.svg) 
+![Compile & Test](https://github.com/douweschulte/rust-pdb/workflows/Compile%20&%20Test/badge.svg) 
 [![Crates.io](https://img.shields.io/crates/v/pdbtbx.svg)](https://crates.io/crates/pdbtbx)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4671031.svg)](https://doi.org/10.5281/zenodo.4671031)
 
@@ -34,7 +34,7 @@ The features where support is planned are planned to be included in the 1.0 rele
 * Added mutable structs to extend the use of `AtomWithHierarchy` alongside a refactor which created a struct for every hierarchy level. See the docs for more information.
 * Removed `Atom.pos_array()` and moved the `rstar::rtree` to use `(f64, f64, f64)` instead of `[f64; 3]`. This was made possible by the adoption of tuples as points in rstar. 
 
-Also see [changelog](https://github.com/nonnominandus/pdbtbx/blob/master/changelog.md).
+Also see [changelog](https://github.com/douweschulte/pdbtbx/blob/master/changelog.md).
 
 ## Repository organisation
-Open [this link](https://octo-repo-visualization.vercel.app/?repo=nonnominandus%2Fpdbtbx) to see an overview of the organisation of this repo. For more information see this [blogpost](https://next.github.com/projects/repo-visualization).
+Open [this link](https://octo-repo-visualization.vercel.app/?repo=douweschulte%2Fpdbtbx) to see an overview of the organisation of this repo. For more information see this [blogpost](https://next.github.com/projects/repo-visualization).

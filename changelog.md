@@ -1,5 +1,5 @@
 # Changelog
-All versions are properly annotated on [github](https://github.com/nonnominandus/pdbtbx/releases) so there the source code for each version can be retrieved.
+All versions are properly annotated on [github](https://github.com/douweschulte/pdbtbx/releases) so there the source code for each version can be retrieved.
 
 ### v0.8.0 'All the hierarchy'
 * Added support for residue serial numbers over 9999 and atom serial numbers over 99999 for PDB files. (Thanks to DocKDE)
