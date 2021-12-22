@@ -4,3 +4,6 @@
 default.profraw
 *.txt
 __pycache__
+Cargo.lock
+clippy.toml
+deny.toml
