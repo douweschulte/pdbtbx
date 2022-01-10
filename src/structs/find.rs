@@ -25,7 +25,7 @@ pub enum FindChain {
     /// No information available.
     NoInfo,
     /// The ID is known.
-    ID(String),
+    Id(String),
 }
 
 impl FindChain {
@@ -33,7 +33,7 @@ impl FindChain {
     pub fn matches(&self, chain: &Chain) -> bool {
         match self {
             FindChain::NoInfo => true,
-            FindChain::ID(n) => chain.id() == *n,
+            FindChain::Id(n) => chain.id() == *n,
         }
     }
 }
@@ -75,7 +75,7 @@ pub enum FindConformer {
     /// The alternative location is known, but not the name.
     AlternativeLocation(Option<String>),
     /// The name and alternative location are known.
-    ID(String, Option<String>),
+    Id(String, Option<String>),
 }
 
 impl FindConformer {
@@ -87,7 +87,7 @@ impl FindConformer {
             FindConformer::AlternativeLocation(a) => {
                 conformer.alternative_location() == a.as_ref().map(|s| s.as_str())
             }
-            FindConformer::ID(n, a) => conformer.id() == (n, a.as_ref().map(|s| s.as_str())),
+            FindConformer::Id(n, a) => conformer.id() == (n, a.as_ref().map(|s| s.as_str())),
         }
     }
 }
