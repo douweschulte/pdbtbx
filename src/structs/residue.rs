@@ -229,6 +229,37 @@ impl<'a> Residue {
         }
     }
 
+    /// Find all hierarchies matching the given information
+    pub fn find(
+        &'a self,
+        conformer: FindConformer,
+        atom: FindAtom,
+    ) -> impl DoubleEndedIterator<Item = AtomConformer<'a>> + '_ {
+        self.conformers()
+            .filter(move |c| conformer.matches(c))
+            .map(move |c| {
+                c.find(atom.clone())
+                    .map(move |a| hierarchy::AtomConformer::new(a, c))
+            })
+            .flatten()
+    }
+
+    /// Find all hierarchies matching the given information
+    pub fn find_mut(
+        &'a mut self,
+        conformer: FindConformer,
+        atom: FindAtom,
+    ) -> impl DoubleEndedIterator<Item = AtomConformerMut<'a>> + '_ {
+        self.conformers_mut()
+            .filter(move |c| conformer.matches(c))
+            .map(move |c| {
+                let c_ptr: *mut Conformer = c;
+                c.find_mut(atom.clone())
+                    .map(move |a| hierarchy::AtomConformerMut::new(a, c_ptr))
+            })
+            .flatten()
+    }
+
     /// Get the list of conformers making up this Residue.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {

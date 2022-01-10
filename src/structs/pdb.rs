@@ -464,6 +464,65 @@ impl<'a> PDB {
             .flatten()
     }
 
+    /// Find all hierarchies matching the given information. The program performs a top down search spanning
+    /// all matching elements from every level. Eg it will loop through all chains if `FindChain::NoInfo` is
+    /// given. To have the best performance lock down each level so it will have to search through the minimal
+    /// number of elements. This function can be used to find a single atom or multiple matching the search.
+    /// ```
+    /// let pdb = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap().0;
+    /// let selection = pdb.find(
+    ///    FindModel::NoInfo,
+    ///    FindChain::ID("A".to_owned()),
+    ///    FindResidue::NoInfo,
+    ///    FindConformer::Name("GLY".to_owned()),
+    ///    FindAtom::SerialNumber(750),
+    /// );```
+    pub fn find(
+        &'a self,
+        model: FindModel,
+        chain: FindChain,
+        residue: FindResidue,
+        conformer: FindConformer,
+        atom: FindAtom,
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModel<'a>> + '_ {
+        self.models()
+            .filter(move |m| model.matches(m))
+            .map(move |m| {
+                m.find(
+                    chain.clone(),
+                    residue.clone(),
+                    conformer.clone(),
+                    atom.clone(),
+                )
+                .map(move |h| h.extend(m))
+            })
+            .flatten()
+    }
+
+    /// Find all hierarchies matching the given information. This is the mutable variant of the `find` method.
+    pub fn find_mut(
+        &'a mut self,
+        model: FindModel,
+        chain: FindChain,
+        residue: FindResidue,
+        conformer: FindConformer,
+        atom: FindAtom,
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModelMut<'a>> + '_ {
+        self.models_mut()
+            .filter(move |m| model.matches(m))
+            .map(move |m| {
+                let m_ptr: *mut Model = m;
+                m.find_mut(
+                    chain.clone(),
+                    residue.clone(),
+                    conformer.clone(),
+                    atom.clone(),
+                )
+                .map(move |h| h.extend(m_ptr))
+            })
+            .flatten()
+    }
+
     /// Get the list of Models making up this PDB.
     pub fn models(&self) -> impl DoubleEndedIterator<Item = &Model> + '_ {
         self.models.iter()

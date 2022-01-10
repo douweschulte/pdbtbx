@@ -177,6 +177,16 @@ impl Conformer {
         }
     }
 
+    /// Find all atoms matching the given information
+    pub fn find(&self, atom: FindAtom) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
+        self.atoms().filter(move |a| atom.matches(a))
+    }
+
+    /// Find all atoms matching the given information
+    pub fn find_mut(&mut self, atom: FindAtom) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
+        self.atoms_mut().filter(move |a| atom.matches(a))
+    }
+
     /// Get the list of atoms making up this Conformer.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {

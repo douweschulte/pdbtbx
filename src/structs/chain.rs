@@ -249,6 +249,39 @@ impl<'a> Chain {
         }
     }
 
+    /// Find all hierarchies matching the given information
+    pub fn find(
+        &'a self,
+        residue: FindResidue,
+        conformer: FindConformer,
+        atom: FindAtom,
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidue<'a>> + '_ {
+        self.residues()
+            .filter(move |r| residue.matches(r))
+            .map(move |r| {
+                r.find(conformer.clone(), atom.clone())
+                    .map(move |h| h.extend(r))
+            })
+            .flatten()
+    }
+
+    /// Find all hierarchies matching the given information
+    pub fn find_mut(
+        &'a mut self,
+        residue: FindResidue,
+        conformer: FindConformer,
+        atom: FindAtom,
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueMut<'a>> + '_ {
+        self.residues_mut()
+            .filter(move |r| residue.matches(r))
+            .map(move |r| {
+                let r_ptr: *mut Residue = r;
+                r.find_mut(conformer.clone(), atom.clone())
+                    .map(move |h| h.extend(r_ptr))
+            })
+            .flatten()
+    }
+
     /// Get the list of Residues making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
