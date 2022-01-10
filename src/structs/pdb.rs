@@ -469,14 +469,16 @@ impl<'a> PDB {
     /// given. To have the best performance lock down each level so it will have to search through the minimal
     /// number of elements. This function can be used to find a single atom or multiple matching the search.
     /// ```
-    /// let pdb = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap().0;
+    /// use pdbtbx::*;
+    /// let (pdb, errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
     /// let selection = pdb.find(
     ///    FindModel::NoInfo,
-    ///    FindChain::ID("A".to_owned()),
+    ///    FindChain::Id("A".to_owned()),
     ///    FindResidue::NoInfo,
     ///    FindConformer::Name("GLY".to_owned()),
     ///    FindAtom::SerialNumber(750),
-    /// );```
+    /// );
+    /// ```
     pub fn find(
         &'a self,
         model: FindModel,
