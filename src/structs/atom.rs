@@ -303,6 +303,7 @@ impl Atom {
             reference_tables::get_atomic_number(self.element())
         } else if !self.name().is_empty() {
             let name = reference_tables::get_atomic_number(self.name());
+            #[allow(clippy::unwrap_used)] // The name is not empty so it cannot fail
             if name.is_none() && "CHONS".contains(self.name().chars().next().unwrap()) {
                 reference_tables::get_atomic_number(
                     &self.name().chars().next().unwrap().to_string(),
