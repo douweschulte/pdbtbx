@@ -1,4 +1,4 @@
-![Compile & Test](https://github.com/douweschulte/rust-pdb/workflows/Compile%20&%20Test/badge.svg) 
+![Compile & Test](https://github.com/douweschulte/pdbtbx/actions/workflows/rust.yml/badge.svg)
 [![Crates.io](https://img.shields.io/crates/v/pdbtbx.svg)](https://crates.io/crates/pdbtbx)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4671031.svg)](https://doi.org/10.5281/zenodo.4671031)
 
