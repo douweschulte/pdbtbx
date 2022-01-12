@@ -926,6 +926,36 @@ impl<'a> PDB {
         rstar::RTree::bulk_load(self.atoms_with_hierarchy().collect())
     }
 
+    /// Finds the square bounding box around the PDB. The first tuple
+    /// is the bottom left point, lowest value for all dimensions
+    /// for all points. The second tuple is the top right point, the
+    /// highest value for all dimensions for all points.
+    pub fn bounding_box(&self) -> ((f64, f64, f64), (f64, f64, f64)) {
+        let mut min = [f64::MAX, f64::MAX, f64::MAX];
+        let mut max = [f64::MIN, f64::MIN, f64::MIN];
+        for atom in self.atoms() {
+            if atom.x() < min[0] {
+                min[0] = atom.x()
+            }
+            if atom.y() < min[1] {
+                min[1] = atom.y()
+            }
+            if atom.z() < min[2] {
+                min[2] = atom.z()
+            }
+            if atom.x() > max[0] {
+                max[0] = atom.x()
+            }
+            if atom.y() > max[1] {
+                max[1] = atom.y()
+            }
+            if atom.z() > max[2] {
+                max[2] = atom.z()
+            }
+        }
+        ((min[0], min[1], min[2]), (max[0], max[1], max[2]))
+    }
+
     /// Get the bonds in this PDB file. Runtime O(bonds_count * 2 * atom_count) because it
     /// has to iterate over all atoms to prevent borrow problems.
     pub fn bonds(&self) -> impl DoubleEndedIterator<Item = (&Atom, &Atom, Bond)> + '_ {
@@ -1156,5 +1186,31 @@ mod tests {
         let json = serde_json::to_string(&pdb).unwrap();
         let parsed = serde_json::from_str(&json).unwrap();
         assert_eq!(pdb, parsed);
+    }
+
+    #[test]
+    fn bounding_box() {
+        let mut model = Model::new(0);
+        model.add_atom(
+            Atom::new(false, 0, "", -1.0, 0.0, 2.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        model.add_atom(
+            Atom::new(false, 1, "", 1.0, 2.0, -1.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        model.add_atom(
+            Atom::new(false, 2, "", 2.0, -1.0, 0.5, 0.0, 0.0, "", 0).unwrap(),
+            "B",
+            (0, None),
+            ("MET", None),
+        );
+        let mut pdb = PDB::new();
+        pdb.add_model(model);
+        assert_eq!(((-1., -1., -1.), (2., 2., 2.)), pdb.bounding_box());
     }
 }
