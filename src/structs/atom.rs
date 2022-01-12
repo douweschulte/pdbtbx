@@ -293,13 +293,25 @@ impl Atom {
         }
     }
 
-    /// Get the atomic number of this Atom. If defined it uses `self.element()`, otherwise it uses `self.name()`.
+    /// Get the atomic number of this Atom. If defined it uses `self.element()`, otherwise it uses `self.name()`, if that still does not
+    /// find anything it uses the first character of `self.name()` if that is one of "CHONS". This could potentially lead to misclassifications
+    /// but in most cases should result in the correct element. Otherwise, the element is a required part in the PDB file so not specifying it
+    /// is fair to lead to unspecified behaviour.
     /// It fails when `self.element()` is not an element in the periodic table, or if `self.element()` is undefined and `self.name()` is not an element in the periodic table.
     pub fn atomic_number(&self) -> Option<usize> {
         if !self.element.is_empty() {
             reference_tables::get_atomic_number(self.element())
+        } else if !self.name().is_empty() {
+            let name = reference_tables::get_atomic_number(self.name());
+            if name.is_none() && "CHONS".contains(self.name().chars().next().unwrap()) {
+                reference_tables::get_atomic_number(
+                    &self.name().chars().next().unwrap().to_string(),
+                )
+            } else {
+                name
+            }
         } else {
-            reference_tables::get_atomic_number(self.name())
+            None
         }
     }
 
@@ -312,11 +324,9 @@ impl Atom {
     /// It also fails when the atomic radius is not defined for the given atomic number, so if the atomic
     /// number is higher than 96.
     pub fn atomic_radius(&self) -> Option<f64> {
-        if let Some(s) = self.atomic_number() {
-            reference_tables::get_atomic_radius(s)
-        } else {
-            None
-        }
+        self.atomic_number()
+            .map(reference_tables::get_atomic_radius)
+            .flatten()
     }
 
     /// Get the van der Waals radius for this Atom in Å. The radius is defined up to element 'Es' or atomic number 99.
@@ -326,11 +336,9 @@ impl Atom {
     /// It also fails when the atomic radius is not defined for the given atomic number, so if the atomic
     /// number is higher than 99.
     pub fn vanderwaals_radius(&self) -> Option<f64> {
-        if let Some(s) = self.atomic_number() {
-            reference_tables::get_vanderwaals_radius(s)
-        } else {
-            None
-        }
+        self.atomic_number()
+            .map(reference_tables::get_vanderwaals_radius)
+            .flatten()
     }
 
     /// Gets the covalent bond radii for this Atom.
@@ -673,10 +681,6 @@ mod tests {
         a.set_serial_number(42);
         assert_eq!(a.serial_number(), 42);
         assert_eq!(a.atomic_number(), Some(6));
-        assert!(a.set_name("HOH").is_ok());
-        assert!(a.atomic_radius().is_none());
-        assert!(a.vanderwaals_radius().is_none());
-        assert!(a.covalent_bond_radii().is_none());
         a.set_charge(-1);
         assert_eq!(a.charge(), -1);
         assert_eq!(a.pdb_charge(), "1-".to_string());
