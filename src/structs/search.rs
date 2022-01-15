@@ -1,7 +1,11 @@
 use super::*;
 use std::ops;
 
-/// Any parameter to use in a [Search] for atom(s) in a PDB
+/// Any parameter to use in a [Search] for atom(s) in a PDB.
+/// For position related searches look into the [rstar] crate which can be combined
+/// with this crate using the `rstar` feature, see [PDB::create_atom_rtree] and
+/// [PDB::create_hierarchy_rtree]. The rstar crate makes spatial lookup and queries
+/// way faster and feasible to use in high performance environments.
 #[allow(unused)]
 #[derive(Debug, Clone)]
 pub enum Term {
@@ -91,14 +95,15 @@ impl Term {
     }
 }
 
-/// A collection of multiple search terms in the search for (an) atom(s) in a PDB.
+/// A collection of multiple search [Term]s in the search for (an) atom(s) in a PDB.
 /// You can use bitwise and (`&`), or (`|`), and xor (`^`) to chain a search.
 /// In the same way you can use not `!` to negate a search term.
 ///
 /// ```
 /// use pdbtbx::*;
 /// let (pdb, _errors) = open("example-pdbs/1ubq.pdb", StrictnessLevel::Medium).unwrap();
-/// let selection = pdb.find(Term::ConformerName("ALA".to_owned()) & !Term::Element("N".to_owned()));
+/// let selection = pdb.find(
+///     Term::ConformerName("ALA".to_owned()) & !Term::Element("N".to_owned()));
 /// for hierarchy in selection {
 ///     println!("Atom '{}' is selected", hierarchy.atom().serial_number());
 /// }
