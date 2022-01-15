@@ -1,10 +1,13 @@
 use pdbtbx::*;
 
 fn main() {
-    let pdb = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose)
-        .unwrap()
-        .0;
-    //ATOM    750  C   GLY A  47      20.027  28.708  23.336  1.00 16.31           C
+    let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
+
+    // Two ways of selecting the following atom in the PDB file, the first search can be somewhat faster
+    // because it can discard other chains which the second search has to test.
+    // ```
+    // ATOM    750  C   GLY A  47      20.027  28.708  23.336  1.00 16.31           C
+    // ```
     let sel1 = pdb
         .find(
             Term::ChainId("A".to_owned())
@@ -15,8 +18,14 @@ fn main() {
     let sel2 = pdb
         .find(Term::ResidueSerialNumber(47) & Term::AtomName("C".to_owned()))
         .collect::<Vec<_>>();
+    // But both give the same result
     assert_eq!(sel1, sel2);
-    //ATOM   1111 HD13 LEU A  69      32.170  32.079  18.138  1.00 10.72           H
+
+    // Two ways of selecting the following atom in the PDB file, the first search can be somewhat faster
+    // because it can discard other chains which the second search has to test.
+    // ```
+    // ATOM   1111 HD13 LEU A  69      32.170  32.079  18.138  1.00 10.72           H
+    // ```
     let sel1 = pdb
         .find(
             Term::ChainId("A".to_owned())
@@ -27,14 +36,17 @@ fn main() {
     let sel2 = pdb
         .find(Term::ResidueSerialNumber(69) & Term::AtomName("HD13".to_owned()))
         .collect::<Vec<_>>();
+    // But both give the same result
     assert_eq!(sel1, sel2);
 
+    // Searching too broadly returns an iterator over all hierarchies like [PDB::atoms_with_hierarchy].
     assert_eq!(
         pdb.find(Search::Single(Term::ModelSerialNumber(0))).count(),
         pdb.atom_count()
     );
 
-    let search = Term::AtomElement("C".to_owned()) & Term::ConformerName("VAL".to_owned());
+    // You can use and `&` to combine a search, this short circuits if possible.
+    let search = Term::Element("C".to_owned()) & Term::ConformerName("VAL".to_owned());
     assert!(pdb
         .find(search.clone())
         .all(|s| (s.atom().element() == "C") & (s.conformer().name() == "VAL")));
@@ -52,7 +64,8 @@ fn main() {
         .count();
     assert_eq!(pdb.find(search).count(), val_and_c);
 
-    let search = Term::AtomElement("C".to_owned()) | Term::ConformerName("VAL".to_owned());
+    // You can use and `|` to combine a search, this short circuits if possible.
+    let search = Term::Element("C".to_owned()) | Term::ConformerName("VAL".to_owned());
     assert!(pdb
         .find(search.clone())
         .all(|s| (s.atom().element() == "C") | (s.conformer().name() == "VAL")));
@@ -76,7 +89,8 @@ fn main() {
         .count();
     assert_eq!(pdb.find(search).count(), val + c_not_val);
 
-    let search = Term::AtomElement("C".to_owned()) ^ Term::ConformerName("VAL".to_owned());
+    // You can use and `^` to combine a search, this cannot short circuit, but that has never been a rule (Bryan Cantrill).
+    let search = Term::Element("C".to_owned()) ^ Term::ConformerName("VAL".to_owned());
     assert!(pdb
         .find(search.clone())
         .all(|s| (s.atom().element() == "C") ^ (s.conformer().name() == "VAL")));

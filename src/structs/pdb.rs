@@ -464,11 +464,7 @@ impl<'a> PDB {
             .flatten()
     }
 
-    /// Find all hierarchies matching the given information. The program performs a top down search spanning
-    /// all matching elements from every level. Eg it will loop through all chains if `FindChain::NoInfo` is
-    /// given. To have the best performance lock down each level so it will have to search through the minimal
-    /// number of elements. This function can be used to find a single atom or multiple matching the search.
-    /// TODO: update text
+    /// Find all hierarchies matching the given search. For more details see [Search].
     /// ```
     /// use pdbtbx::*;
     /// let (pdb, errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();

@@ -1,54 +1,42 @@
 use super::*;
 use std::ops;
 
-// WIP: the API is very neat, but this way of searching does not work, it loses it progress while traversing the tree
-// eg ConformerName "VAL" | AtomElement "C" cannot right now track if the first part is true or not when validating the second part
-// it should fill in all values with constants for all hierarchies until it can prove/disprove the hierarchy
-
-/// The trait representing a (set of) parameter(s) to be used in the search for atom(s) in a PDB
-pub trait SearchPDB: Clone {
-    /// Determine if this model matches the search
-    fn optional_matches_model(&mut self, model: &Model) -> Option<bool>;
-    /// Determine if this chain matches the search
-    fn optional_matches_chain(&mut self, chain: &Chain) -> Option<bool>;
-    /// Determine if this residue matches the search
-    fn optional_matches_residue(&mut self, residue: &Residue) -> Option<bool>;
-    /// Determine if this conformer matches the search
-    fn optional_matches_conformer(&mut self, conformer: &Conformer) -> Option<bool>;
-    /// Determine if this atom matches the search
-    fn optional_matches_atom(&mut self, atom: &Atom) -> bool;
-    /// Try if the search is done, return Some(result) if this is the case, otherwise returns None
-    fn finished(&self) -> Option<bool>;
-}
-
-/// Any parameter to use in a search for atom(s) in a PDB
+/// Any parameter to use in a [Search] for atom(s) in a PDB
 #[allow(unused)]
 #[derive(Debug, Clone)]
 pub enum Term {
-    /// The model serial number, only used in (NMR) PDB files with multiple states of a protein
+    /// The model serial number, only used in (NMR) PDB files with multiple states of a protein, see [Model::serial_number].
     ModelSerialNumber(usize),
-    /// The chain id eg 'A'
+    /// The chain id eg `A`, see [Chain::id].
     ChainId(String),
-    /// The serial number is known, but the insertion code is not.
+    /// The residue serial number, see [Residue::serial_number].
     ResidueSerialNumber(isize),
-    /// The insertion code is known, but the serial number is not.
+    /// The residue insertion code eg `Some("A")`, see [Residue::insertion_code].
     ResidueInsertionCode(Option<String>),
-    /// The serial number and insertion code are known.
+    /// The residue serial number and insertion code combined, see [Residue::id].
     ResidueId(isize, Option<String>),
-    /// The name is known, but not the alternative location.
+    /// The conformer name is eg `ALA`, see [Conformer::name].
     ConformerName(String),
-    /// The alternative location is known, but not the name.
+    /// The conformer alternative location eg `Some("A")`, see [Conformer::alternative_location].
     ConformerAlternativeLocation(Option<String>),
-    /// The name and alternative location are known.
+    /// The conformer name and alternative location combined, see [Conformer::id].
     ConformerId(String, Option<String>),
-    /// The serial number is known.
+    /// The atom serial number, see [Atom::serial_number].
     AtomSerialNumber(usize),
-    /// Select a range of atoms starting at the first number and ending with the last number inclusive.
+    /// A range of atoms based on serial number starting at the first number and ending with the last number inclusive.
     AtomSerialNumberRange(usize, usize),
-    /// The name is known.
+    /// The atom name eg `CA`, see [Atom::name].
     AtomName(String),
-    /// The element is known.
-    AtomElement(String),
+    /// The element eq `C`, see [Atom::element].
+    Element(String),
+    /// Atom b factor, see [Atom::b_factor].
+    BFactor(f64),
+    /// Atom B factor range starting at the first number and ending with the last number inclusive.
+    BFactorRange(f64, f64),
+    /// Atom occupancy, see [Atom::occupancy].
+    Occupancy(f64),
+    /// Atom occupancy range starting at the first number and ending with the last number inclusive.
+    OccupancyRange(f64, f64),
 }
 
 impl Term {
@@ -89,13 +77,32 @@ impl Term {
                 Some(atom.serial_number() >= *low && atom.serial_number() <= *high)
             }
             Term::AtomName(n) => Some(atom.name() == n),
-            Term::AtomElement(e) => Some(atom.element() == e),
+            Term::Element(e) => Some(atom.element() == e),
+            Term::BFactor(a) => Some(atom.b_factor() == *a),
+            Term::BFactorRange(low, high) => {
+                Some(atom.b_factor() >= *low && atom.b_factor() <= *high)
+            }
+            Term::Occupancy(a) => Some(atom.occupancy() == *a),
+            Term::OccupancyRange(low, high) => {
+                Some(atom.occupancy() >= *low && atom.occupancy() <= *high)
+            }
             _ => None,
         }
     }
 }
 
-/// A collection of multiple search terms in the search for (an) atom(s) in a PDB
+/// A collection of multiple search terms in the search for (an) atom(s) in a PDB.
+/// You can use bitwise and (`&`), or (`|`), and xor (`^`) to chain a search.
+/// In the same way you can use not `!` to negate a search term.
+///
+/// ```
+/// use pdbtbx::*;
+/// let (pdb, _errors) = open("example-pdbs/1ubq.pdb", StrictnessLevel::Medium).unwrap();
+/// let selection = pdb.find(Term::ConformerName("ALA".to_owned()) & !Term::Element("N".to_owned()));
+/// for hierarchy in selection {
+///     println!("Atom '{}' is selected", hierarchy.atom().serial_number());
+/// }
+/// ```
 #[derive(Debug, Clone)]
 pub enum Search {
     /// A search with operators, &, |, or ^
@@ -124,8 +131,10 @@ impl Search {
         match self {
             Search::Ops(ops, a, b) => match (ops, a.simplify(), b.simplify()) {
                 (Ops::And, Search::Known(false), _) => Search::Known(false),
+                (Ops::And, _, Search::Known(false)) => Search::Known(false),
                 (Ops::And, Search::Known(a), Search::Known(b)) => Search::Known(a & b),
                 (Ops::Or, Search::Known(true), _) => Search::Known(true),
+                (Ops::Or, _, Search::Known(true)) => Search::Known(true),
                 (Ops::Or, Search::Known(a), Search::Known(b)) => Search::Known(a | b),
                 (Ops::Xor, Search::Known(a), Search::Known(b)) => Search::Known(a ^ b),
                 (ops, a, b) => Search::Ops(ops, Box::new(a), Box::new(b)),
@@ -373,7 +382,7 @@ mod tests {
             Some(true)
         );
         assert_eq!(
-            Search::Single(Term::AtomElement("C".to_string()))
+            Search::Single(Term::Element("C".to_string()))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
@@ -390,19 +399,19 @@ mod tests {
     fn search_combinations() {
         let a = Atom::new(true, 123, "CA", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 1).unwrap();
         assert_eq!(
-            (Term::AtomName("CA".to_string()) & Term::AtomElement("C".to_string()))
+            (Term::AtomName("CA".to_string()) & Term::Element("C".to_string()))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
         );
         assert_eq!(
-            (Term::AtomName("CA".to_string()) | Term::AtomElement("E".to_string()))
+            (Term::AtomName("CA".to_string()) | Term::Element("E".to_string()))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
         );
         assert_eq!(
-            (!Term::AtomName("CA".to_string()) ^ Term::AtomElement("C".to_string()))
+            (!Term::AtomName("CA".to_string()) ^ Term::Element("C".to_string()))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
@@ -410,6 +419,68 @@ mod tests {
         assert_eq!(
             (!Term::AtomName("BA".to_string()))
                 .add_atom_info(&a)
+                .complete(),
+            Some(true)
+        );
+    }
+
+    #[test]
+    fn simplify() {
+        assert_eq!(
+            (Term::AtomSerialNumber(123) & Search::Known(false))
+                .simplify()
+                .complete(),
+            Some(false)
+        );
+        assert_eq!(
+            (Search::Known(false) & Term::AtomSerialNumber(123))
+                .simplify()
+                .complete(),
+            Some(false)
+        );
+        assert_eq!(
+            (Search::Known(true) | Term::AtomSerialNumber(123))
+                .simplify()
+                .complete(),
+            Some(true)
+        );
+        assert_eq!(
+            (Term::AtomSerialNumber(123) | Search::Known(true))
+                .simplify()
+                .complete(),
+            Some(true)
+        );
+    }
+
+    #[test]
+    fn complex_simplify() {
+        assert_eq!(
+            (Term::AtomSerialNumber(123)
+                & (Term::AtomSerialNumber(123)
+                    & (Term::AtomSerialNumber(123)
+                        & (Term::AtomSerialNumber(123)
+                            & (Term::AtomSerialNumber(123)
+                                & (Term::AtomSerialNumber(123)
+                                    & (Term::AtomSerialNumber(123) & Search::Known(false))))))))
+            .simplify()
+            .complete(),
+            Some(false)
+        );
+        assert_eq!(
+            (Term::AtomSerialNumber(123)
+                | (Term::AtomSerialNumber(123)
+                    | (Term::AtomSerialNumber(123)
+                        | (Term::AtomSerialNumber(123)
+                            | (Term::AtomSerialNumber(123)
+                                | (Term::AtomSerialNumber(123)
+                                    | (Search::Known(false) ^ Search::Known(true))))))))
+            .simplify()
+            .complete(),
+            Some(true)
+        );
+        assert_eq!(
+            (!Search::Known(false) | Term::AtomSerialNumber(123))
+                .simplify()
                 .complete(),
             Some(true)
         );
