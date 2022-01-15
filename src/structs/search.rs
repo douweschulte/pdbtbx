@@ -384,12 +384,6 @@ mod tests {
                 .complete(),
             Some(true)
         );
-        assert_eq!(
-            Search::Single(Term::ModelSerialNumber(30))
-                .add_atom_info(&a)
-                .complete(),
-            Some(true)
-        );
     }
 
     #[test]

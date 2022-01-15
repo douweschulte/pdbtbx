@@ -468,15 +468,14 @@ impl<'a> PDB {
     /// all matching elements from every level. Eg it will loop through all chains if `FindChain::NoInfo` is
     /// given. To have the best performance lock down each level so it will have to search through the minimal
     /// number of elements. This function can be used to find a single atom or multiple matching the search.
+    /// TODO: update text
     /// ```
     /// use pdbtbx::*;
     /// let (pdb, errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
     /// let selection = pdb.find(
-    ///    FindModel::NoInfo,
-    ///    FindChain::Id("A".to_owned()),
-    ///    FindResidue::NoInfo,
-    ///    FindConformer::Name("GLY".to_owned()),
-    ///    FindAtom::SerialNumber(750),
+    ///     Term::ChainId("A".to_owned())
+    ///     & Term::ConformerName("GLY".to_owned())
+    ///     & Term::AtomSerialNumber(750)
     /// );
     /// ```
     /// Find all hierarchies matching the given information
