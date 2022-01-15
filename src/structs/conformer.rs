@@ -178,13 +178,15 @@ impl Conformer {
     }
 
     /// Find all atoms matching the given information
-    pub fn find(&self, atom: FindAtom) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.atoms().filter(move |a| atom.matches(a))
+    pub fn find(&self, search: Search) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
+        self.atoms()
+            .filter(move |a| search.add_atom_info(a).complete().unwrap_or(true))
     }
 
     /// Find all atoms matching the given information
-    pub fn find_mut(&mut self, atom: FindAtom) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.atoms_mut().filter(move |a| atom.matches(a))
+    pub fn find_mut(&mut self, search: Search) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
+        self.atoms_mut()
+            .filter(move |a| search.add_atom_info(a).complete().unwrap_or(true))
     }
 
     /// Get the list of atoms making up this Conformer.

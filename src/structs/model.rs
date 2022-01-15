@@ -259,34 +259,29 @@ impl<'a> Model {
     /// Find all hierarchies matching the given information
     pub fn find(
         &'a self,
-        chain: FindChain,
-        residue: FindResidue,
-        conformer: FindConformer,
-        atom: FindAtom,
+        search: Search,
     ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChain<'a>> + '_ {
         self.chains()
-            .filter(move |c| chain.matches(c))
-            .map(move |c| {
-                c.find(residue.clone(), conformer.clone(), atom.clone())
-                    .map(move |h| h.extend(c))
-            })
+            .map(move |c| (c, search.clone().add_chain_info(c)))
+            .filter(|(_c, search)| !matches!(search, Search::Known(false)))
+            .map(move |(c, search)| c.find(search).map(move |h| h.extend(c)))
             .flatten()
     }
 
     /// Find all hierarchies matching the given information
     pub fn find_mut(
         &'a mut self,
-        chain: FindChain,
-        residue: FindResidue,
-        conformer: FindConformer,
-        atom: FindAtom,
+        search: Search,
     ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainMut<'a>> + '_ {
         self.chains_mut()
-            .filter(move |c| chain.matches(c))
             .map(move |c| {
+                let search = search.clone().add_chain_info(c);
+                (c, search)
+            })
+            .filter(|(_c, search)| !matches!(search, Search::Known(false)))
+            .map(move |(c, search)| {
                 let c_ptr: *mut Chain = c;
-                c.find_mut(residue.clone(), conformer.clone(), atom.clone())
-                    .map(move |h| h.extend(c_ptr))
+                c.find_mut(search).map(move |h| h.extend(c_ptr))
             })
             .flatten()
     }

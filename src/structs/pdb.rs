@@ -479,48 +479,32 @@ impl<'a> PDB {
     ///    FindAtom::SerialNumber(750),
     /// );
     /// ```
+    /// Find all hierarchies matching the given information
     pub fn find(
         &'a self,
-        model: FindModel,
-        chain: FindChain,
-        residue: FindResidue,
-        conformer: FindConformer,
-        atom: FindAtom,
+        search: Search,
     ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModel<'a>> + '_ {
         self.models()
-            .filter(move |m| model.matches(m))
-            .map(move |m| {
-                m.find(
-                    chain.clone(),
-                    residue.clone(),
-                    conformer.clone(),
-                    atom.clone(),
-                )
-                .map(move |h| h.extend(m))
-            })
+            .map(move |m| (m, search.clone().add_model_info(m)))
+            .filter(|(_m, search)| !matches!(search, Search::Known(false)))
+            .map(move |(m, search)| m.find(search).map(move |h| h.extend(m)))
             .flatten()
     }
 
-    /// Find all hierarchies matching the given information. This is the mutable variant of the `find` method.
+    /// Find all hierarchies matching the given information
     pub fn find_mut(
         &'a mut self,
-        model: FindModel,
-        chain: FindChain,
-        residue: FindResidue,
-        conformer: FindConformer,
-        atom: FindAtom,
+        search: Search,
     ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModelMut<'a>> + '_ {
         self.models_mut()
-            .filter(move |m| model.matches(m))
             .map(move |m| {
+                let search = search.clone().add_model_info(m);
+                (m, search)
+            })
+            .filter(|(_m, search)| !matches!(search, Search::Known(false)))
+            .map(move |(m, search)| {
                 let m_ptr: *mut Model = m;
-                m.find_mut(
-                    chain.clone(),
-                    residue.clone(),
-                    conformer.clone(),
-                    atom.clone(),
-                )
-                .map(move |h| h.extend(m_ptr))
+                m.find_mut(search).map(move |h| h.extend(m_ptr))
             })
             .flatten()
     }

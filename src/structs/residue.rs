@@ -232,13 +232,13 @@ impl<'a> Residue {
     /// Find all hierarchies matching the given information
     pub fn find(
         &'a self,
-        conformer: FindConformer,
-        atom: FindAtom,
+        search: Search,
     ) -> impl DoubleEndedIterator<Item = AtomConformer<'a>> + '_ {
         self.conformers()
-            .filter(move |c| conformer.matches(c))
-            .map(move |c| {
-                c.find(atom.clone())
+            .map(move |c| (c, search.clone().add_conformer_info(c)))
+            .filter(|(_c, search)| !matches!(search, Search::Known(false)))
+            .map(move |(c, search)| {
+                c.find(search)
                     .map(move |a| hierarchy::AtomConformer::new(a, c))
             })
             .flatten()
@@ -247,14 +247,17 @@ impl<'a> Residue {
     /// Find all hierarchies matching the given information
     pub fn find_mut(
         &'a mut self,
-        conformer: FindConformer,
-        atom: FindAtom,
+        search: Search,
     ) -> impl DoubleEndedIterator<Item = AtomConformerMut<'a>> + '_ {
         self.conformers_mut()
-            .filter(move |c| conformer.matches(c))
             .map(move |c| {
+                let search = search.clone().add_conformer_info(c);
+                (c, search)
+            })
+            .filter(|(_c, search)| !matches!(search, Search::Known(false)))
+            .map(move |(c, search)| {
                 let c_ptr: *mut Conformer = c;
-                c.find_mut(atom.clone())
+                c.find_mut(search)
                     .map(move |a| hierarchy::AtomConformerMut::new(a, c_ptr))
             })
             .flatten()

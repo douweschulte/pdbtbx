@@ -67,3 +67,4 @@ jobs:
         run: |
           mkdir -p dump
           cargo run --example waterbox
+          cargo run --example selection
