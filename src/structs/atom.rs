@@ -344,14 +344,14 @@ impl Atom {
 
     /// Gets the covalent bond radii for this Atom.
     /// The result is the radius for a single, double and triple bond, where the last two are optional. If the radius for a double bond is unknown the radius for a triple bond is also unknown.
-    /// All values are given in picometers.
+    /// All values are given in Å.
     /// Sources:
     ///  * P. Pyykkö; M. Atsumi (2009). "Molecular Single-Bond Covalent Radii for Elements 1-118". Chemistry: A European Journal. 15 (1): 186–197. <https://doi.org/10.1002/chem.200800987>
     ///  * P. Pyykkö; M. Atsumi (2009). "Molecular Double-Bond Covalent Radii for Elements Li–E112". Chemistry: A European Journal. 15 (46): 12770–12779. <https://doi.org/10.1002/chem.200901472>
     ///  * P. Pyykkö; S. Riedel; M. Patzschke (2005). "Triple-Bond Covalent Radii". Chemistry: A European Journal. 11 (12): 3511–3520. <https://doi.org/10.1002/chem.200401299>
     ///
     /// It fails if the atomic number of this Atom is not defined (see `self.atomic_number()`).
-    pub fn covalent_bond_radii(&self) -> Option<(usize, Option<usize>, Option<usize>)> {
+    pub fn covalent_bond_radii(&self) -> Option<(f64, Option<f64>, Option<f64>)> {
         self.atomic_number()
             .map(reference_tables::get_covalent_bond_radii)
     }
@@ -463,6 +463,9 @@ impl Atom {
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
     /// less then the sum of the radius from this atom and the other atom. The used radius is (`atom.atomic_radius()`).
     ///
+    /// Note: the atomic radius used in the unbound radius, this is in most cases bigger than the bound radius
+    /// and as such can result in false positives.
+    ///
     /// It fails if for any one of the two atoms the radius (`atom.atomic_radius()`) is not defined.
     pub fn overlaps(&self, other: &Atom) -> Option<bool> {
         self.atomic_radius()
@@ -480,6 +483,9 @@ impl Atom {
     /// atoms or any of their copies given a crystal of the size of the given unit cell stretching out to
     /// all sides.
     ///
+    /// Note: the atomic radius used in the unbound radius, this is in most cases bigger than the bound radius
+    /// and as such can result in false positives.
+    ///
     /// It fails if for any one of the two atoms the radius (`atom.atomic_radius()`) is not defined.
     pub fn overlaps_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
         self.atomic_radius()
@@ -487,6 +493,43 @@ impl Atom {
                 other
                     .atomic_radius()
                     .map(|other_rad| self.distance_wrapping(other, cell) <= self_rad + other_rad)
+            })
+            .flatten()
+    }
+
+    /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
+    /// less then the sum of the radius from this atom and the other atom. The used radius is `atom.covalent_bond_radii().0`.
+    ///
+    /// Note: the atomic radius used in the bound radius to a single atom, this is similar to the bound radius for double or
+    /// triple bonds but could result in incorrect results.
+    ///
+    /// It fails if for any one of the two atoms the radius (`atom.covalent_bond_radii()`) is not defined.
+    pub fn overlaps_bound(&self, other: &Atom) -> Option<bool> {
+        self.covalent_bond_radii()
+            .map(|self_rad| {
+                other
+                    .covalent_bond_radii()
+                    .map(|other_rad| self.distance(other) <= self_rad.0 + other_rad.0)
+            })
+            .flatten()
+    }
+
+    /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
+    /// less then the sum of the radius from this atom and the other atom. The used radius is `atom.covalent_bond_radii().0`.
+    /// Wrapping around the unit cell if needed. Meaning it will give the shortest distance between the two
+    /// atoms or any of their copies given a crystal of the size of the given unit cell stretching out to
+    /// all sides.
+    ///
+    /// Note: the atomic radius used in the bound radius to a single atom, this is similar to the bound radius for double or
+    /// triple bonds but could result in incorrect results.
+    ///
+    /// It fails if for any one of the two atoms the radius (`atom.covalent_bond_radii()`) is not defined.
+    pub fn overlaps_bound_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
+        self.covalent_bond_radii()
+            .map(|self_rad| {
+                other.covalent_bond_radii().map(|other_rad| {
+                    self.distance_wrapping(other, cell) <= self_rad.0 + other_rad.0
+                })
             })
             .flatten()
     }
@@ -692,11 +735,14 @@ mod tests {
         let a = Atom::new(false, 0, "H", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         assert_eq!(a.atomic_radius(), Some(1.54));
         assert_eq!(a.vanderwaals_radius(), Some(1.20));
-        assert_eq!(a.covalent_bond_radii(), Some((32, None, None)));
+        assert_eq!(a.covalent_bond_radii(), Some((0.32, None, None)));
         let a = Atom::new(false, 0, "Cl", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         assert_eq!(a.atomic_radius(), Some(2.06));
         assert_eq!(a.vanderwaals_radius(), Some(1.82));
-        assert_eq!(a.covalent_bond_radii(), Some((99, Some(95), Some(93))));
+        assert_eq!(
+            a.covalent_bond_radii(),
+            Some((0.99, Some(0.95), Some(0.93)))
+        );
     }
 
     #[test]
