@@ -34,12 +34,14 @@ The features where support is planned are planned to be included in the 1.0 rele
 * The crate has many ways of iterating over the PDB structure to allow for convenient access and control over the performance.
 
 ## Latest update
-### v0.8.0 'All the hierarchy'
-* Added support for residue serial numbers over 9999 and atom serial numbers over 99999 for PDB files. (Thanks to DocKDE)
-* Changed argument type of `save_pdb` from `PDB` to `&PDB`. (Thanks to DocKDE)
-* Allow lack of chain name in PDB files. (Thanks to DocKDE)
-* Added mutable structs to extend the use of `AtomWithHierarchy` alongside a refactor which created a struct for every hierarchy level. See the docs for more information.
-* Removed `Atom.pos_array()` and moved the `rstar::rtree` to use `(f64, f64, f64)` instead of `[f64; 3]`. This was made possible by the adoption of tuples as points in rstar. 
+### v0.9.0 'Structured search'
+* Added `find` method on all levels in the PDB, this should allow for human friendly atom(s) searching.
+    `pdb.find(Term::ConformerName("ALA".to_string()) + Term::AtomName("CA".to_string()))`
+* Added `bounding_box` to the PDB struct.
+* Added `atom.overlaps_bound()` which uses covalent bond radii instead of unbound radii. (Thanks to raised issue)
+* Extended `atomic_number` to take the first character of the name if this is one of "CHONS" and the element is unset and the name is not an element name.
+* Updated covalent bond radii to work in Å as well (was picometers).
+* Respecified the dependencies versions to allow cargo to more often reuse dependencies in complex projects.
 
 Also see [changelog](https://github.com/douweschulte/pdbtbx/blob/master/changelog.md).
 
