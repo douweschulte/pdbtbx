@@ -8,6 +8,7 @@ use std::ops;
 /// way faster and feasible to use in high performance environments.
 #[allow(unused)]
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub enum Term {
     /// The model serial number, only used in (NMR) PDB files with multiple states of a protein, see [Model::serial_number].
     ModelSerialNumber(usize),
@@ -19,7 +20,7 @@ pub enum Term {
     ResidueInsertionCode(Option<String>),
     /// The residue serial number and insertion code combined, see [Residue::id].
     ResidueId(isize, Option<String>),
-    /// The conformer name is eg `ALA`, see [Conformer::name].
+    /// The conformer name eg `ALA`, see [Conformer::name].
     ConformerName(String),
     /// The conformer alternative location eg `Some("A")`, see [Conformer::alternative_location].
     ConformerAlternativeLocation(Option<String>),
