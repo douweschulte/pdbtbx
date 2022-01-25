@@ -3,9 +3,12 @@ All versions are properly annotated on [github](https://github.com/douweschulte/
 
 ### upcoming
 * Implemented `find` method on all levels in the PDB, this should allow for human friendly atom(s) searching.
+    `pdb.find(Term::ConformerName("ALA".to_string()) + Term::AtomName("CA".to_string()))`
 * Added `bounding_box` to the PDB struct.
 * Extended `atomic_number` to take the first character of the name if this is one of "CHONS" and the element is unset and the name is not an element name.
 * Respecified the dependencies versions to allow cargo to more often reuse dependencies in complex projects.
+* Updated covalent bond radii to work in Å as well (was picometers).
+* Added `atom.overlaps_bound()` which uses covalent bond radii instead of unbound radii. (Thanks to raised issue)
 
 ### v0.8.0 'All the hierarchy'
 * Added support for residue serial numbers over 9999 and atom serial numbers over 99999 for PDB files. (Thanks to DocKDE)

@@ -4,7 +4,7 @@ use pdbtbx::*;
 #[test]
 fn wrapping_residue_number() {
     let (pdb, errors) = pdbtbx::open("example-pdbs/large.pdb", StrictnessLevel::Strict).unwrap();
-    let pdb_errors = save(pdb.clone(), &("dump/large.pdb"), StrictnessLevel::Loose);
+    let pdb_errors = save(pdb.clone(), "dump/large.pdb", StrictnessLevel::Loose);
     let (pdb2, _) = pdbtbx::open("dump/large.pdb", StrictnessLevel::Strict).unwrap();
     print!("{:?}", errors);
     print!("{:?}", pdb_errors);

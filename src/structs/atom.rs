@@ -44,17 +44,19 @@ impl Atom {
     pub fn new(
         hetero: bool,
         serial_number: usize,
-        atom_name: &str,
+        atom_name: impl Into<String>,
         x: f64,
         y: f64,
         z: f64,
         occupancy: f64,
         b_factor: f64,
-        element: &str,
+        element: impl Into<String>,
         charge: isize,
     ) -> Option<Atom> {
-        if valid_identifier(atom_name)
-            && valid_identifier(element)
+        let atom_name = atom_name.into();
+        let element = element.into();
+        if valid_identifier(&atom_name)
+            && valid_identifier(&element)
             && x.is_finite()
             && y.is_finite()
             && z.is_finite()
@@ -203,8 +205,9 @@ impl Atom {
     /// For PDB files the name can at most contain 4 characters.
     /// If the name is invalid an error message is provided.
     /// The name can only contain valid characters, the ASCII graphic characters (`char.is_ascii_graphic() || char == ' '`).
-    pub fn set_name(&mut self, new_name: &str) -> Result<(), String> {
-        if !valid_identifier(new_name) {
+    pub fn set_name(&mut self, new_name: impl Into<String>) -> Result<(), String> {
+        let new_name = new_name.into();
+        if !valid_identifier(&new_name) {
             Err(format!(
                 "New name has invalid characters for atom {} name {}",
                 self.serial_number, new_name
@@ -281,8 +284,9 @@ impl Atom {
     /// For PDB files the element can at most contain 2 characters.
     /// If the element is invalid an error message is provided.
     /// The element can only contain valid characters, the ASCII graphic characters (`char.is_ascii_graphic() || char == ' '`).
-    pub fn set_element(&mut self, new_element: &str) -> Result<(), String> {
-        if !valid_identifier(new_element) {
+    pub fn set_element(&mut self, new_element: impl Into<String>) -> Result<(), String> {
+        let new_element = new_element.into();
+        if !valid_identifier(&new_element) {
             Err(format!(
                 "New element has invalid characters for atom {} name {}",
                 self.serial_number, new_element
