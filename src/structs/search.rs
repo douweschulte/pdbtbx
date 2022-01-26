@@ -12,10 +12,16 @@ use std::ops;
 pub enum Term {
     /// The model serial number, only used in (NMR) PDB files with multiple states of a protein, see [Model::serial_number].
     ModelSerialNumber(usize),
+    /// Search for a range of model serial numbers, starting at the first number and ending with the last number inclusive.
+    ModelSerialNumberRange(usize, usize),
     /// The chain id eg `A`, see [Chain::id].
     ChainId(String),
+    /// Search for a range of chain ids, using the Ord implementation of std::str [https://doc.rust-lang.org/std/primitive.str.html#impl-Ord], starting at the first number and ending with the last number inclusive.
+    ChainIdRange(String, String),
     /// The residue serial number, see [Residue::serial_number].
     ResidueSerialNumber(isize),
+    /// Search for a range of residue serial numbers, starting at the first number and ending with the last number inclusive.
+    ResidueSerialNumberRange(isize, isize),
     /// The residue insertion code eg `Some("A")`, see [Residue::insertion_code].
     ResidueInsertionCode(Option<String>),
     /// The residue serial number and insertion code combined, see [Residue::id].
@@ -42,24 +48,39 @@ pub enum Term {
     Occupancy(f64),
     /// Atom occupancy range starting at the first number and ending with the last number inclusive.
     OccupancyRange(f64, f64),
+    /// Search for backbone atoms, this means that [Conformer::is_amino_acid] is `true` and [Atom::is_backbone] is `true`.
+    Backbone,
+    /// Search for side chain atoms, this means that [Conformer::is_amino_acid] is `true` and [Atom::is_backbone] is `false`.
+    SideChain,
+    /// Search for hetero atoms, this means that [Atom::hetero] is `true`.
+    Hetero,
 }
 
 impl Term {
     fn optional_matches_model(&self, model: &Model) -> Option<bool> {
         match self {
             Term::ModelSerialNumber(s) => Some(*s == model.serial_number()),
+            Term::ModelSerialNumberRange(low, high) => {
+                Some(*low <= model.serial_number() && *high >= model.serial_number())
+            }
             _ => None,
         }
     }
     fn optional_matches_chain(&self, chain: &Chain) -> Option<bool> {
         match self {
             Term::ChainId(s) => Some(s == chain.id()),
+            Term::ChainIdRange(low, high) => {
+                Some(low.as_str() <= chain.id() && high.as_str() >= chain.id())
+            }
             _ => None,
         }
     }
     fn optional_matches_residue(&self, residue: &Residue) -> Option<bool> {
         match self {
             Term::ResidueSerialNumber(s) => Some(*s == residue.serial_number()),
+            Term::ResidueSerialNumberRange(low, high) => {
+                Some(*low <= residue.serial_number() && *high >= residue.serial_number())
+            }
             Term::ResidueInsertionCode(ic) => Some(ic.as_deref() == residue.insertion_code()),
             Term::ResidueId(s, ic) => Some((*s, ic.as_deref()) == residue.id()),
             _ => None,
@@ -72,6 +93,8 @@ impl Term {
                 Some(al.as_deref() == conformer.alternative_location())
             }
             Term::ConformerId(n, al) => Some((n.as_str(), al.as_deref()) == conformer.id()),
+            Term::Backbone if !conformer.is_amino_acid() => Some(false),
+            Term::SideChain if !conformer.is_amino_acid() => Some(false),
             _ => None,
         }
     }
@@ -91,6 +114,9 @@ impl Term {
             Term::OccupancyRange(low, high) => {
                 Some(atom.occupancy() >= *low && atom.occupancy() <= *high)
             }
+            Term::Backbone => Some(atom.is_backbone()),
+            Term::SideChain => Some(!atom.is_backbone()),
+            Term::Hetero => Some(atom.hetero()),
             _ => None,
         }
     }
