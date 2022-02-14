@@ -38,8 +38,8 @@ pub enum Term {
     AtomSerialNumberRange(usize, usize),
     /// The atom name eg `CA`, see [Atom::name].
     AtomName(String),
-    /// The element eq `C`, see [Atom::element].
-    Element(String),
+    /// The element eq `C`, see [Atom::element], see [Element].
+    Element(Element),
     /// Atom b factor, see [Atom::b_factor].
     BFactor(f64),
     /// Atom B factor range starting at the first number and ending with the last number inclusive.
@@ -105,7 +105,7 @@ impl Term {
                 Some(atom.serial_number() >= *low && atom.serial_number() <= *high)
             }
             Term::AtomName(n) => Some(atom.name() == n),
-            Term::Element(e) => Some(atom.element() == e),
+            Term::Element(e) => atom.element().map(|a| a == e),
             Term::BFactor(a) => Some(atom.b_factor() == *a),
             Term::BFactorRange(low, high) => {
                 Some(atom.b_factor() >= *low && atom.b_factor() <= *high)
@@ -414,7 +414,7 @@ mod tests {
             Some(true)
         );
         assert_eq!(
-            Search::Single(Term::Element("C".to_string()))
+            Search::Single(Term::Element(Element::C))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
@@ -431,19 +431,19 @@ mod tests {
     fn search_combinations() {
         let a = Atom::new(true, 123, "CA", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 1).unwrap();
         assert_eq!(
-            (Term::AtomName("CA".to_string()) & Term::Element("C".to_string()))
+            (Term::AtomName("CA".to_string()) & Term::Element(Element::C))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
         );
         assert_eq!(
-            (Term::AtomName("CA".to_string()) | Term::Element("E".to_string()))
+            (Term::AtomName("CA".to_string()) | Term::Element(Element::Ca))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
         );
         assert_eq!(
-            (!Term::AtomName("CA".to_string()) ^ Term::Element("C".to_string()))
+            (!Term::AtomName("CA".to_string()) ^ Term::Element(Element::C))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
