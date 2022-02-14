@@ -476,6 +476,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
             for residue in chain.residues() {
                 for conformer in residue.conformers() {
                     for atom in conformer.atoms() {
+                        let element = atom.element().map_or_else(|| "", Element::symbol);
                         print_line(vec![
                             (6, if atom.hetero() { "HETATM" } else { "ATOM  " }),
                             (0, &atom_line(atom, conformer, residue, chain)),
@@ -486,7 +487,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                             (6, &format!("{:6.2}", atom.occupancy())),
                             (6, &format!("{:6.2}", atom.b_factor())),
                             (0, "          "),
-                            (2, atom.element()),
+                            (2, element),
                             (0, &atom.pdb_charge()),
                         ]);
                         #[allow(clippy::cast_possible_truncation)]
@@ -503,7 +504,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                                 (7, &format!("{:8.3}", (f[0][2] * 10000.0) as isize)),
                                 (7, &format!("{:8.3}", (f[1][2] * 10000.0) as isize)),
                                 (0, "      "),
-                                (2, atom.element()),
+                                (2, element),
                                 (0, &atom.pdb_charge()),
                             ]);
                         }

@@ -164,7 +164,9 @@ _atom_site.aniso_U[3][3]"
                         let mut data = vec![
                             (if atom.hetero() { "HETATM" } else { "ATOM" }).to_string(), // ATOM or HETATM
                             atom.serial_number().to_string(), // Serial number
-                            atom.element().to_string(),       // Element
+                            atom.element()
+                                .map_or_else(|| "", Element::symbol)
+                                .to_string(), // Element
                             atom.name().to_string(),          // Name
                             conformer.alternative_location().unwrap_or(".").to_string(), // Alternative location
                             conformer.name().to_string(), // Residue name

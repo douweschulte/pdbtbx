@@ -78,7 +78,14 @@ fn find_clashes() {
 
     let mut clashing_atoms = Vec::new();
     for atom_hier in pdb.atoms_with_hierarchy() {
-        let radius = atom_hier.atom().atomic_radius().unwrap().powi(2);
+        let radius = atom_hier
+            .atom()
+            .element()
+            .unwrap()
+            .atomic_radius()
+            .van_der_waals
+            .unwrap()
+            .powi(2);
         let contacts = tree.locate_within_distance(atom_hier.atom().pos(), radius);
 
         for other_atom_hier in contacts {

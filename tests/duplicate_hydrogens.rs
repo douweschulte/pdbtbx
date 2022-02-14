@@ -7,6 +7,8 @@
 // In the parser the name of the conformer was not trimmed correctly creating a ton of different
 // conformers creating this issue.
 
+use pdbtbx::*;
+
 #[test]
 fn main() {
     assert_eq!(22, number_of_h("example-pdbs/nucleic.pdb"));
@@ -27,7 +29,11 @@ fn number_of_h(file: &str) -> usize {
         }
     }
 
-    structure
-        .atoms()
-        .fold(0, |acc, a| acc + if a.element() == "H" { 1 } else { 0 })
+    structure.atoms().fold(0, |acc, a| {
+        acc + if a.element() == Some(&Element::H) {
+            1
+        } else {
+            0
+        }
+    })
 }

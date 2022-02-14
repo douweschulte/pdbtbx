@@ -23,13 +23,13 @@
 //! to a file.
 //!
 //! ```rust
-//! use pdbtbx;
+//! use pdbtbx::*;
 //! let (mut pdb, _errors) = pdbtbx::open(
 //!         "example-pdbs/1ubq.pdb",
 //!         pdbtbx::StrictnessLevel::Medium
 //!     ).unwrap();
 //!
-//! pdb.remove_atoms_by(|atom| atom.element() == "H"); // Remove all H atoms
+//! pdb.remove_atoms_by(|atom| atom.element() == Some(&Element::H)); // Remove all H atoms
 //!
 //! let mut avg_b_factor = 0.0;
 //! for atom in pdb.atoms() { // Iterate over all atoms in the structure

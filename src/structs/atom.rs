@@ -3,6 +3,7 @@ use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::TransformationMatrix;
 use std::cmp::Ordering;
+use std::convert::TryInto;
 use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 
@@ -31,7 +32,7 @@ pub struct Atom {
     /// The B-factor (or temperature factor) of the Atom
     b_factor: f64,
     /// The element of the Atom, can only use the standard allowed characters
-    element: String,
+    element: Option<Element>,
     /// The charge of the Atom
     charge: isize,
     /// The anisotropic temperature factors, if applicable
@@ -54,8 +55,8 @@ impl Atom {
         element: impl Into<String>,
         charge: isize,
     ) -> Option<Atom> {
-        let atom_name = atom_name.into();
-        let element = element.into();
+        let atom_name = atom_name.into().trim().to_string();
+        let element = element.into().trim().to_string();
         if valid_identifier(&atom_name)
             && valid_identifier(&element)
             && x.is_finite()
@@ -64,6 +65,20 @@ impl Atom {
             && occupancy.is_finite()
             && b_factor.is_finite()
         {
+            let element = if let Ok(elem) = element.as_str().try_into() {
+                Some(elem)
+            } else if let Ok(elem) = atom_name.as_str().try_into() {
+                Some(elem)
+            } else if !atom_name.is_empty() {
+                let char = atom_name.trim().chars().next();
+                if !atom_name.trim().is_empty() && "CHNOS".contains(char?) {
+                    Element::from_symbol(char?.to_string().as_str())
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
             Some(Atom {
                 counter: ATOM_COUNTER.fetch_add(1, AtomicOrdering::SeqCst),
                 hetero,
@@ -74,7 +89,7 @@ impl Atom {
                 z,
                 occupancy,
                 b_factor,
-                element: element.trim().to_ascii_uppercase(),
+                element,
                 charge,
                 atf: None,
             })
@@ -287,91 +302,16 @@ impl Atom {
 
     /// Get the element of this atom.
     /// In PDB files the element can at most contain 2 characters.
-    pub fn element(&self) -> &str {
-        &self.element
+    pub fn element(&self) -> Option<&Element> {
+        self.element.as_ref()
     }
 
-    /// Set the element of this atom. The element will be trimmed (whitespace removed) and changed to ASCII uppercase as requested by PDB/PDBx standard.
-    /// For PDB files the element can at most contain 2 characters, enforced when saving the file.
-    /// # Errors
-    /// The element can only contain valid characters, the ASCII graphic characters (`char.is_ascii_graphic() || char == ' '`).
-    /// If the element is invalid an error message is provided.
-    pub fn set_element(&mut self, new_element: impl Into<String>) -> Result<(), String> {
-        let new_element = new_element.into();
-        if valid_identifier(&new_element) {
-            self.element = new_element.trim().to_ascii_uppercase();
-            Ok(())
-        } else {
-            Err(format!(
-                "New element has invalid characters for atom {} name {}",
-                self.serial_number, new_element
-            ))
-        }
+    /// Set the element of this atom.
+    pub fn set_element(&mut self, element: Element) {
+        self.element = Some(element);
     }
 
-    /// Get the atomic number of this Atom. If defined, it uses `self.element()`, otherwise it uses `self.name()`, if that still does not
-    /// find anything it uses the first character of `self.name()` if that is one of "CHONS". This could potentially lead to misclassifications
-    /// but in most cases should result in the correct element. It should be noted that the element is a required part in the PDB file so not specifying it
-    /// is likely to lead to unspecified behaviour.
-    /// # Errors
-    /// It returns `None` if `self.element()` is not an element in the periodic table, or if `self.element()` is undefined and `self.name()` is not an element in the periodic table.
-    pub fn atomic_number(&self) -> Option<usize> {
-        if !self.element.is_empty() {
-            reference_tables::get_atomic_number(self.element())
-        } else if !self.name().is_empty() {
-            let name = reference_tables::get_atomic_number(self.name());
-            #[allow(clippy::unwrap_used)] // The name is not empty so it cannot fail
-            if name.is_none() && "CHONS".contains(self.name().chars().next().unwrap()) {
-                reference_tables::get_atomic_number(
-                    &self.name().chars().next().unwrap().to_string(),
-                )
-            } else {
-                name
-            }
-        } else {
-            None
-        }
-    }
-
-    /// Get the atomic radius of this Atom in Å. The radius is defined up to element 'Cm' or atomic number 96.
-    /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96.
-    /// Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: <http://doi.org/10.1002/chem.201602949>.
-    /// Updated to the corrigendum: <https://doi.org/10.1002/chem.201700610>.
-    ///
-    /// It returns `None` if the atomic number of this Atom is not defined (see `self.atomic_number()`).
-    /// The same is true if the atomic radius is not defined for the given atomic number, i.e. if the atomic
-    /// number is higher than 96.
-    pub fn atomic_radius(&self) -> Option<f64> {
-        self.atomic_number()
-            .and_then(reference_tables::get_atomic_radius)
-    }
-
-    /// Get the van der Waals radius for this Atom in Å. The radius is defined up to element 'Es' or atomic number 99.
-    /// Source: Alvarez, S. (2013). A cartography of the van der Waals territories. Dalton Transactions, 42(24), 8617. <https://doi.org/10.1039/c3dt50599e>.
-    ///
-    /// It returns `None` if the atomic number of this Atom is not defined (see `self.atomic_number()`).
-    /// The same is true if the atomic radius is not defined for the given atomic number, i.e. if the atomic
-    /// number is higher than 99.
-    pub fn vanderwaals_radius(&self) -> Option<f64> {
-        self.atomic_number()
-            .and_then(reference_tables::get_vanderwaals_radius)
-    }
-
-    /// Gets the covalent bond radii for this Atom.
-    /// The result is the radius for a single, double and triple bond, where the last two are optional. If the radius for a double bond is unknown, the radius for a triple bond is also unknown.
-    /// All values are given in Å.
-    /// Sources:
-    ///  * P. Pyykkö; M. Atsumi (2009). "Molecular Single-Bond Covalent Radii for Elements 1-118". Chemistry: A European Journal. 15 (1): 186–197. <https://doi.org/10.1002/chem.200800987>
-    ///  * P. Pyykkö; M. Atsumi (2009). "Molecular Double-Bond Covalent Radii for Elements Li–E112". Chemistry: A European Journal. 15 (46): 12770–12779. <https://doi.org/10.1002/chem.200901472>
-    ///  * P. Pyykkö; S. Riedel; M. Patzschke (2005). "Triple-Bond Covalent Radii". Chemistry: A European Journal. 11 (12): 3511–3520. <https://doi.org/10.1002/chem.200401299>
-    ///
-    /// It returns `None` if the atomic number of this Atom is not defined (see `self.atomic_number()`).
-    pub fn covalent_bond_radii(&self) -> Option<(f64, Option<f64>, Option<f64>)> {
-        self.atomic_number()
-            .map(reference_tables::get_covalent_bond_radii)
-    }
-
-    /// Get the charge of this atom.
+    /// Get the charge of the atom.
     /// In PDB files the charge is one digit with a sign.
     pub const fn charge(&self) -> isize {
         self.charge
@@ -536,70 +476,96 @@ impl Atom {
         (dot / (abs_n1 * abs_n2)).acos().to_degrees()
     }
 
-    /// Checks whether this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radii of this atom and the other atom. The used radius is (`atom.atomic_radius()`).
+    /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
+    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].unbound.
     ///
     /// Note: the atomic radius used is the unbound radius, this is in most cases bigger than the bound radius
     /// and as such can result in false positives.
     ///
-    /// It returns `None` if, for any one of the two atoms, the radius (`atom.atomic_radius()`) is not defined.
+    /// It fails if for any one of the two atoms the element or unbound radius is not known.
     pub fn overlaps(&self, other: &Atom) -> Option<bool> {
-        self.atomic_radius().and_then(|self_rad| {
-            other
-                .atomic_radius()
-                .map(|other_rad| self.distance(other) <= self_rad + other_rad)
-        })
+        self.element()
+            .map(Element::atomic_radius)
+            .and_then(|self_rad| {
+                other
+                    .element()
+                    .map(Element::atomic_radius)
+                    .map(|other_rad| {
+                        Some(self.distance(other) <= self_rad.unbound? + other_rad.unbound?)
+                    })
+            })
+            .flatten()
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radii of this atom and the other atom, wrapping around the unit cell if needed.
-    /// The used radius is (`atom.atomic_radius()`). This will give the shortest distance between the two
+    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].unbound.
+    /// Wrapping around the unit cell if needed. Meaning it will give the shortest distance between the two
     /// atoms or any of their copies given a crystal of the size of the given unit cell stretching out to
     /// all sides.
     ///
     /// Note: the atomic radius used is the unbound radius, this is in most cases bigger than the bound radius
     /// and as such can result in false positives.
     ///
-    /// It fails if for any one of the two atoms the radius (`atom.atomic_radius()`) is not defined.
+    /// It fails if for any one of the two atoms the element or unbound radius is not known.
     pub fn overlaps_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
-        self.atomic_radius().and_then(|self_rad| {
-            other
-                .atomic_radius()
-                .map(|other_rad| self.distance_wrapping(other, cell) <= self_rad + other_rad)
-        })
+        self.element()
+            .map(Element::atomic_radius)
+            .and_then(|self_rad| {
+                other
+                    .element()
+                    .map(Element::atomic_radius)
+                    .map(|other_rad| {
+                        Some(
+                            self.distance_wrapping(other, cell)
+                                <= self_rad.unbound? + other_rad.unbound?,
+                        )
+                    })
+            })
+            .flatten()
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radius from this atom and the other atom. The used radius is `atom.covalent_bond_radii().0`.
+    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].covalent_single.
     ///
     /// Note: the atomic radius used in the bound radius to a single atom, this is similar to the bound radius for double or
     /// triple bonds but could result in incorrect results.
     ///
-    /// It fails if for any one of the two atoms the radius (`atom.covalent_bond_radii()`) is not defined.
+    /// It fails if for any one of the two atoms the element is not known.
     pub fn overlaps_bound(&self, other: &Atom) -> Option<bool> {
-        self.covalent_bond_radii().and_then(|self_rad| {
-            other
-                .covalent_bond_radii()
-                .map(|other_rad| self.distance(other) <= self_rad.0 + other_rad.0)
-        })
+        self.element()
+            .map(Element::atomic_radius)
+            .and_then(|self_rad| {
+                other
+                    .element()
+                    .map(Element::atomic_radius)
+                    .map(|other_rad| {
+                        self.distance(other) <= self_rad.covalent_single + other_rad.covalent_single
+                    })
+            })
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radii of this atom and the other atom, wrapping around the unit cell if needed.
-    /// The used radius is `atom.covalent_bond_radii().0`. This will give the shortest distance between the two
+    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].covalent_single.
+    /// Wrapping around the unit cell if needed. Meaning it will give the shortest distance between the two
     /// atoms or any of their copies given a crystal of the size of the given unit cell stretching out to
     /// all sides.
     ///
     /// Note: the atomic radius used is the bound radius to a single atom, this is similar to the bound radius for double or
     /// triple bonds but could result in incorrect results.
     ///
-    /// It returns `None` if for any one of the two atoms the radius (`atom.covalent_bond_radii()`) is not defined.
+    /// It fails if for any one of the two atoms the element is not known.
     pub fn overlaps_bound_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
-        self.covalent_bond_radii().and_then(|self_rad| {
-            other
-                .covalent_bond_radii()
-                .map(|other_rad| self.distance_wrapping(other, cell) <= self_rad.0 + other_rad.0)
-        })
+        self.element()
+            .map(Element::atomic_radius)
+            .and_then(|self_rad| {
+                other
+                    .element()
+                    .map(Element::atomic_radius)
+                    .map(|other_rad| {
+                        self.distance_wrapping(other, cell)
+                            <= self_rad.covalent_single + other_rad.covalent_single
+                    })
+            })
     }
 }
 
@@ -610,7 +576,8 @@ impl fmt::Display for Atom {
             "ATOM ID: {}, Number: {}, Element: {}, X: {}, Y: {}, Z: {}, OCC: {}, B: {}, ANISOU: {}",
             self.name(),
             self.serial_number(),
-            self.element(),
+            self.element()
+                .map_or_else(|| "".to_string(), ToString::to_string),
             self.x(),
             self.y(),
             self.z(),
@@ -633,7 +600,7 @@ impl Clone for Atom {
             self.z,
             self.occupancy,
             self.b_factor,
-            &self.element,
+            self.element.map_or_else(|| "", |e| e.symbol()),
             self.charge,
         )
         .expect("Invalid Atom properties in a clone");
@@ -707,16 +674,6 @@ mod tests {
         a.set_name("RK").unwrap();
         a.set_name("R").unwrap();
         a.set_name("").unwrap();
-    }
-
-    #[test]
-    fn set_element() {
-        let mut a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
-        assert!(a.set_element("R̈").is_err());
-        assert!(a.set_element("HOH").is_ok());
-        a.set_element("RK").unwrap();
-        a.set_element("R").unwrap();
-        a.set_element("").unwrap();
     }
 
     #[test]
@@ -804,7 +761,7 @@ mod tests {
         assert!(a.hetero());
         a.set_serial_number(42);
         assert_eq!(a.serial_number(), 42);
-        assert_eq!(a.atomic_number(), Some(6));
+        assert_eq!(a.element().unwrap().atomic_number(), 6);
         a.set_charge(-1);
         assert_eq!(a.charge(), -1);
         assert_eq!(a.pdb_charge(), "1-".to_string());
@@ -812,17 +769,21 @@ mod tests {
 
     #[test]
     fn check_radii() {
-        let a = Atom::new(false, 0, "H", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
-        assert_eq!(a.atomic_radius(), Some(1.54));
-        assert_eq!(a.vanderwaals_radius(), Some(1.20));
-        assert_eq!(a.covalent_bond_radii(), Some((0.32, None, None)));
+        // No element defined because that should be taken from the atom name (out of PDB spec but common in PDB files)
+        let a = dbg!(Atom::new(false, 0, "H", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap());
+        let radii = dbg!(a.element().unwrap().atomic_radius());
+        assert_eq!(radii.unbound, Some(1.54));
+        assert_eq!(radii.van_der_waals, Some(1.20));
+        assert_eq!(radii.covalent_single, 0.32);
+        assert_eq!(radii.covalent_double, None);
+        assert_eq!(radii.covalent_triple, None);
         let a = Atom::new(false, 0, "Cl", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
-        assert_eq!(a.atomic_radius(), Some(2.06));
-        assert_eq!(a.vanderwaals_radius(), Some(1.82));
-        assert_eq!(
-            a.covalent_bond_radii(),
-            Some((0.99, Some(0.95), Some(0.93)))
-        );
+        let radii = a.element().unwrap().atomic_radius();
+        assert_eq!(radii.unbound, Some(2.06));
+        assert_eq!(radii.van_der_waals, Some(1.82));
+        assert_eq!(radii.covalent_single, 0.99);
+        assert_eq!(radii.covalent_double, Some(0.95));
+        assert_eq!(radii.covalent_triple, Some(0.93));
     }
 
     #[test]

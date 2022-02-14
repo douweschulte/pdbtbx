@@ -46,32 +46,32 @@ fn main() {
     );
 
     // You can use and `&` to combine a search, this short circuits if possible.
-    let search = Term::Element("C".to_owned()) & Term::ConformerName("VAL".to_owned());
+    let search = Term::Element(Element::C) & Term::ConformerName("VAL".to_owned());
     assert!(pdb
         .find(search.clone())
-        .all(|s| (s.atom().element() == "C") & (s.conformer().name() == "VAL")));
+        .all(|s| (s.atom().element() == Some(&Element::C)) & (s.conformer().name() == "VAL")));
     assert_eq!(
         pdb.find(search.clone()).count(),
         pdb.atoms_with_hierarchy()
-            .filter(|s| (s.atom().element() == "C") & (s.conformer().name() == "VAL"))
+            .filter(|s| (s.atom().element() == Some(&Element::C)) & (s.conformer().name() == "VAL"))
             .count()
     );
     let val_and_c = pdb
         .conformers()
         .filter(|c| c.name() == "VAL")
-        .flat_map(|c| c.atoms().filter(|a| a.element() == "C"))
+        .flat_map(|c| c.atoms().filter(|a| a.element() == Some(&Element::C)))
         .count();
     assert_eq!(pdb.find(search).count(), val_and_c);
 
     // You can use and `|` to combine a search, this short circuits if possible.
-    let search = Term::Element("C".to_owned()) | Term::ConformerName("VAL".to_owned());
+    let search = Term::Element(Element::C) | Term::ConformerName("VAL".to_owned());
     assert!(pdb
         .find(search.clone())
-        .all(|s| (s.atom().element() == "C") | (s.conformer().name() == "VAL")));
+        .all(|s| (s.atom().element() == Some(&Element::C)) | (s.conformer().name() == "VAL")));
     assert_eq!(
         pdb.find(search.clone()).count(),
         pdb.atoms_with_hierarchy()
-            .filter(|s| (s.atom().element() == "C") | (s.conformer().name() == "VAL"))
+            .filter(|s| (s.atom().element() == Some(&Element::C)) | (s.conformer().name() == "VAL"))
             .count()
     );
     let val = pdb
@@ -82,30 +82,30 @@ fn main() {
     let c_not_val = pdb
         .conformers()
         .filter(|c| c.name() != "VAL")
-        .flat_map(|c| c.atoms().filter(|a| a.element() == "C"))
+        .flat_map(|c| c.atoms().filter(|a| a.element() == Some(&Element::C)))
         .count();
     assert_eq!(pdb.find(search).count(), val + c_not_val);
 
     // You can use and `^` to combine a search, this cannot short circuit, but that has never been a rule (Bryan Cantrill).
-    let search = Term::Element("C".to_owned()) ^ Term::ConformerName("VAL".to_owned());
+    let search = Term::Element(Element::C) ^ Term::ConformerName("VAL".to_owned());
     assert!(pdb
         .find(search.clone())
-        .all(|s| (s.atom().element() == "C") ^ (s.conformer().name() == "VAL")));
+        .all(|s| (s.atom().element() == Some(&Element::C)) ^ (s.conformer().name() == "VAL")));
     assert_eq!(
         pdb.find(search.clone()).count(),
         pdb.atoms_with_hierarchy()
-            .filter(|s| (s.atom().element() == "C") ^ (s.conformer().name() == "VAL"))
+            .filter(|s| (s.atom().element() == Some(&Element::C)) ^ (s.conformer().name() == "VAL"))
             .count()
     );
     let val_not_c = pdb
         .conformers()
         .filter(|c| c.name() == "VAL")
-        .flat_map(|c| c.atoms().filter(|a| a.element() != "C"))
+        .flat_map(|c| c.atoms().filter(|a| a.element() != Some(&Element::C)))
         .count();
     let c_not_val = pdb
         .conformers()
         .filter(|c| c.name() != "VAL")
-        .flat_map(|c| c.atoms().filter(|a| a.element() == "C"))
+        .flat_map(|c| c.atoms().filter(|a| a.element() == Some(&Element::C)))
         .count();
     assert_eq!(pdb.find(search).count(), val_not_c + c_not_val);
 }

@@ -10,6 +10,8 @@ fn main() {
         ("small", "example-pdbs/1ubq.pdb"),
         ("medium", "example-pdbs/1yyf.pdb"),
         ("big", "example-pdbs/pTLS-6484.pdb"),
+        ("huge", "example-pdbs/large.pdb"),
+        ("extreme", "example-pdbs/1htq.pdb"),
     ];
     let mmcif_names = vec![
         ("small", "example-pdbs/1ubq.cif"),

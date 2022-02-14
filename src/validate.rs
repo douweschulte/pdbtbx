@@ -140,17 +140,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                                 Context::None,
                             ));
                         }
-                        if atom.element().len() > 2 {
-                            errors.push(PDBError::new(
-                                ErrorLevel::LooseWarning,
-                                "Atom element too long",
-                                &format!(
-                                    "Atom {} has a element which is too long, max 2 chars.",
-                                    atom.serial_number()
-                                ),
-                                Context::None,
-                            ));
-                        }
                         if atom.serial_number() > 99999 {
                             errors.push(PDBError::new(
                                 ErrorLevel::LooseWarning,
