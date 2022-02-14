@@ -40,8 +40,14 @@ pub struct Atom {
 }
 
 impl Atom {
+<<<<<<< HEAD
     /// Create a new Atom
     #[must_use]
+=======
+    /// Create a new Atom. If no or an invalid element is given it tries to find the element
+    /// by using the full atom name as element. If this is not valid it will use the first
+    /// character of the name if it is one of "CHNOS".
+>>>>>>> dd35e8c (Fixed examples and changed Atom::set_element)
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         hetero: bool,
@@ -769,6 +775,7 @@ mod tests {
 
     #[test]
     fn check_radii() {
+        use crate::Element;
         // No element defined because that should be taken from the atom name (out of PDB spec but common in PDB files)
         let a = dbg!(Atom::new(false, 0, "H", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap());
         let radii = dbg!(a.element().unwrap().atomic_radius());
@@ -777,6 +784,7 @@ mod tests {
         assert_eq!(radii.covalent_single, 0.32);
         assert_eq!(radii.covalent_double, None);
         assert_eq!(radii.covalent_triple, None);
+        assert_eq!(a.element().unwrap(), &Element::H);
         let a = Atom::new(false, 0, "Cl", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         let radii = a.element().unwrap().atomic_radius();
         assert_eq!(radii.unbound, Some(2.06));
@@ -784,6 +792,15 @@ mod tests {
         assert_eq!(radii.covalent_single, 0.99);
         assert_eq!(radii.covalent_double, Some(0.95));
         assert_eq!(radii.covalent_triple, Some(0.93));
+        assert_eq!(a.element().unwrap(), &Element::Cl);
+        let a = Atom::new(false, 0, "H3", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
+        let radii = a.element().unwrap().atomic_radius();
+        assert_eq!(radii.unbound, Some(1.54));
+        assert_eq!(radii.van_der_waals, Some(1.20));
+        assert_eq!(radii.covalent_single, 0.32);
+        assert_eq!(radii.covalent_double, None);
+        assert_eq!(radii.covalent_triple, None);
+        assert_eq!(a.element().unwrap(), &Element::H);
     }
 
     #[test]

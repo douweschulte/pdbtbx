@@ -18,7 +18,7 @@ use rayon::prelude::*;
 /// use pdbtbx::*;
 /// let (mut pdb, _errors) = pdbtbx::open(
 ///         "example-pdbs/1ubq.pdb",
-///         pdbtbx::StrictnessLevel::Medium
+///         StrictnessLevel::Medium
 ///     ).unwrap();
 ///
 /// pdb.remove_atoms_by(|atom| atom.element() == Some(&Element::H)); // Remove all H atoms
@@ -30,7 +30,11 @@ use rayon::prelude::*;
 /// avg_b_factor /= pdb.atom_count() as f64;
 ///
 /// println!("The average B factor of the protein is: {}", avg_b_factor);
+<<<<<<< HEAD
 /// pdbtbx::save(&pdb, "dump/1ubq_no_hydrogens.pdb", pdbtbx::StrictnessLevel::Loose);
+=======
+/// pdbtbx::save(pdb, "dump/1ubq_no_hydrogens.pdb", StrictnessLevel::Loose);
+>>>>>>> dd35e8c (Fixed examples and changed Atom::set_element)
 /// ```
 pub struct PDB {
     /// The identifier as posed in the PDB Header or mmCIF entry.id, normally a 4 char string like '1UBQ'.
