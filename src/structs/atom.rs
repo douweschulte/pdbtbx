@@ -40,7 +40,9 @@ pub struct Atom {
 }
 
 impl Atom {
-    /// Create a new Atom
+    /// Create a new Atom. If no or an invalid element is given it tries to find the element
+    /// by using the full atom name as element. If this is not valid it will use the first
+    /// character of the name if it is one of "CHNOS".
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         hetero: bool,
@@ -295,23 +297,9 @@ impl Atom {
         self.element.as_ref()
     }
 
-    /// Set the element of this atom. The element will be trimmed (whitespace removed) and changed to ASCII uppercase as requested by PDB/PDBx standard.
-    /// For PDB files the element can at most contain 2 characters.
-    /// If the element is invalid an error message is provided.
-    /// The element can only contain valid characters, the ASCII graphic characters (`char.is_ascii_graphic() || char == ' '`).
-    pub fn set_element(&mut self, new_element: impl Into<String>) -> Result<(), String> {
-        let new_element = new_element.into();
-        if !valid_identifier(&new_element) {
-            Err(format!(
-                "New element has invalid characters for atom {} name {}",
-                self.serial_number, new_element
-            ))
-        } else if let Ok(elem) = new_element.as_str().try_into() {
-            self.element = Some(elem);
-            Ok(())
-        } else {
-            Err("Invalid symbol, does not define an element.".to_string())
-        }
+    /// Set the element of this atom.
+    pub fn set_element(&mut self, element: Element) {
+        self.element = Some(element);
     }
 
     /// Get the charge of the atom.
@@ -611,16 +599,6 @@ mod tests {
     }
 
     #[test]
-    fn set_element() {
-        let mut a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
-        assert!(a.set_element("R̈").is_err());
-        assert!(a.set_element("HOH").is_ok());
-        a.set_element("RK").unwrap();
-        a.set_element("R").unwrap();
-        a.set_element("").unwrap();
-    }
-
-    #[test]
     fn distance() {
         let a = Atom::new(false, 0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
         let b = Atom::new(false, 0, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
@@ -701,6 +679,7 @@ mod tests {
 
     #[test]
     fn check_radii() {
+        use crate::Element;
         // No element defined because that should be taken from the atom name (out of PDB spec but common in PDB files)
         let a = Atom::new(false, 0, "H", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         let radii = a.element().unwrap().atomic_radius();
@@ -709,6 +688,7 @@ mod tests {
         assert_eq!(radii.covalent_single, 0.32);
         assert_eq!(radii.covalent_double, None);
         assert_eq!(radii.covalent_triple, None);
+        assert_eq!(a.element().unwrap(), &Element::H);
         let a = Atom::new(false, 0, "Cl", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         let radii = a.element().unwrap().atomic_radius();
         assert_eq!(radii.unbound, Some(2.06));
@@ -716,6 +696,15 @@ mod tests {
         assert_eq!(radii.covalent_single, 0.99);
         assert_eq!(radii.covalent_double, Some(0.95));
         assert_eq!(radii.covalent_triple, Some(0.93));
+        assert_eq!(a.element().unwrap(), &Element::Cl);
+        let a = Atom::new(false, 0, "H3", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
+        let radii = a.element().unwrap().atomic_radius();
+        assert_eq!(radii.unbound, Some(1.54));
+        assert_eq!(radii.van_der_waals, Some(1.20));
+        assert_eq!(radii.covalent_single, 0.32);
+        assert_eq!(radii.covalent_double, None);
+        assert_eq!(radii.covalent_triple, None);
+        assert_eq!(a.element().unwrap(), &Element::H);
     }
 
     #[test]
