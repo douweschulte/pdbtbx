@@ -60,7 +60,7 @@ pub fn get_atomic_number(element: &str) -> Option<usize> {
 }
 
 /// Gets the atomic radius for the given atomic number (defined up until 'Cm' 96) in Å.
-/// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96. Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: http://doi.org/10.1002/chem.201602949, doi:10.1002/chem.201602949.
+/// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96. Chemistry - A European Journal, 22(41):14625–14632, oct 2016. URL: <http://doi.org/10.1002/chem.201602949>, doi:10.1002/chem.201602949.
 /// Updated to the corrigendum: <https://doi.org/10.1002/chem.201700610>
 pub fn get_atomic_radius(atomic_number: usize) -> Option<f64> {
     ELEMENT_ATOMIC_RADII.get(atomic_number - 1).copied()

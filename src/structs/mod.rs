@@ -20,7 +20,7 @@ pub use bond::Bond;
 pub use chain::Chain;
 pub use conformer::Conformer;
 pub use database_reference::*;
-pub use elements::Element;
+pub use elements::*;
 use helper::*;
 pub use hierarchy::*;
 pub use model::Model;

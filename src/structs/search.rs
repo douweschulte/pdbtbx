@@ -3,41 +3,41 @@ use std::ops;
 
 /// Any parameter to use in a [Search] for atom(s) in a PDB.
 /// For position related searches look into the [rstar] crate which can be combined
-/// with this crate using the `rstar` feature, see [PDB::create_atom_rtree] and
-/// [PDB::create_hierarchy_rtree]. The rstar crate makes spatial lookup and queries
+/// with this crate using the `rstar` feature, see [`PDB::create_atom_rtree`] and
+/// [`PDB::create_hierarchy_rtree`]. The rstar crate makes spatial lookup and queries
 /// way faster and feasible to use in high performance environments.
 #[allow(unused)]
 #[derive(Debug, Clone)]
 #[non_exhaustive]
-pub enum Term {
+pub enum Term<'a> {
     /// The model serial number, only used in (NMR) PDB files with multiple states of a protein, see [Model::serial_number].
     ModelSerialNumber(usize),
     /// Search for a range of model serial numbers, starting at the first number and ending with the last number inclusive.
     ModelSerialNumberRange(usize, usize),
     /// The chain id eg `A`, see [Chain::id].
-    ChainId(String),
-    /// Search for a range of chain ids, using the Ord implementation of std::str [https://doc.rust-lang.org/std/primitive.str.html#impl-Ord], starting at the first number and ending with the last number inclusive.
-    ChainIdRange(String, String),
+    ChainId(&'a str),
+    /// Search for a range of chain ids, using the Ord implementation of std::str <https://doc.rust-lang.org/std/primitive.str.html#impl-Ord>, starting at the first number and ending with the last number inclusive.
+    ChainIdRange(&'a str, &'a str),
     /// The residue serial number, see [Residue::serial_number].
     ResidueSerialNumber(isize),
     /// Search for a range of residue serial numbers, starting at the first number and ending with the last number inclusive.
     ResidueSerialNumberRange(isize, isize),
     /// The residue insertion code eg `Some("A")`, see [Residue::insertion_code].
-    ResidueInsertionCode(Option<String>),
+    ResidueInsertionCode(Option<&'a str>),
     /// The residue serial number and insertion code combined, see [Residue::id].
-    ResidueId(isize, Option<String>),
+    ResidueId(isize, Option<&'a str>),
     /// The conformer name eg `ALA`, see [Conformer::name].
-    ConformerName(String),
+    ConformerName(&'a str),
     /// The conformer alternative location eg `Some("A")`, see [Conformer::alternative_location].
-    ConformerAlternativeLocation(Option<String>),
+    ConformerAlternativeLocation(Option<&'a str>),
     /// The conformer name and alternative location combined, see [Conformer::id].
-    ConformerId(String, Option<String>),
+    ConformerId(&'a str, Option<&'a str>),
     /// The atom serial number, see [Atom::serial_number].
     AtomSerialNumber(usize),
     /// A range of atoms based on serial number starting at the first number and ending with the last number inclusive.
     AtomSerialNumberRange(usize, usize),
     /// The atom name eg `CA`, see [Atom::name].
-    AtomName(String),
+    AtomName(&'a str),
     /// The element eq `C`, see [Atom::element], see [Element].
     Element(Element),
     /// Atom b factor, see [Atom::b_factor].
@@ -56,8 +56,8 @@ pub enum Term {
     Hetero,
 }
 
-impl Term {
-    fn optional_matches_model(&self, model: &Model) -> Option<bool> {
+impl<'a> Term<'a> {
+    const fn optional_matches_model(&self, model: &Model) -> Option<bool> {
         match self {
             Term::ModelSerialNumber(s) => Some(*s == model.serial_number()),
             Term::ModelSerialNumberRange(low, high) => {
@@ -68,10 +68,8 @@ impl Term {
     }
     fn optional_matches_chain(&self, chain: &Chain) -> Option<bool> {
         match self {
-            Term::ChainId(s) => Some(s == chain.id()),
-            Term::ChainIdRange(low, high) => {
-                Some(low.as_str() <= chain.id() && high.as_str() >= chain.id())
-            }
+            Term::ChainId(s) => Some(*s == chain.id()),
+            Term::ChainIdRange(low, high) => Some(*low <= chain.id() && *high >= chain.id()),
             _ => None,
         }
     }
@@ -88,11 +86,11 @@ impl Term {
     }
     fn optional_matches_conformer(&self, conformer: &Conformer) -> Option<bool> {
         match self {
-            Term::ConformerName(n) => Some(n == conformer.name()),
+            Term::ConformerName(n) => Some(*n == conformer.name()),
             Term::ConformerAlternativeLocation(al) => {
                 Some(al.as_deref() == conformer.alternative_location())
             }
-            Term::ConformerId(n, al) => Some((n.as_str(), al.as_deref()) == conformer.id()),
+            Term::ConformerId(n, al) => Some((*n, *al) == conformer.id()),
             Term::Backbone if !conformer.is_amino_acid() => Some(false),
             Term::SideChain if !conformer.is_amino_acid() => Some(false),
             _ => None,
@@ -104,7 +102,7 @@ impl Term {
             Term::AtomSerialNumberRange(low, high) => {
                 Some(atom.serial_number() >= *low && atom.serial_number() <= *high)
             }
-            Term::AtomName(n) => Some(atom.name() == n),
+            Term::AtomName(n) => Some(atom.name() == *n),
             Term::Element(e) => atom.element().map(|a| a == e),
             Term::BFactor(a) => Some(atom.b_factor() == *a),
             Term::BFactorRange(low, high) => {
@@ -136,13 +134,13 @@ impl Term {
 /// }
 /// ```
 #[derive(Debug, Clone)]
-pub enum Search {
+pub enum Search<'a> {
     /// A search with operators, &, |, or ^
-    Ops(Ops, Box<Search>, Box<Search>),
+    Ops(Ops, Box<Search<'a>>, Box<Search<'a>>),
     /// !A (not)
-    Not(Box<Search>),
+    Not(Box<Search<'a>>),
     /// A (single search term)
-    Single(Term),
+    Single(Term<'a>),
     /// Known value
     Known(bool),
 }
@@ -158,8 +156,8 @@ pub enum Ops {
     Xor,
 }
 
-impl Search {
-    fn simplify(self) -> Search {
+impl<'a> Search<'a> {
+    fn simplify(self) -> Self {
         match self {
             Search::Ops(ops, a, b) => match (ops, a.simplify(), b.simplify()) {
                 (Ops::And, Search::Known(false), _) => Search::Known(false),
@@ -180,7 +178,7 @@ impl Search {
     }
 
     /// Check if the search is done.
-    pub fn complete(&self) -> Option<bool> {
+    pub const fn complete(&self) -> Option<bool> {
         match self {
             Search::Known(a) => Some(*a),
             _ => None,
@@ -188,7 +186,7 @@ impl Search {
     }
 
     /// Add information about the model into the search, returns a new search with the information integrated
-    pub fn add_model_info(&self, model: &Model) -> Search {
+    pub fn add_model_info(&self, model: &Model) -> Self {
         match self {
             Search::Ops(ops, a, b) => Search::Ops(
                 *ops,
@@ -207,7 +205,7 @@ impl Search {
     }
 
     /// Add information about the chain into the search, returns a new search with the information integrated
-    pub fn add_chain_info(&self, chain: &Chain) -> Search {
+    pub fn add_chain_info(&self, chain: &Chain) -> Self {
         match self {
             Search::Ops(ops, a, b) => Search::Ops(
                 *ops,
@@ -226,7 +224,7 @@ impl Search {
     }
 
     /// Add information about the residue into the search, returns a new search with the information integrated
-    pub fn add_residue_info(&self, residue: &Residue) -> Search {
+    pub fn add_residue_info(&self, residue: &Residue) -> Self {
         match self {
             Search::Ops(ops, a, b) => Search::Ops(
                 *ops,
@@ -245,7 +243,7 @@ impl Search {
     }
 
     /// Add information about the conformer into the search, returns a new search with the information integrated
-    pub fn add_conformer_info(&self, conformer: &Conformer) -> Search {
+    pub fn add_conformer_info(&self, conformer: &Conformer) -> Self {
         match self {
             Search::Ops(ops, a, b) => Search::Ops(
                 *ops,
@@ -264,7 +262,7 @@ impl Search {
     }
 
     /// Add information about the atom into the search, returns a new search with the information integrated
-    pub fn add_atom_info(&self, atom: &Atom) -> Search {
+    pub fn add_atom_info(&self, atom: &Atom) -> Self {
         match self {
             Search::Ops(ops, a, b) => Search::Ops(
                 *ops,
@@ -283,8 +281,8 @@ impl Search {
     }
 }
 
-impl ops::BitAnd<Term> for Term {
-    type Output = Search;
+impl<'a> ops::BitAnd<Term<'a>> for Term<'a> {
+    type Output = Search<'a>;
     fn bitand(self, rhs: Self) -> Self::Output {
         Search::Ops(
             Ops::And,
@@ -294,8 +292,8 @@ impl ops::BitAnd<Term> for Term {
     }
 }
 
-impl ops::BitOr<Term> for Term {
-    type Output = Search;
+impl<'a> ops::BitOr<Term<'a>> for Term<'a> {
+    type Output = Search<'a>;
     fn bitor(self, rhs: Self) -> Self::Output {
         Search::Ops(
             Ops::Or,
@@ -305,8 +303,8 @@ impl ops::BitOr<Term> for Term {
     }
 }
 
-impl ops::BitXor<Term> for Term {
-    type Output = Search;
+impl<'a> ops::BitXor<Term<'a>> for Term<'a> {
+    type Output = Search<'a>;
     fn bitxor(self, rhs: Self) -> Self::Output {
         Search::Ops(
             Ops::Xor,
@@ -316,79 +314,79 @@ impl ops::BitXor<Term> for Term {
     }
 }
 
-impl ops::Not for Term {
-    type Output = Search;
+impl<'a> ops::Not for Term<'a> {
+    type Output = Search<'a>;
     fn not(self) -> Self::Output {
         Search::Not(Box::new(Search::Single(self)))
     }
 }
 
-impl ops::BitAnd<Search> for Term {
-    type Output = Search;
-    fn bitand(self, rhs: Search) -> Self::Output {
+impl<'a> ops::BitAnd<Search<'a>> for Term<'a> {
+    type Output = Search<'a>;
+    fn bitand(self, rhs: Search<'a>) -> Self::Output {
         Search::Ops(Ops::And, Box::new(Search::Single(self)), Box::new(rhs))
     }
 }
 
-impl ops::BitOr<Search> for Term {
-    type Output = Search;
-    fn bitor(self, rhs: Search) -> Self::Output {
+impl<'a> ops::BitOr<Search<'a>> for Term<'a> {
+    type Output = Search<'a>;
+    fn bitor(self, rhs: Search<'a>) -> Self::Output {
         Search::Ops(Ops::Or, Box::new(Search::Single(self)), Box::new(rhs))
     }
 }
 
-impl ops::BitXor<Search> for Term {
-    type Output = Search;
-    fn bitxor(self, rhs: Search) -> Self::Output {
+impl<'a> ops::BitXor<Search<'a>> for Term<'a> {
+    type Output = Search<'a>;
+    fn bitxor(self, rhs: Search<'a>) -> Self::Output {
         Search::Ops(Ops::Xor, Box::new(Search::Single(self)), Box::new(rhs))
     }
 }
 
-impl ops::BitAnd<Search> for Search {
-    type Output = Search;
+impl<'a> ops::BitAnd<Search<'a>> for Search<'a> {
+    type Output = Search<'a>;
     fn bitand(self, rhs: Self) -> Self::Output {
         Search::Ops(Ops::And, Box::new(self), Box::new(rhs))
     }
 }
 
-impl ops::BitOr<Search> for Search {
-    type Output = Search;
+impl<'a> ops::BitOr<Search<'a>> for Search<'a> {
+    type Output = Search<'a>;
     fn bitor(self, rhs: Self) -> Self::Output {
         Search::Ops(Ops::Or, Box::new(self), Box::new(rhs))
     }
 }
 
-impl ops::BitXor<Search> for Search {
-    type Output = Search;
+impl<'a> ops::BitXor<Search<'a>> for Search<'a> {
+    type Output = Search<'a>;
     fn bitxor(self, rhs: Self) -> Self::Output {
         Search::Ops(Ops::Xor, Box::new(self), Box::new(rhs))
     }
 }
 
-impl ops::Not for Search {
-    type Output = Search;
+impl<'a> ops::Not for Search<'a> {
+    type Output = Search<'a>;
     fn not(self) -> Self::Output {
         Search::Not(Box::new(self))
     }
 }
 
-impl ops::BitAnd<Term> for Search {
-    type Output = Search;
-    fn bitand(self, rhs: Term) -> Self::Output {
+impl<'a> ops::BitAnd<Term<'a>> for Search<'a> {
+    type Output = Search<'a>;
+    fn bitand(self, rhs: Term<'a>) -> Self::Output {
         Search::Ops(Ops::And, Box::new(self), Box::new(Search::Single(rhs)))
     }
 }
 
-impl ops::BitOr<Term> for Search {
-    type Output = Search;
-    fn bitor(self, rhs: Term) -> Self::Output {
+impl<'a> ops::BitOr<Term<'a>> for Search<'a> {
+    type Output = Search<'a>;
+    fn bitor(self, rhs: Term<'a>) -> Self::Output {
         Search::Ops(Ops::Or, Box::new(self), Box::new(Search::Single(rhs)))
     }
 }
 
-impl ops::BitXor<Term> for Search {
-    type Output = Search;
-    fn bitxor(self, rhs: Term) -> Self::Output {
+impl<'a> ops::BitXor<Term<'a>> for Search<'a> {
+    type Output = Search<'a>;
+    fn bitxor(self, rhs: Term<'a>) -> Self::Output {
         Search::Ops(Ops::Xor, Box::new(self), Box::new(Search::Single(rhs)))
     }
 }
@@ -408,7 +406,7 @@ mod tests {
             Some(true)
         );
         assert_eq!(
-            Search::Single(Term::AtomName("CA".to_string()))
+            Search::Single(Term::AtomName("CA"))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
@@ -431,27 +429,25 @@ mod tests {
     fn search_combinations() {
         let a = Atom::new(true, 123, "CA", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 1).unwrap();
         assert_eq!(
-            (Term::AtomName("CA".to_string()) & Term::Element(Element::C))
+            (Term::AtomName("CA") & Term::Element(Element::C))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
         );
         assert_eq!(
-            (Term::AtomName("CA".to_string()) | Term::Element(Element::Ca))
+            (Term::AtomName("CA") | Term::Element(Element::Ca))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
         );
         assert_eq!(
-            (!Term::AtomName("CA".to_string()) ^ Term::Element(Element::C))
+            (!Term::AtomName("CA") ^ Term::Element(Element::C))
                 .add_atom_info(&a)
                 .complete(),
             Some(true)
         );
         assert_eq!(
-            (!Term::AtomName("BA".to_string()))
-                .add_atom_info(&a)
-                .complete(),
+            (!Term::AtomName("BA")).add_atom_info(&a).complete(),
             Some(true)
         );
     }

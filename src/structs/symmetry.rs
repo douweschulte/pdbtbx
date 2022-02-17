@@ -49,7 +49,7 @@ impl Symmetry {
     }
 
     /// Get the index of this space group in Int. Crys. Handbook Vol A 2016
-    pub fn index(&self) -> usize {
+    pub const fn index(&self) -> usize {
         self.index
     }
 

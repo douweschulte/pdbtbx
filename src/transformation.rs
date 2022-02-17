@@ -10,7 +10,7 @@ pub struct TransformationMatrix {
 
 impl TransformationMatrix {
     /// Get the raw matrix (row major order)
-    pub fn matrix(&self) -> [[f64; 4]; 3] {
+    pub const fn matrix(&self) -> [[f64; 4]; 3] {
         self.matrix
     }
 
@@ -20,7 +20,7 @@ impl TransformationMatrix {
     }
 
     /// Create a matrix defining identity, so no transformation
-    pub fn identity() -> Self {
+    pub const fn identity() -> Self {
         TransformationMatrix {
             matrix: [
                 [1.0, 0.0, 0.0, 0.0],
@@ -31,7 +31,7 @@ impl TransformationMatrix {
     }
 
     /// Create a matrix with the given matrix
-    pub fn from_matrix(matrix: [[f64; 4]; 3]) -> Self {
+    pub const fn from_matrix(matrix: [[f64; 4]; 3]) -> Self {
         TransformationMatrix { matrix }
     }
 

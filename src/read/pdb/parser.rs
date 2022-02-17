@@ -14,7 +14,7 @@ use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 
 /// Parse the given file into a PDB struct.
-/// Returns an PDBError when it found a BreakingError. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns an [`PDBError`] when it found a [`ErrorLevel::BreakingError`]. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 pub fn open_pdb(
     filename: &str,
     level: StrictnessLevel,
@@ -30,7 +30,7 @@ pub fn open_pdb(
 }
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
-/// Returns an PDBError when it found a BreakingError. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns an [`PDBError`] when it found a [`ErrorLevel::BreakingError`]. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// ## Arguments
 /// * `input` - the input stream
@@ -86,7 +86,7 @@ where
             errors.extend(line_errors);
             match result {
                 LexItem::Header(_, _, identifier) => pdb.identifier = Some(identifier),
-                LexItem::Remark(num, text) => pdb.add_remark(num, text.to_string()),
+                LexItem::Remark(num, text) => pdb.add_remark(num, text.clone()),
                 LexItem::Atom(
                     hetero,
                     serial_number,
@@ -1451,7 +1451,7 @@ fn lex_modres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     )
 }
 
-/// Parse a SSBond line into the corresponding LexItem
+/// Parse a SSBond line into the corresponding [`LexItem`]
 fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
@@ -1504,7 +1504,7 @@ fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     )
 }
 
-/// Parse a number, generic for anything that can be parsed using FromStr
+/// Parse a number, generic for anything that can be parsed using [`FromStr`]
 fn parse_number<T: FromStr>(context: Context, input: &[char]) -> Result<T, PDBError> {
     let string = input
         .iter()

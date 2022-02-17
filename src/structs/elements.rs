@@ -380,23 +380,23 @@ impl Element {
     }
 
     /// Get the symbol for this element eg "He" for Helium
-    pub fn symbol(&self) -> &'static str {
+    pub const fn symbol(&self) -> &'static str {
         ELEMENT_SYMBOLS[self.atomic_number() - 1]
     }
 
-    /// Get the full name for an element, eg "Helium" for Element::He
+    /// Get the full name for an element, eg "Helium" for `Element::He`
     pub const fn full_name(&self) -> &'static str {
         ELEMENT_NAMES[self.atomic_number() - 1]
     }
 
-    /// Get the [AtomicRadius] for this element, see the documentation for the struct to get more information.
+    /// Get the [`AtomicRadius`] for this element, see the documentation for the struct to get more information.
     pub const fn atomic_radius(&self) -> &'static AtomicRadius {
         &ELEMENT_ATOMIC_RADII[self.atomic_number() - 1]
     }
 
     /// Get the atomic weight for the given element. Applicable for all normal materials.
     /// The mean value is given for the uncertainty surrounding the values for all elements.
-    /// Source: CIAAW. Atomic weights of the elements 2020. Available online at https://www.ciaaw.org/atomic-weights.htm.
+    /// Source: CIAAW. Atomic weights of the elements 2020. Available online at <https://www.ciaaw.org/atomic-weights.htm>.
     pub const fn weight(&self) -> Option<f64> {
         ELEMENT_WEIGHT[self.atomic_number() - 1]
     }

@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 /// Parse the given mmCIF file into a PDB struct.
-/// Returns an PDBError when it found a BreakingError. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns an [`PDBError`] when it found a [`ErrorLevel::BreakingError`]. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 pub fn open_mmcif(
     filename: &str,
     level: StrictnessLevel,
@@ -225,7 +225,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             };
         }
 
-        /// Parse a value from an optional column, if in place, with the same format as parse_column!
+        /// Parse a value from an optional column, if in place, with the same format as `parse_column`!
         macro_rules! parse_optional {
             ($type:tt, $index:tt) => {
                 if let Some(value) = optional_values[$index] {
@@ -401,7 +401,7 @@ fn get_text<'a, 'b>(value: &'a Value, context: &'b Context) -> Result<Option<&'a
     }
 }
 
-/// Get the Numeric content of the value, if available, it also fails on NumericWithUncertainty
+/// Get the Numeric content of the value, if available, it also fails on [`Value::NumericWithUncertainty`]
 fn get_f64(value: &Value, context: &Context) -> Result<Option<f64>, PDBError> {
     match value {
         Value::Numeric(num) => Ok(Some(*num)),

@@ -28,7 +28,7 @@ impl<'a> Residue {
     /// * `conformer` - if available it can already add an conformer
     ///
     /// ## Fails
-    /// It fails if any of the characters making up the insertion_code are invalid.
+    /// It fails if any of the characters making up the `insertion_code` are invalid.
     pub fn new(
         number: isize,
         insertion_code: Option<&str>,
@@ -54,7 +54,7 @@ impl<'a> Residue {
     }
 
     /// The serial number of the Residue
-    pub fn serial_number(&self) -> isize {
+    pub const fn serial_number(&self) -> isize {
         self.serial_number
     }
 
@@ -70,8 +70,8 @@ impl<'a> Residue {
 
     /// Set the insertion code of the Residue
     /// It returns false if the `new_code` contains invalid characters
-    pub fn set_insertion_code(&mut self, new_code: &str) -> bool {
-        if let Some(c) = prepare_identifier(new_code) {
+    pub fn set_insertion_code(&mut self, new_code: impl Into<String>) -> bool {
+        if let Some(c) = prepare_identifier(&new_code.into()) {
             self.insertion_code = Some(c);
             true
         } else {
@@ -168,7 +168,7 @@ impl<'a> Residue {
     }
 
     /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// `alternative_location`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -195,7 +195,7 @@ impl<'a> Residue {
     }
 
     /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// `alternative_location`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -232,7 +232,7 @@ impl<'a> Residue {
     /// Find all hierarchies matching the given information
     pub fn find(
         &'a self,
-        search: Search,
+        search: Search<'a>,
     ) -> impl DoubleEndedIterator<Item = AtomConformer<'a>> + '_ {
         self.conformers()
             .map(move |c| (c, search.clone().add_conformer_info(c)))
@@ -247,7 +247,7 @@ impl<'a> Residue {
     /// Find all hierarchies matching the given information
     pub fn find_mut(
         &'a mut self,
-        search: Search,
+        search: Search<'a>,
     ) -> impl DoubleEndedIterator<Item = AtomConformerMut<'a>> + '_ {
         self.conformers_mut()
             .map(move |c| {

@@ -57,7 +57,7 @@ pub struct PDB {
 /// Creator functions for a PDB file
 impl PDB {
     /// Create an empty PDB struct.
-    pub fn new() -> PDB {
+    pub const fn new() -> PDB {
         PDB {
             identifier: None,
             remarks: Vec::new(),
@@ -110,7 +110,8 @@ impl PDB {
     ///
     /// ## Panics
     /// It panics if the text if too long, the text contains invalid characters or the remark-type-number is not valid (wwPDB v3.30).
-    pub fn add_remark(&mut self, remark_type: usize, remark_text: String) {
+    pub fn add_remark(&mut self, remark_type: usize, remark_text: impl Into<String>) {
+        let remark_text = remark_text.into();
         assert!(reference_tables::valid_remark_type_number(remark_type), "The given remark-type-number is not valid, see wwPDB v3.30 for valid remark-type-numbers");
         assert!(
             valid_text(&remark_text),
@@ -133,39 +134,39 @@ impl PDB {
     }
 }
 
-/// # MtriX
-/// Functionality for working with the MtriX records form the PDB. The MtriX are needed
+/// # [`MtriX`]
+/// Functionality for working with the `MtriX` records form the PDB. The `MtriX` are needed
 /// to transform the Models to the full asymmetric subunit, if needed to contain the
 /// non-crystallographic symmetry.
 impl PDB {
-    /// Get the MtriX records for this PDB.
+    /// Get the [`MtriX`] records for this PDB.
     pub fn mtrix(&self) -> impl DoubleEndedIterator<Item = &MtriX> + '_ {
         self.mtrix.iter()
     }
 
-    /// Get the parallel MtriX records for this PDB.
+    /// Get the parallel [`MtriX`] records for this PDB.
     #[doc_cfg(feature = "rayon")]
     pub fn par_mtrix(&self) -> impl ParallelIterator<Item = &MtriX> + '_ {
         self.mtrix.par_iter()
     }
 
-    /// Get the MtriX records for this PDB, as mutable references.
+    /// Get the [`MtriX`] records for this PDB, as mutable references.
     pub fn mtrix_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut MtriX> + '_ {
         self.mtrix.iter_mut()
     }
 
-    /// Get the parallel MtriX records for this PDB, as mutable references.
+    /// Get the parallel [`MtriX`] records for this PDB, as mutable references.
     #[doc_cfg(feature = "rayon")]
     pub fn par_mtrix_mut(&mut self) -> impl ParallelIterator<Item = &mut MtriX> + '_ {
         self.mtrix.par_iter_mut()
     }
 
-    /// Add a MtriX to this PDB.
+    /// Add a [`MtriX`] to this PDB.
     pub fn add_mtrix(&mut self, mtrix: MtriX) {
         self.mtrix.push(mtrix);
     }
 
-    /// Delete the MtriX matching the given predicate.
+    /// Delete the [`MtriX`] matching the given predicate.
     pub fn delete_mtrix_by<F>(&mut self, predicate: F)
     where
         F: Fn(&MtriX) -> bool,
@@ -426,7 +427,7 @@ impl<'a> PDB {
     }
 
     /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// alternative_location, with its hierarchy. The algorithm is based
+    /// `alternative_location`, with its hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -445,7 +446,7 @@ impl<'a> PDB {
     }
 
     /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// alternative_location, with its hierarchy. The algorithm is based
+    /// `alternative_location`, with its hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -477,7 +478,7 @@ impl<'a> PDB {
     /// Find all hierarchies matching the given information
     pub fn find(
         &'a self,
-        search: Search,
+        search: Search<'a>,
     ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModel<'a>> + '_ {
         self.models()
             .map(move |m| (m, search.clone().add_model_info(m)))
@@ -489,7 +490,7 @@ impl<'a> PDB {
     /// Find all hierarchies matching the given information
     pub fn find_mut(
         &'a mut self,
-        search: Search,
+        search: Search<'a>,
     ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModelMut<'a>> + '_ {
         self.models_mut()
             .map(move |m| {
@@ -760,7 +761,7 @@ impl<'a> PDB {
     }
 
     /// This renumbers all numbered structs in the PDB.
-    /// So it renumbers models, atoms, residues, chains and MtriXs.
+    /// So it renumbers models, atoms, residues, chains and [`MtriX`]s.
     pub fn renumber(&mut self) {
         let mut model_counter = 1;
         for model in self.models_mut() {
@@ -935,7 +936,7 @@ impl<'a> PDB {
         ((min[0], min[1], min[2]), (max[0], max[1], max[2]))
     }
 
-    /// Get the bonds in this PDB file. Runtime O(bonds_count * 2 * atom_count) because it
+    /// Get the bonds in this PDB file. Runtime `O(bonds_count * 2 * atom_count)` because it
     /// has to iterate over all atoms to prevent borrow problems.
     pub fn bonds(&self) -> impl DoubleEndedIterator<Item = (&Atom, &Atom, Bond)> + '_ {
         self.bonds.iter().map(move |(a, b, bond)| {

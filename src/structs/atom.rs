@@ -47,17 +47,17 @@ impl Atom {
     pub fn new(
         hetero: bool,
         serial_number: usize,
-        atom_name: impl Into<String>,
+        atom_name: impl AsRef<str>,
         x: f64,
         y: f64,
         z: f64,
         occupancy: f64,
         b_factor: f64,
-        element: impl Into<String>,
+        element: impl AsRef<str>,
         charge: isize,
     ) -> Option<Atom> {
-        let atom_name = atom_name.into().trim().to_string();
-        let element = element.into().trim().to_string();
+        let atom_name = atom_name.as_ref().trim().to_ascii_uppercase();
+        let element = element.as_ref().trim().to_ascii_uppercase();
         if valid_identifier(&atom_name)
             && valid_identifier(&element)
             && x.is_finite()
@@ -84,7 +84,7 @@ impl Atom {
                 counter: ATOM_COUNTER.fetch_add(1, AtomicOrdering::SeqCst),
                 hetero,
                 serial_number,
-                name: atom_name.trim().to_ascii_uppercase(),
+                name: atom_name,
                 x,
                 y,
                 z,
@@ -100,12 +100,12 @@ impl Atom {
     }
 
     /// Get the unique immutable counter for this atom
-    pub(crate) fn counter(&self) -> usize {
+    pub(crate) const fn counter(&self) -> usize {
         self.counter
     }
 
     /// Get if this atom is an hetero atom (`true`), a non standard atom, or a normal atom (`false`)
-    pub fn hetero(&self) -> bool {
+    pub const fn hetero(&self) -> bool {
         self.hetero
     }
 
@@ -116,7 +116,7 @@ impl Atom {
 
     /// Get the position of the atom as a tuple of `f64`, in the following order: (x, y, z).
     /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
-    pub fn pos(&self) -> (f64, f64, f64) {
+    pub const fn pos(&self) -> (f64, f64, f64) {
         (self.x, self.y, self.z)
     }
 
@@ -139,7 +139,7 @@ impl Atom {
     /// Get the X position of the atom.
     /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
     /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn x(&self) -> f64 {
+    pub const fn x(&self) -> f64 {
         self.x
     }
 
@@ -160,7 +160,7 @@ impl Atom {
     /// Get the Y position of the atom.
     /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
     /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn y(&self) -> f64 {
+    pub const fn y(&self) -> f64 {
         self.y
     }
 
@@ -181,7 +181,7 @@ impl Atom {
     /// Get the Z position of the atom.
     /// Given in Aͦ as defined by PDB, to be specific in the orthogonal coordinate system.
     /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn z(&self) -> f64 {
+    pub const fn z(&self) -> f64 {
         self.z
     }
 
@@ -200,14 +200,14 @@ impl Atom {
     }
 
     /// Get the serial number of the atom.
-    /// This number combined with the alt_loc from the Conformer of this Atom is defined to be unique in the containing model, which is not enforced.
-    /// THe precision of this number is 5 digits in PDB files.
-    pub fn serial_number(&self) -> usize {
+    /// This number combined with the `alt_loc` from the Conformer of this Atom is defined to be unique in the containing model, which is not enforced.
+    /// The precision of this number is 5 digits in PDB files.
+    pub const fn serial_number(&self) -> usize {
         self.serial_number
     }
 
     /// Set the serial number of the atom.
-    /// This number combined with the alt_loc from the Conformer of this Atom is defined to be unique in the containing model, which is not enforced.
+    /// This number combined with the `alt_loc` from the Conformer of this Atom is defined to be unique in the containing model, which is not enforced.
     pub fn set_serial_number(&mut self, new_serial_number: usize) {
         self.serial_number = new_serial_number;
     }
@@ -237,7 +237,7 @@ impl Atom {
 
     /// Get the occupancy or Q factor of the atom. This indicates the fraction of unit cells in which this atom is present, in the normal case this will be one (1) and it can range between 1 and 0 (inclusive).
     /// This number has a precision of 6.2 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn occupancy(&self) -> f64 {
+    pub const fn occupancy(&self) -> f64 {
         self.occupancy
     }
 
@@ -266,7 +266,7 @@ impl Atom {
     /// This indicates the uncertainty in the position of the atom as seen over all unit cells in the whole crystal.
     /// A low uncertainty is modelled with a low B factor, with zero uncertainty being equal to a B factor of 0. A higher uncertainty is modelled by a high B factor.
     /// This number has a precision of 6.2 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn b_factor(&self) -> f64 {
+    pub const fn b_factor(&self) -> f64 {
         self.b_factor
     }
 
@@ -293,7 +293,7 @@ impl Atom {
 
     /// Get the element of this atom.
     /// In PDB files the element can at most contain 2 characters.
-    pub fn element(&self) -> Option<&Element> {
+    pub const fn element(&self) -> Option<&Element> {
         self.element.as_ref()
     }
 
@@ -304,7 +304,7 @@ impl Atom {
 
     /// Get the charge of the atom.
     /// In PDB files the charge is one digit with a sign.
-    pub fn charge(&self) -> isize {
+    pub const fn charge(&self) -> isize {
         self.charge
     }
 
@@ -333,7 +333,7 @@ impl Atom {
 
     /// Get the anisotropic temperature factors, if available.
     /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn anisotropic_temperature_factors(&self) -> Option<[[f64; 3]; 3]> {
+    pub const fn anisotropic_temperature_factors(&self) -> Option<[[f64; 3]; 3]> {
         self.atf
     }
 
@@ -343,7 +343,7 @@ impl Atom {
     }
 
     /// Get if this atom is likely to be a part of the backbone of a protein.
-    /// This is based on this Atom only, for a more precise definition use [hierarchy::ContainsAtomConformer]`.is_backbone()`.
+    /// This is based on this Atom only, for a more precise definition use [`hierarchy::ContainsAtomConformer::is_backbone`].
     pub fn is_backbone(&self) -> bool {
         reference_tables::is_backbone(self.name())
     }
@@ -355,7 +355,7 @@ impl Atom {
     }
 
     /// See if the `other` Atom corresponds with this Atom.
-    /// Which means that the Atoms are equal except for the position, occupancy, and b_factor.
+    /// Which means that the Atoms are equal except for the position, occupancy, and `b_factor`.
     /// Used to validate that multiple models contain the same atoms, but with different positional data.
     pub fn corresponds(&self, other: &Atom) -> bool {
         self.serial_number == other.serial_number
@@ -407,7 +407,7 @@ impl Atom {
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].unbound.
+    /// less then the sum of the radius from this atom and the other atom. The used radius is [`AtomicRadius`]`.unbound`.
     ///
     /// Note: the atomic radius used in the unbound radius, this is in most cases bigger than the bound radius
     /// and as such can result in false positives.
@@ -426,7 +426,7 @@ impl Atom {
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].unbound.
+    /// less then the sum of the radius from this atom and the other atom. The used radius is [`AtomicRadius`]`.unbound`.
     /// Wrapping around the unit cell if needed. Meaning it will give the shortest distance between the two
     /// atoms or any of their copies given a crystal of the size of the given unit cell stretching out to
     /// all sides.
@@ -451,7 +451,7 @@ impl Atom {
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].covalent_single.
+    /// less then the sum of the radius from this atom and the other atom. The used radius is [`AtomicRadius`]`.covalent_single`.
     ///
     /// Note: the atomic radius used in the bound radius to a single atom, this is similar to the bound radius for double or
     /// triple bonds but could result in incorrect results.
@@ -469,7 +469,7 @@ impl Atom {
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].covalent_single.
+    /// less then the sum of the radius from this atom and the other atom. The used radius is [`AtomicRadius`]`.covalent_single`.
     /// Wrapping around the unit cell if needed. Meaning it will give the shortest distance between the two
     /// atoms or any of their copies given a crystal of the size of the given unit cell stretching out to
     /// all sides.

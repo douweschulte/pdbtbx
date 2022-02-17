@@ -19,7 +19,7 @@ pub struct PDBError {
 }
 
 impl PDBError {
-    /// Create a new PDBError
+    /// Create a new `PDBError`
     ///
     /// ## Arguments
     /// * `level` - The level of the error, defining how it should be handled
@@ -41,7 +41,7 @@ impl PDBError {
     }
 
     /// The level of the error
-    pub fn level(&self) -> ErrorLevel {
+    pub const fn level(&self) -> ErrorLevel {
         self.level
     }
 

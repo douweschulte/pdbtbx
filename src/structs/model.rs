@@ -22,7 +22,7 @@ impl<'a> Model {
     ///
     /// ## Arguments
     /// * `serial_number` - the serial number
-    pub fn new(serial_number: usize) -> Model {
+    pub const fn new(serial_number: usize) -> Model {
         Model {
             serial_number,
             chains: Vec::new(),
@@ -30,7 +30,7 @@ impl<'a> Model {
     }
 
     /// The serial number of this Model
-    pub fn serial_number(&self) -> usize {
+    pub const fn serial_number(&self) -> usize {
         self.serial_number
     }
 
@@ -170,7 +170,7 @@ impl<'a> Model {
     }
 
     /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// insertion_code, with its full hierarchy. The algorithm is based
+    /// `insertion_code`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -213,7 +213,7 @@ impl<'a> Model {
     }
 
     /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// insertion_code, with its full hierarchy. The algorithm is based
+    /// `insertion_code`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -259,7 +259,7 @@ impl<'a> Model {
     /// Find all hierarchies matching the given information
     pub fn find(
         &'a self,
-        search: Search,
+        search: Search<'a>,
     ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChain<'a>> + '_ {
         self.chains()
             .map(move |c| (c, search.clone().add_chain_info(c)))
@@ -271,7 +271,7 @@ impl<'a> Model {
     /// Find all hierarchies matching the given information
     pub fn find_mut(
         &'a mut self,
-        search: Search,
+        search: Search<'a>,
     ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainMut<'a>> + '_ {
         self.chains_mut()
             .map(move |c| {
@@ -501,7 +501,8 @@ impl<'a> Model {
     ///
     /// ## Arguments
     /// * `id` - the id of the Chain to remove
-    pub fn remove_chain_by_id(&mut self, id: String) -> bool {
+    pub fn remove_chain_by_id(&mut self, id: impl Into<String>) -> bool {
+        let id = id.into();
         let index = self.chains().position(|a| a.id() == id);
 
         if let Some(i) = index {
@@ -519,7 +520,8 @@ impl<'a> Model {
     /// ## Arguments
     /// * `id` - the id of the Chain to remove
     #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_chain_by_id(&mut self, id: String) -> bool {
+    pub fn par_remove_chain_by_id(&mut self, id: impl Into<String>) -> bool {
+        let id = id.into();
         let index = self.chains.par_iter().position_first(|a| a.id() == id);
 
         if let Some(i) = index {

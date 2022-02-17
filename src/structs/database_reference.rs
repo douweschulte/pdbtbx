@@ -15,7 +15,7 @@ pub struct SequencePosition {
 }
 
 impl SequencePosition {
-    /// Create a new SequencePosition
+    /// Create a new `SequencePosition`
     pub fn new(start: isize, start_insert: char, end: isize, end_insert: char) -> Self {
         SequencePosition {
             start,
@@ -33,7 +33,7 @@ impl SequencePosition {
         }
     }
 
-    /// Create a new SequencePosition, from a tuple
+    /// Create a new `SequencePosition`, from a tuple
     pub fn from_tuple((start, start_insert, end, end_insert): (isize, char, isize, char)) -> Self {
         SequencePosition::new(start, start_insert, end, end_insert)
     }
@@ -41,7 +41,7 @@ impl SequencePosition {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-/// A DatabaseReference containing the cross-reference to a corresponding database sequence for a Chain.
+/// A `DatabaseReference` containing the cross-reference to a corresponding database sequence for a Chain.
 pub struct DatabaseReference {
     /// The information about the database, (name, accession code, identification code), see DBREF documentation wwPDB v3.30
     pub database: (String, String, String),
@@ -54,8 +54,8 @@ pub struct DatabaseReference {
 }
 
 impl DatabaseReference {
-    /// Create a new DatabaseReference
-    pub fn new(
+    /// Create a new `DatabaseReference`
+    pub const fn new(
         database: (String, String, String),
         pdb_position: SequencePosition,
         database_position: SequencePosition,
@@ -82,8 +82,8 @@ pub struct SequenceDifference {
 }
 
 impl SequenceDifference {
-    /// Create a new DatabaseReference
-    pub fn new(
+    /// Create a new [`DatabaseReference`]
+    pub const fn new(
         residue: (String, isize, Option<String>),
         database_residue: Option<(String, isize)>,
         comment: String,

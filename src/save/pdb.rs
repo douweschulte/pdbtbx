@@ -43,9 +43,9 @@ pub fn save_pdb(pdb: &PDB, filename: &str, level: StrictnessLevel) -> Result<(),
     Ok(())
 }
 
-/// Save the given PDB struct to the given BufWriter.
+/// Save the given PDB struct to the given [`BufWriter`].
 /// It does not validate or renumber the PDB, so if that is needed that needs to be done in preparation.
-/// It does change the output format based on the StrictnessLevel given.
+/// It does change the output format based on the [`StrictnessLevel`] given.
 ///
 /// ## Loose
 /// * Does not pad all lines to 70 chars length

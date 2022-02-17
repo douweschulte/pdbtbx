@@ -54,7 +54,7 @@ impl<'a> Chain {
     }
 
     /// Get the database reference, if any, for this chain.
-    pub fn database_reference(&self) -> Option<&DatabaseReference> {
+    pub const fn database_reference(&self) -> Option<&DatabaseReference> {
         self.database_reference.as_ref()
     }
 
@@ -163,7 +163,7 @@ impl<'a> Chain {
     }
 
     /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// `alternative_location`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -206,7 +206,7 @@ impl<'a> Chain {
     }
 
     /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// `alternative_location`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -252,7 +252,7 @@ impl<'a> Chain {
     /// Find all hierarchies matching the given information
     pub fn find(
         &'a self,
-        search: Search,
+        search: Search<'a>,
     ) -> impl DoubleEndedIterator<Item = AtomConformerResidue<'a>> + '_ {
         self.residues()
             .map(move |r| (r, search.clone().add_residue_info(r)))
@@ -264,7 +264,7 @@ impl<'a> Chain {
     /// Find all hierarchies matching the given information
     pub fn find_mut(
         &'a mut self,
-        search: Search,
+        search: Search<'a>,
     ) -> impl DoubleEndedIterator<Item = AtomConformerResidueMut<'a>> + '_ {
         self.residues_mut()
             .map(move |r| {

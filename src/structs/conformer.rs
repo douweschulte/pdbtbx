@@ -10,7 +10,7 @@ use std::fmt;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
-/// A Conformer of a Conformer containing multiple atoms, analogous to 'atom_group' in cctbx
+/// A Conformer of a Conformer containing multiple atoms, analogous to `atom_group` in cctbx
 pub struct Conformer {
     /// The name of this Conformer
     name: String,
@@ -22,7 +22,7 @@ pub struct Conformer {
     modification: Option<(String, String)>,
 }
 
-impl Conformer {
+impl<'a> Conformer {
     /// Create a new Conformer
     ///
     /// ## Arguments
@@ -32,8 +32,12 @@ impl Conformer {
     ///
     /// ## Fails
     /// It fails if any of the characters making up the name are invalid.
-    pub fn new(name: &str, alt_loc: Option<&str>, atom: Option<Atom>) -> Option<Conformer> {
-        if let Some(n) = prepare_identifier(name) {
+    pub fn new(
+        name: impl AsRef<str>,
+        alt_loc: Option<&str>,
+        atom: Option<Atom>,
+    ) -> Option<Conformer> {
+        if let Some(n) = prepare_identifier(name.as_ref()) {
             let mut res = Conformer {
                 name: n,
                 alternative_location: None,
@@ -61,8 +65,8 @@ impl Conformer {
     ///
     /// ## Fails
     /// It fails if any of the characters of the new name are invalid.
-    pub fn set_name(&mut self, new_name: &str) -> bool {
-        if let Some(n) = prepare_identifier(new_name) {
+    pub fn set_name(&mut self, new_name: impl AsRef<str>) -> bool {
+        if let Some(n) = prepare_identifier(new_name.as_ref()) {
             self.name = n;
             true
         } else {
@@ -79,8 +83,8 @@ impl Conformer {
     ///
     /// ## Fails
     /// It fails if any of the characters of the new alternative location are invalid.
-    pub fn set_alternative_location(&mut self, new_loc: &str) -> bool {
-        if let Some(l) = prepare_identifier(new_loc) {
+    pub fn set_alternative_location(&mut self, new_loc: impl AsRef<str>) -> bool {
+        if let Some(l) = prepare_identifier(new_loc.as_ref()) {
             self.alternative_location = Some(l);
             true
         } else {
@@ -100,12 +104,16 @@ impl Conformer {
     }
 
     /// Get the modification of this Conformer e.g., chemical or post-translational. These will be saved in the MODRES records in the PDB file
-    pub fn modification(&self) -> Option<&(String, String)> {
+    pub const fn modification(&self) -> Option<&(String, String)> {
         self.modification.as_ref()
     }
 
     /// Set the modification of this Conformer e.g., chemical or post-translational. These will be saved in the MODRES records in the PDB file
-    pub fn set_modification(&mut self, new_modification: (String, String)) -> Result<(), String> {
+    pub fn set_modification(
+        &mut self,
+        new_modification: (impl Into<String>, impl Into<String>),
+    ) -> Result<(), String> {
+        let new_modification = (new_modification.0.into(), new_modification.1.into());
         if !valid_identifier(&new_modification.0) {
             Err(format!(
                 "New modification has invalid characters for standard conformer name, conformer: {:?}, standard name \"{}\"",
@@ -178,13 +186,16 @@ impl Conformer {
     }
 
     /// Find all atoms matching the given information
-    pub fn find(&self, search: Search) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
+    pub fn find(&'a self, search: Search<'a>) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
         self.atoms()
             .filter(move |a| search.add_atom_info(a).complete().unwrap_or(true))
     }
 
     /// Find all atoms matching the given information
-    pub fn find_mut(&mut self, search: Search) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
+    pub fn find_mut(
+        &'a mut self,
+        search: Search<'a>,
+    ) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.atoms_mut()
             .filter(move |a| search.add_atom_info(a).complete().unwrap_or(true))
     }
@@ -296,7 +307,8 @@ impl Conformer {
     ///
     /// ## Panics
     /// It panics when the index is outside bounds.
-    pub fn remove_atom_by_name(&mut self, name: String) -> bool {
+    pub fn remove_atom_by_name(&mut self, name: impl Into<String>) -> bool {
+        let name = name.into();
         let index = self.atoms().position(|a| a.name() == name);
 
         if let Some(i) = index {
@@ -316,7 +328,8 @@ impl Conformer {
     /// ## Panics
     /// It panics when the index is outside bounds.
     #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_atom_by_name(&mut self, name: String) -> bool {
+    pub fn par_remove_atom_by_name(&mut self, name: impl Into<String>) -> bool {
+        let name = name.into();
         let index = self.atoms.par_iter().position_first(|a| a.name() == name);
 
         if let Some(i) = index {
@@ -406,15 +419,9 @@ mod tests {
         assert!(!a.set_alternative_location("Aͦ"));
         assert_eq!(a.alternative_location(), Some("A"));
 
-        assert!(a
-            .set_modification(("ALA".to_string(), "Alanine".to_string()))
-            .is_ok());
-        assert!(a
-            .set_modification(("ALAͦ".to_string(), "Alanine".to_string()))
-            .is_err());
-        assert!(a
-            .set_modification(("ALA".to_string(), "Aͦlanine".to_string()))
-            .is_err());
+        assert!(a.set_modification(("ALA", "Alanine")).is_ok());
+        assert!(a.set_modification(("ALAͦ", "Alanine")).is_err());
+        assert!(a.set_modification(("ALA", "Aͦlanine")).is_err());
     }
 
     #[test]
@@ -446,7 +453,7 @@ mod tests {
         assert_eq!(a.atom(0), Some(&atom1));
         assert_eq!(a.atom_mut(0), Some(&mut atom1));
         a.remove_atom(0);
-        assert!(a.remove_atom_by_name("CB".to_string()));
+        assert!(a.remove_atom_by_name("CB"));
         assert!(a.remove_atom_by_serial_number(13));
         assert_eq!(a.atom_count(), 0);
     }
