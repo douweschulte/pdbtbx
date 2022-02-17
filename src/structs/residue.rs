@@ -507,6 +507,19 @@ impl Ord for Residue {
     }
 }
 
+impl std::ops::Index<usize> for Residue {
+    type Output = Conformer;
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.conformers[idx]
+    }
+}
+
+impl std::ops::IndexMut<usize> for Residue {
+    fn index_mut(&mut self, idx: usize) -> &mut Self::Output {
+        &mut self.conformers[idx]
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {

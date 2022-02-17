@@ -608,6 +608,19 @@ impl Ord for Model {
     }
 }
 
+impl std::ops::Index<usize> for Model {
+    type Output = Chain;
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.chains[idx]
+    }
+}
+
+impl std::ops::IndexMut<usize> for Model {
+    fn index_mut(&mut self, idx: usize) -> &mut Self::Output {
+        &mut self.chains[idx]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

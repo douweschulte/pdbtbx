@@ -397,6 +397,19 @@ impl Ord for Conformer {
     }
 }
 
+impl std::ops::Index<usize> for Conformer {
+    type Output = Atom;
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.atoms[idx]
+    }
+}
+
+impl std::ops::IndexMut<usize> for Conformer {
+    fn index_mut(&mut self, idx: usize) -> &mut Self::Output {
+        &mut self.atoms[idx]
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {

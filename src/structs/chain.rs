@@ -555,6 +555,19 @@ impl Ord for Chain {
     }
 }
 
+impl std::ops::Index<usize> for Chain {
+    type Output = Residue;
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.residues[idx]
+    }
+}
+
+impl std::ops::IndexMut<usize> for Chain {
+    fn index_mut(&mut self, idx: usize) -> &mut Self::Output {
+        &mut self.residues[idx]
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {

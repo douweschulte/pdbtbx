@@ -991,6 +991,19 @@ impl Default for PDB {
     }
 }
 
+impl std::ops::Index<usize> for PDB {
+    type Output = Model;
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.models[idx]
+    }
+}
+
+impl std::ops::IndexMut<usize> for PDB {
+    fn index_mut(&mut self, idx: usize) -> &mut Self::Output {
+        &mut self.models[idx]
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
