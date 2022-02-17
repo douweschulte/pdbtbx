@@ -82,7 +82,7 @@ impl<'a> Chain {
     /// Get the amount of Conformers making up this Chain in parallel
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformer_count(&self) -> usize {
-        self.par_residues().map(|res| res.conformer_count()).sum()
+        self.par_residues().map(Residue::conformer_count).sum()
     }
 
     /// Get the amount of Atoms making up this Chain
@@ -93,7 +93,7 @@ impl<'a> Chain {
     /// Get the amount of Atoms making up this Chain in parallel
     #[doc_cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
-        self.par_residues().map(|res| res.par_atom_count()).sum()
+        self.par_residues().map(Residue::par_atom_count).sum()
     }
 
     /// Get a specific Residue from list of Residues making up this Chain.
@@ -306,49 +306,50 @@ impl<'a> Chain {
     /// Get the list of Conformers making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
-        self.residues().flat_map(|a| a.conformers())
+        self.residues().flat_map(Residue::conformers)
     }
 
     /// Get the list of Conformers making up this Chain in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
-        self.par_residues().flat_map(|a| a.par_conformers())
+        self.par_residues().flat_map(Residue::par_conformers)
     }
 
     /// Get the list of Conformers as mutable references making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
-        self.residues_mut().flat_map(|a| a.conformers_mut())
+        self.residues_mut().flat_map(Residue::conformers_mut)
     }
 
     /// Get the list of Conformers as mutable references making up this Chain in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
-        self.par_residues_mut().flat_map(|a| a.par_conformers_mut())
+        self.par_residues_mut()
+            .flat_map(Residue::par_conformers_mut)
     }
 
     /// Get the list of Atoms making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.residues().flat_map(|a| a.atoms())
+        self.residues().flat_map(Residue::atoms)
     }
 
     /// Get the list of Atoms making up this Chain in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.par_residues().flat_map(|a| a.par_atoms())
+        self.par_residues().flat_map(Residue::par_atoms)
     }
 
     /// Get the list of Atoms as mutable references making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.residues_mut().flat_map(|a| a.atoms_mut())
+        self.residues_mut().flat_map(Residue::atoms_mut)
     }
 
     /// Get the list of Atoms as mutable references making up this Chain in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.par_residues_mut().flat_map(|a| a.par_atoms_mut())
+        self.par_residues_mut().flat_map(Residue::par_atoms_mut)
     }
 
     /// Returns all atom with their hierarchy struct for each atom in this chain.
@@ -489,7 +490,7 @@ impl<'a> Chain {
 
     /// Remove all empty Residues from this Chain, and all empty Conformers from the Residues.
     pub fn remove_empty(&mut self) {
-        self.residues_mut().for_each(|r| r.remove_empty());
+        self.residues_mut().for_each(Residue::remove_empty);
         self.residues.retain(|r| r.conformer_count() > 0);
     }
 

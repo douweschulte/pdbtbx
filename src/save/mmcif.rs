@@ -161,7 +161,7 @@ _atom_site.aniso_U[3][3]"
                             (if atom.hetero() { "HETATM" } else { "ATOM" }).to_string(), // ATOM or HETATM
                             atom.serial_number().to_string(), // Serial number
                             atom.element()
-                                .map_or_else(|| "", |e| e.symbol())
+                                .map_or_else(|| "", Element::symbol)
                                 .to_string(), // Element
                             atom.name().to_string(),          // Name
                             conformer.alternative_location().unwrap_or(".").to_string(), // Alternative location

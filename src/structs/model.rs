@@ -53,7 +53,7 @@ impl<'a> Model {
     /// Get the amount of Residues making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residue_count(&self) -> usize {
-        self.par_chains().map(|chain| chain.residue_count()).sum()
+        self.par_chains().map(Chain::residue_count).sum()
     }
 
     /// Get the amount of Conformers making up this Model.
@@ -65,9 +65,7 @@ impl<'a> Model {
     /// Get the amount of Conformers making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformer_count(&self) -> usize {
-        self.par_chains()
-            .map(|chain| chain.par_conformer_count())
-            .sum()
+        self.par_chains().map(Chain::par_conformer_count).sum()
     }
 
     /// Get the amount of Atoms making up this Model.
@@ -78,7 +76,7 @@ impl<'a> Model {
     /// Get the amount of Atoms making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
-        self.par_chains().map(|chain| chain.par_atom_count()).sum()
+        self.par_chains().map(Chain::par_atom_count).sum()
     }
 
     /// Get a specific Chain from list of Chains making up this Model.
@@ -313,73 +311,73 @@ impl<'a> Model {
     /// Get the list of Residues making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.chains().flat_map(|a| a.residues())
+        self.chains().flat_map(Chain::residues)
     }
 
     /// Get the list of Residues making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
-        self.par_chains().flat_map(|a| a.par_residues())
+        self.par_chains().flat_map(Chain::par_residues)
     }
 
     /// Get the list of Residues as mutable references making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
-        self.chains_mut().flat_map(|a| a.residues_mut())
+        self.chains_mut().flat_map(Chain::residues_mut)
     }
 
     /// Get the list of Residues as mutable references making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
-        self.par_chains_mut().flat_map(|a| a.par_residues_mut())
+        self.par_chains_mut().flat_map(Chain::par_residues_mut)
     }
 
     /// Get the list of Conformers making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
-        self.chains().flat_map(|a| a.conformers())
+        self.chains().flat_map(Chain::conformers)
     }
 
     /// Get the list of Conformers making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
-        self.par_chains().flat_map(|a| a.par_conformers())
+        self.par_chains().flat_map(Chain::par_conformers)
     }
 
     /// Get the list of Conformers as mutable references making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
-        self.chains_mut().flat_map(|a| a.conformers_mut())
+        self.chains_mut().flat_map(Chain::conformers_mut)
     }
 
     /// Get the list of Conformers as mutable references making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
-        self.par_chains_mut().flat_map(|a| a.par_conformers_mut())
+        self.par_chains_mut().flat_map(Chain::par_conformers_mut)
     }
 
     /// Get the list of Atoms making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.chains().flat_map(|a| a.atoms())
+        self.chains().flat_map(Chain::atoms)
     }
 
     /// Get the list of Atoms making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.par_chains().flat_map(|a| a.par_atoms())
+        self.par_chains().flat_map(Chain::par_atoms)
     }
 
     /// Get the list of Atoms as mutable references making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.chains_mut().flat_map(|a| a.atoms_mut())
+        self.chains_mut().flat_map(Chain::atoms_mut)
     }
 
     /// Get the list of Atoms as mutable references making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.par_chains_mut().flat_map(|a| a.par_atoms_mut())
+        self.par_chains_mut().flat_map(Chain::par_atoms_mut)
     }
 
     /// Returns all atom with their hierarchy struct for each atom in this chain.
@@ -534,14 +532,14 @@ impl<'a> Model {
 
     /// Remove all empty Chain from this Model, and all empty Residues from the Chains.
     pub fn remove_empty(&mut self) {
-        self.chains_mut().for_each(|c| c.remove_empty());
+        self.chains_mut().for_each(Chain::remove_empty);
         self.chains.retain(|c| c.residue_count() > 0);
     }
 
     /// Remove all empty Chain from this Model, and all empty Residues from the Chains in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_remove_empty(&mut self) {
-        self.par_chains_mut().for_each(|c| c.remove_empty());
+        self.par_chains_mut().for_each(Chain::remove_empty);
         self.chains.retain(|c| c.residue_count() > 0);
     }
 

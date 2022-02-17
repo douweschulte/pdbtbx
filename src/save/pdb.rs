@@ -432,7 +432,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
             for residue in chain.residues() {
                 for conformer in residue.conformers() {
                     for atom in conformer.atoms() {
-                        let element = atom.element().map_or_else(|| "", |e| e.symbol());
+                        let element = atom.element().map_or_else(|| "", Element::symbol);
                         print_line(vec![
                             (6, if atom.hetero() { "HETATM" } else { "ATOM  " }),
                             (0, &atom_line(atom, conformer, residue, chain)),

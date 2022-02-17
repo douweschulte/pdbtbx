@@ -524,7 +524,7 @@ fn validate_seqres(
 
             let total_found = chain
                 .residues()
-                .filter(|r| !r.atoms().any(|a| a.hetero()))
+                .filter(|r| !r.atoms().any(Atom::hetero))
                 .count();
             if chain_sequence.len() != total_found {
                 errors.push(PDBError::new(
@@ -597,7 +597,7 @@ fn add_bonds(pdb: &mut PDB, bonds: Vec<(Context, LexItem)>) -> Vec<PDBError> {
                                 })
                                 .map(|r| {
                                     r.conformers().find(|c| c.name() == atom.0).map(|c| {
-                                        c.atoms().find(|a| a.name() == "SG").map(|a| a.counter())
+                                        c.atoms().find(|a| a.name() == "SG").map(Atom::counter)
                                     })
                                 })
                         })

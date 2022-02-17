@@ -415,11 +415,14 @@ impl Atom {
     /// It fails if for any one of the two atoms the element or unbound radius is not known.
     pub fn overlaps(&self, other: &Self) -> Option<bool> {
         self.element()
-            .map(|e| e.atomic_radius())
+            .map(Element::atomic_radius)
             .map(|self_rad| {
-                other.element().map(|e| e.atomic_radius()).map(|other_rad| {
-                    Some(self.distance(other) <= self_rad.unbound? + other_rad.unbound?)
-                })
+                other
+                    .element()
+                    .map(Element::atomic_radius)
+                    .map(|other_rad| {
+                        Some(self.distance(other) <= self_rad.unbound? + other_rad.unbound?)
+                    })
             })
             .flatten()
             .flatten()
@@ -437,14 +440,17 @@ impl Atom {
     /// It fails if for any one of the two atoms the element or unbound radius is not known.
     pub fn overlaps_wrapping(&self, other: &Self, cell: &UnitCell) -> Option<bool> {
         self.element()
-            .map(|e| e.atomic_radius())
+            .map(Element::atomic_radius)
             .map(|self_rad| {
-                other.element().map(|e| e.atomic_radius()).map(|other_rad| {
-                    Some(
-                        self.distance_wrapping(other, cell)
-                            <= self_rad.unbound? + other_rad.unbound?,
-                    )
-                })
+                other
+                    .element()
+                    .map(Element::atomic_radius)
+                    .map(|other_rad| {
+                        Some(
+                            self.distance_wrapping(other, cell)
+                                <= self_rad.unbound? + other_rad.unbound?,
+                        )
+                    })
             })
             .flatten()
             .flatten()
@@ -459,11 +465,14 @@ impl Atom {
     /// It fails if for any one of the two atoms the element is not known.
     pub fn overlaps_bound(&self, other: &Self) -> Option<bool> {
         self.element()
-            .map(|e| e.atomic_radius())
+            .map(Element::atomic_radius)
             .map(|self_rad| {
-                other.element().map(|e| e.atomic_radius()).map(|other_rad| {
-                    self.distance(other) <= self_rad.covalent_single + other_rad.covalent_single
-                })
+                other
+                    .element()
+                    .map(Element::atomic_radius)
+                    .map(|other_rad| {
+                        self.distance(other) <= self_rad.covalent_single + other_rad.covalent_single
+                    })
             })
             .flatten()
     }
@@ -480,12 +489,15 @@ impl Atom {
     /// It fails if for any one of the two atoms the element is not known.
     pub fn overlaps_bound_wrapping(&self, other: &Self, cell: &UnitCell) -> Option<bool> {
         self.element()
-            .map(|e| e.atomic_radius())
+            .map(Element::atomic_radius)
             .map(|self_rad| {
-                other.element().map(|e| e.atomic_radius()).map(|other_rad| {
-                    self.distance_wrapping(other, cell)
-                        <= self_rad.covalent_single + other_rad.covalent_single
-                })
+                other
+                    .element()
+                    .map(Element::atomic_radius)
+                    .map(|other_rad| {
+                        self.distance_wrapping(other, cell)
+                            <= self_rad.covalent_single + other_rad.covalent_single
+                    })
             })
             .flatten()
     }
@@ -499,7 +511,7 @@ impl fmt::Display for Atom {
             self.name(),
             self.serial_number(),
             self.element()
-                .map_or_else(|| "".to_string(), |e| e.to_string()),
+                .map_or_else(|| "".to_string(), ToString::to_string),
             self.x(),
             self.y(),
             self.z(),

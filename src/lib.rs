@@ -162,20 +162,22 @@ println!("There are {} backbone atoms within 3.5Aͦ of the atom at index 42", to
 )]
 // Clippy lints
 #![deny(
-    clippy::enum_glob_use,
-    clippy::single_match_else,
-    clippy::nonminimal_bool,
-    clippy::print_stdout,
-    clippy::use_debug,
-    clippy::missing_docs_in_private_items,
-    clippy::unwrap_used,
-    clippy::map_unwrap_or,
+    clippy::all,
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
+    clippy::enum_glob_use,
+    clippy::map_unwrap_or,
+    clippy::missing_docs_in_private_items,
+    clippy::nonminimal_bool,
+    clippy::print_stdout,
+    clippy::redundant_closure_for_method_calls,
     clippy::similar_names,
-    clippy::all
+    clippy::single_match_else,
+    clippy::unnecessary_wraps,
+    clippy::unwrap_used,
+    clippy::use_debug
 )]
 // Allow PDB (and derived) names to be used
 #![allow(clippy::upper_case_acronyms)]

@@ -262,10 +262,7 @@ impl<'a> PDB {
     /// Get the amount of Chains making up this PDB in parallel. Including all models.
     #[doc_cfg(feature = "rayon")]
     pub fn par_total_chain_count(&self) -> usize {
-        self.models
-            .par_iter()
-            .map(|model| model.chain_count())
-            .sum()
+        self.models.par_iter().map(Model::chain_count).sum()
     }
 
     /// Get the amount of Residues making up this PDB. Including all models.
@@ -278,10 +275,7 @@ impl<'a> PDB {
     /// Get the amount of Residues making up this PDB in parallel. Including all models.
     #[doc_cfg(feature = "rayon")]
     pub fn par_total_residue_count(&self) -> usize {
-        self.models
-            .par_iter()
-            .map(|model| model.par_residue_count())
-            .sum()
+        self.models.par_iter().map(Model::par_residue_count).sum()
     }
 
     /// Get the amount of Conformer making up this PDB. Including all models.
@@ -294,10 +288,7 @@ impl<'a> PDB {
     /// Get the amount of Conformer making up this PDB in parallel. Including all models.
     #[doc_cfg(feature = "rayon")]
     pub fn par_total_conformer_count(&self) -> usize {
-        self.models
-            .par_iter()
-            .map(|model| model.par_conformer_count())
-            .sum()
+        self.models.par_iter().map(Model::par_conformer_count).sum()
     }
 
     /// Get the amount of Atoms making up this PDB. Including all models.
@@ -310,10 +301,7 @@ impl<'a> PDB {
     /// Get the amount of Atoms making up this PDB in parallel. Including all models.
     #[doc_cfg(feature = "rayon")]
     pub fn par_total_atom_count(&self) -> usize {
-        self.models
-            .par_iter()
-            .map(|model| model.par_atom_count())
-            .sum()
+        self.models.par_iter().map(Model::par_atom_count).sum()
     }
 
     /// Get a specific Model from list of Models making up this PDB.
@@ -530,97 +518,97 @@ impl<'a> PDB {
     /// Get the list of Chains making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
-        self.models().flat_map(|a| a.chains())
+        self.models().flat_map(Model::chains)
     }
 
     /// Get the list of Chains making up this PDB in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_chains(&self) -> impl ParallelIterator<Item = &Chain> + '_ {
-        self.par_models().flat_map(|a| a.par_chains())
+        self.par_models().flat_map(Model::par_chains)
     }
 
     /// Get the list of Chains as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
-        self.models_mut().flat_map(|a| a.chains_mut())
+        self.models_mut().flat_map(Model::chains_mut)
     }
 
     /// Get the list of Chains as mutable references making up this PDB in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_chains_mut(&mut self) -> impl ParallelIterator<Item = &mut Chain> + '_ {
-        self.par_models_mut().flat_map(|a| a.par_chains_mut())
+        self.par_models_mut().flat_map(Model::par_chains_mut)
     }
 
     /// Get the list of Residues making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.models().flat_map(|a| a.residues())
+        self.models().flat_map(Model::residues)
     }
 
     /// Get the list of Residues making up this PDB in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
-        self.par_models().flat_map(|a| a.par_residues())
+        self.par_models().flat_map(Model::par_residues)
     }
 
     /// Get the list of Residue as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
-        self.models_mut().flat_map(|a| a.residues_mut())
+        self.models_mut().flat_map(Model::residues_mut)
     }
 
     /// Get the list of Residue as mutable references making up this PDB in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
-        self.par_models_mut().flat_map(|a| a.par_residues_mut())
+        self.par_models_mut().flat_map(Model::par_residues_mut)
     }
 
     /// Get the list of Conformers making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
-        self.models().flat_map(|a| a.conformers())
+        self.models().flat_map(Model::conformers)
     }
 
     /// Get the list of Conformers making up this PDB in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
-        self.par_models().flat_map(|a| a.par_conformers())
+        self.par_models().flat_map(Model::par_conformers)
     }
 
     /// Get the list of Conformers as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
-        self.models_mut().flat_map(|a| a.conformers_mut())
+        self.models_mut().flat_map(Model::conformers_mut)
     }
 
     /// Get the list of Conformers as mutable references making up this PDB in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
-        self.par_models_mut().flat_map(|a| a.par_conformers_mut())
+        self.par_models_mut().flat_map(Model::par_conformers_mut)
     }
 
     /// Get the list of Atom making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.models().flat_map(|a| a.atoms())
+        self.models().flat_map(Model::atoms)
     }
 
     /// Get the list of Atom making up this PDB in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.par_models().flat_map(|a| a.par_atoms())
+        self.par_models().flat_map(Model::par_atoms)
     }
 
     /// Get the list of Atom as mutable references making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.models_mut().flat_map(|a| a.atoms_mut())
+        self.models_mut().flat_map(Model::atoms_mut)
     }
 
     /// Get the list of Atom as mutable references making up this PDB in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.par_models_mut().flat_map(|a| a.par_atoms_mut())
+        self.par_models_mut().flat_map(Model::par_atoms_mut)
     }
 
     /// Returns all atom with their hierarchy struct for each atom in this chain.
@@ -748,7 +736,7 @@ impl<'a> PDB {
 
     /// Remove all empty Models from this PDB, and all empty Chains from the Model, and all empty Residues from the Chains.
     pub fn remove_empty(&mut self) {
-        self.models.iter_mut().for_each(|m| m.remove_empty());
+        self.models.iter_mut().for_each(Model::remove_empty);
         self.models.retain(|m| m.chain_count() > 0);
     }
 
@@ -756,7 +744,7 @@ impl<'a> PDB {
     /// Done in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_remove_empty(&mut self) {
-        self.models.par_iter_mut().for_each(|m| m.remove_empty());
+        self.models.par_iter_mut().for_each(Model::remove_empty);
         self.models.retain(|m| m.chain_count() > 0);
     }
 
@@ -870,12 +858,10 @@ impl<'a> PDB {
     #[doc_cfg(feature = "rayon")]
     pub fn par_full_sort(&mut self) {
         self.par_sort();
-        self.par_models_mut().for_each(|model| model.par_sort());
-        self.par_chains_mut().for_each(|chain| chain.par_sort());
-        self.par_residues_mut()
-            .for_each(|residue| residue.par_sort());
-        self.par_conformers_mut()
-            .for_each(|conformer| conformer.par_sort());
+        self.par_models_mut().for_each(Model::par_sort);
+        self.par_chains_mut().for_each(Chain::par_sort);
+        self.par_residues_mut().for_each(Residue::par_sort);
+        self.par_conformers_mut().for_each(Conformer::par_sort);
     }
 
     /// Create an R star tree which can be used for fast lookup of

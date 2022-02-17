@@ -70,7 +70,7 @@ fn main() {
     let val = pdb
         .conformers()
         .filter(|c| c.name() == "VAL")
-        .map(|c| c.atoms())
+        .map(pdbtbx::Conformer::atoms)
         .flatten()
         .count();
     let c_not_val = pdb
