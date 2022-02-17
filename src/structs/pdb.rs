@@ -57,8 +57,8 @@ pub struct PDB {
 /// Creator functions for a PDB file
 impl PDB {
     /// Create an empty PDB struct.
-    pub const fn new() -> PDB {
-        PDB {
+    pub const fn new() -> Self {
+        Self {
             identifier: None,
             remarks: Vec::new(),
             scale: None,
@@ -470,8 +470,8 @@ impl<'a> PDB {
     /// use pdbtbx::*;
     /// let (pdb, errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
     /// let selection = pdb.find(
-    ///     Term::ChainId("A".to_owned())
-    ///     & Term::ConformerName("GLY".to_owned())
+    ///     Term::ChainId("A")
+    ///     & Term::ConformerName("GLY")
     ///     & Term::AtomSerialNumber(750)
     /// );
     /// ```
@@ -820,7 +820,7 @@ impl<'a> PDB {
     /// Joins two PDBs. If one has multiple models it extends the models of this PDB with the models of the other PDB. If this PDB does
     /// not have any models it moves the models of the other PDB to this PDB. If both have one model it moves all chains/residues/atoms
     /// form the first model of the other PDB to the first model of this PDB. Effectively the same as calling join on those models.
-    pub fn join(&mut self, mut other: PDB) {
+    pub fn join(&mut self, mut other: Self) {
         #[allow(clippy::unwrap_used)]
         if self.model_count() > 1 || other.model_count() > 1 {
             self.models.extend(other.models);

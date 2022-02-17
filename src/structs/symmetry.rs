@@ -15,13 +15,13 @@ pub struct Symmetry {
 impl Symmetry {
     /// Create a new Symmetry based on a fully qualified Herman Mauguin or Hall symbol
     pub fn new(symbol: &str) -> Option<Self> {
-        reference_tables::get_index_for_symbol(symbol.trim()).map(|index| Symmetry { index })
+        reference_tables::get_index_for_symbol(symbol.trim()).map(|index| Self { index })
     }
 
     /// Create a new Symmetry based on the index of a symbol in Int. Crys. Handbook Vol A 2016
     pub fn from_index(index: usize) -> Option<Self> {
         if reference_tables::get_herman_mauguin_symbol_for_index(index).is_some() {
-            Some(Symmetry { index })
+            Some(Self { index })
         } else {
             None
         }

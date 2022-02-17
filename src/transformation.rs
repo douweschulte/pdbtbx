@@ -21,7 +21,7 @@ impl TransformationMatrix {
 
     /// Create a matrix defining identity, so no transformation
     pub const fn identity() -> Self {
-        TransformationMatrix {
+        Self {
             matrix: [
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
@@ -32,7 +32,7 @@ impl TransformationMatrix {
 
     /// Create a matrix with the given matrix
     pub const fn from_matrix(matrix: [[f64; 4]; 3]) -> Self {
-        TransformationMatrix { matrix }
+        Self { matrix }
     }
 
     /// Create a matrix defining a rotation around the X axis
@@ -43,7 +43,7 @@ impl TransformationMatrix {
     pub fn rotation_x(deg: f64) -> Self {
         assert!(deg.is_finite(), "The amount of degrees is not finite");
         let (s, c) = deg.to_radians().sin_cos();
-        TransformationMatrix {
+        Self {
             matrix: [[1.0, 0.0, 0.0, 0.0], [0.0, c, -s, 0.0], [0.0, s, c, 0.0]],
         }
     }
@@ -56,7 +56,7 @@ impl TransformationMatrix {
     pub fn rotation_y(deg: f64) -> Self {
         assert!(deg.is_finite(), "The amount of degrees is not finite");
         let (s, c) = deg.to_radians().sin_cos();
-        TransformationMatrix {
+        Self {
             matrix: [[c, 0.0, s, 0.0], [0.0, 1.0, 0.0, 0.0], [-s, 0.0, c, 0.0]],
         }
     }
@@ -70,7 +70,7 @@ impl TransformationMatrix {
         assert!(deg.is_finite(), "The amount of degrees is not finite");
         let c = deg.to_radians().cos();
         let s = deg.to_radians().sin();
-        TransformationMatrix {
+        Self {
             matrix: [[c, -s, 0.0, 0.0], [s, c, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0]],
         }
     }
@@ -83,7 +83,7 @@ impl TransformationMatrix {
             x.is_finite() && y.is_finite() && z.is_finite(),
             "One or more of the arguments is not finite"
         );
-        TransformationMatrix {
+        Self {
             matrix: [[1.0, 0.0, 0.0, x], [0.0, 1.0, 0.0, y], [0.0, 0.0, 1.0, z]],
         }
     }
@@ -95,7 +95,7 @@ impl TransformationMatrix {
     /// It panics if `f` is not finite (`f64.is_finite()`)
     pub fn magnify(f: f64) -> Self {
         assert!(f.is_finite(), "The factor is not finite");
-        TransformationMatrix {
+        Self {
             matrix: [[f, 0.0, 0.0, 0.0], [0.0, f, 0.0, 0.0], [0.0, 0.0, f, 0.0]],
         }
     }
@@ -112,7 +112,7 @@ impl TransformationMatrix {
             x.is_finite() && y.is_finite() && z.is_finite(),
             "One or more of the arguments is not finite"
         );
-        TransformationMatrix {
+        Self {
             matrix: [[x, 0.0, 0.0, 0.0], [0.0, y, 0.0, 0.0], [0.0, 0.0, z, 0.0]],
         }
     }
@@ -149,7 +149,7 @@ impl TransformationMatrix {
     /// Combine this transformation with another transformation to deliver a new transformation.
     /// This transformation is applied before the other transformation.
     pub fn combine(&self, other: &Self) -> Self {
-        TransformationMatrix {
+        Self {
             matrix: [
                 [
                     other.matrix[0][0] * self.matrix[0][0]

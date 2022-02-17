@@ -26,11 +26,11 @@ impl<'a> Chain {
     ///
     /// ## Fails
     /// It fails if the identifier is an invalid character.
-    pub fn new(id: &str) -> Option<Chain> {
+    pub fn new(id: &str) -> Option<Self> {
         if !valid_identifier(id) {
             return None;
         }
-        Some(Chain {
+        Some(Self {
             id: id.trim().to_ascii_uppercase(),
             residues: Vec::new(),
             database_reference: None,
@@ -510,7 +510,7 @@ impl<'a> Chain {
 
     /// Join this Chain with another Chain, this moves all atoms from the other Chain
     /// to this Chain. All other (meta) data of this Chain will stay the same.
-    pub fn join(&mut self, other: Chain) {
+    pub fn join(&mut self, other: Self) {
         self.residues.extend(other.residues);
     }
 

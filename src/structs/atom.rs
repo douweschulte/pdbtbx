@@ -55,7 +55,7 @@ impl Atom {
         b_factor: f64,
         element: impl AsRef<str>,
         charge: isize,
-    ) -> Option<Atom> {
+    ) -> Option<Self> {
         let atom_name = atom_name.as_ref().trim().to_ascii_uppercase();
         let element = element.as_ref().trim().to_ascii_uppercase();
         if valid_identifier(&atom_name)
@@ -80,7 +80,7 @@ impl Atom {
             } else {
                 None
             };
-            Some(Atom {
+            Some(Self {
                 counter: ATOM_COUNTER.fetch_add(1, AtomicOrdering::SeqCst),
                 hetero,
                 serial_number,
@@ -357,7 +357,7 @@ impl Atom {
     /// See if the `other` Atom corresponds with this Atom.
     /// Which means that the Atoms are equal except for the position, occupancy, and `b_factor`.
     /// Used to validate that multiple models contain the same atoms, but with different positional data.
-    pub fn corresponds(&self, other: &Atom) -> bool {
+    pub fn corresponds(&self, other: &Self) -> bool {
         self.serial_number == other.serial_number
             && self.name() == other.name()
             && self.element() == other.element()
@@ -367,7 +367,7 @@ impl Atom {
     }
 
     /// Gives the distance between the centers of two atoms in Aͦ.
-    pub fn distance(&self, other: &Atom) -> f64 {
+    pub fn distance(&self, other: &Self) -> f64 {
         ((other.x - self.x).powi(2) + (other.y - self.y).powi(2) + (other.z - self.z).powi(2))
             .sqrt()
     }
@@ -375,7 +375,7 @@ impl Atom {
     /// Gives the distance between the centers of two atoms in Aͦ.
     /// Wrapping around the unit cell if needed.
     /// Meaning it will give the shortest distance between the two atoms or any of their copies given a crystal of the size of the given unit cell stretching out to all sides.
-    pub fn distance_wrapping(&self, other: &Atom, cell: &UnitCell) -> f64 {
+    pub fn distance_wrapping(&self, other: &Self, cell: &UnitCell) -> f64 {
         let mut x = other.x;
         if (self.x - other.x).abs() > cell.a() / 2.0 {
             if self.x > other.x {
@@ -413,7 +413,7 @@ impl Atom {
     /// and as such can result in false positives.
     ///
     /// It fails if for any one of the two atoms the element or unbound radius is not known.
-    pub fn overlaps(&self, other: &Atom) -> Option<bool> {
+    pub fn overlaps(&self, other: &Self) -> Option<bool> {
         self.element()
             .map(|e| e.atomic_radius())
             .map(|self_rad| {
@@ -435,7 +435,7 @@ impl Atom {
     /// and as such can result in false positives.
     ///
     /// It fails if for any one of the two atoms the element or unbound radius is not known.
-    pub fn overlaps_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
+    pub fn overlaps_wrapping(&self, other: &Self, cell: &UnitCell) -> Option<bool> {
         self.element()
             .map(|e| e.atomic_radius())
             .map(|self_rad| {
@@ -457,7 +457,7 @@ impl Atom {
     /// triple bonds but could result in incorrect results.
     ///
     /// It fails if for any one of the two atoms the element is not known.
-    pub fn overlaps_bound(&self, other: &Atom) -> Option<bool> {
+    pub fn overlaps_bound(&self, other: &Self) -> Option<bool> {
         self.element()
             .map(|e| e.atomic_radius())
             .map(|self_rad| {
@@ -478,7 +478,7 @@ impl Atom {
     /// triple bonds but could result in incorrect results.
     ///
     /// It fails if for any one of the two atoms the element is not known.
-    pub fn overlaps_bound_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
+    pub fn overlaps_bound_wrapping(&self, other: &Self, cell: &UnitCell) -> Option<bool> {
         self.element()
             .map(|e| e.atomic_radius())
             .map(|self_rad| {
@@ -513,7 +513,7 @@ impl fmt::Display for Atom {
 impl Clone for Atom {
     /// The clone implementation needs to use the constructor to guarantee the uniqueness of the counter
     fn clone(&self) -> Self {
-        let mut atom = Atom::new(
+        let mut atom = Self::new(
             self.hetero,
             self.serial_number,
             &self.name,

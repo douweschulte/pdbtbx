@@ -13,7 +13,7 @@ pub struct BuildUpMatrix {
 impl BuildUpMatrix {
     /// Create an empty struct
     pub const fn empty() -> Self {
-        BuildUpMatrix {
+        Self {
             row0: None,
             row1: None,
             row2: None,

@@ -21,7 +21,7 @@ impl MtriX {
         transformation: TransformationMatrix,
         contained: bool,
     ) -> Self {
-        MtriX {
+        Self {
             serial_number,
             transformation,
             contained,

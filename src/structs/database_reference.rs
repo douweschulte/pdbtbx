@@ -17,7 +17,7 @@ pub struct SequencePosition {
 impl SequencePosition {
     /// Create a new `SequencePosition`
     pub fn new(start: isize, start_insert: char, end: isize, end_insert: char) -> Self {
-        SequencePosition {
+        Self {
             start,
             start_insert: if start_insert == ' ' {
                 None
@@ -35,7 +35,7 @@ impl SequencePosition {
 
     /// Create a new `SequencePosition`, from a tuple
     pub fn from_tuple((start, start_insert, end, end_insert): (isize, char, isize, char)) -> Self {
-        SequencePosition::new(start, start_insert, end, end_insert)
+        Self::new(start, start_insert, end, end_insert)
     }
 }
 
@@ -60,7 +60,7 @@ impl DatabaseReference {
         pdb_position: SequencePosition,
         database_position: SequencePosition,
     ) -> Self {
-        DatabaseReference {
+        Self {
             database,
             pdb_position,
             database_position,
@@ -88,7 +88,7 @@ impl SequenceDifference {
         database_residue: Option<(String, isize)>,
         comment: String,
     ) -> Self {
-        SequenceDifference {
+        Self {
             residue,
             database_residue,
             comment,

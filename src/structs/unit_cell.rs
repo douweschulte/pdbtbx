@@ -27,8 +27,8 @@ impl UnitCell {
     /// * `alpha` - alpha angle in degrees
     /// * `beta` - beta angle in degrees
     /// * `gamma` - gamma angle in degrees
-    pub const fn new(a: f64, b: f64, c: f64, alpha: f64, beta: f64, gamma: f64) -> UnitCell {
-        UnitCell {
+    pub const fn new(a: f64, b: f64, c: f64, alpha: f64, beta: f64, gamma: f64) -> Self {
+        Self {
             a,
             b,
             c,

@@ -22,8 +22,8 @@ impl<'a> Model {
     ///
     /// ## Arguments
     /// * `serial_number` - the serial number
-    pub const fn new(serial_number: usize) -> Model {
-        Model {
+    pub const fn new(serial_number: usize) -> Self {
+        Self {
             serial_number,
             chains: Vec::new(),
         }
@@ -563,7 +563,7 @@ impl<'a> Model {
     /// Join this Model with another Model, this moves all atoms from the other Model
     /// to this Model. All other (meta) data of this Model will stay the same. It will add
     /// new Chains and Residues as defined in the other model.
-    pub fn join(&mut self, other: Model) {
+    pub fn join(&mut self, other: Self) {
         self.chains.extend(other.chains);
     }
 

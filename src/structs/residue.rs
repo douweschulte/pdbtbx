@@ -33,8 +33,8 @@ impl<'a> Residue {
         number: isize,
         insertion_code: Option<&str>,
         conformer: Option<Conformer>,
-    ) -> Option<Residue> {
-        let mut res = Residue {
+    ) -> Option<Self> {
+        let mut res = Self {
             serial_number: number,
             insertion_code: None,
             conformers: Vec::new(),
@@ -462,7 +462,7 @@ impl<'a> Residue {
 
     /// Join this Residue with another Residue, this moves all conformers from the other Residue
     /// to this Residue. All other (meta) data of this Residue will stay the same.
-    pub fn join(&mut self, other: Residue) {
+    pub fn join(&mut self, other: Self) {
         self.conformers.extend(other.conformers);
     }
 

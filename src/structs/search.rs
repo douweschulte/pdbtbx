@@ -128,7 +128,7 @@ impl<'a> Term<'a> {
 /// use pdbtbx::*;
 /// let (pdb, _errors) = open("example-pdbs/1ubq.pdb", StrictnessLevel::Medium).unwrap();
 /// let selection = pdb.find(
-///     Term::ConformerName("ALA".to_owned()) & !Term::Element(Element::N));
+///     Term::ConformerName("ALA") & !Term::Element(Element::N));
 /// for hierarchy in selection {
 ///     println!("Atom '{}' is selected", hierarchy.atom().serial_number());
 /// }

@@ -45,7 +45,7 @@ fn parse_data_block(input: &mut Position<'_>) -> Result<DataBlock, PDBError> {
 /// Parse a main loop item, a data item or a save frame
 fn parse_data_item_or_save_frame(input: &mut Position<'_>) -> Result<Item, PDBError> {
     let start = *input;
-    if let Some(()) = start_with(input, "save_") {
+    if start_with(input, "save_") == Some(()) {
         let mut frame = SaveFrame {
             name: parse_identifier(input).to_string(),
             items: Vec::new(),
@@ -53,7 +53,7 @@ fn parse_data_item_or_save_frame(input: &mut Position<'_>) -> Result<Item, PDBEr
         while let Ok(item) = parse_data_item(input) {
             frame.items.push(item);
         }
-        if let Some(()) = start_with(input, "save_") {
+        if start_with(input, "save_") == Some(()) {
             Ok(Item::SaveFrame(frame))
         } else {
             Err(PDBError::new(
@@ -73,7 +73,7 @@ fn parse_data_item_or_save_frame(input: &mut Position<'_>) -> Result<Item, PDBEr
 fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
     let start = *input;
     trim_comments_and_whitespace(input);
-    if let Some(()) = start_with(input, "loop_") {
+    if start_with(input, "loop_") == Some(()) {
         let mut loop_value = Loop {
             header: Vec::new(),
             data: Vec::new(),
@@ -81,7 +81,7 @@ fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
         let mut values = Vec::new();
         trim_comments_and_whitespace(input);
 
-        while let Some(()) = start_with(input, "_") {
+        while start_with(input, "_") == Some(()) {
             let inner_name = parse_identifier(input);
             loop_value.header.push(inner_name.to_string());
             trim_comments_and_whitespace(input);
@@ -108,7 +108,7 @@ fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
         }
 
         Ok(DataItem::Loop(loop_value))
-    } else if let Some(()) = start_with(input, "_") {
+    } else if start_with(input, "_") == Some(()) {
         let name = parse_identifier(input);
         if let Ok(value) = parse_value(input) {
             Ok(DataItem::Single(Single {
@@ -431,7 +431,7 @@ fn parse_multiline_string<'a>(input: &mut Position<'a>) -> Result<&'a str, PDBEr
             input.column += 1;
             return Ok(trimmed);
         } else if c == '\n' {
-            if let Some('\r') = (&mut iter).peek() {
+            if (&mut iter).peek() == Some(&'\r') {
                 chars_to_remove += 1;
                 let _ = (&mut iter).next();
             }
@@ -440,7 +440,7 @@ fn parse_multiline_string<'a>(input: &mut Position<'a>) -> Result<&'a str, PDBEr
             chars_to_remove += 1;
             eol = true;
         } else if c == '\r' {
-            if let Some('\n') = (&mut iter).peek() {
+            if (&mut iter).peek() == Some(&'\n') {
                 chars_to_remove += 1;
                 let _ = (&mut iter).next();
             }
@@ -473,7 +473,7 @@ fn skip_to_eol(input: &mut Position<'_>) {
 
     while let Some(c) = (&mut iter).next() {
         if c == '\n' {
-            if let Some('\r') = (&mut iter).peek() {
+            if (&mut iter).peek() == Some(&'\r') {
                 chars_to_remove += 1
             }
             input.line += 1;
@@ -482,7 +482,7 @@ fn skip_to_eol(input: &mut Position<'_>) {
             input.text = &input.text[chars_to_remove..];
             return;
         } else if c == '\r' {
-            if let Some('\n') = (&mut iter).peek() {
+            if (&mut iter).peek() == Some(&'\n') {
                 chars_to_remove += 1
             }
             input.line += 1;
@@ -509,7 +509,7 @@ fn trim_whitespace(input: &mut Position<'_>) {
             input.column += 1;
             chars_to_remove += 1;
         } else if c == '\n' {
-            if let Some('\r') = (&mut iter).peek() {
+            if (&mut iter).peek() == Some(&'\r') {
                 chars_to_remove += 1;
                 let _ = (&mut iter).next();
             }
@@ -517,7 +517,7 @@ fn trim_whitespace(input: &mut Position<'_>) {
             input.column = 1;
             chars_to_remove += 1;
         } else if c == '\r' {
-            if let Some('\n') = (&mut iter).peek() {
+            if (&mut iter).peek() == Some(&'\n') {
                 chars_to_remove += 1;
                 let _ = (&mut iter).next();
             }

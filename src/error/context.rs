@@ -49,28 +49,28 @@ pub enum Context {
 
 impl Context {
     /// Creates a new context when no context can be given
-    pub fn none() -> Context {
-        Context::None
+    pub fn none() -> Self {
+        Self::None
     }
 
     /// Creates a new context when only a line (eg filename) can be shown
-    pub fn show(line: &str) -> Context {
-        Context::Show {
+    pub fn show(line: &str) -> Self {
+        Self::Show {
             line: line.to_string(),
         }
     }
 
     /// Creates a new context when a full line is faulty and no special position can be annotated
-    pub fn full_line(linenumber: usize, line: &str) -> Context {
-        Context::FullLine {
+    pub fn full_line(linenumber: usize, line: &str) -> Self {
+        Self::FullLine {
             linenumber,
             line: line.to_owned(),
         }
     }
 
     /// Creates a new context when a special position can be annotated on a line
-    pub fn line(linenumber: usize, line: &str, offset: usize, length: usize) -> Context {
-        Context::Line {
+    pub fn line(linenumber: usize, line: &str, offset: usize, length: usize) -> Self {
+        Self::Line {
             linenumber,
             line: line.to_string(),
             offset,
@@ -80,16 +80,16 @@ impl Context {
 
     /// Creates a new context to highlight a certain position
     #[allow(clippy::unwrap_used)]
-    pub fn position(pos: &Position<'_>) -> Context {
+    pub fn position(pos: &Position<'_>) -> Self {
         if pos.text.is_empty() {
-            Context::Line {
+            Self::Line {
                 linenumber: pos.line,
                 line: "".to_string(),
                 offset: 0,
                 length: 3,
             }
         } else {
-            Context::Line {
+            Self::Line {
                 linenumber: pos.line,
                 line: pos.text.lines().into_iter().next().unwrap().to_string(),
                 offset: 0,
@@ -99,16 +99,16 @@ impl Context {
     }
 
     /// Creates a new context from a start and end point within a single file
-    pub fn range(start: &Position<'_>, end: &Position<'_>) -> Context {
+    pub fn range(start: &Position<'_>, end: &Position<'_>) -> Self {
         if start.line == end.line {
-            Context::Line {
+            Self::Line {
                 linenumber: start.line,
                 line: start.text[..(end.column - start.column)].to_string(),
                 offset: start.column,
                 length: end.column - start.column,
             }
         } else {
-            Context::Range {
+            Self::Range {
                 start_linenumber: start.line,
                 lines: start
                     .text

@@ -9,14 +9,10 @@ fn main() {
     // ATOM    750  C   GLY A  47      20.027  28.708  23.336  1.00 16.31           C
     // ```
     let sel1 = pdb
-        .find(
-            Term::ChainId("A".to_owned())
-                & Term::ConformerName("GLY".to_owned())
-                & Term::AtomSerialNumber(750),
-        )
+        .find(Term::ChainId("A") & Term::ConformerName("GLY") & Term::AtomSerialNumber(750))
         .collect::<Vec<_>>();
     let sel2 = pdb
-        .find(Term::ResidueSerialNumber(47) & Term::AtomName("C".to_owned()))
+        .find(Term::ResidueSerialNumber(47) & Term::AtomName("C"))
         .collect::<Vec<_>>();
     // But both give the same result
     assert_eq!(sel1, sel2);
@@ -27,14 +23,10 @@ fn main() {
     // ATOM   1111 HD13 LEU A  69      32.170  32.079  18.138  1.00 10.72           H
     // ```
     let sel1 = pdb
-        .find(
-            Term::ChainId("A".to_owned())
-                & Term::ConformerName("LEU".to_owned())
-                & Term::AtomSerialNumber(1111),
-        )
+        .find(Term::ChainId("A") & Term::ConformerName("LEU") & Term::AtomSerialNumber(1111))
         .collect::<Vec<_>>();
     let sel2 = pdb
-        .find(Term::ResidueSerialNumber(69) & Term::AtomName("HD13".to_owned()))
+        .find(Term::ResidueSerialNumber(69) & Term::AtomName("HD13"))
         .collect::<Vec<_>>();
     // But both give the same result
     assert_eq!(sel1, sel2);
@@ -46,7 +38,7 @@ fn main() {
     );
 
     // You can use and `&` to combine a search, this short circuits if possible.
-    let search = Term::Element(Element::C) & Term::ConformerName("VAL".to_owned());
+    let search = Term::Element(Element::C) & Term::ConformerName("VAL");
     assert!(pdb
         .find(search.clone())
         .all(|s| (s.atom().element() == Some(&Element::C)) & (s.conformer().name() == "VAL")));
@@ -65,7 +57,7 @@ fn main() {
     assert_eq!(pdb.find(search).count(), val_and_c);
 
     // You can use and `|` to combine a search, this short circuits if possible.
-    let search = Term::Element(Element::C) | Term::ConformerName("VAL".to_owned());
+    let search = Term::Element(Element::C) | Term::ConformerName("VAL");
     assert!(pdb
         .find(search.clone())
         .all(|s| (s.atom().element() == Some(&Element::C)) | (s.conformer().name() == "VAL")));
@@ -90,7 +82,7 @@ fn main() {
     assert_eq!(pdb.find(search).count(), val + c_not_val);
 
     // You can use and `^` to combine a search, this cannot short circuit, but that has never been a rule (Bryan Cantrill).
-    let search = Term::Element(Element::C) ^ Term::ConformerName("VAL".to_owned());
+    let search = Term::Element(Element::C) ^ Term::ConformerName("VAL");
     assert!(pdb
         .find(search.clone())
         .all(|s| (s.atom().element() == Some(&Element::C)) ^ (s.conformer().name() == "VAL")));

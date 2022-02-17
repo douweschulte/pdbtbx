@@ -32,13 +32,9 @@ impl<'a> Conformer {
     ///
     /// ## Fails
     /// It fails if any of the characters making up the name are invalid.
-    pub fn new(
-        name: impl AsRef<str>,
-        alt_loc: Option<&str>,
-        atom: Option<Atom>,
-    ) -> Option<Conformer> {
+    pub fn new(name: impl AsRef<str>, alt_loc: Option<&str>, atom: Option<Atom>) -> Option<Self> {
         if let Some(n) = prepare_identifier(name.as_ref()) {
-            let mut res = Conformer {
+            let mut res = Self {
                 name: n,
                 alternative_location: None,
                 atoms: Vec::new(),
@@ -357,7 +353,7 @@ impl<'a> Conformer {
 
     /// Join this Conformer with another Conformer, this moves all atoms from the other Conformer
     /// to this Conformer. All other (meta) data of this Conformer will stay the same.
-    pub fn join(&mut self, other: Conformer) {
+    pub fn join(&mut self, other: Self) {
         self.atoms.extend(other.atoms);
     }
 
