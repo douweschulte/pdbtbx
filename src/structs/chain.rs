@@ -195,13 +195,12 @@ impl<'a> Chain {
                     }
                 })
                 .ok()
-                .map(|index| {
+                .and_then(|index| {
                     self.residue(index)
                         .unwrap()
                         .binary_find_atom(serial_number, alternative_location)
                         .map(|h| h.extend(self.residue(index).unwrap()))
                 })
-                .flatten()
         }
     }
 
@@ -238,14 +237,13 @@ impl<'a> Chain {
                     }
                 })
                 .ok()
-                .map(move |index| {
+                .and_then(move |index| {
                     let residue: *mut Residue = self.residue_mut(index).unwrap();
                     self.residue_mut(index)
                         .unwrap()
                         .binary_find_atom_mut(serial_number, alternative_location)
                         .map(|h| h.extend(residue))
                 })
-                .flatten()
         }
     }
 
@@ -257,8 +255,7 @@ impl<'a> Chain {
         self.residues()
             .map(move |r| (r, search.clone().add_residue_info(r)))
             .filter(|(_r, search)| !matches!(search, Search::Known(false)))
-            .map(move |(r, search)| r.find(search).map(move |h| h.extend(r)))
-            .flatten()
+            .flat_map(move |(r, search)| r.find(search).map(move |h| h.extend(r)))
     }
 
     /// Find all hierarchies matching the given information
@@ -272,11 +269,10 @@ impl<'a> Chain {
                 (r, search)
             })
             .filter(|(_r, search)| !matches!(search, Search::Known(false)))
-            .map(move |(r, search)| {
+            .flat_map(move |(r, search)| {
                 let r_ptr: *mut Residue = r;
                 r.find_mut(search).map(move |h| h.extend(r_ptr))
             })
-            .flatten()
     }
 
     /// Get the list of Residues making up this Chain.
@@ -388,7 +384,7 @@ impl<'a> Chain {
         let mut new_residue = Residue::new(residue_id.0, residue_id.1, None)
             .expect("Invalid chars in Residue creation");
         let mut current_residue = &mut new_residue;
-        for residue in &mut self.residues {
+        for residue in &mut self.residues.iter_mut().rev() {
             if residue.id() == residue_id {
                 current_residue = residue;
                 found = true;

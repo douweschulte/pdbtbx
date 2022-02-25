@@ -237,11 +237,10 @@ impl<'a> Residue {
         self.conformers()
             .map(move |c| (c, search.clone().add_conformer_info(c)))
             .filter(|(_c, search)| !matches!(search, Search::Known(false)))
-            .map(move |(c, search)| {
+            .flat_map(move |(c, search)| {
                 c.find(search)
                     .map(move |a| hierarchy::AtomConformer::new(a, c))
             })
-            .flatten()
     }
 
     /// Find all hierarchies matching the given information
@@ -255,12 +254,11 @@ impl<'a> Residue {
                 (c, search)
             })
             .filter(|(_c, search)| !matches!(search, Search::Known(false)))
-            .map(move |(c, search)| {
+            .flat_map(move |(c, search)| {
                 let c_ptr: *mut Conformer = c;
                 c.find_mut(search)
                     .map(move |a| hierarchy::AtomConformerMut::new(a, c_ptr))
             })
-            .flatten()
     }
 
     /// Get the list of conformers making up this Residue.

@@ -202,13 +202,12 @@ impl<'a> Model {
                     }
                 })
                 .ok()
-                .map(|index| {
+                .and_then(|index| {
                     self.chain(index)
                         .unwrap()
                         .binary_find_atom(serial_number, insertion_code)
                         .map(|h| h.extend(self.chain(index).unwrap()))
                 })
-                .flatten()
         }
     }
 
@@ -245,14 +244,13 @@ impl<'a> Model {
                     }
                 })
                 .ok()
-                .map(move |index| {
+                .and_then(move |index| {
                     let chain: *mut Chain = self.chain_mut(index).unwrap();
                     self.chain_mut(index)
                         .unwrap()
                         .binary_find_atom_mut(serial_number, insertion_code)
                         .map(|h| h.extend(chain))
                 })
-                .flatten()
         }
     }
 
@@ -264,8 +262,7 @@ impl<'a> Model {
         self.chains()
             .map(move |c| (c, search.clone().add_chain_info(c)))
             .filter(|(_c, search)| !matches!(search, Search::Known(false)))
-            .map(move |(c, search)| c.find(search).map(move |h| h.extend(c)))
-            .flatten()
+            .flat_map(move |(c, search)| c.find(search).map(move |h| h.extend(c)))
     }
 
     /// Find all hierarchies matching the given information
@@ -279,11 +276,10 @@ impl<'a> Model {
                 (c, search)
             })
             .filter(|(_c, search)| !matches!(search, Search::Known(false)))
-            .map(move |(c, search)| {
+            .flat_map(move |(c, search)| {
                 let c_ptr: *mut Chain = c;
                 c.find_mut(search).map(move |h| h.extend(c_ptr))
             })
-            .flatten()
     }
 
     /// Get the list of Chains making up this Model.

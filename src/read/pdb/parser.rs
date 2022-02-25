@@ -589,7 +589,7 @@ fn add_bonds(pdb: &mut PDB, bonds: Vec<(Context, LexItem)>) -> Vec<PDBError> {
                 let find = |atom: (String, isize, Option<String>, String)| {
                     pdb.chains()
                         .find(|c| c.id() == atom.3)
-                        .map(|c| {
+                        .and_then(|c| {
                             c.residues()
                                 .find(|r| {
                                     r.serial_number() == atom.1
@@ -601,7 +601,6 @@ fn add_bonds(pdb: &mut PDB, bonds: Vec<(Context, LexItem)>) -> Vec<PDBError> {
                                     })
                                 })
                         })
-                        .flatten()
                         .flatten()
                         .flatten()
                 };
