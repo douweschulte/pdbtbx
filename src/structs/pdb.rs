@@ -435,13 +435,10 @@ impl<'a> PDB {
         serial_number: usize,
         alternative_location: Option<&str>,
     ) -> Option<AtomConformerResidueChainModel<'a>> {
-        self.models()
-            .next()
-            .map(|m| {
-                m.binary_find_atom(serial_number, alternative_location)
-                    .map(|res| res.extend(m))
-            })
-            .flatten()
+        self.models().next().and_then(|m| {
+            m.binary_find_atom(serial_number, alternative_location)
+                .map(|res| res.extend(m))
+        })
     }
 
     /// Get the specified atom, its uniqueness is guaranteed by including the
@@ -454,14 +451,11 @@ impl<'a> PDB {
         serial_number: usize,
         alternative_location: Option<&str>,
     ) -> Option<AtomConformerResidueChainModelMut<'a>> {
-        self.models_mut()
-            .next()
-            .map(|m| {
-                let model: *mut Model = m;
-                m.binary_find_atom_mut(serial_number, alternative_location)
-                    .map(|res| res.extend(model))
-            })
-            .flatten()
+        self.models_mut().next().and_then(|m| {
+            let model: *mut Model = m;
+            m.binary_find_atom_mut(serial_number, alternative_location)
+                .map(|res| res.extend(model))
+        })
     }
 
     /// Find all hierarchies matching the given search. For more details see [Search].
@@ -482,8 +476,7 @@ impl<'a> PDB {
         self.models()
             .map(move |m| (m, search.clone().add_model_info(m)))
             .filter(|(_m, search)| !matches!(search, Search::Known(false)))
-            .map(move |(m, search)| m.find(search).map(move |h| h.extend(m)))
-            .flatten()
+            .flat_map(move |(m, search)| m.find(search).map(move |h| h.extend(m)))
     }
 
     /// Find all hierarchies matching the given information
@@ -497,11 +490,10 @@ impl<'a> PDB {
                 (m, search)
             })
             .filter(|(_m, search)| !matches!(search, Search::Known(false)))
-            .map(move |(m, search)| {
+            .flat_map(move |(m, search)| {
                 let m_ptr: *mut Model = m;
                 m.find_mut(search).map(move |h| h.extend(m_ptr))
             })
-            .flatten()
     }
 
     /// Get the list of Models making up this PDB.

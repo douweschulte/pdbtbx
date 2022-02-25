@@ -330,8 +330,7 @@ impl Atom {
     /// number is higher than 96.
     pub fn atomic_radius(&self) -> Option<f64> {
         self.atomic_number()
-            .map(reference_tables::get_atomic_radius)
-            .flatten()
+            .and_then(reference_tables::get_atomic_radius)
     }
 
     /// Get the van der Waals radius for this Atom in Å. The radius is defined up to element 'Es' or atomic number 99.
@@ -342,8 +341,7 @@ impl Atom {
     /// number is higher than 99.
     pub fn vanderwaals_radius(&self) -> Option<f64> {
         self.atomic_number()
-            .map(reference_tables::get_vanderwaals_radius)
-            .flatten()
+            .and_then(reference_tables::get_vanderwaals_radius)
     }
 
     /// Gets the covalent bond radii for this Atom.
@@ -472,13 +470,11 @@ impl Atom {
     ///
     /// It fails if for any one of the two atoms the radius (`atom.atomic_radius()`) is not defined.
     pub fn overlaps(&self, other: &Atom) -> Option<bool> {
-        self.atomic_radius()
-            .map(|self_rad| {
-                other
-                    .atomic_radius()
-                    .map(|other_rad| self.distance(other) <= self_rad + other_rad)
-            })
-            .flatten()
+        self.atomic_radius().and_then(|self_rad| {
+            other
+                .atomic_radius()
+                .map(|other_rad| self.distance(other) <= self_rad + other_rad)
+        })
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
@@ -492,13 +488,11 @@ impl Atom {
     ///
     /// It fails if for any one of the two atoms the radius (`atom.atomic_radius()`) is not defined.
     pub fn overlaps_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
-        self.atomic_radius()
-            .map(|self_rad| {
-                other
-                    .atomic_radius()
-                    .map(|other_rad| self.distance_wrapping(other, cell) <= self_rad + other_rad)
-            })
-            .flatten()
+        self.atomic_radius().and_then(|self_rad| {
+            other
+                .atomic_radius()
+                .map(|other_rad| self.distance_wrapping(other, cell) <= self_rad + other_rad)
+        })
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
@@ -509,13 +503,11 @@ impl Atom {
     ///
     /// It fails if for any one of the two atoms the radius (`atom.covalent_bond_radii()`) is not defined.
     pub fn overlaps_bound(&self, other: &Atom) -> Option<bool> {
-        self.covalent_bond_radii()
-            .map(|self_rad| {
-                other
-                    .covalent_bond_radii()
-                    .map(|other_rad| self.distance(other) <= self_rad.0 + other_rad.0)
-            })
-            .flatten()
+        self.covalent_bond_radii().and_then(|self_rad| {
+            other
+                .covalent_bond_radii()
+                .map(|other_rad| self.distance(other) <= self_rad.0 + other_rad.0)
+        })
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
@@ -529,13 +521,11 @@ impl Atom {
     ///
     /// It fails if for any one of the two atoms the radius (`atom.covalent_bond_radii()`) is not defined.
     pub fn overlaps_bound_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
-        self.covalent_bond_radii()
-            .map(|self_rad| {
-                other.covalent_bond_radii().map(|other_rad| {
-                    self.distance_wrapping(other, cell) <= self_rad.0 + other_rad.0
-                })
-            })
-            .flatten()
+        self.covalent_bond_radii().and_then(|self_rad| {
+            other
+                .covalent_bond_radii()
+                .map(|other_rad| self.distance_wrapping(other, cell) <= self_rad.0 + other_rad.0)
+        })
     }
 }
 
