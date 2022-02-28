@@ -1,10 +1,13 @@
 use pdbtbx::*;
 use rayon::iter::ParallelIterator;
 
-#[test]
-#[cfg(feature = "rstar")]
-#[cfg(feature = "rayon")]
+fn main() {
+    atom_sphere();
+    residue_sphere();
+}
+
 /// Find all Atoms in a sphere around a single origin Atom with a user-defined radius
+/// This is using the features `rstar` and `rayon`.
 fn atom_sphere() {
     let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
     let (origin_id, radius): (usize, f64) = (12, 3.5);
@@ -24,11 +27,9 @@ fn atom_sphere() {
     assert_eq!(sphere_atoms.len(), 16)
 }
 
-#[test]
-#[cfg(feature = "rstar")]
-#[cfg(feature = "rayon")]
 /// Find all Atoms belonging to a Residue that has at least one Atom within a sphere of
 /// user-defined origin and radius.
+/// This is using the features `rstar` and `rayon`.
 fn residue_sphere() {
     let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
     let (origin_id, radius): (usize, f64) = (12, 3.5);
