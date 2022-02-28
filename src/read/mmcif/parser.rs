@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 /// Parse the given mmCIF file into a PDB struct.
-/// Returns an PDBError when it found a BreakingError. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 pub fn open_mmcif(
     filename: &str,
     level: StrictnessLevel,

@@ -9,7 +9,7 @@ use std::io::BufWriter;
 
 /// Save the given PDB struct to the given file as mmCIF or PDBx.
 /// It validates the PDB. It fails if the validation fails with the given `level`, or if the file could not be opened.
-/// If validation gives rise to problems use the `save_raw` function.
+/// If validation gives rise to problems, use the `save_raw` function.
 /// ## Warning
 /// This function is unstable and unfinished!
 pub fn save_mmcif(pdb: &PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {

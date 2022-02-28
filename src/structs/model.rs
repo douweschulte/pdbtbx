@@ -9,7 +9,7 @@ use std::cmp::Ordering;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
-/// A Model containing multiple Chains
+/// A Model containing multiple Chains.
 pub struct Model {
     /// The serial number of this Model
     serial_number: usize,
@@ -18,7 +18,7 @@ pub struct Model {
 }
 
 impl<'a> Model {
-    /// Create a new Model
+    /// Create a new Model.
     ///
     /// ## Arguments
     /// * `serial_number` - the serial number
@@ -29,40 +29,40 @@ impl<'a> Model {
         }
     }
 
-    /// The serial number of this Model
+    /// Get the serial number of this Model.
     pub fn serial_number(&self) -> usize {
         self.serial_number
     }
 
-    /// Set the serial number of this Model
+    /// Set the serial number of this Model.
     pub fn set_serial_number(&mut self, new_number: usize) {
         self.serial_number = new_number;
     }
 
-    /// Get the amount of Chains making up this Model.
+    /// Get the number of Chains making up this Model.
     pub fn chain_count(&self) -> usize {
         self.chains.len()
     }
 
-    /// Get the amount of Residues making up this Model.
+    /// Get the number of Residues making up this Model.
     pub fn residue_count(&self) -> usize {
         self.chains()
             .fold(0, |sum, chain| chain.residue_count() + sum)
     }
 
-    /// Get the amount of Residues making up this Model in parallel.
+    /// Get the number of Residues making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residue_count(&self) -> usize {
         self.par_chains().map(|chain| chain.residue_count()).sum()
     }
 
-    /// Get the amount of Conformers making up this Model.
+    /// Get the number of Conformers making up this Model.
     pub fn conformer_count(&self) -> usize {
         self.chains()
             .fold(0, |sum, chain| chain.conformer_count() + sum)
     }
 
-    /// Get the amount of Conformers making up this Model in parallel.
+    /// Get the number of Conformers making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformer_count(&self) -> usize {
         self.par_chains()
@@ -70,106 +70,106 @@ impl<'a> Model {
             .sum()
     }
 
-    /// Get the amount of Atoms making up this Model.
+    /// Get the number of Atoms making up this Model.
     pub fn atom_count(&self) -> usize {
         self.chains().fold(0, |sum, chain| chain.atom_count() + sum)
     }
 
-    /// Get the amount of Atoms making up this Model in parallel.
+    /// Get the number of Atoms making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
         self.par_chains().map(|chain| chain.par_atom_count()).sum()
     }
 
-    /// Get a specific Chain from list of Chains making up this Model.
+    /// Get a reference to a specific Chain from list of Chains making up this Model.
     ///
     /// ## Arguments
     /// * `index` - the index of the Chain
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn chain(&self, index: usize) -> Option<&Chain> {
         self.chains().nth(index)
     }
 
-    /// Get a specific Chain as a mutable reference from list of Chains making up this Model.
+    /// Get a mutable reference to a specific Chain reference from list of Chains making up this Model.
     ///
     /// ## Arguments
     /// * `index` - the index of the Chain
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn chain_mut(&mut self, index: usize) -> Option<&mut Chain> {
         self.chains_mut().nth(index)
     }
 
-    /// Get a specific Residue from the Residues making up this Model.
+    /// Get a reference to a specific Residue from the Residues making up this Model.
     ///
     /// ## Arguments
     /// * `index` - the index of the Residue
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn residue(&self, index: usize) -> Option<&Residue> {
         self.residues().nth(index)
     }
 
-    /// Get a specific Residue as a mutable reference from the Residues making up this Model.
+    /// Get a mutable reference to a specific Residue from the Residues making up this Model.
     ///
     /// ## Arguments
     /// * `index` - the index of the Residue
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn residue_mut(&mut self, index: usize) -> Option<&mut Residue> {
         self.residues_mut().nth(index)
     }
 
-    /// Get a specific Conformer from the Conformers making up this Model.
+    /// Get a reference to a specific Conformer from the Conformers making up this Model.
     ///
     /// ## Arguments
     /// * `index` - the index of the Conformer
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn conformer(&self, index: usize) -> Option<&Conformer> {
         self.conformers().nth(index)
     }
 
-    /// Get a specific Conformer as a mutable reference from the Conformers making up this Model.
+    /// Get a mutable reference to a specific Conformer from the Conformers making up this Model.
     ///
     /// ## Arguments
     /// * `index` - the index of the Conformer
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn conformer_mut(&mut self, index: usize) -> Option<&mut Conformer> {
         self.conformers_mut().nth(index)
     }
 
-    /// Get a specific Atom from the Atoms making up this Model.
+    /// Get a reference to a specific Atom from the Atoms making up this Model.
     ///
     /// ## Arguments
     /// * `index` - the index of the Atom
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn atom(&self, index: usize) -> Option<&Atom> {
         self.atoms().nth(index)
     }
 
-    /// Get a specific Atom as a mutable reference from the Atoms making up this Model.
+    /// Get a mutable reference to a specific Atom from the Atoms making up this Model.
     ///
     /// ## Arguments
     /// * `index` - the index of the Atom
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
         self.atoms_mut().nth(index)
     }
 
-    /// Get the specified atom, its uniqueness is guaranteed by including the
+    /// Get a reference to the specified atom. Its uniqueness is guaranteed by including the
     /// insertion_code, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
@@ -211,8 +211,8 @@ impl<'a> Model {
         }
     }
 
-    /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// insertion_code, with its full hierarchy. The algorithm is based
+    /// Get a mutable reference to the specified atom. Its uniqueness is guaranteed by
+    /// including the insertion_code, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -254,7 +254,7 @@ impl<'a> Model {
         }
     }
 
-    /// Find all hierarchies matching the given information
+    /// Find all hierarchies matching the given search. For more details see [Search].
     pub fn find(
         &'a self,
         search: Search,
@@ -265,7 +265,7 @@ impl<'a> Model {
             .flat_map(move |(c, search)| c.find(search).map(move |h| h.extend(c)))
     }
 
-    /// Find all hierarchies matching the given information
+    /// Find all hierarchies matching the given search. For more details see [Search].
     pub fn find_mut(
         &'a mut self,
         search: Search,
@@ -282,103 +282,103 @@ impl<'a> Model {
             })
     }
 
-    /// Get the list of Chains making up this Model.
+    /// Get an iterator of references to Chains making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains(&self) -> impl DoubleEndedIterator<Item = &Chain> + '_ {
         self.chains.iter()
     }
 
-    /// Get the list of Chains making up this Model in parallel.
+    /// Get a parallel iterator of references to Chains making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_chains(&self) -> impl ParallelIterator<Item = &Chain> + '_ {
         self.chains.par_iter()
     }
 
-    /// Get the list of Chains as mutable references making up this Model.
+    /// Get an iterator of mutable references to Chains making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn chains_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Chain> + '_ {
         self.chains.iter_mut()
     }
 
-    /// Get the list of Chains as mutable references making up this Model in parallel.
+    /// Get a parallel iterator of mutable references to Chains making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_chains_mut(&mut self) -> impl ParallelIterator<Item = &mut Chain> + '_ {
         self.chains.par_iter_mut()
     }
 
-    /// Get the list of Residues making up this Model.
+    /// Get an iterator of references to Residues making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
         self.chains().flat_map(|a| a.residues())
     }
 
-    /// Get the list of Residues making up this Model in parallel.
+    /// Get a parallel iterator of references to Residues making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
         self.par_chains().flat_map(|a| a.par_residues())
     }
 
-    /// Get the list of Residues as mutable references making up this Model.
+    /// Get an iterator of mutable references to Residues making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
         self.chains_mut().flat_map(|a| a.residues_mut())
     }
 
-    /// Get the list of Residues as mutable references making up this Model in parallel.
+    /// Get a parallel iterator of mutable references to Residues making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
         self.par_chains_mut().flat_map(|a| a.par_residues_mut())
     }
 
-    /// Get the list of Conformers making up this Model.
+    /// Get an iterator of references to Conformers making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
         self.chains().flat_map(|a| a.conformers())
     }
 
-    /// Get the list of Conformers making up this Model in parallel.
+    /// Get a parallel iterator of references to Conformers making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
         self.par_chains().flat_map(|a| a.par_conformers())
     }
 
-    /// Get the list of Conformers as mutable references making up this Model.
+    /// Get an iterator of mutable references to Conformers making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
         self.chains_mut().flat_map(|a| a.conformers_mut())
     }
 
-    /// Get the list of Conformers as mutable references making up this Model in parallel.
+    /// Get a parallel iterator of mutable references to Conformers making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
         self.par_chains_mut().flat_map(|a| a.par_conformers_mut())
     }
 
-    /// Get the list of Atoms making up this Model.
+    /// Get an iterator of references to Atoms making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
         self.chains().flat_map(|a| a.atoms())
     }
 
-    /// Get the list of Atoms making up this Model in parallel.
+    /// Get a parallel iterator of references to Atoms making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
         self.par_chains().flat_map(|a| a.par_atoms())
     }
 
-    /// Get the list of Atoms as mutable references making up this Model.
+    /// Get an iterator of mutable references to Atoms making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.chains_mut().flat_map(|a| a.atoms_mut())
     }
 
-    /// Get the list of Atoms as mutable references making up this Model in parallel.
+    /// Get a parallel iterator of mutable references to Atoms making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.par_chains_mut().flat_map(|a| a.par_atoms_mut())
     }
 
-    /// Returns all atom with their hierarchy struct for each atom in this chain.
+    /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this Model.
     pub fn atoms_with_hierarchy(
         &'a self,
     ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChain<'a>> + '_ {
@@ -386,7 +386,7 @@ impl<'a> Model {
             .flat_map(|c| c.atoms_with_hierarchy().map(move |h| h.extend(c)))
     }
 
-    /// Returns all atom with their hierarchy struct for each atom in this chain.
+    /// Get an iterator of mutable references to a struct containing all atoms with their hierarchy making up this Model.
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
     ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainMut<'a>> + '_ {
@@ -405,7 +405,7 @@ impl<'a> Model {
     /// * `conformer_id` - the id construct of the Conformer to add the Atom to
     ///
     /// ## Panics
-    /// It panics if the Chain id or Residue name contains any invalid characters.
+    /// It panics if the Chain ID or Residue ID contain any invalid characters.
     pub fn add_atom(
         &mut self,
         new_atom: Atom,
@@ -487,7 +487,7 @@ impl<'a> Model {
     /// * `index` - the index of the Chain to remove
     ///
     /// ## Panics
-    /// It panics when the index is outside bounds.
+    /// Panics if the index is out of bounds.
     pub fn remove_chain(&mut self, index: usize) -> Chain {
         self.chains.remove(index)
     }
@@ -561,17 +561,17 @@ impl<'a> Model {
         self.chains.extend(other.chains);
     }
 
-    /// Extend the Chains on this Model by the given iterator.
+    /// Extend the Chains on this Model by the given iterator of Chains.
     pub fn extend<T: IntoIterator<Item = Chain>>(&mut self, iter: T) {
         self.chains.extend(iter);
     }
 
-    /// Sort the Chains of this Model
+    /// Sort the Chains of this Model.
     pub fn sort(&mut self) {
         self.chains.sort();
     }
 
-    /// Sort the Chains of this Model in parallel
+    /// Sort the Chains of this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_sort(&mut self) {
         self.chains.par_sort();

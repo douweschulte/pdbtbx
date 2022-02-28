@@ -10,7 +10,7 @@ use std::fmt;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
-/// A Conformer of a Conformer containing multiple atoms, analogous to 'atom_group' in cctbx
+/// A Conformer containing multiple atoms, analogous to 'atom_group' in cctbx
 pub struct Conformer {
     /// The name of this Conformer
     name: String,
@@ -31,7 +31,7 @@ impl Conformer {
     /// * `atom` - if available it can already add an atom
     ///
     /// ## Fails
-    /// It fails if any of the characters making up the name are invalid.
+    /// It fails and returns `None` if any of the characters making up the name are invalid.
     pub fn new(name: &str, alt_loc: Option<&str>, atom: Option<Atom>) -> Option<Conformer> {
         if let Some(n) = prepare_identifier(name) {
             let mut res = Conformer {
@@ -52,12 +52,12 @@ impl Conformer {
         }
     }
 
-    /// The name of the Conformer
+    /// Get the name of the Conformer
     pub fn name(&self) -> &str {
         &self.name
     }
 
-    /// Set the name of the Conformer
+    /// Set the name of the Conformer.
     ///
     /// ## Fails
     /// It fails if any of the characters of the new name are invalid.
@@ -70,12 +70,12 @@ impl Conformer {
         }
     }
 
-    /// The alternative location of the Conformer
+    /// Get the alternative location of the Conformer, if present.
     pub fn alternative_location(&self) -> Option<&str> {
         self.alternative_location.as_deref()
     }
 
-    /// Set the alternative location of the Conformer
+    /// Set the alternative location of the Conformer.
     ///
     /// ## Fails
     /// It fails if any of the characters of the new alternative location are invalid.
@@ -88,18 +88,18 @@ impl Conformer {
         }
     }
 
-    /// Set the alternative location of the Conformer to None
+    /// Set the alternative location of the Conformer to `None`.
     pub fn remove_alternative_location(&mut self) {
         self.alternative_location = None;
     }
 
     /// Returns the uniquely identifying construct for this Conformer.
-    /// It consists of the name and the alternative location.
+    /// It consists of the name and alternative location.
     pub fn id(&self) -> (&str, Option<&str>) {
         (&self.name, self.alternative_location())
     }
 
-    /// Get the modification of this Conformer e.g., chemical or post-translational. These will be saved in the MODRES records in the PDB file
+    /// Get the modification of this Conformer e.g., chemical or post-translational. These is saved in the MODRES records in the PDB file
     pub fn modification(&self) -> Option<&(String, String)> {
         self.modification.as_ref()
     }
@@ -122,18 +122,18 @@ impl Conformer {
         }
     }
 
-    /// The amount of atoms making up this Conformer
+    /// The number of atoms making up this Conformer
     pub fn atom_count(&self) -> usize {
         self.atoms.len()
     }
 
-    /// Get a specific atom from list of atoms making up this Conformer.
+    /// Get a specific atom from the list of atoms making up this Conformer.
     ///
     /// ## Arguments
     /// * `index` - the index of the atom
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// It returns `None` if the index is out of bounds.
     pub fn atom(&self, index: usize) -> Option<&Atom> {
         self.atoms.get(index)
     }
@@ -144,14 +144,15 @@ impl Conformer {
     /// * `index` - the index of the atom
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// It returns `None` if the index is out of bounds.
     pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
         self.atoms.get_mut(index)
     }
 
-    /// Get a specific Atom specified by its serial number, which is defined to be unique
-    /// within a single conformer. It does this using binary search so the underlying vector
-    /// is assumed to be sorted, this can be enforced by using `conformer.sort()` beforehand.
+    /// Get a reference to the specified atom which is unique within a single conformer.
+    /// The algorithm is based on binary search so it is faster than an exhaustive search, but the
+    /// underlying vector is assumed to be sorted. This assumption can be enforced
+    /// by using `conformer.sort()`.
     pub fn binary_find_atom(&self, serial_number: usize) -> Option<&Atom> {
         if let Ok(i) = self
             .atoms
@@ -163,9 +164,10 @@ impl Conformer {
         }
     }
 
-    /// Get a specific Atom specified by its serial number, which is defined to be unique
-    /// within a single conformer. It does this using binary search so the underlying vector
-    /// is assumed to be sorted, this can be enforced by using `conformer.sort()` beforehand.
+    /// Get a mutable reference to the specified atom which is unique within a single conformer.
+    /// The algorithm is based on binary search so it is faster than an exhaustive search, but the
+    /// underlying vector is assumed to be sorted. This assumption can be enforced
+    /// by using `conformer.sort()`.
     pub fn binary_find_atom_mut(&mut self, serial_number: usize) -> Option<&mut Atom> {
         if let Ok(i) = self
             .atoms
@@ -189,25 +191,25 @@ impl Conformer {
             .filter(move |a| search.add_atom_info(a).complete().unwrap_or(true))
     }
 
-    /// Get the list of atoms making up this Conformer.
+    /// Get an iterator of references to Atoms making up this Conformer.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
         self.atoms.iter()
     }
 
-    /// Get the list of atoms making up this Conformer in parallel.
+    /// Get a parallel iterator of references to Atoms making up this Conformer.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
         self.atoms.par_iter()
     }
 
-    /// Get the list of atoms as mutable references making up this Conformer.
+    /// Get an iterator of mutable references to Atoms making up this Conformer.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.atoms.iter_mut()
     }
 
-    /// Get the list of atoms as mutable references making up this Conformer in parallel.
+    /// Get a parallel iterator of mutable references to Atoms making up this Conformer.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.atoms.par_iter_mut()
@@ -220,7 +222,7 @@ impl Conformer {
         self.atoms.push(new_atom);
     }
 
-    /// Returns if this Conformer is an amino acid
+    /// Returns whether this Conformer is an amino acid.
     pub fn is_amino_acid(&self) -> bool {
         reference_tables::get_amino_acid_number(self.name()).is_some()
     }
@@ -239,19 +241,19 @@ impl Conformer {
     /// * `index` - the index of the atom to remove
     ///
     /// ## Panics
-    /// It panics when the index is outside bounds.
+    /// Panics if the index is out of bounds.
     pub fn remove_atom(&mut self, index: usize) {
         self.atoms.remove(index);
     }
 
-    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
-    /// It removes the first matching Atom from the list.
+    /// Remove the specified Atom. Returns `true` if a matching Atom was found and removed.
+    /// Removes the first matching Atom from the list.
     ///
     /// ## Arguments
     /// * `serial_number` - the serial number of the Atom to remove
     ///
     /// ## Panics
-    /// It panics when the index is outside bounds.
+    /// Panics if the index is out of bounds.
     pub fn remove_atom_by_serial_number(&mut self, serial_number: usize) -> bool {
         let index = self
             .atoms()
@@ -265,14 +267,14 @@ impl Conformer {
         }
     }
 
-    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
-    /// It removes the first matching Atom from the list. Matching is done in parallel.
+    /// Remove the specified Atom. Returns `true` if a matching Atom was found and removed.
+    /// Removes the first matching Atom from the list. Matching is done in parallel.
     ///
     /// ## Arguments
     /// * `serial_number` - the serial number of the Atom to remove
     ///
     /// ## Panics
-    /// It panics when the index is outside bounds.
+    /// Panics if the index is out of bounds.
     #[doc_cfg(feature = "rayon")]
     pub fn par_remove_atom_by_serial_number(&mut self, serial_number: usize) -> bool {
         let index = self
@@ -288,14 +290,14 @@ impl Conformer {
         }
     }
 
-    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
-    /// It removes the first matching Atom from the list.
+    /// Remove the specified Atom. Returns `true` if a matching Atom was found and removed.
+    /// Removes the first matching Atom from the list.
     ///
     /// ## Arguments
     /// * `name` - the name of the Atom to remove
     ///
     /// ## Panics
-    /// It panics when the index is outside bounds.
+    /// Panics if the index is out of bounds.
     pub fn remove_atom_by_name(&mut self, name: String) -> bool {
         let index = self.atoms().position(|a| a.name() == name);
 
@@ -307,14 +309,14 @@ impl Conformer {
         }
     }
 
-    /// Remove the Atom specified. It returns `true` if it found a matching Atom and removed it.
-    /// It removes the first matching Atom from the list. Matching is done in parallel.
+    /// Remove the specified Atom. Returns `true` if a matching Atom was found and removed.
+    /// Removes the first matching Atom from the list. Matching is done in parallel.
     ///
     /// ## Arguments
     /// * `name` - the name of the Atom to remove
     ///
     /// ## Panics
-    /// It panics when the index is outside bounds.
+    /// Panics if the index is out of bounds.
     #[doc_cfg(feature = "rayon")]
     pub fn par_remove_atom_by_name(&mut self, name: String) -> bool {
         let index = self.atoms.par_iter().position_first(|a| a.name() == name);
@@ -348,17 +350,17 @@ impl Conformer {
         self.atoms.extend(other.atoms);
     }
 
-    /// Extend the Atoms on this Conformer by the given iterator.
+    /// Extend the Atoms on this Conformer by the given iterator over Atoms.
     pub fn extend<T: IntoIterator<Item = Atom>>(&mut self, iter: T) {
         self.atoms.extend(iter);
     }
 
-    /// Sort the Atoms of this Conformer
+    /// Sort the Atoms of this Conformer.
     pub fn sort(&mut self) {
         self.atoms.sort();
     }
 
-    /// Sort the Atoms of this Conformer in parallel
+    /// Sort the Atoms of this Conformer in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_sort(&mut self) {
         self.atoms.par_sort();

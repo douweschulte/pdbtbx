@@ -9,7 +9,7 @@ use std::fmt;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
-/// A Residue containing multiple Residues
+/// A Residue containing multiple Conformers
 pub struct Residue {
     /// The serial number of this Residue, can be negative as that is used sometimes. See <https://proteopedia.org/wiki/index.php/Unusual_sequence_numbering>.
     serial_number: isize,
@@ -28,7 +28,7 @@ impl<'a> Residue {
     /// * `conformer` - if available it can already add an conformer
     ///
     /// ## Fails
-    /// It fails if any of the characters making up the insertion_code are invalid.
+    /// It fails and returns `None` if any of the characters making up the insertion_code are invalid.
     pub fn new(
         number: isize,
         insertion_code: Option<&str>,
@@ -53,23 +53,23 @@ impl<'a> Residue {
         Some(res)
     }
 
-    /// The serial number of the Residue
+    /// Get the serial number of the Residue.
     pub fn serial_number(&self) -> isize {
         self.serial_number
     }
 
-    /// Set the serial number of the Residue
+    /// Set the serial number of the Residue.
     pub fn set_serial_number(&mut self, new_number: isize) {
         self.serial_number = new_number;
     }
 
-    /// The insertion code of the Residue
+    /// Get the insertion code of the Residue.
     pub fn insertion_code(&self) -> Option<&str> {
         self.insertion_code.as_deref()
     }
 
-    /// Set the insertion code of the Residue
-    /// It returns false if the `new_code` contains invalid characters
+    /// Set the insertion code of the Residue.
+    /// Fails and returns false if the `new_code` contains invalid characters
     pub fn set_insertion_code(&mut self, new_code: &str) -> bool {
         if let Some(c) = prepare_identifier(new_code) {
             self.insertion_code = Some(c);
@@ -79,13 +79,13 @@ impl<'a> Residue {
         }
     }
 
-    /// Set the insertion code of the Residue to None
+    /// Set the insertion code of the Residue to None.
     pub fn remove_insertion_code(&mut self) {
         self.insertion_code = None;
     }
 
-    /// Returns the uniquely identifying construct for this Residue.
-    /// It consists of the serial number and the insertion code.
+    /// Returns the uniquely identifying construct for this Residue,
+    /// consisting of the serial number and the insertion code.
     pub fn id(&self) -> (isize, Option<&str>) {
         (self.serial_number, self.insertion_code())
     }
@@ -107,68 +107,68 @@ impl<'a> Residue {
         }
     }
 
-    /// The amount of Conformers making up this Residue
+    /// The number of Conformers making up this Residue.
     pub fn conformer_count(&self) -> usize {
         self.conformers.len()
     }
 
-    /// Get the amount of Atoms making up this Residue
+    /// Get the number of Atoms making up this Residue.
     pub fn atom_count(&self) -> usize {
         self.conformers().fold(0, |sum, res| res.atom_count() + sum)
     }
 
-    /// Get the amount of Atoms making up this Residue in parallel
+    /// Get the number of Atoms making up this Residue in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
         self.par_conformers().map(|a| a.atom_count()).sum()
     }
 
-    /// Get a specific conformer from list of conformers making up this Residue.
+    /// Get a reference to a specific Conformer from the list of Conformers making up this Residue.
     ///
     /// ## Arguments
     /// * `index` - the index of the conformer
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn conformer(&self, index: usize) -> Option<&Conformer> {
         self.conformers.get(index)
     }
 
-    /// Get a specific conformer as a mutable reference from list of conformers making up this Residue.
+    /// Get a mutable reference to a specific Conformer from the list of Conformers making up this Residue.
     ///
     /// ## Arguments
     /// * `index` - the index of the conformer
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn conformer_mut(&mut self, index: usize) -> Option<&mut Conformer> {
         self.conformers.get_mut(index)
     }
 
-    /// Get a specific Atom from list of Atoms making up this Residue.
+    /// Get a reference to a specific Atom from the list of Conformers making up this Residue.
     ///
     /// ## Arguments
     /// * `index` - the index of the Atom
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn atom(&self, index: usize) -> Option<&Atom> {
         self.atoms().nth(index)
     }
 
-    /// Get a specific Atom as a mutable reference from list of Atoms making up this Residue.
+    /// Get a mutable reference to a specific Atom from the list of Conformers making up this Residue.
     ///
     /// ## Arguments
     /// * `index` - the index of the Atom
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// Returns `None` if the index is out of bounds.
     pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
         self.atoms_mut().nth(index)
     }
 
-    /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// Get A reference to the specified Atom. Its uniqueness is guaranteed by including the
+    /// insertion_code, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -194,8 +194,8 @@ impl<'a> Residue {
         None
     }
 
-    /// Get the specified atom, its uniqueness is guaranteed by including the
-    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// Get a mutable reference to the specified Atom. Its uniqueness is guaranteed by
+    /// including the insertion_code, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -229,7 +229,7 @@ impl<'a> Residue {
         }
     }
 
-    /// Find all hierarchies matching the given information
+    /// Find all hierarchies matching the given search. For more details see [Search].
     pub fn find(
         &'a self,
         search: Search,
@@ -243,7 +243,7 @@ impl<'a> Residue {
             })
     }
 
-    /// Find all hierarchies matching the given information
+    /// Find all hierarchies matching the given search. For more details see [Search].
     pub fn find_mut(
         &'a mut self,
         search: Search,
@@ -261,64 +261,64 @@ impl<'a> Residue {
             })
     }
 
-    /// Get the list of conformers making up this Residue.
+    /// Get an iterator of references to Conformers making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
         self.conformers.iter()
     }
 
-    /// Get the list of conformers making up this Residue in parallel.
+    /// Get a parallel iterator of references to Conformers making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
         self.conformers.par_iter()
     }
 
-    /// Get the list of conformers as mutable references making up this Residue.
+    /// Get an iterator of mutable references to Conformers making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
         self.conformers.iter_mut()
     }
 
-    /// Get the list of conformers as mutable references making up this Residue in parallel.
+    /// Get a parallel iterator of mutable references to Conformers making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
         self.conformers.par_iter_mut()
     }
 
-    /// Get the list of Atoms making up this Residue.
+    /// Get an iterator of references to Atoms making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
         self.conformers().flat_map(|a| a.atoms())
     }
 
-    /// Get the list of Atoms making up this Residue in parallel.
+    /// Get a parallel iterator of references to Atoms making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
         self.par_conformers().flat_map(|a| a.par_atoms())
     }
 
-    /// Get the list of Atoms as mutable references making up this Residue.
+    /// Get an iterator of mutable references to Atoms making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.conformers_mut().flat_map(|a| a.atoms_mut())
     }
 
-    /// Get the list of Atoms as mutable references making up this Residue in parallel.
+    /// Get a parallel iterator of mutable references to Atoms making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.par_conformers_mut().flat_map(|a| a.par_atoms_mut())
     }
 
-    /// Returns all atom with their hierarchy struct for each atom in this residue.
+    /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this Model.
     pub fn atoms_with_hierarchy(
         &'a self,
     ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformer<'a>> + '_ {
         self.conformers()
             .flat_map(|c| c.atoms().map(move |a| (a, c)))
-            .map(hierarchy::AtomConformer::form_tuple)
+            .map(hierarchy::AtomConformer::from_tuple)
     }
 
-    /// Returns all atom with their hierarchy struct for each atom in this residue.
+    /// Get an iterator of mutable references to a struct containing all atoms with their hierarchy making up this Model.
     #[allow(trivial_casts)]
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
@@ -328,7 +328,7 @@ impl<'a> Residue {
                 let conformer: *mut Conformer = c;
                 c.atoms_mut().map(move |a| (a as *mut Atom, conformer))
             })
-            .map(hierarchy::AtomConformerMut::form_tuple)
+            .map(hierarchy::AtomConformerMut::from_tuple)
     }
 
     /// Add a new conformer to the list of conformers making up this Residue.
@@ -338,7 +338,9 @@ impl<'a> Residue {
         self.conformers.push(new_conformer);
     }
 
-    /// Add a new Atom to this Residue. It finds if there already is a Residue with the given serial number if there is it will add this atom to that Residue, otherwise it will create a new Residue and add that to the list of Residues making up this Chain.
+    /// Add a new Atom to this Residue. If a Residue with the given serial number already exists, the
+    /// Atom will be added to it, otherwise a new Residue is created to hold the created atom
+    /// and added to the list of Residues in its chain.
     ///
     /// ## Arguments
     /// * `new_atom` - the new Atom to add
@@ -393,25 +395,26 @@ impl<'a> Residue {
             .for_each(|conformer| conformer.remove_atoms_by(&predicate))
     }
 
-    /// Remove the conformer specified.
+    /// Remove the specified conformer.
     ///
     /// ## Arguments
-    /// * `index` - the index of the conformer to remove
+    /// * `index` - the index of the Conformer to remove
     ///
     /// ## Panics
-    /// It panics when the index is outside bounds.
+    /// Panics when the index is outside bounds.
     pub fn remove_conformer(&mut self, index: usize) {
         self.conformers.remove(index);
     }
 
-    /// Remove the conformer specified. It returns `true` if it found a matching conformer and removed it.
-    /// It removes the first matching conformer from the list.
+    /// Remove the specified conformer. Returns `true` if a matching Conformer was found and
+    /// removed.
+    /// Removes the first matching Conformer from the list.
     ///
     /// ## Arguments
     /// * `id` - the identifying construct of the Conformer to remove
     ///
     /// ## Panics
-    /// It panics when the index is outside bounds.
+    /// Panics when the index is outside bounds.
     pub fn remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
         let index = self.conformers().position(|a| a.id() == id);
 
@@ -423,14 +426,15 @@ impl<'a> Residue {
         }
     }
 
-    /// Remove the conformer specified. It returns `true` if it found a matching conformer and removed it.
-    /// It removes the first matching conformer from the list. Searching is done in parallel
+    /// Remove the specified Conformer. Returns `true` if a matching Conformer was found and
+    /// removed.
+    /// It removes the first matching Conformer from the list. Searching is done in parallel.
     ///
     /// ## Arguments
     /// * `id` - the identifying construct of the Conformer to remove
     ///
     /// ## Panics
-    /// It panics when the index is outside bounds.
+    /// Panics when the index is outside bounds.
     #[doc_cfg(feature = "rayon")]
     pub fn par_remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
         let index = self.conformers.par_iter().position_first(|a| a.id() == id);
@@ -443,14 +447,14 @@ impl<'a> Residue {
         }
     }
 
-    /// Apply a transformation to the position of all conformers making up this Residue, the new position is immediately set.
+    /// Apply a transformation to the position of all Conformers making up this Residue, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
         for conformer in self.conformers_mut() {
             conformer.apply_transformation(transformation);
         }
     }
 
-    /// Apply a transformation to the position of all conformers making up this Residue, the new position is immediately set.
+    /// Apply a transformation to the position of all Conformers making up this Residue, the new position is immediately set.
     /// Done in parallel
     #[doc_cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
@@ -458,23 +462,23 @@ impl<'a> Residue {
             .for_each(|conformer| conformer.apply_transformation(transformation))
     }
 
-    /// Join this Residue with another Residue, this moves all conformers from the other Residue
+    /// Join this Residue with another Residue, this moves all Conformers from the other Residue
     /// to this Residue. All other (meta) data of this Residue will stay the same.
     pub fn join(&mut self, other: Residue) {
         self.conformers.extend(other.conformers);
     }
 
-    /// Extend the conformers on this Residue by the given iterator.
+    /// Extend the Conformers on this Residue by the given iterator.
     pub fn extend<T: IntoIterator<Item = Conformer>>(&mut self, iter: T) {
         self.conformers.extend(iter);
     }
 
-    /// Sort the conformers of this Residue
+    /// Sort the Conformers of this Residue
     pub fn sort(&mut self) {
         self.conformers.sort();
     }
 
-    /// Sort the conformers of this Residue in parallel
+    /// Sort the Conformers of this Residue in parallel
     #[doc_cfg(feature = "rayon")]
     pub fn par_sort(&mut self) {
         self.conformers.par_sort();
