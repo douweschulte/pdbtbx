@@ -25,7 +25,7 @@ impl<'a> Chain {
     /// * `id` - the identifier
     ///
     /// ## Fails
-    /// It fails if the identifier is an invalid character.
+    /// It returns `None` if the identifier is an invalid character.
     pub fn new(id: &str) -> Option<Chain> {
         if !valid_identifier(id) {
             return None;
@@ -68,101 +68,101 @@ impl<'a> Chain {
         self.database_reference = Some(reference);
     }
 
-    /// Get the amount of Residues making up this Chain
+    /// Get the number of Residues making up this Chain
     pub fn residue_count(&self) -> usize {
         self.residues.len()
     }
 
-    /// Get the amount of Conformers making up this Chain
+    /// Get the number of Conformers making up this Chain
     pub fn conformer_count(&self) -> usize {
         self.residues()
             .fold(0, |sum, res| res.conformer_count() + sum)
     }
 
-    /// Get the amount of Conformers making up this Chain in parallel
+    /// Get the number of Conformers making up this Chain in parallel
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformer_count(&self) -> usize {
         self.par_residues().map(|res| res.conformer_count()).sum()
     }
 
-    /// Get the amount of Atoms making up this Chain
+    /// Get the number of Atoms making up this Chain
     pub fn atom_count(&self) -> usize {
         self.residues().fold(0, |sum, res| res.atom_count() + sum)
     }
 
-    /// Get the amount of Atoms making up this Chain in parallel
+    /// Get the number of Atoms making up this Chain in parallel
     #[doc_cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
         self.par_residues().map(|res| res.par_atom_count()).sum()
     }
 
-    /// Get a specific Residue from list of Residues making up this Chain.
+    /// Get a reference to a specific Residue from list of Residues making up this Chain.
     ///
     /// ## Arguments
     /// * `index` - the index of the Residue
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// It returns `None` if the index is out of bounds.
     pub fn residue(&self, index: usize) -> Option<&Residue> {
         self.residues.get(index)
     }
 
-    /// Get a specific Residue as a mutable reference from list of Residues making up this Chain.
+    /// Get a mutable reference to a specific Residue from the list of Residues making up this Chain.
     ///
     /// ## Arguments
     /// * `index` - the index of the Residue
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// It returns `None` if the index is out of bounds.
     pub fn residue_mut(&mut self, index: usize) -> Option<&mut Residue> {
         self.residues.get_mut(index)
     }
 
-    /// Get a specific Conformer from list of Conformers making up this Chain.
+    /// Get a reference to a specific Conformer from list of Conformers making up this Chain.
     ///
     /// ## Arguments
     /// * `index` - the index of the Conformer
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// It returns `None` if the index is out of bounds.
     pub fn conformer(&self, index: usize) -> Option<&Conformer> {
         self.conformers().nth(index)
     }
 
-    /// Get a specific Conformer as a mutable reference from list of Conformers making up this Chain.
+    /// Get a mutable reference to a specific Conformer from list of Conformers making up this Chain.
     ///
     /// ## Arguments
     /// * `index` - the index of the Conformer
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// It returns `None` if the index is out of bounds.
     pub fn conformer_mut(&mut self, index: usize) -> Option<&mut Conformer> {
         self.conformers_mut().nth(index)
     }
 
-    /// Get a specific Atom from the Atoms making up this Chain.
+    /// Get a reference to a specific Atom from the Atoms making up this Chain.
     ///
     /// ## Arguments
     /// * `index` - the index of the Atom
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// It returns `None` if the index is out of bounds.
     pub fn atom(&self, index: usize) -> Option<&Atom> {
         self.atoms().nth(index)
     }
 
-    /// Get a specific Atom as a mutable reference from the Atoms making up this Chain.
+    /// Get a mutable reference to a specific Atom from the Atoms making up this Chain.
     ///
     /// ## Arguments
     /// * `index` - the index of the Atom
     ///
     /// ## Fails
-    /// It fails when the index is outside bounds.
+    /// It returns `None` if the index is out of bounds.
     pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
         self.atoms_mut().nth(index)
     }
 
-    /// Get the specified atom, its uniqueness is guaranteed by including the
+    /// Get a reference to the specified atom. Its uniqueness is guaranteed by including the
     /// alternative_location, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
@@ -204,7 +204,7 @@ impl<'a> Chain {
         }
     }
 
-    /// Get the specified atom, its uniqueness is guaranteed by including the
+    /// Get a mutable reference to the specified atom. Its uniqueness is guaranteed by including the
     /// alternative_location, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
@@ -275,79 +275,79 @@ impl<'a> Chain {
             })
     }
 
-    /// Get the list of Residues making up this Chain.
+    /// Get an iterator of references to Residues making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
         self.residues.iter()
     }
 
-    /// Get the list of Residues making up this Chain in parallel.
+    /// Get a parallel iterator of references to Residues making up this Chain.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
         self.residues.par_iter()
     }
 
-    /// Get the list of Residues as mutable references making up this Chain.
+    /// Get an iterator of mutable references to Residues making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
         self.residues.iter_mut()
     }
 
-    /// Get the list of Residues as mutable references making up this Chain in parallel.
+    /// Get a parallel iterator of mutable references to Residues making up this Chain.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
         self.residues.par_iter_mut()
     }
 
-    /// Get the list of Conformers making up this Chain.
+    /// Get an iterator of references to Conformers making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
         self.residues().flat_map(|a| a.conformers())
     }
 
-    /// Get the list of Conformers making up this Chain in parallel.
+    /// Get a parallel iterator of references to Conformers making up this Chain.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
         self.par_residues().flat_map(|a| a.par_conformers())
     }
 
-    /// Get the list of Conformers as mutable references making up this Chain.
+    /// Get an iterator of mutable references to Conformers making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
         self.residues_mut().flat_map(|a| a.conformers_mut())
     }
 
-    /// Get the list of Conformers as mutable references making up this Chain in parallel.
+    /// Get a parallel iterator of mutable references to Conformers making up this Chain.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
         self.par_residues_mut().flat_map(|a| a.par_conformers_mut())
     }
 
-    /// Get the list of Atoms making up this Chain.
+    /// Get an iterator of references to Atoms making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
         self.residues().flat_map(|a| a.atoms())
     }
 
-    /// Get the list of Atoms making up this Chain in parallel.
+    /// Get a parallel iterator of references to Atoms making up this Chain.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
         self.par_residues().flat_map(|a| a.par_atoms())
     }
 
-    /// Get the list of Atoms as mutable references making up this Chain.
+    /// Get an iterator of mutable references to Atoms making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
         self.residues_mut().flat_map(|a| a.atoms_mut())
     }
 
-    /// Get the list of Atoms as mutable references making up this Chain in parallel.
+    /// Get a parallel iterator of mutablereferences to Atoms making up this Chain.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.par_residues_mut().flat_map(|a| a.par_atoms_mut())
     }
 
-    /// Returns all atom with their hierarchy struct for each atom in this chain.
+    /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this Chain.
     pub fn atoms_with_hierarchy(
         &'a self,
     ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidue<'a>> + '_ {
@@ -355,7 +355,7 @@ impl<'a> Chain {
             .flat_map(|r| r.atoms_with_hierarchy().map(move |h| h.extend(r)))
     }
 
-    /// Returns all atom with their hierarchy struct for each atom in this chain.
+    /// Get an iterator of mutable references to a struct containing all atoms with their hierarchy making up this Chain.
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
     ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueMut<'a>> + '_ {
@@ -365,7 +365,9 @@ impl<'a> Chain {
         })
     }
 
-    /// Add a new Atom to this Chain. It finds if there already is a Residue with the given serial number if there is it will add this atom to that Residue, otherwise it will create a new Residue and add that to the list of Residues making up this Chain.
+    /// Add a new Atom to this Chain. If a Residue with the given serial number already exists, the
+    /// Atom will be added to it, otherwise a new Residue is created to hold the created atom
+    /// and added to the list of Residues in this chain.
     ///
     /// ## Arguments
     /// * `new_atom` - the new Atom to add
@@ -373,7 +375,7 @@ impl<'a> Chain {
     /// * `conformer_id` - the id construct of the Conformer to add the Atom to
     ///
     /// ## Panics
-    /// It panics if the Residue name contains any invalid characters.
+    /// It panics if the given Residue ID contains any invalid characters.
     pub fn add_atom(
         &mut self,
         new_atom: Atom,
@@ -400,12 +402,12 @@ impl<'a> Chain {
         current_residue.add_atom(new_atom, conformer_id);
     }
 
-    /// Add a Residue end of to the list of Residues making up this Chain. This does not detect any duplicates of names or serial numbers in the list of Residues.
+    /// Add a Residue to the end of to the list of Residues making up this Chain. This does not detect any duplicates of names or serial numbers in the list of Residues.
     pub fn add_residue(&mut self, residue: Residue) {
         self.residues.push(residue);
     }
 
-    /// Inserts a Residue to the index in the list of Residues making up this Chain. This does not detect any duplicates of names or serial numbers in the list of Residues.
+    /// Inserts a Residue at the given index into the list of Residues making up this Chain. This does not detect any duplicates of names or serial numbers in the list of Residues.
     /// This panics if `index > len`.
     pub fn insert_residue(&mut self, index: usize, residue: Residue) {
         self.residues.insert(index, residue);
@@ -439,19 +441,19 @@ impl<'a> Chain {
         self.residues.retain(|residue| !predicate(residue));
     }
 
-    /// Remove the Residue specified.
+    /// Remove the specified Residue.
     ///
     /// ## Arguments
     /// * `index` - the index of the Residue to remove
     ///
     /// ## Panics
-    /// It panics when the index is outside bounds.
+    /// It panics if the index is out of bounds.
     pub fn remove_residue(&mut self, index: usize) {
         self.residues.remove(index);
     }
 
-    /// Remove the Residue specified. It returns `true` if it found a matching Residue and removed it.
-    /// It removes the first matching Residue from the list.
+    /// Remove the specified Residue. Returns `true` if a matching Residue was found and removed.
+    /// Removes the first matching Residue from the list.
     ///
     /// ## Arguments
     /// * `id` - the id construct of the Residue to remove (see Residue.id())
@@ -466,8 +468,8 @@ impl<'a> Chain {
         }
     }
 
-    /// Remove the Residue specified. It returns `true` if it found a matching Residue and removed it.
-    /// It removes the first matching Residue from the list.
+    /// Remove the specified Residue. Returns `true` if a matching Residue was found and removed.
+    /// Removes the first matching Residue from the list.
     ///
     /// ## Arguments
     /// * `id` - the id construct of the Residue to remove (see Residue.id())
@@ -510,7 +512,7 @@ impl<'a> Chain {
         self.residues.extend(other.residues);
     }
 
-    /// Extend the Residues on this Chain by the given iterator.
+    /// Extend the Residues on this Chain by the given iterator of Residues.
     pub fn extend<T: IntoIterator<Item = Residue>>(&mut self, iter: T) {
         self.residues.extend(iter);
     }

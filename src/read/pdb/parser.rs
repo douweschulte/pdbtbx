@@ -14,7 +14,7 @@ use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 
 /// Parse the given file into a PDB struct.
-/// Returns an PDBError when it found a BreakingError. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 pub fn open_pdb(
     filename: &str,
     level: StrictnessLevel,
@@ -30,7 +30,7 @@ pub fn open_pdb(
 }
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
-/// Returns an PDBError when it found a BreakingError. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// ## Arguments
 /// * `input` - the input stream
@@ -713,6 +713,8 @@ fn lex_remark(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>),
 }
 
 /// Lex a HEADER
+/// ## Fails
+/// Fails if the header is too short (below 66 lines)
 fn lex_header(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     if line.len() < 66 {
         Err(PDBError::new(

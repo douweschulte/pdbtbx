@@ -5,9 +5,9 @@ use std::fmt;
 pub enum Context {
     /// When no context can be given
     None,
-    /// When only a line (eg filename) can be shown
+    /// When only a line (e.g. in a file) can be shown
     Show {
-        /// The line to be shown to the user (eg filename)
+        /// The line to be shown to the user (e.g. filename)
         line: String,
     },
     /// When a full line is faulty and no special position can be annotated

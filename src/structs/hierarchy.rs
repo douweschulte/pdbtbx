@@ -40,7 +40,7 @@
 use super::*;
 use std::marker::PhantomData;
 
-/// A struct to hold references to an Atom and its containing Conformer
+/// A struct to hold references to an Atom and its containing Conformer.
 #[derive(Debug, Clone)]
 pub struct AtomConformer<'a> {
     /// The Conformer containing this Atom
@@ -49,7 +49,7 @@ pub struct AtomConformer<'a> {
     atom: &'a Atom,
 }
 
-/// A struct to hold references to an Atom and its containing Conformer and Residue
+/// A struct to hold references to an Atom and its containing Conformer and Residue.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidue<'a> {
     /// The Residue containing this Atom
@@ -60,7 +60,7 @@ pub struct AtomConformerResidue<'a> {
     atom: &'a Atom,
 }
 
-/// A struct to hold references to an Atom and its containing Conformer, Residue, and Chain
+/// A struct to hold references to an Atom and its containing Conformer, Residue, and Chain.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidueChain<'a> {
     /// The Chain containing this Atom
@@ -73,7 +73,7 @@ pub struct AtomConformerResidueChain<'a> {
     atom: &'a Atom,
 }
 
-/// A struct to hold references to an Atom and its containing Conformer, Residue, Chain, and Model
+/// A struct to hold references to an Atom and its containing Conformer, Residue, Chain, and Model.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidueChainModel<'a> {
     /// The Model containing this Atom
@@ -88,7 +88,7 @@ pub struct AtomConformerResidueChainModel<'a> {
     atom: &'a Atom,
 }
 
-/// A struct to hold mutable references to an Atom and its containing Conformer
+/// A struct to hold mutable references to an Atom and its containing Conformer.
 #[derive(Debug, Clone)]
 pub struct AtomConformerMut<'a> {
     /// The Conformer containing this Atom
@@ -98,7 +98,7 @@ pub struct AtomConformerMut<'a> {
     phantom: PhantomData<&'a usize>,
 }
 
-/// A struct to hold mutable references to an Atom and its containing Conformer and Residue
+/// A struct to hold mutable references to an Atom and its containing Conformer and Residue.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidueMut<'a> {
     /// The Residue containing this Atom
@@ -110,7 +110,8 @@ pub struct AtomConformerResidueMut<'a> {
     phantom: PhantomData<&'a usize>,
 }
 
-/// A struct to hold mutable references to an Atom and its containing Conformer, Residue, and Chain
+/// A struct to hold mutable references to an Atom and its containing Conformer, Residue, and
+/// Chain.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidueChainMut<'a> {
     /// The Chain containing this Atom
@@ -124,7 +125,7 @@ pub struct AtomConformerResidueChainMut<'a> {
     phantom: PhantomData<&'a usize>,
 }
 
-/// A struct to hold mutable references to an Atom and its containing Conformer, Residue, Chain, and Model
+/// A struct to hold mutable references to an Atom and its containing Conformer, Residue, Chain, and Model.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidueChainModelMut<'a> {
     /// The Model containing this Atom
@@ -140,7 +141,7 @@ pub struct AtomConformerResidueChainModelMut<'a> {
     phantom: PhantomData<&'a usize>,
 }
 
-/// A trait which defines all functions on a hierarchy which contains Atoms and Conformers
+/// A trait which defines all functions on a hierarchy which contains Atoms and Conformers.
 pub trait ContainsAtomConformer {
     /// Get a reference to the atom
     fn atom(&self) -> &Atom;
@@ -156,25 +157,25 @@ pub trait ContainsAtomConformer {
     }
 }
 
-/// A trait which defines all functions on a hierarchy which contains Atoms, Conformers, and Residues
+/// A trait which defines all functions on a hierarchy which contains Atoms, Conformers, and Residues.
 pub trait ContainsAtomConformerResidue: ContainsAtomConformer {
     /// Get a reference to the residue
     fn residue(&self) -> &Residue;
 }
 
-/// A trait which defines all functions on a hierarchy which contains Atoms, Conformers, Residues, and Chains
+/// A trait which defines all functions on a hierarchy which contains Atoms, Conformers, Residues, and Chains.
 pub trait ContainsAtomConformerResidueChain: ContainsAtomConformerResidue {
     /// Get a reference to the chain
     fn chain(&self) -> &Chain;
 }
 
-/// A trait which defines all functions on a hierarchy which contains Atoms, Conformers, Residues, Chains, and Models
+/// A trait which defines all functions on a hierarchy which contains Atoms, Conformers, Residues, Chains, and Models.
 pub trait ContainsAtomConformerResidueChainModel: ContainsAtomConformerResidueChain {
     /// Get a reference to the model
     fn model(&self) -> &Model;
 }
 
-/// A trait which defines all functions on a mutable hierarchy which contains Atoms and Conformers
+/// A trait which defines all functions on a mutable hierarchy which contains Atoms and Conformers.
 pub trait ContainsAtomConformerMut: ContainsAtomConformer {
     /// Get a mutable reference to the atom
     fn atom_mut(&mut self) -> &mut Atom;
@@ -182,7 +183,7 @@ pub trait ContainsAtomConformerMut: ContainsAtomConformer {
     fn conformer_mut(&mut self) -> &mut Conformer;
 }
 
-/// A trait which defines all functions on a mutable hierarchy which contains Atoms, Conformers, and Residues
+/// A trait which defines all functions on a mutable hierarchy which contains Atoms, Conformers, and Residues.
 pub trait ContainsAtomConformerResidueMut:
     ContainsAtomConformerResidue + ContainsAtomConformerMut
 {
@@ -190,7 +191,7 @@ pub trait ContainsAtomConformerResidueMut:
     fn residue_mut(&mut self) -> &mut Residue;
 }
 
-/// A trait which defines all functions on a mutable hierarchy which contains Atoms, Conformers, Residues, and Chains
+/// A trait which defines all functions on a mutable hierarchy which contains Atoms, Conformers, Residues, and Chains.
 pub trait ContainsAtomConformerResidueChainMut:
     ContainsAtomConformerResidueChain + ContainsAtomConformerResidueMut
 {
@@ -198,7 +199,7 @@ pub trait ContainsAtomConformerResidueChainMut:
     fn chain_mut(&mut self) -> &mut Chain;
 }
 
-/// A trait which defines all functions on a mutable hierarchy which contains Atoms, Conformers, Residues, Chains, and Models
+/// A trait which defines all functions on a mutable hierarchy which contains Atoms, Conformers, Residues, Chains, and Models.
 pub trait ContainsAtomConformerResidueChainModelMut:
     ContainsAtomConformerResidueChainModel + ContainsAtomConformerResidueChainMut
 {
@@ -257,7 +258,7 @@ impl<'a> AtomConformer<'a> {
     pub(crate) fn new(atom: &'a Atom, conformer: &'a Conformer) -> AtomConformer<'a> {
         AtomConformer { atom, conformer }
     }
-    pub(crate) fn form_tuple(tuple: (&'a Atom, &'a Conformer)) -> AtomConformer<'a> {
+    pub(crate) fn from_tuple(tuple: (&'a Atom, &'a Conformer)) -> AtomConformer<'a> {
         AtomConformer {
             atom: tuple.0,
             conformer: tuple.1,
@@ -455,7 +456,7 @@ impl<'a> AtomConformerMut<'a> {
             phantom: PhantomData,
         }
     }
-    pub(crate) fn form_tuple(tuple: (*mut Atom, *mut Conformer)) -> AtomConformerMut<'a> {
+    pub(crate) fn from_tuple(tuple: (*mut Atom, *mut Conformer)) -> AtomConformerMut<'a> {
         AtomConformerMut {
             atom: tuple.0,
             conformer: tuple.1,
@@ -514,7 +515,7 @@ impl<'a> AtomConformerResidueMut<'a> {
             phantom: PhantomData,
         }
     }
-    pub(crate) fn form_tuple(
+    pub(crate) fn from_tuple(
         tuple: (*mut Atom, *mut Conformer, *mut Residue),
     ) -> AtomConformerResidueMut<'a> {
         AtomConformerResidueMut {
@@ -592,7 +593,7 @@ impl<'a> AtomConformerResidueChainMut<'a> {
             phantom: PhantomData,
         }
     }
-    pub(crate) fn form_tuple(
+    pub(crate) fn from_tuple(
         tuple: (*mut Atom, *mut Conformer, *mut Residue, *mut Chain),
     ) -> AtomConformerResidueChainMut<'a> {
         AtomConformerResidueChainMut {
@@ -687,7 +688,7 @@ impl<'a> AtomConformerResidueChainModelMut<'a> {
             phantom: PhantomData,
         }
     }
-    pub(crate) fn form_tuple(
+    pub(crate) fn from_tuple(
         tuple: (
             *mut Atom,
             *mut Conformer,

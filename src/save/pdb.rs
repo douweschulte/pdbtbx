@@ -10,9 +10,9 @@ use std::io::prelude::*;
 use std::io::BufWriter;
 use std::iter;
 
-/// Save the given PDB struct to the given file.
-/// It validates the PDB. It fails if the validation fails with the given `level`.
-/// If validation gives rise to problems use the `save_raw` function.
+/// Save the given PDB struct to the given file, validating it beforehand.
+/// It fails if the validation fails with the given `level`.
+/// If validation gives rise to problems, use the `save_raw` function.
 ///
 /// ## Known Problems
 /// Saving SEQRES lines is experimental, as there are many nitpicky things to consider
@@ -44,7 +44,7 @@ pub fn save_pdb(pdb: &PDB, filename: &str, level: StrictnessLevel) -> Result<(),
 }
 
 /// Save the given PDB struct to the given BufWriter.
-/// It does not validate or renumber the PDB, so if that is needed that needs to be done in preparation.
+/// It does not validate or renumber the PDB, so if that is needed, that needs to be done in preparation.
 /// It does change the output format based on the StrictnessLevel given.
 ///
 /// ## Loose
