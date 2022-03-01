@@ -61,7 +61,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
         time.as_millis()
     );
 
-    assert!(pdb.total_atom_count() != 0, "No atoms found");
+    assert!(!(pdb.total_atom_count() == 0), "No atoms found");
 
     println!("PDB parsed");
 

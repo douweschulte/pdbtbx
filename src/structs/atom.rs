@@ -466,6 +466,67 @@ impl Atom {
         ((x - self.x).powi(2) + (y - self.y).powi(2) + (z - self.z).powi(2)).sqrt()
     }
 
+    #[allow(clippy::similar_names)]
+    /// Gives the angle between the centers of three atoms in degrees.
+    /// The angle is calculated as the angle between the two lines that include
+    /// atoms [1, 2] and [2, 3]
+    pub fn angle(&self, atom2: &Atom, atom3: &Atom) -> f64 {
+        let (a, b, c) = (self.pos(), atom2.pos(), atom3.pos());
+
+        // Form the two vectors
+        let ba = [a.0 - b.0, a.1 - b.1, a.2 - b.2];
+        let bc = [c.0 - b.0, c.1 - b.1, c.2 - b.2];
+
+        // Calculate absolute values of vectors
+        let abs_ba = ba.iter().fold(0.0, |acc, x| acc + (x * x)).sqrt();
+        let abs_bc = bc.iter().fold(0.0, |acc, x| acc + (x * x)).sqrt();
+
+        // Form dot product between vecs
+        let dot = ba
+            .iter()
+            .zip(bc.iter())
+            .fold(0.0, |acc, (a, b)| acc + (a * b));
+
+        // Calculate angle from all ingredients
+        (dot / (abs_ba * abs_bc)).acos().to_degrees()
+    }
+
+    #[allow(clippy::similar_names)]
+    /// Gives the dihedral between the centers of four atoms in degrees.
+    /// The angle is calculated as the angle between the two planes spanned by
+    /// atoms [1, 2, 3] and [2, 3, 4].
+    pub fn dihedral(&self, atom2: &Atom, atom3: &Atom, atom4: &Atom) -> f64 {
+        let (a, b, c, d) = (self.pos(), atom2.pos(), atom3.pos(), atom4.pos());
+
+        // Form vectors
+        let ba = [a.0 - b.0, a.1 - b.1, a.2 - b.2];
+        let bc = [c.0 - b.0, c.1 - b.1, c.2 - b.2];
+        let cb = [b.0 - c.0, b.1 - c.1, b.2 - c.2];
+        let cd = [d.0 - c.0, d.1 - c.1, d.2 - c.2];
+
+        // Form two normal vectors via cross products
+        let n1 = [
+            ba[1] * bc[2] - ba[2] * bc[1],
+            ba[2] * bc[0] - ba[0] * bc[2],
+            ba[0] * bc[1] - ba[1] * bc[0],
+        ];
+        let n2 = [
+            cb[1] * cd[2] - cb[2] * cd[1],
+            cb[2] * cd[0] - cb[0] * cd[2],
+            cb[0] * cd[1] - cb[1] * cd[0],
+        ];
+
+        // calculate abs of vecs
+        let abs_n1 = n1.iter().fold(0.0, |acc, x| acc + (x * x)).sqrt();
+        let abs_n2 = n2.iter().fold(0.0, |acc, x| acc + (x * x)).sqrt();
+
+        let dot = n1
+            .iter()
+            .zip(n2.iter())
+            .fold(0.0, |acc, (a, b)| acc + (a * b));
+        (dot / (abs_n1 * abs_n2)).acos().to_degrees()
+    }
+
     /// Checks whether this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
     /// less then the sum of the radii of this atom and the other atom. The used radius is (`atom.atomic_radius()`).
     ///
@@ -658,6 +719,18 @@ mod tests {
         assert!(a.overlaps_wrapping(&b, &cell).unwrap());
         assert_eq!(a.distance(&b), 8.0);
         assert_eq!(a.distance_wrapping(&b, &cell), 2.0);
+    }
+
+    #[test]
+    fn angles() {
+        let a = Atom::new(false, 0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(false, 0, "", 0.0, 1.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let c = Atom::new(false, 0, "", 0.0, 0.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
+        let d = Atom::new(false, 0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
+        let e = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+
+        assert!((a.angle(&b, &c) - 60.0).abs() < 0.0001);
+        assert!((a.dihedral(&e, &c, &d) - 45.0).abs() < 0.0001);
     }
 
     #[test]

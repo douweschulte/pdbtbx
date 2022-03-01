@@ -59,7 +59,8 @@ fn main() {
     let val_and_c = pdb
         .conformers()
         .filter(|c| c.name() == "VAL")
-        .flat_map(|c| c.atoms().filter(|a| a.element() == "C"))
+        .map(|c| c.atoms().filter(|a| a.element() == "C"))
+        .flatten()
         .count();
     assert_eq!(pdb.find(search).count(), val_and_c);
 
@@ -77,12 +78,14 @@ fn main() {
     let val = pdb
         .conformers()
         .filter(|c| c.name() == "VAL")
-        .flat_map(|c| c.atoms())
+        .map(|c| c.atoms())
+        .flatten()
         .count();
     let c_not_val = pdb
         .conformers()
         .filter(|c| c.name() != "VAL")
-        .flat_map(|c| c.atoms().filter(|a| a.element() == "C"))
+        .map(|c| c.atoms().filter(|a| a.element() == "C"))
+        .flatten()
         .count();
     assert_eq!(pdb.find(search).count(), val + c_not_val);
 
@@ -100,12 +103,14 @@ fn main() {
     let val_not_c = pdb
         .conformers()
         .filter(|c| c.name() == "VAL")
-        .flat_map(|c| c.atoms().filter(|a| a.element() != "C"))
+        .map(|c| c.atoms().filter(|a| a.element() != "C"))
+        .flatten()
         .count();
     let c_not_val = pdb
         .conformers()
         .filter(|c| c.name() != "VAL")
-        .flat_map(|c| c.atoms().filter(|a| a.element() == "C"))
+        .map(|c| c.atoms().filter(|a| a.element() == "C"))
+        .flatten()
         .count();
     assert_eq!(pdb.find(search).count(), val_not_c + c_not_val);
 }
