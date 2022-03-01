@@ -54,6 +54,7 @@ pub struct PDB {
     bonds: Vec<(usize, usize, Bond)>,
 }
 
+#[derive(Debug)]
 pub(crate) struct ChainResSet {
     pub(crate) chain_set: Mutex<HashSet<String>>,
     pub(crate) residue_set: Mutex<HashSet<(isize, Option<String>)>>,

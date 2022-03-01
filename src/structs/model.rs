@@ -418,31 +418,31 @@ impl<'a> Model {
         let mut new_chain =
             Chain::new(chain_id_trim).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
+        #[allow(clippy::unwrap_used)]
+        let mut chain_set = CHAIN_RES_IN_PDB.chain_set.lock().unwrap();
 
         #[allow(clippy::unwrap_used)]
-        if CHAIN_RES_IN_PDB
-            .chain_set
-            .lock()
-            .unwrap()
-            .get(chain_id_trim)
-            .is_none()
-        {
+        if chain_set.get(chain_id_trim).is_none() {
             for chain in &mut self.chains.iter_mut().rev() {
                 if chain.id() == chain_id_trim {
                     current_chain = chain;
                     // found = true;
-                    CHAIN_RES_IN_PDB
-                        .chain_set
-                        .lock()
-                        .unwrap()
-                        .insert(chain_id_trim.to_owned());
                     break;
                 }
             }
         } else {
+            chain_set.insert(chain_id_trim.to_owned());
             self.chains.push(new_chain);
             current_chain = (&mut self.chains).last_mut().unwrap();
         }
+
+        // for chain in &mut self.chains.iter_mut().rev() {
+        //     if chain.id() == chain_id_trim {
+        //         current_chain = chain;
+        //         found = true;
+        //         break;
+        //     }
+        // }
 
         // #[allow(clippy::unwrap_used)]
         // if !found {

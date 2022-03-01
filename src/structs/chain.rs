@@ -365,7 +365,7 @@ impl<'a> Chain {
         })
     }
 
-    /// Add a new Atom to this Chain. If a Residue with the given serial number already exists, the
+    /// Add a new Atom to this Chain. If a Residue with the given ID already exists, the
     /// Atom will be added to it, otherwise a new Residue is created to hold the created atom
     /// and added to the list of Residues in this chain.
     ///
@@ -386,28 +386,23 @@ impl<'a> Chain {
         let mut new_residue = Residue::new(residue_id.0, residue_id.1, None)
             .expect("Invalid chars in Residue creation");
         let mut current_residue = &mut new_residue;
+        #[allow(clippy::unwrap_used)]
+        let mut residue_set = CHAIN_RES_IN_PDB.residue_set.lock().unwrap();
 
         #[allow(clippy::unwrap_used)]
-        if CHAIN_RES_IN_PDB
-            .residue_set
-            .lock()
-            .unwrap()
+        if residue_set
             .get(&(residue_id.0, residue_id.1.map(|s| s.to_owned())))
-            .is_none()
+            .is_some()
         {
             for residue in &mut self.residues.iter_mut().rev() {
                 if residue.id() == residue_id {
                     current_residue = residue;
                     // found = true;
-                    CHAIN_RES_IN_PDB
-                        .residue_set
-                        .lock()
-                        .unwrap()
-                        .insert((residue_id.0, residue_id.1.map(|s| s.to_owned())));
                     break;
                 }
             }
         } else {
+            residue_set.insert((residue_id.0, residue_id.1.map(|s| s.to_owned())));
             self.residues.push(new_residue);
             current_residue = self.residues.last_mut().unwrap();
         }
@@ -415,7 +410,7 @@ impl<'a> Chain {
         // for residue in &mut self.residues.iter_mut().rev() {
         //     if residue.id() == residue_id {
         //         current_residue = residue;
-        //         // found = true;
+        //         found = true;
         //         break;
         //     }
         // }
@@ -425,6 +420,8 @@ impl<'a> Chain {
         //     current_residue = self.residues.last_mut().unwrap();
         // }
 
+        // println!("{:?}", CHAIN_RES_IN_PDB.chain_set.lock().unwrap());
+        // println!("{:?}", CHAIN_RES_IN_PDB.residue_set.lock().unwrap());
         current_residue.add_atom(new_atom, conformer_id);
     }
 
