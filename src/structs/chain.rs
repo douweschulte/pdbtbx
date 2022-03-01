@@ -382,22 +382,45 @@ impl<'a> Chain {
         residue_id: (isize, Option<&str>),
         conformer_id: (&str, Option<&str>),
     ) {
-        let mut found = false;
+        // let mut found = false;
         let mut new_residue = Residue::new(residue_id.0, residue_id.1, None)
             .expect("Invalid chars in Residue creation");
         let mut current_residue = &mut new_residue;
-        for residue in &mut self.residues.iter_mut().rev() {
-            if residue.id() == residue_id {
-                current_residue = residue;
-                found = true;
-                break;
+
+        #[allow(clippy::unwrap_used)]
+        if CHAIN_RES_IN_PDB
+            .residue_set
+            .lock()
+            .unwrap()
+            .get(&(residue_id.0, residue_id.1.map(|s| s.to_owned())))
+            .is_none()
+        {
+            for residue in &mut self.residues.iter_mut().rev() {
+                if residue.id() == residue_id {
+                    current_residue = residue;
+                    // found = true;
+                    CHAIN_RES_IN_PDB
+                        .residue_set
+                        .lock()
+                        .unwrap()
+                        .insert((residue_id.0, residue_id.1.map(|s| s.to_owned())));
+                    break;
+                }
             }
         }
-        #[allow(clippy::unwrap_used)]
-        if !found {
-            self.residues.push(new_residue);
-            current_residue = self.residues.last_mut().unwrap();
-        }
+
+        // for residue in &mut self.residues.iter_mut().rev() {
+        //     if residue.id() == residue_id {
+        //         current_residue = residue;
+        //         // found = true;
+        //         break;
+        //     }
+        // }
+        // #[allow(clippy::unwrap_used)]
+        // if !found {
+        //     self.residues.push(new_residue);
+        //     current_residue = self.residues.last_mut().unwrap();
+        // }
 
         current_residue.add_atom(new_atom, conformer_id);
     }
@@ -530,6 +553,8 @@ impl<'a> Chain {
 }
 
 use std::fmt;
+
+use super::pdb::CHAIN_RES_IN_PDB;
 impl fmt::Display for Chain {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(

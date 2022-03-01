@@ -413,23 +413,42 @@ impl<'a> Model {
         residue_id: (isize, Option<&str>),
         conformer_id: (&str, Option<&str>),
     ) {
-        let mut found = false;
+        // let mut found = false;
         let mut new_chain =
             Chain::new(chain_id.trim()).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
-        for chain in &mut self.chains {
-            if chain.id() == chain_id.trim() {
-                current_chain = chain;
-                found = true;
-                break;
-            }
-        }
+
         #[allow(clippy::unwrap_used)]
-        if !found {
-            // As this moves the chain the atom should be added later to keep the reference intact
+        if CHAIN_RES_IN_PDB
+            .chain_set
+            .lock()
+            .unwrap()
+            .get(chain_id.trim())
+            .is_none()
+        {
+            for chain in &mut self.chains.iter_mut().rev() {
+                if chain.id() == chain_id.trim() {
+                    current_chain = chain;
+                    // found = true;
+                    CHAIN_RES_IN_PDB
+                        .chain_set
+                        .lock()
+                        .unwrap()
+                        .insert(chain_id.trim().to_owned());
+                    break;
+                }
+            }
+        } else {
             self.chains.push(new_chain);
             current_chain = (&mut self.chains).last_mut().unwrap();
         }
+
+        // #[allow(clippy::unwrap_used)]
+        // if !found {
+        //     // As this moves the chain the atom should be added later to keep the reference intact
+        //     self.chains.push(new_chain);
+        //     current_chain = (&mut self.chains).last_mut().unwrap();
+        // }
 
         current_chain.add_atom(new_atom, residue_id, conformer_id);
     }
@@ -579,6 +598,9 @@ impl<'a> Model {
 }
 
 use std::fmt;
+
+use super::pdb::CHAIN_RES_IN_PDB;
+
 impl fmt::Display for Model {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(

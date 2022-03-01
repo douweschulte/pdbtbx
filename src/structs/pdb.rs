@@ -6,6 +6,7 @@ use crate::transformation::*;
 use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
+use std::sync::Mutex;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
@@ -51,6 +52,18 @@ pub struct PDB {
     models: Vec<Model>,
     /// Bonds in this PDB.
     bonds: Vec<(usize, usize, Bond)>,
+}
+
+pub(crate) struct ChainResSet {
+    pub(crate) chain_set: Mutex<HashSet<String>>,
+    pub(crate) residue_set: Mutex<HashSet<(isize, Option<String>)>>,
+}
+
+lazy_static! {
+    pub(crate) static ref CHAIN_RES_IN_PDB: ChainResSet = ChainResSet {
+        chain_set: Mutex::new(HashSet::new()),
+        residue_set: Mutex::new(HashSet::new())
+    };
 }
 
 /// # Creators
@@ -972,6 +985,7 @@ impl<'a> PDB {
     }
 }
 
+use std::collections::HashSet;
 use std::fmt;
 impl fmt::Display for PDB {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

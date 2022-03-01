@@ -181,6 +181,9 @@ println!("There are {} backbone atoms within 3.5Aͦ of the atom at index 42", to
 #![allow(clippy::upper_case_acronyms)]
 #![cfg_attr(feature = "unstable-doc-cfg", feature(doc_cfg))]
 
+#[macro_use]
+extern crate lazy_static;
+
 /// To save and display errors
 mod error;
 /// To open PDB files
