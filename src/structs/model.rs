@@ -414,8 +414,9 @@ impl<'a> Model {
         conformer_id: (&str, Option<&str>),
     ) {
         // let mut found = false;
+        let chain_id_trim = chain_id.trim();
         let mut new_chain =
-            Chain::new(chain_id.trim()).expect("Invalid characters in chain creation");
+            Chain::new(chain_id_trim).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
 
         #[allow(clippy::unwrap_used)]
@@ -423,18 +424,18 @@ impl<'a> Model {
             .chain_set
             .lock()
             .unwrap()
-            .get(chain_id.trim())
+            .get(chain_id_trim)
             .is_none()
         {
             for chain in &mut self.chains.iter_mut().rev() {
-                if chain.id() == chain_id.trim() {
+                if chain.id() == chain_id_trim {
                     current_chain = chain;
                     // found = true;
                     CHAIN_RES_IN_PDB
                         .chain_set
                         .lock()
                         .unwrap()
-                        .insert(chain_id.trim().to_owned());
+                        .insert(chain_id_trim.to_owned());
                     break;
                 }
             }
