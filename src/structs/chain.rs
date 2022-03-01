@@ -394,7 +394,7 @@ impl<'a> Chain {
                 current_residue.serial_number(),
                 current_residue.insertion_code().map(|s| s.to_owned()),
             ))
-            .is_some()
+            .is_none()
         {
             for residue in &mut self.residues.iter_mut().rev() {
                 if residue.id() == residue_id {
