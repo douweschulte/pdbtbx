@@ -413,7 +413,6 @@ impl<'a> Model {
         residue_id: (isize, Option<&str>),
         conformer_id: (&str, Option<&str>),
     ) {
-        // let mut found = false;
         let chain_id_trim = chain_id.trim();
         let mut new_chain =
             Chain::new(chain_id_trim).expect("Invalid characters in chain creation");
@@ -426,7 +425,6 @@ impl<'a> Model {
             for chain in &mut self.chains.iter_mut().rev() {
                 if chain.id() == chain_id_trim {
                     current_chain = chain;
-                    // found = true;
                     break;
                 }
             }
@@ -435,21 +433,6 @@ impl<'a> Model {
             self.chains.push(new_chain);
             current_chain = (&mut self.chains).last_mut().unwrap();
         }
-
-        // for chain in &mut self.chains.iter_mut().rev() {
-        //     if chain.id() == chain_id_trim {
-        //         current_chain = chain;
-        //         found = true;
-        //         break;
-        //     }
-        // }
-
-        // #[allow(clippy::unwrap_used)]
-        // if !found {
-        //     // As this moves the chain the atom should be added later to keep the reference intact
-        //     self.chains.push(new_chain);
-        //     current_chain = (&mut self.chains).last_mut().unwrap();
-        // }
 
         current_chain.add_atom(new_atom, residue_id, conformer_id);
     }
