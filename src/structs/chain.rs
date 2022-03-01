@@ -407,6 +407,9 @@ impl<'a> Chain {
                     break;
                 }
             }
+        } else {
+            self.residues.push(new_residue);
+            current_residue = self.residues.last_mut().unwrap();
         }
 
         // for residue in &mut self.residues.iter_mut().rev() {
