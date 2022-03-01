@@ -495,7 +495,7 @@ impl Atom {
     /// Gives the dihedral between the centers of four atoms in degrees.
     /// The angle is calculated as the angle between the two planes spanned by
     /// atoms [1, 2, 3] and [2, 3, 4].
-    pub fn calc_dihedral(&self, atom2: &Atom, atom3: &Atom, atom4: &Atom) -> f64 {
+    pub fn dihedral(&self, atom2: &Atom, atom3: &Atom, atom4: &Atom) -> f64 {
         let (a, b, c, d) = (self.pos(), atom2.pos(), atom3.pos(), atom4.pos());
 
         // Form vectors
@@ -719,6 +719,18 @@ mod tests {
         assert!(a.overlaps_wrapping(&b, &cell).unwrap());
         assert_eq!(a.distance(&b), 8.0);
         assert_eq!(a.distance_wrapping(&b, &cell), 2.0);
+    }
+
+    #[test]
+    fn angles() {
+        let a = Atom::new(false, 0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(false, 0, "", 0.0, 1.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let c = Atom::new(false, 0, "", 0.0, 0.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
+        let d = Atom::new(false, 0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
+        let e = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+
+        assert!((a.angle(&b, &c) - 60.0).abs() < 0.0001);
+        assert!((a.dihedral(&e, &c, &d) - 45.0).abs() < 0.0001);
     }
 
     #[test]
