@@ -376,6 +376,7 @@ impl<'a> Chain {
     ///
     /// ## Panics
     /// It panics if the given Residue ID contains any invalid characters.
+    #[allow(clippy::unwrap_used)]
     pub fn add_atom(
         &mut self,
         new_atom: Atom,
@@ -385,22 +386,30 @@ impl<'a> Chain {
         let mut new_residue = Residue::new(residue_id.0, residue_id.1, None)
             .expect("Invalid chars in Residue creation");
         let mut current_residue = &mut new_residue;
-        #[allow(clippy::unwrap_used)]
         let mut residue_set = CHAIN_RES_IN_PDB.residue_set.lock().unwrap();
-
-        #[allow(clippy::unwrap_used)]
-        if residue_set
+        let in_residue_set = residue_set
             .get(&(residue_id.0, residue_id.1.map(|s| s.to_owned())))
-            .is_some()
-        {
+            .is_some();
+        let mut in_pdb = false;
+
+        if in_residue_set {
+            // The whole loop needs to be executed to find cases where the Residue is in the Set
+            // but not in the PDB struct. This can happen if it was removed by hand.
             for residue in &mut self.residues.iter_mut().rev() {
                 if residue.id() == residue_id {
                     current_residue = residue;
+                    in_pdb = true;
                     break;
                 }
             }
-        } else {
-            residue_set.insert((residue_id.0, residue_id.1.map(|s| s.to_owned())));
+        }
+
+        if !in_residue_set {
+            // If the Residue was not present in both the Set and the PDB struct, add it to both.
+            // If it was removed from the PDB struct by hand, don't add it to the Set again.
+            if !in_pdb {
+                residue_set.insert((residue_id.0, residue_id.1.map(|s| s.to_owned())));
+            }
             self.residues.push(new_residue);
             current_residue = self.residues.last_mut().unwrap();
         }

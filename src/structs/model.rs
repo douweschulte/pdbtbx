@@ -406,6 +406,7 @@ impl<'a> Model {
     ///
     /// ## Panics
     /// It panics if the Chain ID or Residue ID contain any invalid characters.
+    #[allow(clippy::unwrap_used)]
     pub fn add_atom(
         &mut self,
         new_atom: Atom,
@@ -417,19 +418,28 @@ impl<'a> Model {
         let mut new_chain =
             Chain::new(chain_id_trim).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
-        #[allow(clippy::unwrap_used)]
         let mut chain_set = CHAIN_RES_IN_PDB.chain_set.lock().unwrap();
+        let in_chain_set = chain_set.get(chain_id_trim).is_some();
+        let mut in_pdb = false;
 
-        #[allow(clippy::unwrap_used)]
-        if chain_set.get(chain_id_trim).is_some() {
+        if in_chain_set {
+            // The whole loop needs to be executed to find cases where the Chain is in the Set
+            // but not in the PDB struct. This can happen if it was removed by hand.
             for chain in &mut self.chains.iter_mut().rev() {
                 if chain.id() == chain_id_trim {
                     current_chain = chain;
+                    in_pdb = true;
                     break;
                 }
             }
-        } else {
-            chain_set.insert(chain_id_trim.to_owned());
+        }
+
+        if !in_chain_set {
+            // If the Chain was not present in both the Set and the PDB struct, add it to both.
+            // If it was removed from the PDB struct by hand, don't add it to the Set again.
+            if !in_pdb {
+                chain_set.insert(chain_id_trim.to_owned());
+            }
             self.chains.push(new_chain);
             current_chain = (&mut self.chains).last_mut().unwrap();
         }
