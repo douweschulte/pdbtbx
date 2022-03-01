@@ -382,7 +382,6 @@ impl<'a> Chain {
         residue_id: (isize, Option<&str>),
         conformer_id: (&str, Option<&str>),
     ) {
-        // let mut found = false;
         let mut new_residue = Residue::new(residue_id.0, residue_id.1, None)
             .expect("Invalid chars in Residue creation");
         let mut current_residue = &mut new_residue;
@@ -397,7 +396,6 @@ impl<'a> Chain {
             for residue in &mut self.residues.iter_mut().rev() {
                 if residue.id() == residue_id {
                     current_residue = residue;
-                    // found = true;
                     break;
                 }
             }
@@ -407,21 +405,6 @@ impl<'a> Chain {
             current_residue = self.residues.last_mut().unwrap();
         }
 
-        // for residue in &mut self.residues.iter_mut().rev() {
-        //     if residue.id() == residue_id {
-        //         current_residue = residue;
-        //         found = true;
-        //         break;
-        //     }
-        // }
-        // #[allow(clippy::unwrap_used)]
-        // if !found {
-        //     self.residues.push(new_residue);
-        //     current_residue = self.residues.last_mut().unwrap();
-        // }
-
-        // println!("{:?}", CHAIN_RES_IN_PDB.chain_set.lock().unwrap());
-        // println!("{:?}", CHAIN_RES_IN_PDB.residue_set.lock().unwrap());
         current_residue.add_atom(new_atom, conformer_id);
     }
 

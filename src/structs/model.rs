@@ -422,7 +422,7 @@ impl<'a> Model {
         let mut chain_set = CHAIN_RES_IN_PDB.chain_set.lock().unwrap();
 
         #[allow(clippy::unwrap_used)]
-        if chain_set.get(chain_id_trim).is_none() {
+        if chain_set.get(chain_id_trim).is_some() {
             for chain in &mut self.chains.iter_mut().rev() {
                 if chain.id() == chain_id_trim {
                     current_chain = chain;
