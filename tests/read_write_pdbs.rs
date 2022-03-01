@@ -1,4 +1,5 @@
 use pdbtbx::*;
+use std::collections::HashSet;
 use std::path::Path;
 use std::time::Instant;
 use std::{env, fs};
@@ -158,7 +159,7 @@ fn save_pdb_strict() {
 
     let atom = Atom::new(false, 0, "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
     let mut model = Model::new(0);
-    model.add_atom(atom, "A", (0, None), ("LYS", None));
+    model.add_atom(atom, "A", (0, None), ("LYS", None), &HashSet::new());
     let mut pdb = PDB::new();
     pdb.add_model(model);
 
@@ -180,7 +181,7 @@ fn save_mmcif_strict() {
 
     let atom = Atom::new(false, 0, "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
     let mut model = Model::new(0);
-    model.add_atom(atom, "A", (0, None), ("LYS", None));
+    model.add_atom(atom, "A", (0, None), ("LYS", None), &HashSet::new());
     let mut pdb = PDB::new();
     pdb.add_model(model);
 

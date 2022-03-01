@@ -412,12 +412,13 @@ impl<'a> Model {
         chain_id: &str,
         residue_id: (isize, Option<&str>),
         conformer_id: (&str, Option<&str>),
+        residue_set: &HashSet<(isize, Option<String>)>,
     ) {
         let mut found = false;
         let mut new_chain =
             Chain::new(chain_id.trim()).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
-        for chain in &mut self.chains {
+        for chain in &mut self.chains.iter_mut().rev() {
             if chain.id() == chain_id.trim() {
                 current_chain = chain;
                 found = true;
@@ -431,7 +432,7 @@ impl<'a> Model {
             current_chain = (&mut self.chains).last_mut().unwrap();
         }
 
-        current_chain.add_atom(new_atom, residue_id, conformer_id);
+        current_chain.add_atom(new_atom, residue_id, conformer_id, residue_set);
     }
 
     /// Add a Chain to the list of Chains making up this Model. This does not detect any duplicates of names or serial numbers in the list of Chains.
@@ -578,6 +579,7 @@ impl<'a> Model {
     }
 }
 
+use std::collections::HashSet;
 use std::fmt;
 impl fmt::Display for Model {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -660,6 +662,7 @@ mod tests {
             "A",
             (0, None),
             ("ALA", None),
+            &HashSet::new(),
         );
         // Test if changing properties for each element of the hierarchy is possible
         for mut hierarchy in a.atoms_with_hierarchy_mut() {

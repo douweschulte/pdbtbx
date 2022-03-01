@@ -381,25 +381,48 @@ impl<'a> Chain {
         new_atom: Atom,
         residue_id: (isize, Option<&str>),
         conformer_id: (&str, Option<&str>),
+        residue_set: &HashSet<(isize, Option<String>)>,
     ) {
-        let mut found = false;
+        // let mut found = false;
         let mut new_residue = Residue::new(residue_id.0, residue_id.1, None)
             .expect("Invalid chars in Residue creation");
         let mut current_residue = &mut new_residue;
-        for residue in &mut self.residues.iter_mut().rev() {
-            if residue.id() == residue_id {
-                current_residue = residue;
-                found = true;
-                break;
-            }
-        }
+
         #[allow(clippy::unwrap_used)]
-        if !found {
+        if residue_set
+            .get(&(
+                current_residue.serial_number(),
+                current_residue.insertion_code().map(|s| s.to_owned()),
+            ))
+            .is_some()
+        {
+            for residue in &mut self.residues.iter_mut().rev() {
+                if residue.id() == residue_id {
+                    current_residue = residue;
+                    break;
+                }
+            }
+        } else {
             self.residues.push(new_residue);
             current_residue = self.residues.last_mut().unwrap();
         }
 
         current_residue.add_atom(new_atom, conformer_id);
+
+        // for residue in &mut self.residues.iter_mut().rev() {
+        //     if residue.id() == residue_id {
+        //         current_residue = residue;
+        //         found = true;
+        //         break;
+        //     }
+        // }
+        // #[allow(clippy::unwrap_used)]
+        // if !found {
+        //     self.residues.push(new_residue);
+        //     current_residue = self.residues.last_mut().unwrap();
+        // }
+
+        // current_residue.add_atom(new_atom, conformer_id);
     }
 
     /// Add a Residue to the end of to the list of Residues making up this Chain. This does not detect any duplicates of names or serial numbers in the list of Residues.
@@ -529,6 +552,7 @@ impl<'a> Chain {
     }
 }
 
+use std::collections::HashSet;
 use std::fmt;
 impl fmt::Display for Chain {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

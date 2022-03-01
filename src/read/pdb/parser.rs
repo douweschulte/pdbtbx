@@ -8,6 +8,7 @@ use crate::StrictnessLevel;
 
 use std::cmp;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -61,6 +62,7 @@ where
     let mut chain_iter = ('A'..='Z').cycle();
     // Initialize chain_id value
     let mut chain_id_new = chain_iter.next();
+    let mut residue_set = HashSet::new();
 
     for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
@@ -119,6 +121,11 @@ where
                             .to_string();
                     }
 
+                    residue_set.insert((
+                        residue_serial_number + residue_serial_addition,
+                        insertion_code.clone(),
+                    ));
+
                     current_model.add_atom(
                         Atom::new(
                             hetero,
@@ -140,6 +147,7 @@ where
                             insertion_code.as_deref(),
                         ),
                         (&residue_name, alt_loc.as_deref()),
+                        &residue_set,
                     );
                     last_residue_serial_number = residue_serial_number;
                     last_atom_serial_number = serial_number;

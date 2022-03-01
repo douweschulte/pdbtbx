@@ -988,6 +988,8 @@ impl Default for PDB {
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
+    use std::collections::HashSet;
+
     use super::*;
 
     #[test]
@@ -995,8 +997,8 @@ mod tests {
         let a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         let b = Atom::new(false, 1, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         let mut model = Model::new(0);
-        model.add_atom(b, "A", (0, None), ("LYS", None));
-        model.add_atom(a, "A", (0, None), ("LYS", None));
+        model.add_atom(b, "A", (0, None), ("LYS", None), &HashSet::new());
+        model.add_atom(a, "A", (0, None), ("LYS", None), &HashSet::new());
         let mut pdb = PDB::new();
         pdb.add_model(model);
         assert_eq!(pdb.atom(0).unwrap().serial_number(), 1);
@@ -1014,18 +1016,21 @@ mod tests {
             "A",
             (0, None),
             ("MET", Some("A")),
+            &HashSet::new(),
         );
         model.add_atom(
             Atom::new(false, 1, "", 1.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", Some("B")),
+            &HashSet::new(),
         );
         model.add_atom(
             Atom::new(false, 1, "", 2.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         let mut pdb = PDB::new();
         pdb.add_model(model);
@@ -1045,18 +1050,21 @@ mod tests {
             "A",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         model.add_atom(
             Atom::new(false, 1, "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         model.add_atom(
             Atom::new(false, 2, "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         let mut pdb = PDB::new();
         pdb.add_model(model);
@@ -1089,18 +1097,21 @@ mod tests {
             "A",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         model.add_atom(
             Atom::new(false, 1, "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         model.add_atom(
             Atom::new(false, 2, "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "B",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         let mut pdb = PDB::new();
         pdb.add_model(model);
@@ -1141,18 +1152,21 @@ mod tests {
             "A",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         model.add_atom(
             Atom::new(false, 1, "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         model.add_atom(
             Atom::new(false, 2, "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "B",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         let pdb = PDB::new();
 
@@ -1170,18 +1184,21 @@ mod tests {
             "A",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         model.add_atom(
             Atom::new(false, 1, "", 1.0, 2.0, -1.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         model.add_atom(
             Atom::new(false, 2, "", 2.0, -1.0, 0.5, 0.0, 0.0, "", 0).unwrap(),
             "B",
             (0, None),
             ("MET", None),
+            &HashSet::new(),
         );
         let mut pdb = PDB::new();
         pdb.add_model(model);

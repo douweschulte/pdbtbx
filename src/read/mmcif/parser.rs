@@ -3,6 +3,7 @@ use crate::error::*;
 use crate::structs::*;
 use crate::validate::*;
 use crate::StrictnessLevel;
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -369,6 +370,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
                 chain_name,
                 (residue_number, insertion_code),
                 (residue_name, alt_loc),
+                &HashSet::new(),
             );
         } else {
             errors.push(PDBError::new(
