@@ -270,8 +270,10 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
                 ErrorLevel::LooseWarning,
                 "Invalid Model",
                 &format!(
-                    "Model {} does not have the same amount of atoms (Normal + Hetero) as the first model.",
-                    model.serial_number()
+                    "Model {} does not have the same amount of atoms (Normal + Hetero) ({}) as the first model ({}).",
+                    model.serial_number(),
+                    model.atom_count(),
+                    total_atoms
                 ),
                 Context::None,
             ));
@@ -281,8 +283,10 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
                 ErrorLevel::StrictWarning,
                 "Invalid Model",
                 &format!(
-                    "Model {} does not have the same amount of atoms as the first model.",
-                    model.serial_number()
+                    "Model {} does not have the same amount of atoms ({}) as the first model ({}).",
+                    model.serial_number(),
+                    model.atoms().filter(|a| !a.hetero()).count(),
+                    normal_atoms
                 ),
                 Context::None,
             ));
