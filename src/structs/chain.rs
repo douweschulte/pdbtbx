@@ -27,12 +27,21 @@ impl<'a> Chain {
     /// ## Fails
     /// It returns `None` if the identifier is an invalid character.
     pub fn new(id: &str) -> Option<Chain> {
-        if !valid_identifier(id) {
-            return None;
-        }
-        Some(Chain {
-            id: id.trim().to_ascii_uppercase(),
+        prepare_identifier(id).map(|id| Chain {
+            id,
             residues: Vec::new(),
+            database_reference: None,
+        })
+    }
+
+    /// Create a new Chain filled with the Residues provided.
+    ///
+    /// ## Fails
+    /// It returns `None` if the identifier is an invalid character.
+    pub fn from_iter(id: &str, residues: impl Iterator<Item = Residue>) -> Option<Chain> {
+        prepare_identifier(id).map(|id| Chain {
+            id,
+            residues: residues.collect(),
             database_reference: None,
         })
     }

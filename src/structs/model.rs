@@ -29,6 +29,17 @@ impl<'a> Model {
         }
     }
 
+    /// Create a new Model.
+    ///
+    /// ## Arguments
+    /// * `serial_number` - the serial number
+    pub fn from_iter(serial_number: usize, chains: impl Iterator<Item = Chain>) -> Model {
+        Model {
+            serial_number,
+            chains: chains.collect(),
+        }
+    }
+
     /// Get the serial number of this Model.
     pub fn serial_number(&self) -> usize {
         self.serial_number

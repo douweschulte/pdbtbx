@@ -31,6 +31,7 @@ pub fn open_pdb(
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// It sorts the parsed PDB (see [PDB::full_sort]) for validation of the models.
 ///
 /// ## Arguments
 /// * `input` - the input stream
@@ -46,7 +47,9 @@ where
 {
     let mut errors = Vec::new();
     let mut pdb = PDB::new();
-    let mut current_model = Model::new(0);
+    let mut current_model_number = 0;
+    let mut current_model: HashMap<String, HashMap<(isize, Option<String>), Residue>> =
+        HashMap::new();
     let mut sequence: HashMap<String, Vec<(usize, usize, Vec<String>)>> = HashMap::new();
     let mut database_references = Vec::new();
     let mut modifications = Vec::new();
@@ -119,34 +122,64 @@ where
                             .to_string();
                     }
 
-                    current_model.add_atom(
-                        Atom::new(
-                            hetero,
-                            // serial_number,
-                            serial_number + atom_serial_addition,
-                            &name,
-                            x,
-                            y,
-                            z,
-                            occ,
-                            b,
-                            &element,
-                            charge,
-                        )
-                        .expect("Invalid characters in atom creation"),
-                        &chain_id,
-                        (
-                            residue_serial_number + residue_serial_addition,
-                            insertion_code.as_deref(),
-                        ),
-                        (&residue_name, alt_loc.as_deref()),
-                    );
+                    let atom = Atom::new(
+                        hetero,
+                        serial_number + atom_serial_addition,
+                        &name,
+                        x,
+                        y,
+                        z,
+                        occ,
+                        b,
+                        &element,
+                        charge,
+                    )
+                    .expect("Invalid characters in atom creation");
+                    let conformer_id = (residue_name.as_str(), alt_loc.as_deref());
+
+                    let current_chain = if let Some(chain) = current_model.get_mut(&chain_id) {
+                        chain
+                    } else {
+                        current_model.insert(chain_id.clone(), HashMap::new());
+                        current_model.get_mut(&chain_id).unwrap()
+                    };
+
+                    if let Some(residue) = current_chain.get_mut(&(
+                        residue_serial_number + residue_serial_addition,
+                        insertion_code.clone(),
+                    )) {
+                        residue.add_atom(atom, conformer_id);
+                    } else {
+                        current_chain.insert(
+                            (
+                                residue_serial_number + residue_serial_addition,
+                                insertion_code.clone(),
+                            ),
+                            Residue::new(
+                                residue_serial_number + residue_serial_addition,
+                                insertion_code.as_deref(),
+                                Some(
+                                    Conformer::new(
+                                        residue_name.as_str(),
+                                        alt_loc.as_deref(),
+                                        Some(atom),
+                                    )
+                                    .expect("Invalid characters in Conformer creation"),
+                                ),
+                            )
+                            .expect("Invalid characters in Residue creation"),
+                        );
+                    }
+
                     last_residue_serial_number = residue_serial_number;
                     last_atom_serial_number = serial_number;
                 }
                 LexItem::Anisou(s, n, _, _r, _c, _rs, _, factors, _, _e, _ch) => {
                     let mut found = false;
-                    for atom in current_model.atoms_mut().rev() {
+                    for atom in current_model
+                        .values_mut()
+                        .flat_map(|residues| residues.values_mut().flat_map(|r| r.atoms_mut()))
+                    {
                         if atom.serial_number() == s {
                             atom.set_anisotropic_temperature_factors(factors);
                             found = true;
@@ -161,11 +194,17 @@ where
                     }
                 }
                 LexItem::Model(number) => {
-                    if current_model.atom_count() > 0 {
-                        pdb.add_model(current_model)
+                    if !current_model.is_empty() {
+                        pdb.add_model(Model::from_iter(
+                            current_model_number,
+                            current_model.into_iter().map(|(id, residues)| {
+                                Chain::from_iter(&id, residues.into_values())
+                                    .expect("Invalid characters in Chain definition")
+                            }),
+                        ));
                     }
-
-                    current_model = Model::new(number);
+                    current_model_number = number;
+                    current_model = HashMap::new();
                 }
                 LexItem::Scale(n, row) => {
                     temp_scale.set_row(n, row);
@@ -257,10 +296,16 @@ where
                     _num_connect,
                     _num_seq,
                 ) => {
-                    // This has to be one of the last lines so push the current model
-                    if current_model.atom_count() > 0 {
-                        pdb.add_model(current_model);
-                        current_model = Model::new(0);
+                    // THe last atoms need to be added to make the MASTER checksum work out
+                    if !current_model.is_empty() {
+                        pdb.add_model(Model::from_iter(
+                            current_model_number,
+                            current_model.into_iter().map(|(id, residues)| {
+                                Chain::from_iter(&id, residues.into_values())
+                                    .expect("Invalid characters in Chain definition")
+                            }),
+                        ));
+                        current_model = HashMap::new();
                     }
                     // The for now forgotten numbers will have to be added when the appropriate records are added to the parser
                     if num_remark != pdb.remark_count() {
@@ -323,8 +368,14 @@ where
             errors.push(line_result.unwrap_err())
         }
     }
-    if current_model.atom_count() > 0 {
-        pdb.add_model(current_model);
+    if !current_model.is_empty() {
+        pdb.add_model(Model::from_iter(
+            current_model_number,
+            current_model.into_iter().map(|(id, residues)| {
+                Chain::from_iter(&id, residues.into_values())
+                    .expect("Invalid characters in Chain definition")
+            }),
+        ));
     }
 
     for (chain_id, reference) in database_references {
@@ -372,6 +423,7 @@ where
     }
 
     reshuffle_conformers(&mut pdb);
+    pdb.full_sort(); // It has to do a full sort because `HashMap` does not preserve ordering, which breaks model validation
 
     errors.extend(validate_seqres(&mut pdb, sequence, &context));
     errors.extend(add_modifications(&mut pdb, modifications));
