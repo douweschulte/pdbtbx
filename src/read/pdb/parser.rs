@@ -6,6 +6,7 @@ use crate::structs::*;
 use crate::validate::*;
 use crate::StrictnessLevel;
 
+use indexmap::IndexMap;
 use std::cmp;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -48,8 +49,8 @@ where
     let mut errors = Vec::new();
     let mut pdb = PDB::new();
     let mut current_model_number = 0;
-    let mut current_model: HashMap<String, HashMap<(isize, Option<String>), Residue>> =
-        HashMap::new();
+    let mut current_model: IndexMap<String, IndexMap<(isize, Option<String>), Residue>> =
+        IndexMap::new();
     let mut sequence: HashMap<String, Vec<(usize, usize, Vec<String>)>> = HashMap::new();
     let mut database_references = Vec::new();
     let mut modifications = Vec::new();
@@ -140,7 +141,7 @@ where
                     let current_chain = if let Some(chain) = current_model.get_mut(&chain_id) {
                         chain
                     } else {
-                        current_model.insert(chain_id.clone(), HashMap::new());
+                        current_model.insert(chain_id.clone(), IndexMap::new());
                         current_model.get_mut(&chain_id).unwrap()
                     };
 
@@ -178,6 +179,7 @@ where
                     let mut found = false;
                     for atom in current_model
                         .values_mut()
+                        .rev()
                         .flat_map(|residues| residues.values_mut().flat_map(|r| r.atoms_mut()))
                     {
                         if atom.serial_number() == s {
@@ -204,7 +206,7 @@ where
                         ));
                     }
                     current_model_number = number;
-                    current_model = HashMap::new();
+                    current_model = IndexMap::new();
                 }
                 LexItem::Scale(n, row) => {
                     temp_scale.set_row(n, row);
@@ -305,7 +307,7 @@ where
                                     .expect("Invalid characters in Chain definition")
                             }),
                         ));
-                        current_model = HashMap::new();
+                        current_model = IndexMap::new();
                     }
                     // The for now forgotten numbers will have to be added when the appropriate records are added to the parser
                     if num_remark != pdb.remark_count() {
@@ -423,7 +425,8 @@ where
     }
 
     reshuffle_conformers(&mut pdb);
-    pdb.full_sort(); // It has to do a full sort because `HashMap` does not preserve ordering, which breaks model validation
+    // It has to do a full sort because `HashMap` does not preserve ordering, which breaks model validation
+    // pdb.full_sort();
 
     errors.extend(validate_seqres(&mut pdb, sequence, &context));
     errors.extend(add_modifications(&mut pdb, modifications));
