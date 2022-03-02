@@ -425,8 +425,6 @@ where
     }
 
     reshuffle_conformers(&mut pdb);
-    // It has to do a full sort because `HashMap` does not preserve ordering, which breaks model validation
-    // pdb.full_sort();
 
     errors.extend(validate_seqres(&mut pdb, sequence, &context));
     errors.extend(add_modifications(&mut pdb, modifications));
