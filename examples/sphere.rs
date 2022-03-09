@@ -4,6 +4,7 @@ use rayon::iter::ParallelIterator;
 fn main() {
     atom_sphere();
     residue_sphere();
+    find_clashes();
 }
 
 /// Find all Atoms in a sphere around a single origin Atom with a user-defined radius
@@ -63,4 +64,41 @@ fn residue_sphere() {
     sphere_atoms.sort_unstable();
     sphere_atoms.dedup();
     assert_eq!(sphere_atoms.len(), 37)
+}
+
+/// Determine whether any Atoms have other Atoms within they atomic radius and collect
+/// the results in a Vector holding a tuple of the Atoms (plus hierarchy) in question.
+/// This can be used to find any clashes or close contacts.
+/// Results for Atoms within the same Residue are excluded as well as those from the C and N Atoms
+/// constituting the peptide bond of neighbording amino acids.
+/// Also, Atoms are not counted twice.
+fn find_clashes() {
+    let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
+    let tree = pdb.create_hierarchy_rtree();
+
+    let mut clashing_atoms = Vec::new();
+    for atom_hier in pdb.atoms_with_hierarchy() {
+        let radius = atom_hier.atom().atomic_radius().unwrap().powi(2);
+        let contacts = tree.locate_within_distance(atom_hier.atom().pos(), radius);
+
+        for other_atom_hier in contacts {
+            // This eliminates duplicate entries
+            if other_atom_hier.atom() < atom_hier.atom()
+            // This eliminates atoms from same residue
+                && other_atom_hier.residue() != atom_hier.residue()
+                // This eliminates peptide bonds
+                && !(other_atom_hier.atom().name() == "C"
+                    && atom_hier.atom().name() == "N"
+                    && other_atom_hier.residue().serial_number() + 1
+                        == atom_hier.residue().serial_number())
+            {
+                clashing_atoms.push((atom_hier.clone(), other_atom_hier.clone()));
+            }
+        }
+    }
+    assert_eq!(clashing_atoms.len(), 1);
+    assert_eq!(clashing_atoms[0].0.residue().name(), Some("HOH"));
+    assert_eq!(clashing_atoms[0].1.residue().name(), Some("LYS"));
+    assert_eq!(clashing_atoms[0].0.atom().name(), "O");
+    assert_eq!(clashing_atoms[0].1.atom().name(), "HZ3");
 }
