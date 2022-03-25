@@ -252,7 +252,35 @@ where
                             SequencePosition::from_tuple(local_pos),
                             SequencePosition::from_tuple(db_pos),
                         ),
+                        true,
                     ));
+                }
+                LexItem::Dbref1(_pdb_id, chain_id, local_pos, db, db_id) => {
+                    database_references.push((
+                        chain_id,
+                        DatabaseReference::new(
+                            (db, "".to_string(), db_id),
+                            SequencePosition::from_tuple(local_pos),
+                            SequencePosition::new(0, ' ', 0, ' '),
+                        ),
+                        false,
+                    ));
+                }
+                LexItem::Dbref2(_pdb_id, chain_id, db_acc, db_start, db_end) => {
+                    let mut found = false;
+                    for dbref in database_references.iter_mut() {
+                        if dbref.0 == chain_id {
+                            dbref.1.database.1 = db_acc;
+                            dbref.1.database_position =
+                                SequencePosition::new(db_start, ' ', db_end, ' ');
+                            dbref.2 = true;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if !found {
+                        errors.push(PDBError::new(ErrorLevel::BreakingError, "Solitary DBREF2", &format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{}'", chain_id), line_context.clone()))
+                    }
                 }
                 LexItem::Seqadv(
                     _id_code,
@@ -265,7 +293,7 @@ where
                     db_pos,
                     comment,
                 ) => {
-                    if let Some((_, db_ref)) =
+                    if let Some((_, db_ref, _)) =
                         database_references.iter_mut().find(|a| a.0 == chain_id)
                     {
                         db_ref.differences.push(SequenceDifference::new(
@@ -380,8 +408,15 @@ where
         ));
     }
 
-    for (chain_id, reference) in database_references {
-        if let Some(chain) = pdb.chains_mut().find(|a| a.id() == chain_id) {
+    for (chain_id, reference, complete) in database_references {
+        if !complete {
+            errors.push(PDBError::new(
+                ErrorLevel::StrictWarning,
+                "Solitary DBREF1 definition",
+                &format!("The complementary DBREF2 was not found for this DBREF1 definition. For chain id '{}'. For database '{}' with ID code '{}'.", chain_id, reference.database.0, reference.database.2),
+                Context::None,
+            ))
+        } else if let Some(chain) = pdb.chains_mut().find(|a| a.id() == chain_id) {
             chain.set_database_reference(reference);
         }
     }
@@ -577,7 +612,7 @@ fn validate_seqres(
 
             let total_found = chain
                 .residues()
-                .filter(|r| !r.atoms().any(|a| a.hetero()))
+                .filter(|r| !r.atoms().any(|a| a.hetero())) // TODO: It filters out all residues with at least one HETATM, this should be changed to include in the total residues defined in HETNAM.
                 .count();
             if chain_sequence.len() != total_found {
                 errors.push(PDBError::new(
@@ -701,6 +736,8 @@ fn lex_line(line: &str, linenumber: usize) -> Result<(LexItem, Vec<PDBError>), P
             "MODEL " => Ok(lex_model(linenumber, line)),
             "MASTER" => Ok(lex_master(linenumber, line)),
             "DBREF " => Ok(lex_dbref(linenumber, line)),
+            "DBREF1" => Ok(lex_dbref1(linenumber, line)),
+            "DBREF2" => Ok(lex_dbref2(linenumber, line)),
             "SEQRES" => Ok(lex_seqres(linenumber, line)),
             "SEQADV" => Ok(lex_seqadv(linenumber, line)),
             "MODRES" => Ok(lex_modres(linenumber, line)),
@@ -1376,7 +1413,7 @@ fn lex_dbref(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let insert_begin = chars[18];
     let seq_end = check(parse_number(
         Context::line(linenumber, line, 21, 4),
-        &chars[21..24],
+        &chars[20..24],
     ));
     let insert_end = chars[24];
     let database = chars[26..32].iter().collect::<String>().trim().to_string();
@@ -1407,6 +1444,79 @@ fn lex_dbref(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
                 database_seq_end,
                 database_insert_end,
             ),
+        ),
+        errors,
+    )
+}
+
+/// Lexes a DBREF1 record
+fn lex_dbref1(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+    let mut errors = Vec::new();
+    let chars: Vec<char> = line.chars().collect();
+    let mut check = |item| match item {
+        Ok(t) => t,
+        Err(e) => {
+            errors.push(e);
+            0
+        }
+    };
+    let id_code = [chars[7], chars[8], chars[9], chars[10]];
+    let chain_id = chars[12];
+    let seq_begin = check(parse_number(
+        Context::line(linenumber, line, 14, 4),
+        &chars[14..18],
+    ));
+    let insert_begin = chars[18];
+    let seq_end = check(parse_number(
+        Context::line(linenumber, line, 21, 4),
+        &chars[21..24],
+    ));
+    let insert_end = chars[24];
+    let database = chars[26..32].iter().collect::<String>().trim().to_string();
+    let database_id_code = chars[47..67].iter().collect::<String>().trim().to_string();
+
+    (
+        LexItem::Dbref1(
+            id_code,
+            String::from(chain_id),
+            (seq_begin, insert_begin, seq_end, insert_end),
+            database,
+            database_id_code,
+        ),
+        errors,
+    )
+}
+
+/// Lexes a DBREF2 record
+fn lex_dbref2(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+    let mut errors = Vec::new();
+    let chars: Vec<char> = line.chars().collect();
+    let mut check = |item| match item {
+        Ok(t) => t,
+        Err(e) => {
+            errors.push(e);
+            0
+        }
+    };
+    let id_code = [chars[7], chars[8], chars[9], chars[10]];
+    let chain_id = chars[12];
+    let database_accession = chars[28..40].iter().collect::<String>().trim().to_string();
+    let database_seq_begin = check(parse_number(
+        Context::line(linenumber, line, 55, 5),
+        &chars[45..55],
+    ));
+    let database_seq_end = check(parse_number(
+        Context::line(linenumber, line, 62, 5),
+        &chars[57..67],
+    ));
+
+    (
+        LexItem::Dbref2(
+            id_code,
+            String::from(chain_id),
+            database_accession,
+            database_seq_begin,
+            database_seq_end,
         ),
         errors,
     )

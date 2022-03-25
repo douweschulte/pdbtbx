@@ -119,6 +119,26 @@ pub enum LexItem {
         String,
         (isize, char, isize, char),
     ),
+    /// A DBREF1 row in the DBREF extended format
+    ///  * IDCode
+    ///  * ChainID
+    ///  * (SeqBegin, InsertBegin, SeqEnd, InsertEnd)
+    ///  * Database - Sequence database name
+    ///  * DBIDCode - Sequence database identification code
+    Dbref1(
+        [char; 4],
+        String,
+        (isize, char, isize, char),
+        String,
+        String,
+    ),
+    /// A DBREF2 row in the DBREF extended format
+    ///  * IDCode
+    ///  * ChainID
+    ///  * DBAccession - Sequence database accession code
+    ///  * DBSeqBegin - Initial sequence number of the Database segment
+    ///  * DBSeqEnd -  Ending sequence number of the Database segment
+    Dbref2([char; 4], String, String, isize, isize),
     /// A SEQADV row
     ///  * IDCode
     ///  * ResName - Name of the PDB residue in conflict
