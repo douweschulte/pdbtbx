@@ -1,7 +1,7 @@
 #![allow(dead_code)]
-use super::unit_cell::*;
+use super::unit_cell::UnitCell;
 use crate::reference_tables;
-use crate::transformation::*;
+use crate::transformation::TransformationMatrix;
 use std::cmp::Ordering;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

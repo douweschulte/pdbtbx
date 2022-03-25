@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 /// The position of the sequence for a cross-reference of sequences.
@@ -16,6 +14,7 @@ pub struct SequencePosition {
 
 impl SequencePosition {
     /// Create a new SequencePosition
+    #[must_use]
     pub fn new(start: isize, start_insert: char, end: isize, end_insert: char) -> Self {
         SequencePosition {
             start,
@@ -55,6 +54,7 @@ pub struct DatabaseReference {
 
 impl DatabaseReference {
     /// Create a new DatabaseReference
+    #[must_use]
     pub fn new(
         database: (String, String, String),
         pdb_position: SequencePosition,
@@ -83,6 +83,7 @@ pub struct SequenceDifference {
 
 impl SequenceDifference {
     /// Create a new DatabaseReference
+    #[must_use]
     pub fn new(
         residue: (String, isize, Option<String>),
         database_residue: Option<(String, isize)>,

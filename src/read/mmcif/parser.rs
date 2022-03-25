@@ -26,7 +26,7 @@ pub fn open_mmcif(
             Context::show(filename),
         )]);
     }
-    match super::lexer::lex_cif(contents) {
+    match super::lexer::lex_cif(&contents) {
         Ok(data_block) => parse_mmcif(&data_block, level),
         Err(e) => Err(vec![e]),
     }
@@ -282,7 +282,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         let aniso = if aniso_temp
             .iter()
             .flat_map(|l| l.iter())
-            .all(|v| v.is_some())
+            .all(Option::is_some)
         {
             #[allow(clippy::unwrap_used)]
             Some([
@@ -305,7 +305,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         } else if aniso_temp
             .iter()
             .flat_map(|l| l.iter())
-            .any(|v| v.is_some())
+            .any(Option::is_some)
         {
             errors.push(PDBError::new(
                 ErrorLevel::StrictWarning,

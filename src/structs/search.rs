@@ -3,8 +3,8 @@ use std::ops;
 
 /// Any parameter to use in a [Search] for atom(s) in a PDB.
 /// For position related searches look into the [rstar] crate which can be combined
-/// with this crate using the `rstar` feature, see [PDB::create_atom_rtree] and
-/// [PDB::create_hierarchy_rtree]. The rstar crate makes spatial lookup and queries
+/// with this crate using the `rstar` feature, see [`PDB::create_atom_rtree`] and
+/// [`PDB::create_hierarchy_rtree`]. The rstar crate makes spatial lookup and queries
 /// way faster and feasible to use in high performance environments.
 #[allow(unused)]
 #[derive(Debug, Clone)]
@@ -106,11 +106,11 @@ impl Term {
             }
             Term::AtomName(n) => Some(atom.name() == n),
             Term::Element(e) => Some(atom.element() == e),
-            Term::BFactor(a) => Some(atom.b_factor() == *a),
+            Term::BFactor(a) => Some((atom.b_factor() - *a).abs() < f64::EPSILON),
             Term::BFactorRange(low, high) => {
                 Some(atom.b_factor() >= *low && atom.b_factor() <= *high)
             }
-            Term::Occupancy(a) => Some(atom.occupancy() == *a),
+            Term::Occupancy(a) => Some((atom.occupancy() - *a).abs() < f64::EPSILON),
             Term::OccupancyRange(low, high) => {
                 Some(atom.occupancy() >= *low && atom.occupancy() <= *high)
             }
@@ -162,11 +162,13 @@ impl Search {
     fn simplify(self) -> Search {
         match self {
             Search::Ops(ops, a, b) => match (ops, a.simplify(), b.simplify()) {
-                (Ops::And, Search::Known(false), _) => Search::Known(false),
-                (Ops::And, _, Search::Known(false)) => Search::Known(false),
+                (Ops::And, Search::Known(false), _) | (Ops::And, _, Search::Known(false)) => {
+                    Search::Known(false)
+                }
                 (Ops::And, Search::Known(a), Search::Known(b)) => Search::Known(a & b),
-                (Ops::Or, Search::Known(true), _) => Search::Known(true),
-                (Ops::Or, _, Search::Known(true)) => Search::Known(true),
+                (Ops::Or, Search::Known(true), _) | (Ops::Or, _, Search::Known(true)) => {
+                    Search::Known(true)
+                }
                 (Ops::Or, Search::Known(a), Search::Known(b)) => Search::Known(a | b),
                 (Ops::Xor, Search::Known(a), Search::Known(b)) => Search::Known(a ^ b),
                 (ops, a, b) => Search::Ops(ops, Box::new(a), Box::new(b)),
@@ -180,6 +182,7 @@ impl Search {
     }
 
     /// Check if the search is done.
+    #[must_use]
     pub fn complete(&self) -> Option<bool> {
         match self {
             Search::Known(a) => Some(*a),
@@ -188,6 +191,7 @@ impl Search {
     }
 
     /// Add information about the model into the search, returns a new search with the information integrated
+    #[must_use]
     pub fn add_model_info(&self, model: &Model) -> Search {
         match self {
             Search::Ops(ops, a, b) => Search::Ops(
@@ -207,6 +211,7 @@ impl Search {
     }
 
     /// Add information about the chain into the search, returns a new search with the information integrated
+    #[must_use]
     pub fn add_chain_info(&self, chain: &Chain) -> Search {
         match self {
             Search::Ops(ops, a, b) => Search::Ops(
@@ -226,6 +231,7 @@ impl Search {
     }
 
     /// Add information about the residue into the search, returns a new search with the information integrated
+    #[must_use]
     pub fn add_residue_info(&self, residue: &Residue) -> Search {
         match self {
             Search::Ops(ops, a, b) => Search::Ops(
@@ -245,6 +251,7 @@ impl Search {
     }
 
     /// Add information about the conformer into the search, returns a new search with the information integrated
+    #[must_use]
     pub fn add_conformer_info(&self, conformer: &Conformer) -> Search {
         match self {
             Search::Ops(ops, a, b) => Search::Ops(
@@ -264,6 +271,7 @@ impl Search {
     }
 
     /// Add information about the atom into the search, returns a new search with the information integrated
+    #[must_use]
     pub fn add_atom_info(&self, atom: &Atom) -> Search {
         match self {
             Search::Ops(ops, a, b) => Search::Ops(

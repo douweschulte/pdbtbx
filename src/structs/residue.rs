@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::structs::*;
-use crate::transformation::*;
+use crate::transformation::TransformationMatrix;
 use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
@@ -28,7 +28,8 @@ impl<'a> Residue {
     /// * `conformer` - if available it can already add an conformer
     ///
     /// ## Fails
-    /// It fails and returns `None` if any of the characters making up the insertion_code are invalid.
+    /// It fails and returns `None` if any of the characters making up the `insertion_code` are invalid.
+
     pub fn new(
         number: isize,
         insertion_code: Option<&str>,
@@ -120,7 +121,7 @@ impl<'a> Residue {
     /// Get the number of Atoms making up this Residue in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
-        self.par_conformers().map(|a| a.atom_count()).sum()
+        self.par_conformers().map(Conformer::atom_count).sum()
     }
 
     /// Get a reference to a specific Conformer from the list of Conformers making up this Residue.
@@ -168,7 +169,7 @@ impl<'a> Residue {
     }
 
     /// Get A reference to the specified Atom. Its uniqueness is guaranteed by including the
-    /// insertion_code, with its full hierarchy. The algorithm is based
+    /// `insertion_code`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -195,7 +196,7 @@ impl<'a> Residue {
     }
 
     /// Get a mutable reference to the specified Atom. Its uniqueness is guaranteed by
-    /// including the insertion_code, with its full hierarchy. The algorithm is based
+    /// including the `insertion_code`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -288,25 +289,25 @@ impl<'a> Residue {
     /// Get an iterator of references to Atoms making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.conformers().flat_map(|a| a.atoms())
+        self.conformers().flat_map(Conformer::atoms)
     }
 
     /// Get a parallel iterator of references to Atoms making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.par_conformers().flat_map(|a| a.par_atoms())
+        self.par_conformers().flat_map(Conformer::par_atoms)
     }
 
     /// Get an iterator of mutable references to Atoms making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.conformers_mut().flat_map(|a| a.atoms_mut())
+        self.conformers_mut().flat_map(Conformer::atoms_mut)
     }
 
     /// Get a parallel iterator of mutable references to Atoms making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.par_conformers_mut().flat_map(|a| a.par_atoms_mut())
+        self.par_conformers_mut().flat_map(Conformer::par_atoms_mut)
     }
 
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this Model.
@@ -392,7 +393,7 @@ impl<'a> Residue {
         //     conformer.remove_atoms_by(&predicate);
         // }
         self.conformers_mut()
-            .for_each(|conformer| conformer.remove_atoms_by(&predicate))
+            .for_each(|conformer| conformer.remove_atoms_by(&predicate));
     }
 
     /// Remove the specified conformer.
@@ -459,7 +460,7 @@ impl<'a> Residue {
     #[doc_cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.par_conformers_mut()
-            .for_each(|conformer| conformer.apply_transformation(transformation))
+            .for_each(|conformer| conformer.apply_transformation(transformation));
     }
 
     /// Join this Residue with another Residue, this moves all Conformers from the other Residue

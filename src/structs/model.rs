@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::structs::hierarchy::*;
 use crate::structs::*;
-use crate::transformation::*;
+use crate::transformation::TransformationMatrix;
 use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
@@ -22,6 +22,7 @@ impl<'a> Model {
     ///
     /// ## Arguments
     /// * `serial_number` - the serial number
+    #[must_use]
     pub fn new(serial_number: usize) -> Model {
         Model {
             serial_number,
@@ -57,39 +58,35 @@ impl<'a> Model {
 
     /// Get the number of Residues making up this Model.
     pub fn residue_count(&self) -> usize {
-        self.chains()
-            .fold(0, |sum, chain| chain.residue_count() + sum)
+        self.chains().map(Chain::residue_count).sum()
     }
 
     /// Get the number of Residues making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residue_count(&self) -> usize {
-        self.par_chains().map(|chain| chain.residue_count()).sum()
+        self.par_chains().map(Chain::residue_count).sum()
     }
 
     /// Get the number of Conformers making up this Model.
     pub fn conformer_count(&self) -> usize {
-        self.chains()
-            .fold(0, |sum, chain| chain.conformer_count() + sum)
+        self.chains().map(Chain::conformer_count).sum()
     }
 
     /// Get the number of Conformers making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformer_count(&self) -> usize {
-        self.par_chains()
-            .map(|chain| chain.par_conformer_count())
-            .sum()
+        self.par_chains().map(Chain::par_conformer_count).sum()
     }
 
     /// Get the number of Atoms making up this Model.
     pub fn atom_count(&self) -> usize {
-        self.chains().fold(0, |sum, chain| chain.atom_count() + sum)
+        self.chains().map(Chain::atom_count).sum()
     }
 
     /// Get the number of Atoms making up this Model in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
-        self.par_chains().map(|chain| chain.par_atom_count()).sum()
+        self.par_chains().map(Chain::par_atom_count).sum()
     }
 
     /// Get a reference to a specific Chain from list of Chains making up this Model.
@@ -181,7 +178,7 @@ impl<'a> Model {
     }
 
     /// Get a reference to the specified atom. Its uniqueness is guaranteed by including the
-    /// insertion_code, with its full hierarchy. The algorithm is based
+    /// `insertion_code`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -223,7 +220,7 @@ impl<'a> Model {
     }
 
     /// Get a mutable reference to the specified atom. Its uniqueness is guaranteed by
-    /// including the insertion_code, with its full hierarchy. The algorithm is based
+    /// including the `insertion_code`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -320,73 +317,73 @@ impl<'a> Model {
     /// Get an iterator of references to Residues making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues(&self) -> impl DoubleEndedIterator<Item = &Residue> + '_ {
-        self.chains().flat_map(|a| a.residues())
+        self.chains().flat_map(Chain::residues)
     }
 
     /// Get a parallel iterator of references to Residues making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
-        self.par_chains().flat_map(|a| a.par_residues())
+        self.par_chains().flat_map(Chain::par_residues)
     }
 
     /// Get an iterator of mutable references to Residues making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn residues_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Residue> + '_ {
-        self.chains_mut().flat_map(|a| a.residues_mut())
+        self.chains_mut().flat_map(Chain::residues_mut)
     }
 
     /// Get a parallel iterator of mutable references to Residues making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
-        self.par_chains_mut().flat_map(|a| a.par_residues_mut())
+        self.par_chains_mut().flat_map(Chain::par_residues_mut)
     }
 
     /// Get an iterator of references to Conformers making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
-        self.chains().flat_map(|a| a.conformers())
+        self.chains().flat_map(Chain::conformers)
     }
 
     /// Get a parallel iterator of references to Conformers making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
-        self.par_chains().flat_map(|a| a.par_conformers())
+        self.par_chains().flat_map(Chain::par_conformers)
     }
 
     /// Get an iterator of mutable references to Conformers making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
-        self.chains_mut().flat_map(|a| a.conformers_mut())
+        self.chains_mut().flat_map(Chain::conformers_mut)
     }
 
     /// Get a parallel iterator of mutable references to Conformers making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
-        self.par_chains_mut().flat_map(|a| a.par_conformers_mut())
+        self.par_chains_mut().flat_map(Chain::par_conformers_mut)
     }
 
     /// Get an iterator of references to Atoms making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.chains().flat_map(|a| a.atoms())
+        self.chains().flat_map(Chain::atoms)
     }
 
     /// Get a parallel iterator of references to Atoms making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.par_chains().flat_map(|a| a.par_atoms())
+        self.par_chains().flat_map(Chain::par_atoms)
     }
 
     /// Get an iterator of mutable references to Atoms making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.chains_mut().flat_map(|a| a.atoms_mut())
+        self.chains_mut().flat_map(Chain::atoms_mut)
     }
 
     /// Get a parallel iterator of mutable references to Atoms making up this Model.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.par_chains_mut().flat_map(|a| a.par_atoms_mut())
+        self.par_chains_mut().flat_map(Chain::par_atoms_mut)
     }
 
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this Model.
@@ -508,7 +505,7 @@ impl<'a> Model {
     ///
     /// ## Arguments
     /// * `id` - the id of the Chain to remove
-    pub fn remove_chain_by_id(&mut self, id: String) -> bool {
+    pub fn remove_chain_by_id(&mut self, id: &str) -> bool {
         let index = self.chains().position(|a| a.id() == id);
 
         if let Some(i) = index {
@@ -526,7 +523,7 @@ impl<'a> Model {
     /// ## Arguments
     /// * `id` - the id of the Chain to remove
     #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_chain_by_id(&mut self, id: String) -> bool {
+    pub fn par_remove_chain_by_id(&mut self, id: &str) -> bool {
         let index = self.chains.par_iter().position_first(|a| a.id() == id);
 
         if let Some(i) = index {
@@ -539,14 +536,14 @@ impl<'a> Model {
 
     /// Remove all empty Chain from this Model, and all empty Residues from the Chains.
     pub fn remove_empty(&mut self) {
-        self.chains_mut().for_each(|c| c.remove_empty());
+        self.chains_mut().for_each(Chain::remove_empty);
         self.chains.retain(|c| c.residue_count() > 0);
     }
 
     /// Remove all empty Chain from this Model, and all empty Residues from the Chains in parallel.
     #[doc_cfg(feature = "rayon")]
     pub fn par_remove_empty(&mut self) {
-        self.par_chains_mut().for_each(|c| c.remove_empty());
+        self.par_chains_mut().for_each(Chain::remove_empty);
         self.chains.retain(|c| c.residue_count() > 0);
     }
 
@@ -562,7 +559,7 @@ impl<'a> Model {
     #[doc_cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.par_atoms_mut()
-            .for_each(|atom| atom.apply_transformation(transformation))
+            .for_each(|atom| atom.apply_transformation(transformation));
     }
 
     /// Join this Model with another Model, this moves all atoms from the other Model
@@ -649,7 +646,7 @@ mod tests {
         a.add_chain(Chain::new("A").unwrap());
         a.add_chain(Chain::new("C").unwrap());
         assert_eq!(a.remove_chain(0), Chain::new("A").unwrap());
-        a.remove_chain_by_id("C".to_string());
+        a.remove_chain_by_id("C");
         assert_eq!(a.chain_count(), 0);
     }
 

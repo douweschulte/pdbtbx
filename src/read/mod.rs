@@ -4,6 +4,7 @@ mod general;
 mod mmcif;
 /// Parse PDB files
 mod pdb;
+use super::check_extension;
 
 pub use general::open;
 pub use mmcif::open_mmcif;

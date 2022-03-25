@@ -115,7 +115,7 @@ impl Context {
                     .lines()
                     .into_iter()
                     .take(end.line - start.line)
-                    .map(|a| a.to_string())
+                    .map(ToString::to_string)
                     .collect::<Vec<String>>(),
                 offset: start.column,
             }

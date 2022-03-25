@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::structs::*;
-use crate::transformation::*;
+use crate::transformation::TransformationMatrix;
 use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
@@ -26,6 +26,7 @@ impl<'a> Chain {
     ///
     /// ## Fails
     /// It returns `None` if the identifier is an invalid character.
+    #[must_use]
     pub fn new(id: &str) -> Option<Chain> {
         prepare_identifier(id).map(|id| Chain {
             id,
@@ -84,25 +85,24 @@ impl<'a> Chain {
 
     /// Get the number of Conformers making up this Chain
     pub fn conformer_count(&self) -> usize {
-        self.residues()
-            .fold(0, |sum, res| res.conformer_count() + sum)
+        self.residues().map(Residue::conformer_count).sum()
     }
 
     /// Get the number of Conformers making up this Chain in parallel
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformer_count(&self) -> usize {
-        self.par_residues().map(|res| res.conformer_count()).sum()
+        self.par_residues().map(Residue::conformer_count).sum()
     }
 
     /// Get the number of Atoms making up this Chain
     pub fn atom_count(&self) -> usize {
-        self.residues().fold(0, |sum, res| res.atom_count() + sum)
+        self.residues().map(Residue::atom_count).sum()
     }
 
     /// Get the number of Atoms making up this Chain in parallel
     #[doc_cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
-        self.par_residues().map(|res| res.par_atom_count()).sum()
+        self.par_residues().map(Residue::par_atom_count).sum()
     }
 
     /// Get a reference to a specific Residue from list of Residues making up this Chain.
@@ -172,7 +172,7 @@ impl<'a> Chain {
     }
 
     /// Get a reference to the specified atom. Its uniqueness is guaranteed by including the
-    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// `alternative_location`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -214,7 +214,7 @@ impl<'a> Chain {
     }
 
     /// Get a mutable reference to the specified atom. Its uniqueness is guaranteed by including the
-    /// alternative_location, with its full hierarchy. The algorithm is based
+    /// `alternative_location`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -311,49 +311,50 @@ impl<'a> Chain {
     /// Get an iterator of references to Conformers making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers(&self) -> impl DoubleEndedIterator<Item = &Conformer> + '_ {
-        self.residues().flat_map(|a| a.conformers())
+        self.residues().flat_map(Residue::conformers)
     }
 
     /// Get a parallel iterator of references to Conformers making up this Chain.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
-        self.par_residues().flat_map(|a| a.par_conformers())
+        self.par_residues().flat_map(Residue::par_conformers)
     }
 
     /// Get an iterator of mutable references to Conformers making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn conformers_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Conformer> + '_ {
-        self.residues_mut().flat_map(|a| a.conformers_mut())
+        self.residues_mut().flat_map(Residue::conformers_mut)
     }
 
     /// Get a parallel iterator of mutable references to Conformers making up this Chain.
     #[doc_cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
-        self.par_residues_mut().flat_map(|a| a.par_conformers_mut())
+        self.par_residues_mut()
+            .flat_map(Residue::par_conformers_mut)
     }
 
     /// Get an iterator of references to Atoms making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.residues().flat_map(|a| a.atoms())
+        self.residues().flat_map(Residue::atoms)
     }
 
     /// Get a parallel iterator of references to Atoms making up this Chain.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.par_residues().flat_map(|a| a.par_atoms())
+        self.par_residues().flat_map(Residue::par_atoms)
     }
 
     /// Get an iterator of mutable references to Atoms making up this Chain.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.residues_mut().flat_map(|a| a.atoms_mut())
+        self.residues_mut().flat_map(Residue::atoms_mut)
     }
 
     /// Get a parallel iterator of mutablereferences to Atoms making up this Chain.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.par_residues_mut().flat_map(|a| a.par_atoms_mut())
+        self.par_residues_mut().flat_map(Residue::par_atoms_mut)
     }
 
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this Chain.
@@ -496,7 +497,7 @@ impl<'a> Chain {
 
     /// Remove all empty Residues from this Chain, and all empty Conformers from the Residues.
     pub fn remove_empty(&mut self) {
-        self.residues_mut().for_each(|r| r.remove_empty());
+        self.residues_mut().for_each(Residue::remove_empty);
         self.residues.retain(|r| r.conformer_count() > 0);
     }
 
@@ -512,7 +513,7 @@ impl<'a> Chain {
     #[doc_cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.par_atoms_mut()
-            .for_each(|atom| atom.apply_transformation(transformation))
+            .for_each(|atom| atom.apply_transformation(transformation));
     }
 
     /// Join this Chain with another Chain, this moves all atoms from the other Chain

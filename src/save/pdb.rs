@@ -11,10 +11,12 @@ use std::io::BufWriter;
 use std::iter;
 
 /// Save the given PDB struct to the given file, validating it beforehand.
+///
+/// # Errors
 /// It fails if the validation fails with the given `level`.
 /// If validation gives rise to problems, use the `save_raw` function.
 ///
-/// ## Known Problems
+/// # Known Problems
 /// Saving SEQRES lines is experimental, as there are many nitpicky things to consider
 /// when generating SEQRES records, which are not all implemented (yet).
 pub fn save_pdb(pdb: &PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
@@ -140,6 +142,8 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                 ]);
             }
         }
+        //340  | DBREF  7AZ6 H 1     7     PDB    7AZ6     7AZ6         1      7
+        //     | =====+ ==== = ====+ ====+ ====== ======== ============ =====+ =====+
 
         // SEQADV
         for chain in model.chains() {

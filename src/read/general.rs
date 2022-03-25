@@ -4,12 +4,13 @@ use crate::structs::PDB;
 use crate::StrictnessLevel;
 
 /// Open an atomic data file, either PDB or mmCIF/PDBx. The correct type will be
-/// determined based on the file extension. Returns a PDBError if
-/// a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// determined based on the file extension.
+/// # Errors
+/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 pub fn open(filename: &str, level: StrictnessLevel) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-    if filename.ends_with(".pdb") {
+    if check_extension(filename, "pdb") {
         open_pdb(filename, level)
-    } else if filename.ends_with(".cif") {
+    } else if check_extension(filename, "cif") {
         open_mmcif(filename, level)
     } else {
         Err(vec![PDBError::new(

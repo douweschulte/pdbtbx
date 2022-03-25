@@ -180,7 +180,7 @@ where
                     for atom in current_model
                         .values_mut()
                         .rev()
-                        .flat_map(|residues| residues.values_mut().flat_map(|r| r.atoms_mut()))
+                        .flat_map(|residues| residues.values_mut().flat_map(Residue::atoms_mut))
                     {
                         if atom.serial_number() == s {
                             atom.set_anisotropic_temperature_factors(factors);
@@ -612,7 +612,7 @@ fn validate_seqres(
 
             let total_found = chain
                 .residues()
-                .filter(|r| !r.atoms().any(|a| a.hetero())) // TODO: It filters out all residues with at least one HETATM, this should be changed to include in the total residues defined in HETNAM.
+                .filter(|r| !r.atoms().any(Atom::hetero)) // TODO: It filters out all residues with at least one HETATM, this should be changed to include in the total residues defined in HETNAM.
                 .count();
             if chain_sequence.len() != total_found {
                 errors.push(PDBError::new(
@@ -650,17 +650,17 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
                                 ));
                             }
                         } else {
-                            errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified residue in the PDB file.", context))
+                            errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified residue in the PDB file.", context));
                         }
                     } else {
-                        errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified chain in the PDB file.", context))
+                        errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified chain in the PDB file.", context));
                     }
                 } else {
-                    errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The chain presented in this MODRES record could not be found in the PDB file.", context))
+                    errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The chain presented in this MODRES record could not be found in the PDB file.", context));
                 }
             }
             _ => {
-                panic!("Found an invalid element in the modifications list, it is not a LexItem::Modres")
+                panic!("Found an invalid element in the modifications list, it is not a LexItem::Modres");
             }
         }
     }
@@ -685,7 +685,7 @@ fn add_bonds(pdb: &mut PDB, bonds: Vec<(Context, LexItem)>) -> Vec<PDBError> {
                                 })
                                 .map(|r| {
                                     r.conformers().find(|c| c.name() == atom.0).map(|c| {
-                                        c.atoms().find(|a| a.name() == "SG").map(|a| a.counter())
+                                        c.atoms().find(|a| a.name() == "SG").map(Atom::counter)
                                     })
                                 })
                         })
@@ -707,7 +707,9 @@ fn add_bonds(pdb: &mut PDB, bonds: Vec<(Context, LexItem)>) -> Vec<PDBError> {
                 }
             }
             _ => {
-                panic!("Found an invalid element in the bonds list, it is not a valid bond LexItem")
+                panic!(
+                    "Found an invalid element in the bonds list, it is not a valid bond LexItem"
+                );
             }
         }
     }

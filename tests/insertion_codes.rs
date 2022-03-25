@@ -4,11 +4,7 @@ use pdbtbx::*;
 fn insertion_codes() {
     let (pdb, errors) =
         pdbtbx::open("example-pdbs/insertion_codes.pdb", StrictnessLevel::Strict).unwrap();
-    let pdb_errors = save(
-        pdb.clone(),
-        "dump/insertion_codes.pdb",
-        StrictnessLevel::Loose,
-    );
+    let pdb_errors = save(&pdb, "dump/insertion_codes.pdb", StrictnessLevel::Loose);
     let (pdb2, _) = pdbtbx::open("dump/insertion_codes.pdb", StrictnessLevel::Strict).unwrap();
     print!("{:?}", errors);
     print!("{:?}", pdb_errors);

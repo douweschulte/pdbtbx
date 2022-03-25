@@ -87,11 +87,11 @@ fn bench_clone(pdb: PDB) {
 }
 
 fn bench_save_pdb(pdb: PDB) {
-    save(pdb, "dump/dump.pdb", StrictnessLevel::Loose).unwrap();
+    save(&pdb, "dump/dump.pdb", StrictnessLevel::Loose).unwrap();
 }
 
 fn bench_save_mmcif(pdb: PDB) {
-    save(pdb, "dump/dump.cif", StrictnessLevel::Loose).unwrap();
+    save(&pdb, "dump/dump.cif", StrictnessLevel::Loose).unwrap();
 }
 
 fn measure_multiple<T: Clone>(

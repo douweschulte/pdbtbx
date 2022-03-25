@@ -7,7 +7,7 @@ use std::io::{BufRead, BufReader};
 #[test]
 fn clipped() {
     let (pdb, errors) = pdbtbx::open("example-pdbs/large.pdb", StrictnessLevel::Strict).unwrap();
-    let pdb_errors = save(pdb, "dump/large.pdb", StrictnessLevel::Loose);
+    let pdb_errors = save(&pdb, "dump/large.pdb", StrictnessLevel::Loose);
     print!("{:?}", errors);
     print!("{:?}", pdb_errors);
     let file = File::open("dump/large.pdb").unwrap();

@@ -43,70 +43,70 @@ use std::marker::PhantomData;
 /// A struct to hold references to an Atom and its containing Conformer.
 #[derive(Debug, Clone)]
 pub struct AtomConformer<'a> {
-    /// The Conformer containing this Atom
-    conformer: &'a Conformer,
     /// This Atom
     atom: &'a Atom,
+    /// The Conformer containing this Atom
+    conformer: &'a Conformer,
 }
 
 /// A struct to hold references to an Atom and its containing Conformer and Residue.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidue<'a> {
-    /// The Residue containing this Atom
-    residue: &'a Residue,
-    /// The Conformer containing this Atom
-    conformer: &'a Conformer,
     /// This Atom
     atom: &'a Atom,
+    /// The Conformer containing this Atom
+    conformer: &'a Conformer,
+    /// The Residue containing this Atom
+    residue: &'a Residue,
 }
 
 /// A struct to hold references to an Atom and its containing Conformer, Residue, and Chain.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidueChain<'a> {
-    /// The Chain containing this Atom
-    chain: &'a Chain,
-    /// The Residue containing this Atom
-    residue: &'a Residue,
-    /// The Conformer containing this Atom
-    conformer: &'a Conformer,
     /// This Atom
     atom: &'a Atom,
+    /// The Conformer containing this Atom
+    conformer: &'a Conformer,
+    /// The Residue containing this Atom
+    residue: &'a Residue,
+    /// The Chain containing this Atom
+    chain: &'a Chain,
 }
 
 /// A struct to hold references to an Atom and its containing Conformer, Residue, Chain, and Model.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidueChainModel<'a> {
-    /// The Model containing this Atom
-    model: &'a Model,
-    /// The Chain containing this Atom
-    chain: &'a Chain,
-    /// The Residue containing this Atom
-    residue: &'a Residue,
-    /// The Conformer containing this Atom
-    conformer: &'a Conformer,
     /// This Atom
     atom: &'a Atom,
+    /// The Conformer containing this Atom
+    conformer: &'a Conformer,
+    /// The Residue containing this Atom
+    residue: &'a Residue,
+    /// The Chain containing this Atom
+    chain: &'a Chain,
+    /// The Model containing this Atom
+    model: &'a Model,
 }
 
 /// A struct to hold mutable references to an Atom and its containing Conformer.
 #[derive(Debug, Clone)]
 pub struct AtomConformerMut<'a> {
-    /// The Conformer containing this Atom
-    conformer: *mut Conformer,
     /// This Atom
     atom: *mut Atom,
+    /// The Conformer containing this Atom
+    conformer: *mut Conformer,
     phantom: PhantomData<&'a usize>,
 }
 
 /// A struct to hold mutable references to an Atom and its containing Conformer and Residue.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidueMut<'a> {
-    /// The Residue containing this Atom
-    residue: *mut Residue,
-    /// The Conformer containing this Atom
-    conformer: *mut Conformer,
     /// This Atom
     atom: *mut Atom,
+    /// The Conformer containing this Atom
+    conformer: *mut Conformer,
+    /// The Residue containing this Atom
+    residue: *mut Residue,
     phantom: PhantomData<&'a usize>,
 }
 
@@ -114,30 +114,30 @@ pub struct AtomConformerResidueMut<'a> {
 /// Chain.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidueChainMut<'a> {
-    /// The Chain containing this Atom
-    chain: *mut Chain,
-    /// The Residue containing this Atom
-    residue: *mut Residue,
-    /// The Conformer containing this Atom
-    conformer: *mut Conformer,
     /// This Atom
     atom: *mut Atom,
+    /// The Conformer containing this Atom
+    conformer: *mut Conformer,
+    /// The Residue containing this Atom
+    residue: *mut Residue,
+    /// The Chain containing this Atom
+    chain: *mut Chain,
     phantom: PhantomData<&'a usize>,
 }
 
 /// A struct to hold mutable references to an Atom and its containing Conformer, Residue, Chain, and Model.
 #[derive(Debug, Clone)]
 pub struct AtomConformerResidueChainModelMut<'a> {
-    /// The Model containing this Atom
-    model: *mut Model,
-    /// The Chain containing this Atom
-    chain: *mut Chain,
-    /// The Residue containing this Atom
-    residue: *mut Residue,
-    /// The Conformer containing this Atom
-    conformer: *mut Conformer,
     /// This Atom
     atom: *mut Atom,
+    /// The Conformer containing this Atom
+    conformer: *mut Conformer,
+    /// The Residue containing this Atom
+    residue: *mut Residue,
+    /// The Chain containing this Atom
+    chain: *mut Chain,
+    /// The Model containing this Atom
+    model: *mut Model,
     phantom: PhantomData<&'a usize>,
 }
 

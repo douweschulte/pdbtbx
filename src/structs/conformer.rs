@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::reference_tables;
 use crate::structs::*;
-use crate::transformation::*;
+use crate::transformation::TransformationMatrix;
 use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
@@ -10,7 +10,7 @@ use std::fmt;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
-/// A Conformer containing multiple atoms, analogous to 'atom_group' in cctbx
+/// A Conformer containing multiple atoms, analogous to `atom_group` in cctbx
 pub struct Conformer {
     /// The name of this Conformer
     name: String,
@@ -32,6 +32,7 @@ impl Conformer {
     ///
     /// ## Fails
     /// It fails and returns `None` if any of the characters making up the name are invalid.
+    #[must_use]
     pub fn new(name: &str, alt_loc: Option<&str>, atom: Option<Atom>) -> Option<Conformer> {
         if let Some(n) = prepare_identifier(name) {
             let mut res = Conformer {
@@ -99,12 +100,14 @@ impl Conformer {
         (&self.name, self.alternative_location())
     }
 
-    /// Get the modification of this Conformer e.g., chemical or post-translational. These is saved in the MODRES records in the PDB file
+    /// Get the modification of this Conformer e.g., chemical or post-translational. These is saved in the MODRES records in the PDB file.
     pub fn modification(&self) -> Option<&(String, String)> {
         self.modification.as_ref()
     }
 
-    /// Set the modification of this Conformer e.g., chemical or post-translational. These will be saved in the MODRES records in the PDB file
+    /// Set the modification of this Conformer e.g., chemical or post-translational. These will be saved in the MODRES records in the PDB file.
+    /// # Errors
+    /// It fails if the conformer name or comment has invalid characters.
     pub fn set_modification(&mut self, new_modification: (String, String)) -> Result<(), String> {
         if !valid_identifier(&new_modification.0) {
             Err(format!(
@@ -113,7 +116,7 @@ impl Conformer {
             ))
         } else if !valid_text(&new_modification.1) {
             Err(format!(
-                "New modification has invalid characters the comment, conformer: {:?}, comment \"{}\"",
+                "New modification has invalid characters in the comment, conformer: {:?}, comment \"{}\"",
                 self.id(), new_modification.1
             ))
         } else {
@@ -298,7 +301,7 @@ impl Conformer {
     ///
     /// ## Panics
     /// Panics if the index is out of bounds.
-    pub fn remove_atom_by_name(&mut self, name: String) -> bool {
+    pub fn remove_atom_by_name(&mut self, name: &str) -> bool {
         let index = self.atoms().position(|a| a.name() == name);
 
         if let Some(i) = index {
@@ -318,7 +321,7 @@ impl Conformer {
     /// ## Panics
     /// Panics if the index is out of bounds.
     #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_atom_by_name(&mut self, name: String) -> bool {
+    pub fn par_remove_atom_by_name(&mut self, name: &str) -> bool {
         let index = self.atoms.par_iter().position_first(|a| a.name() == name);
 
         if let Some(i) = index {
@@ -341,7 +344,7 @@ impl Conformer {
     #[doc_cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.par_atoms_mut()
-            .for_each(|a| a.apply_transformation(transformation))
+            .for_each(|a| a.apply_transformation(transformation));
     }
 
     /// Join this Conformer with another Conformer, this moves all atoms from the other Conformer
@@ -448,7 +451,7 @@ mod tests {
         assert_eq!(a.atom(0), Some(&atom1));
         assert_eq!(a.atom_mut(0), Some(&mut atom1));
         a.remove_atom(0);
-        assert!(a.remove_atom_by_name("CB".to_string()));
+        assert!(a.remove_atom_by_name("CB"));
         assert!(a.remove_atom_by_serial_number(13));
         assert_eq!(a.atom_count(), 0);
     }

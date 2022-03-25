@@ -102,7 +102,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
         .all(|a| !a.fails(StrictnessLevel::Medium))
     {
         save(
-            pdb.clone(),
+            &pdb,
             &(folder.to_string() + name + ".pdb"),
             StrictnessLevel::Loose,
         )
@@ -115,7 +115,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
         //assert_eq!(pdb, saved_pdb);
     }
     save(
-        pdb,
+        &pdb,
         &(folder.to_string() + name + ".cif"),
         StrictnessLevel::Loose,
     )
@@ -139,7 +139,7 @@ fn save_invalid_name() {
         .into_os_string()
         .into_string()
         .unwrap();
-    let res = save(PDB::new(), &name, StrictnessLevel::Loose);
+    let res = save(&PDB::new(), &name, StrictnessLevel::Loose);
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.len(), 1);
@@ -162,7 +162,7 @@ fn save_pdb_strict() {
     let mut pdb = PDB::new();
     pdb.add_model(model);
 
-    let res = save(pdb, &name, StrictnessLevel::Strict);
+    let res = save(&pdb, &name, StrictnessLevel::Strict);
     assert!(res.is_ok());
     let (_pdb, errors) = crate::open(&name, StrictnessLevel::Strict).unwrap();
     assert_eq!(errors.len(), 0);
@@ -184,7 +184,7 @@ fn save_mmcif_strict() {
     let mut pdb = PDB::new();
     pdb.add_model(model);
 
-    let res = save(pdb, &name, StrictnessLevel::Strict);
+    let res = save(&pdb, &name, StrictnessLevel::Strict);
     println!("{:?}", res);
     assert!(res.is_ok());
     let (_pdb, errors) = crate::open(&name, StrictnessLevel::Strict).unwrap();

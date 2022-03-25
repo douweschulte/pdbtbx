@@ -3,9 +3,9 @@ use super::lexitem::*;
 use crate::error::*;
 
 /// Parse/lex a CIF file into CIF intermediate structure
-pub fn lex_cif(input: String) -> Result<DataBlock, PDBError> {
+pub fn lex_cif(text: &str) -> Result<DataBlock, PDBError> {
     parse_main(&mut Position {
-        text: &input[..],
+        text,
         line: 1,
         column: 1,
     })
@@ -331,9 +331,8 @@ fn parse_identifier<'a>(input: &mut Position<'a>) -> &'a str {
             input.text = &input.text[chars_to_remove..];
             input.column += chars_to_remove;
             return identifier;
-        } else {
-            chars_to_remove += 1;
         }
+        chars_to_remove += 1;
     }
 
     let identifier = input.text;
@@ -399,9 +398,8 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
                 ),
                 Context::range(input, &end),
             ));
-        } else {
-            chars_to_remove += 1;
         }
+        chars_to_remove += 1;
     }
 
     let mut end = *input;
@@ -490,9 +488,8 @@ fn skip_to_eol(input: &mut Position<'_>) {
             chars_to_remove += 1;
             input.text = &input.text[chars_to_remove..];
             return;
-        } else {
-            chars_to_remove += 1;
         }
+        chars_to_remove += 1;
     }
 
     input.text = "";

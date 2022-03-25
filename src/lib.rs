@@ -38,7 +38,7 @@
 //! avg_b_factor /= pdb.atom_count() as f64;
 //!
 //! println!("The average B factor of the protein is: {}", avg_b_factor);
-//! pdbtbx::save(pdb, "dump/1ubq_no_hydrogens.pdb", pdbtbx::StrictnessLevel::Loose);
+//! pdbtbx::save(&pdb, "dump/1ubq_no_hydrogens.pdb", pdbtbx::StrictnessLevel::Loose);
 //! ```
 //!
 //! ## PDB Hierarchy
@@ -152,6 +152,7 @@ println!("There are {} backbone atoms within 3.5Aͦ of the atom at index 42", to
 #![doc = "## References"]
 #![doc = "1. [`Grosse-Kunstleve, R. W. et al`] Grosse-Kunstleve, R. W., Sauter, N. K., Moriarty, N. W., & Adams, P. D. (2002). TheComputational Crystallography Toolbox: crystallographic algorithms in a reusable software framework. Journal of Applied Crystallography, 35(1), 126–136. [https://doi.org/10.1107/s0021889801017824](https://doi.org/10.1107/s0021889801017824)"]
 #![doc = "1. [`Perkel, J. M.`] Perkel, J. M. (2020). Why scientists are turning to Rust. Nature, 588(7836), 185–186. [https://doi.org/10.1038/d41586-020-03382-2](https://doi.org/10.1038/d41586-020-03382-2)"]
+// Set linting behaviour
 #![deny(
     missing_docs,
     trivial_casts,
@@ -160,25 +161,28 @@ println!("There are {} backbone atoms within 3.5Aͦ of the atom at index 42", to
     unused,
     rust_2018_idioms
 )]
-// Clippy lints
 #![deny(
-    clippy::enum_glob_use,
-    clippy::single_match_else,
-    clippy::nonminimal_bool,
-    clippy::print_stdout,
-    clippy::use_debug,
-    clippy::missing_docs_in_private_items,
-    clippy::unwrap_used,
-    clippy::map_unwrap_or,
+    clippy::all,
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
+    clippy::enum_glob_use,
+    clippy::implicit_clone,
+    clippy::map_unwrap_or,
+    clippy::missing_docs_in_private_items,
+    clippy::nonminimal_bool,
+    clippy::print_stdout,
+    clippy::redundant_clone,
+    clippy::redundant_closure_for_method_calls,
+    clippy::redundant_closure,
     clippy::similar_names,
-    clippy::all
+    clippy::single_match_else,
+    clippy::unwrap_used,
+    clippy::use_debug
 )]
-// Allow PDB (and derived) names to be used
-#![allow(clippy::upper_case_acronyms)]
+//#![warn(clippy::pedantic)] // Activate if in for a nice evening of clippy love 💖
+#![allow(clippy::upper_case_acronyms)] // Allow PDB (and derived) names to be used
 #![cfg_attr(feature = "unstable-doc-cfg", feature(doc_cfg))]
 
 /// To save and display errors
@@ -204,3 +208,12 @@ pub use strictness_level::StrictnessLevel;
 pub use structs::*;
 pub use transformation::*;
 pub use validate::{validate, validate_pdb};
+
+/// Helper function to check extensions in filenames
+fn check_extension(filename: &str, extension: &str) -> bool {
+    filename
+        .rsplit('.')
+        .next()
+        .map(|ext| ext.eq_ignore_ascii_case(extension))
+        == Some(true)
+}

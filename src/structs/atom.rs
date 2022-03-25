@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::reference_tables;
 use crate::structs::*;
-use crate::transformation::*;
+use crate::transformation::TransformationMatrix;
 use std::cmp::Ordering;
 use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
@@ -40,6 +40,7 @@ pub struct Atom {
 
 impl Atom {
     /// Create a new Atom
+    #[must_use]
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         hetero: bool,
@@ -104,6 +105,7 @@ impl Atom {
     }
 
     /// Set the position of the atom as a tuple of `f64`, in the following order: (x, y, z).
+    /// # Errors
     /// It fails if one or more of the numbers is not finite (`f64.is_finite()`).
     pub fn set_pos(&mut self, new_pos: (f64, f64, f64)) -> Result<(), String> {
         if new_pos.0.is_finite() && new_pos.1.is_finite() && new_pos.2.is_finite() {
@@ -127,6 +129,7 @@ impl Atom {
     }
 
     /// Set the X position of the atom in Å.
+    /// # Errors
     /// It fails if `new_pos` is not finite (`f64.is_finite()`).
     pub fn set_x(&mut self, new_pos: f64) -> Result<(), String> {
         if new_pos.is_finite() {
@@ -148,6 +151,7 @@ impl Atom {
     }
 
     /// Set the Y position of the atom in Å.
+    /// # Errors
     /// It fails if `new_pos` is not finite (`f64.is_finite()`).
     pub fn set_y(&mut self, new_pos: f64) -> Result<(), String> {
         if new_pos.is_finite() {
@@ -169,6 +173,7 @@ impl Atom {
     }
 
     /// Set the Z position of the atom in Å.
+    /// # Errors
     /// It fails if `new_pos` is not finite (`f64.is_finite()`).
     pub fn set_z(&mut self, new_pos: f64) -> Result<(), String> {
         if new_pos.is_finite() {
@@ -183,7 +188,7 @@ impl Atom {
     }
 
     /// Get the serial number of the atom.
-    /// This number, combined with the alt_loc from the Conformer of this Atom, is defined to be unique in the containing model, which is not enforced.
+    /// This number, combined with the `alt_loc` from the Conformer of this Atom, is defined to be unique in the containing model, which is not enforced.
     /// The precision of this number is 5 digits in PDB files.
     /// If more than 99,999 atoms are present in the same model, the internal numbering will
     /// continue counting up even if the file from which the atoms were read does not.
@@ -194,31 +199,31 @@ impl Atom {
     }
 
     /// Set the serial number of the atom.
-    /// This number, combined with the alt_loc from the Conformer, of this Atom is defined to be unique in the containing model, which is not enforced.
+    /// This number, combined with the `alt_loc` from the Conformer, of this Atom is defined to be unique in the containing model, which is not enforced.
     pub fn set_serial_number(&mut self, new_serial_number: usize) {
         self.serial_number = new_serial_number;
     }
 
     /// Get the name of the atom. The name will be trimmed (whitespace removed) and changed to ASCII uppercase.
-    /// For PDB files the name can at most contain 4 characters.
     pub fn name(&self) -> &str {
         &self.name
     }
 
     /// Set the name of the atom. The name will be trimmed (whitespace removed) and changed to ASCII uppercase as requested by PDB/PDBx standard.
-    /// For PDB files the name can at most contain 4 characters.
+    /// For PDB files the name can at most contain 4 characters, enforced when saving the file.
+    /// # Errors
     /// The name can only contain valid characters, the ASCII graphic characters (`char.is_ascii_graphic() || char == ' '`).
     /// If the name is invalid an error message is provided.
     pub fn set_name(&mut self, new_name: impl Into<String>) -> Result<(), String> {
         let new_name = new_name.into();
-        if !valid_identifier(&new_name) {
+        if valid_identifier(&new_name) {
+            self.name = new_name.trim().to_ascii_uppercase();
+            Ok(())
+        } else {
             Err(format!(
                 "New name has invalid characters for atom {} name {}",
                 self.serial_number, new_name
             ))
-        } else {
-            self.name = new_name.trim().to_ascii_uppercase();
-            Ok(())
         }
     }
 
@@ -229,6 +234,7 @@ impl Atom {
     }
 
     /// Set the occupancy or Q factor of the atom.
+    /// # Errors
     /// It fails if `new_occupancy` is not finite (`f64.is_finite()`) or if it is negative.
     pub fn set_occupancy(&mut self, new_occupancy: f64) -> Result<(), String> {
         if new_occupancy.is_finite() {
@@ -258,6 +264,7 @@ impl Atom {
     }
 
     /// Set the B factor or temperature factor of the atom.
+    /// # Errors
     /// It fails if `new_b_factor` is not finite (`f64.is_finite()`) or if it is negative.
     pub fn set_b_factor(&mut self, new_b_factor: f64) -> Result<(), String> {
         if new_b_factor.is_finite() {
@@ -285,19 +292,20 @@ impl Atom {
     }
 
     /// Set the element of this atom. The element will be trimmed (whitespace removed) and changed to ASCII uppercase as requested by PDB/PDBx standard.
-    /// For PDB files the element can at most contain 2 characters.
+    /// For PDB files the element can at most contain 2 characters, enforced when saving the file.
+    /// # Errors
     /// The element can only contain valid characters, the ASCII graphic characters (`char.is_ascii_graphic() || char == ' '`).
     /// If the element is invalid an error message is provided.
     pub fn set_element(&mut self, new_element: impl Into<String>) -> Result<(), String> {
         let new_element = new_element.into();
-        if !valid_identifier(&new_element) {
+        if valid_identifier(&new_element) {
+            self.element = new_element.trim().to_ascii_uppercase();
+            Ok(())
+        } else {
             Err(format!(
                 "New element has invalid characters for atom {} name {}",
                 self.serial_number, new_element
             ))
-        } else {
-            self.element = new_element.trim().to_ascii_uppercase();
-            Ok(())
         }
     }
 
@@ -305,6 +313,7 @@ impl Atom {
     /// find anything it uses the first character of `self.name()` if that is one of "CHONS". This could potentially lead to misclassifications
     /// but in most cases should result in the correct element. It should be noted that the element is a required part in the PDB file so not specifying it
     /// is likely to lead to unspecified behaviour.
+    /// # Errors
     /// It returns `None` if `self.element()` is not an element in the periodic table, or if `self.element()` is undefined and `self.name()` is not an element in the periodic table.
     pub fn atomic_number(&self) -> Option<usize> {
         if !self.element.is_empty() {
@@ -404,7 +413,7 @@ impl Atom {
     }
 
     /// Determine whether this atom is likely to be a part of the backbone of a protein.
-    /// This is based on this Atom only, for a more precise definition use [hierarchy::ContainsAtomConformer]`.is_backbone()`.
+    /// This is based on this Atom only, for a more precise definition use [`hierarchy::ContainsAtomConformer::is_backbone`].
     pub fn is_backbone(&self) -> bool {
         reference_tables::is_backbone(self.name())
     }
@@ -691,7 +700,7 @@ mod tests {
     #[test]
     fn set_name() {
         let mut a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
-        assert!(a.set_name("Å").is_err());
+        assert!(a.set_name("Å").is_err());
         assert!(a.set_name("ATOMS").is_ok());
         a.set_name("ATOM").unwrap();
         a.set_name("HOH").unwrap();
