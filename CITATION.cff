@@ -17,6 +17,9 @@ identifiers:
   - description: Crates.io link
     type: url
     value: https://crates.io/crates/pdbtbx
+  - description: Documentation
+    type: url
+    value: https://docs.rs/pdbtbx/latest/pdbtbx/
   - description: Repository
     type: url
     value: https://github.com/douweschulte/pdbtbx
