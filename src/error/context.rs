@@ -45,6 +45,20 @@ pub enum Context {
         /// The possible offset of the first line, will be padded with spaces
         offset: usize,
     },
+    /// To show multiple lines where an error occurred.
+    RangeHighlights {
+        /// The linenumber of the first line
+        start_linenumber: usize,
+        /// The lines to show
+        lines: Vec<String>,
+        /// Highlights defined by the line (relative to the set of lines given), start column in that line and length of highlight
+        highlights: Vec<(usize, usize, usize)>,
+    },
+    /// To show multiple contexts
+    Multiple {
+        /// The contexts to show
+        contexts: Vec<(Option<String>, Context)>,
+    },
 }
 
 impl Context {
@@ -149,15 +163,65 @@ impl fmt::Display for Context {
                 lines,
                 offset,
             } => {
-                write!(f, "\n     |").expect("Fault in writing to output");
+                write!(f, "\n     |")?;
                 let mut number = *start_linenumber;
-                write!(f, "\n{:<4} | {}{}", number, " ".repeat(*offset), lines[0])
-                    .expect("Fault in writing to output");
+                write!(f, "\n{:<4} | {}{}", number, " ".repeat(*offset), lines[0])?;
                 for line in lines.iter().skip(1) {
                     number += 1;
-                    write!(f, "\n{:<4} | {}", number, line).expect("Fault in writing to output");
+                    write!(f, "\n{:<4} | {}", number, line)?;
                 }
                 write!(f, "\n     |")
+            }
+            Context::RangeHighlights {
+                start_linenumber,
+                lines,
+                highlights,
+            } => {
+                write!(f, "\n     |")?;
+                let mut number = *start_linenumber;
+                let mut highlights_peek = highlights.iter().peekable();
+                #[allow(unused)]
+                for (index, line) in lines.iter().enumerate() {
+                    number += 1;
+                    write!(f, "\n{:<4} | {}", number, line)?;
+                    let mut first = true;
+                    let mut last_offset = 0;
+                    while let Some(high) = highlights_peek.peek() {
+                        if high.0 > index {
+                            break;
+                        }
+                        if let Some(high) = highlights_peek.next() {
+                            if first {
+                                write!(f, "\n     | ")?;
+                                first = false;
+                            }
+                            if last_offset < high.1 {
+                                write!(
+                                    f,
+                                    "{}{}",
+                                    " ".repeat(high.1 - last_offset),
+                                    "^".repeat(high.2)
+                                )?;
+                                last_offset = high.1 + high.2;
+                            } else {
+                                println!("A highlight in a range error message is detected to overlap with a previous highlight, it is skipped.");
+                                // Panicking on error gave the following very intense error message (in test code):
+                                // `thread panicked while panicking. aborting. ... (exit code: 0xc000001d, STATUS_ILLEGAL_INSTRUCTION)`
+                                // To prevent other people from panicking upon seeing this error message this error is not raised currently.
+                            }
+                        }
+                    }
+                }
+                write!(f, "\n     |")
+            }
+            Context::Multiple { contexts } => {
+                for (note, context) in contexts {
+                    writeln!(f, "{}", context)?;
+                    if let Some(note) = note {
+                        writeln!(f, "={}", note)?;
+                    }
+                }
+                Ok(())
             }
         }
     }
