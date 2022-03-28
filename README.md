@@ -9,7 +9,7 @@ This is a Rust library helping to parse, edit and save crystallographic PDB/mmCI
 As this is a library in active development, feel free to share your thoughts, ideas, hopes, and criticisms. Every comment will be read and discussed so that this library is as useful as possible for all users. Of course we all like a civilised discussion so please follow the community guidelines, but over all please be a civilised human being.
 
 ## License
-MIT, just use it if you can use it. If you use it for something cool I would like to hear, but no obligations!
+MIT
 
 ## Why
 It started as a way to use Rust in a scientific project. But it moved to an open source project because I think that using Rust in scientific computing is be really helpful and a great addition alongside the ubiquitous Python. So by creating it I hope to extend the usability of Rust a little bit more. Since Nature published an [article](https://www.nature.com/articles/d41586-020-03382-2) (technology feature) which laid out the benefits of using Rust and showed that Rust is used more and more, I am planning on working more with Rust in scientific projects. And I think that the best way to help Rust move forward (in the scientific community) is by creating more support for scientific projects in Rust.
@@ -22,7 +22,39 @@ It started as a way to use Rust in a scientific project. But it moved to an open
 ## Supported features
 As the main goal of this library is to allow access to the atomical data many metadata features of both PDB and mmCIF are unsupported. For both file formats the recent versions (PDB v3.30 and mmcif v5.338) are used, but as both are quite stable file formats the exact version should not matter to end users.
 
-![supported features table](pictures/supported_features.png)
+| PDB   Feature | PDB | mmCIF | Corresponding in mmCIF      |
+|---------------|:---:|:-----:|-----------------------------|
+|   HEADER (ID) | ✔️ | ✔️ | entry.id                    |
+|        REMARK | ✔️ | ⏲ | _pdbx_database_remark.id    |
+|          ATOM | ✔️ | ✔️ | atom_site                   |
+|        ANISOU | ✔️ | ✔️ | atom_site                   |
+|         SCALE | ✔️ | ⏲ | _database_PDB_matrix.scale  |
+|         ORIGX | ✔️ | ⏲ | _database_PDB_matrix.origx  |
+|        MATRIX | ✔️ | ❌ | ?                           |
+|       CRYSTAL | ✔️ | ✔️ | cell + symmetry             |
+|         MODEL | ✔️ | ✔️ | atom_site                   |
+|        MASTER | 〰️ | ❌ | _pdbx_database_PDB_master   |
+|        SEQRES | 〰️ | ❌ | ?                           |
+|         DBREF | ✔️ | ❌ | pdbx_dbref                  |
+|      DBREF1/2 | 〰️ | ❌ | pdbx_dbref                  |
+|        MODRES | ✔️ | ❌ | ?                           |
+|        SEQADV | ✔️ | ❌ | ?                           |
+
+| Section | Keywords | Support |
+|---|---|---|
+| Heterogen | HET, HETNAM, HETSYN, FORMUL | 🔍 |
+| Secondary structure | HELIX, SHEET | 🔍 |
+| Connectivity | SSBOND, LINK, CISPEP, CONNECT | 🔍 |
+|Title | OBSLTE, TITLE, SPLIT, CAVEAT, COMPND, SOURCE, KEYWDS, EXPDTA, NUMMDL, MDLTYP, AUTHOR, REVDAT, SPRSDE, JRNL, HEADER (other columns) | ❌ |
+| Misc. | SITE | ❌ |
+
+| Symbol | Description |
+|:-:|---|
+| ✔️ | Supported |
+| 〰️ | Partially supported |
+| ⏲ | Support planned (v1.0) |
+| 🔍 | Support envisioned (>v1.0) |
+| ❌ | Support not envisioned |
 
 The features where support is planned are planned to be included in the 1.0 release. The features where support is envisioned are candidates to be included, but not necessarily in the 1.0 release. The features where support is not planned are thought to be unnecessary for atomic data computations on theses files. If any of these are really needed for your use case, please raise an issue and we can discuss its inclusion. Also if you need a feature that is 'planned' or 'envisioned', feel free to raise an issue to guide development to spots where it can make a real life impact.
 
