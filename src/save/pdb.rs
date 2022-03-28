@@ -115,35 +115,70 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         for chain in model.chains() {
             if let Some(dbref) = chain.database_reference() {
                 seqres = true;
-                print_line(vec![
-                    (6, "DBREF"),
-                    (0, " "),
-                    (4, pdb.identifier.as_deref().unwrap_or("")),
-                    (0, " "),
-                    (1, chain.id()),
-                    (0, " "),
-                    (4, &dbref.pdb_position.start.to_string()),
-                    (1, get_option!(dbref.pdb_position.start_insert)),
-                    (0, " "),
-                    (4, &dbref.pdb_position.end.to_string()),
-                    (1, get_option!(dbref.pdb_position.end_insert)),
-                    (0, " "),
-                    (6, &dbref.database.0),
-                    (0, " "),
-                    (8, &dbref.database.1),
-                    (0, " "),
-                    (12, &dbref.database.2),
-                    (0, " "),
-                    (5, &dbref.database_position.start.to_string()),
-                    (1, get_option!(dbref.database_position.start_insert)),
-                    (0, " "),
-                    (5, &dbref.database_position.end.to_string()),
-                    (1, get_option!(dbref.pdb_position.end_insert)),
-                ]);
+                if dbref.database.acc.len() > 8
+                    || dbref.database.id.len() > 12
+                    || dbref.database_position.start > 1_000_000 - 1
+                    || dbref.database_position.end > 1_000_000 - 1
+                {
+                    print_line(vec![
+                        (6, "DBREF1"),
+                        (0, " "),
+                        (4, pdb.identifier.as_deref().unwrap_or("")),
+                        (0, " "),
+                        (1, chain.id()),
+                        (0, " "),
+                        (4, &dbref.pdb_position.start.to_string()),
+                        (1, get_option!(dbref.pdb_position.start_insert)),
+                        (0, " "),
+                        (4, &dbref.pdb_position.end.to_string()),
+                        (1, get_option!(dbref.pdb_position.end_insert)),
+                        (0, " "),
+                        (6, &dbref.database.name),
+                        (0, "               "),
+                        (20, &dbref.database.id),
+                    ]);
+                    print_line(vec![
+                        (6, "DBREF2"),
+                        (0, " "),
+                        (4, pdb.identifier.as_deref().unwrap_or("")),
+                        (0, " "),
+                        (1, chain.id()),
+                        (0, "     "),
+                        (22, &dbref.database.acc),
+                        (0, "     "),
+                        (10, &dbref.database_position.start.to_string()),
+                        (0, "  "),
+                        (10, &dbref.database_position.end.to_string()),
+                    ]);
+                } else {
+                    print_line(vec![
+                        (6, "DBREF"),
+                        (0, " "),
+                        (4, pdb.identifier.as_deref().unwrap_or("")),
+                        (0, " "),
+                        (1, chain.id()),
+                        (0, " "),
+                        (4, &dbref.pdb_position.start.to_string()),
+                        (1, get_option!(dbref.pdb_position.start_insert)),
+                        (0, " "),
+                        (4, &dbref.pdb_position.end.to_string()),
+                        (1, get_option!(dbref.pdb_position.end_insert)),
+                        (0, " "),
+                        (6, &dbref.database.name),
+                        (0, " "),
+                        (8, &dbref.database.acc),
+                        (0, " "),
+                        (12, &dbref.database.id),
+                        (0, " "),
+                        (5, &dbref.database_position.start.to_string()),
+                        (1, get_option!(dbref.database_position.start_insert)),
+                        (0, " "),
+                        (5, &dbref.database_position.end.to_string()),
+                        (1, get_option!(dbref.pdb_position.end_insert)),
+                    ]);
+                }
             }
         }
-        //340  | DBREF  7AZ6 H 1     7     PDB    7AZ6     7AZ6         1      7
-        //     | =====+ ==== = ====+ ====+ ====== ======== ============ =====+ =====+
 
         // SEQADV
         for chain in model.chains() {
@@ -160,9 +195,9 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                         (0, " "),
                         (4, &dif.residue.1.to_string()),
                         (0, "  "), // includes always empty field
-                        (4, &dbref.database.0),
+                        (4, &dbref.database.name),
                         (0, " "),
-                        (9, &dbref.database.1),
+                        (9, &dbref.database.acc),
                         (0, " "),
                         (
                             3,

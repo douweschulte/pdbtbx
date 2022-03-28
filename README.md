@@ -36,7 +36,7 @@ As the main goal of this library is to allow access to the atomical data many me
 |        MASTER | 〰️ | ❌ | _pdbx_database_PDB_master   |
 |        SEQRES | 〰️ | ❌ | ?                           |
 |         DBREF | ✔️ | ❌ | pdbx_dbref                  |
-|      DBREF1/2 | 〰️ | ❌ | pdbx_dbref                  |
+|      DBREF1/2 | ✔️ | ❌ | pdbx_dbref                  |
 |        MODRES | ✔️ | ❌ | ?                           |
 |        SEQADV | ✔️ | ❌ | ?                           |
 

@@ -270,7 +270,7 @@ where
                     let mut found = false;
                     for dbref in database_references.iter_mut() {
                         if dbref.0 == chain_id {
-                            dbref.1.database.1 = db_acc;
+                            dbref.1.database.acc = db_acc;
                             dbref.1.database_position =
                                 SequencePosition::new(db_start, ' ', db_end, ' ');
                             dbref.2 = true;
@@ -413,7 +413,7 @@ where
             errors.push(PDBError::new(
                 ErrorLevel::StrictWarning,
                 "Solitary DBREF1 definition",
-                &format!("The complementary DBREF2 was not found for this DBREF1 definition. For chain id '{}'. For database '{}' with ID code '{}'.", chain_id, reference.database.0, reference.database.2),
+                &format!("The complementary DBREF2 was not found for this DBREF1 definition. For chain id '{}'. For database '{}' with ID code '{}'.", chain_id, reference.database.name, reference.database.id),
                 Context::None,
             ))
         } else if let Some(chain) = pdb.chains_mut().find(|a| a.id() == chain_id) {
@@ -1502,7 +1502,7 @@ fn lex_dbref2(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     };
     let id_code = [chars[7], chars[8], chars[9], chars[10]];
     let chain_id = chars[12];
-    let database_accession = chars[28..40].iter().collect::<String>().trim().to_string();
+    let database_accession = chars[18..40].iter().collect::<String>().trim().to_string();
     let database_seq_begin = check(parse_number(
         Context::line(linenumber, line, 55, 5),
         &chars[45..55],

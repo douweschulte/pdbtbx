@@ -43,7 +43,7 @@ impl SequencePosition {
 /// A DatabaseReference containing the cross-reference to a corresponding database sequence for a Chain.
 pub struct DatabaseReference {
     /// The information about the database, (name, accession code, identification code), see DBREF documentation wwPDB v3.30
-    pub database: (String, String, String),
+    pub database: Database,
     /// The position of the sequence as present in the PDB
     pub pdb_position: SequencePosition,
     /// The position of the sequence as present in the database
@@ -56,15 +56,37 @@ impl DatabaseReference {
     /// Create a new DatabaseReference
     #[must_use]
     pub fn new(
-        database: (String, String, String),
+        database: impl Into<Database>,
         pdb_position: SequencePosition,
         database_position: SequencePosition,
     ) -> Self {
         DatabaseReference {
-            database,
+            database: database.into(),
             pdb_position,
             database_position,
             differences: Vec::new(),
+        }
+    }
+}
+
+/// The information about the database see DBREF documentation wwPDB v3.30 <https://www.wwpdb.org/documentation/file-format-content/format33/sect3.html#DBREF>
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct Database {
+    /// Name of the database, eg Uniprot/UNP
+    pub name: String,
+    /// Sequence database accession code, eg Q9KPK8
+    pub acc: String,
+    /// Sequence database identification code, eg UNG_VIBCH
+    pub id: String,
+}
+
+impl From<(String, String, String)> for Database {
+    fn from(database: (String, String, String)) -> Self {
+        Database {
+            name: database.0,
+            acc: database.1,
+            id: database.2,
         }
     }
 }
