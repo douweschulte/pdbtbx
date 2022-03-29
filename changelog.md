@@ -1,6 +1,15 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/douweschulte/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.9.1
+* Added more search terms
+* Added angle and dihedral angle calculations on atoms (Thanks to DocKDE)
+* Added extra examples (Thanks to DocKDE)
+* Added support for DBREF1/2
+* Improved PDB parsing performance (Thanks to DocKDE)
+* Improved error message styling and merged common errors
+* Additional code and documentation improvements
+
 ### v0.9.0 'Structured search'
 * Added `find` method on all levels in the PDB, this should allow for human friendly atom(s) searching.
     `pdb.find(Term::ConformerName("ALA".to_string()) + Term::AtomName("CA".to_string()))`

@@ -66,14 +66,14 @@ The features where support is planned are planned to be included in the 1.0 rele
 * The crate has many ways of iterating over the PDB structure to allow for convenient access and control over the performance.
 
 ## Latest update
-### v0.9.0 'Structured search'
-* Added `find` method on all levels in the PDB, this should allow for human friendly atom(s) searching.
-    `pdb.find(Term::ConformerName("ALA".to_string()) + Term::AtomName("CA".to_string()))`
-* Added `bounding_box` to the PDB struct.
-* Added `atom.overlaps_bound()` which uses covalent bond radii instead of unbound radii. (Thanks to raised issue)
-* Extended `atomic_number` to take the first character of the name if this is one of "CHONS" and the element is unset and the name is not an element name.
-* Updated covalent bond radii to work in Å as well (was picometers).
-* Respecified the dependencies versions to allow cargo to more often reuse dependencies in complex projects.
+### v0.9.1
+* Added more search terms
+* Added angle and dihedral angle calculations on atoms (Thanks to DocKDE)
+* Added extra examples (Thanks to DocKDE)
+* Added support for DBREF1/2
+* Improved PDB parsing performance (Thanks to DocKDE)
+* Improved error message styling and merged common errors
+* Additional code and documentation improvements
 
 Also see [changelog](https://github.com/douweschulte/pdbtbx/blob/master/changelog.md).
 

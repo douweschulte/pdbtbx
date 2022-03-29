@@ -1,5 +1,5 @@
 title: pdbtbx
-version: 0.9.0
+version: 0.9.1
 abstract: A library to open/edit/save (crystallographic) Protein Data Bank (PDB) and mmCIF files in Rust.
 authors:
   - affiliation: Utrecht University
