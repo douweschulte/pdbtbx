@@ -135,16 +135,48 @@ impl Context {
             }
         }
     }
-}
 
-impl fmt::Display for Context {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    /// Display this context, with an optional note after the context.
+    fn display(&self, f: &mut fmt::Formatter<'_>, note: Option<&str>) -> fmt::Result {
+        let mut tail = true; // End with a tailing line ╵
+        #[allow(
+            clippy::cast_sign_loss,
+            clippy::cast_precision_loss,
+            clippy::cast_possible_truncation
+        )]
+        let get_margin = |n| ((n + 1) as f64).log10().max(1.0).ceil() as usize;
+        let margin = match self {
+            Context::None => 0,
+            Context::Show { .. } => 2,
+            Context::FullLine { linenumber: n, .. } => get_margin(*n),
+            Context::Line { linenumber: n, .. } => get_margin(*n),
+            Context::Range {
+                start_linenumber: n,
+                lines: l,
+                ..
+            } => get_margin(n + l.len()),
+            Context::RangeHighlights {
+                start_linenumber: n,
+                lines: l,
+                ..
+            } => get_margin(n + l.len()),
+            Context::Multiple { .. } => 0,
+        };
         match self {
-            Context::None => write!(f, ""),
-            Context::Show { line } => write!(f, "\n     |\n     | {}\n     |\n", line),
-            Context::FullLine { linenumber, line } => {
-                write!(f, "\n     |\n{:<4} | {}\n     |\n", linenumber, line)
+            Context::None => {
+                return Ok(());
             }
+            Context::Show { line } => {
+                write!(f, "\n{:pad$} ╷\n{:pad$} │ {}", "", "", line, pad = margin)?
+            }
+            Context::FullLine { linenumber, line } => write!(
+                f,
+                "\n{:pad$} ╷\n{:<pad$} │ {}",
+                "",
+                linenumber,
+                line,
+                pad = margin
+            )?,
             Context::Line {
                 linenumber,
                 line,
@@ -152,38 +184,47 @@ impl fmt::Display for Context {
                 length,
             } => write!(
                 f,
-                "\n     |\n{:<4} | {}\n     | {}{}\n",
+                "\n{:pad$} ╷\n{:<pad$} │ {}\n{:pad$} · {}{}",
+                "",
                 linenumber,
                 line,
+                "",
                 " ".repeat(*offset),
-                "^".repeat(*length)
-            ),
+                "─".repeat(*length),
+                pad = margin
+            )?,
             Context::Range {
                 start_linenumber,
                 lines,
                 offset,
             } => {
-                write!(f, "\n     |")?;
+                write!(f, "\n{:pad$} ╷", "", pad = margin)?;
                 let mut number = *start_linenumber;
-                write!(f, "\n{:<4} | {}{}", number, " ".repeat(*offset), lines[0])?;
+                write!(
+                    f,
+                    "\n{:<pad$} │ {}{}",
+                    number,
+                    " ".repeat(*offset),
+                    lines[0],
+                    pad = margin
+                )?;
                 for line in lines.iter().skip(1) {
                     number += 1;
-                    write!(f, "\n{:<4} | {}", number, line)?;
+                    write!(f, "\n{:<pad$} │ {}", number, line, pad = margin)?;
                 }
-                write!(f, "\n     |")
             }
             Context::RangeHighlights {
                 start_linenumber,
                 lines,
                 highlights,
             } => {
-                write!(f, "\n     |")?;
+                write!(f, "\n{:pad$} ╷", "", pad = margin)?;
                 let mut number = *start_linenumber;
                 let mut highlights_peek = highlights.iter().peekable();
                 #[allow(unused)]
                 for (index, line) in lines.iter().enumerate() {
                     number += 1;
-                    write!(f, "\n{:<4} | {}", number, line)?;
+                    write!(f, "\n{:<pad$} │ {}", number, line, pad = margin)?;
                     let mut first = true;
                     let mut last_offset = 0;
                     while let Some(high) = highlights_peek.peek() {
@@ -192,7 +233,7 @@ impl fmt::Display for Context {
                         }
                         if let Some(high) = highlights_peek.next() {
                             if first {
-                                write!(f, "\n     | ")?;
+                                write!(f, "\n{:pad$} · ", "", pad = margin)?;
                                 first = false;
                             }
                             if last_offset < high.1 {
@@ -200,7 +241,7 @@ impl fmt::Display for Context {
                                     f,
                                     "{}{}",
                                     " ".repeat(high.1 - last_offset),
-                                    "^".repeat(high.2)
+                                    "─".repeat(high.2)
                                 )?;
                                 last_offset = high.1 + high.2;
                             } else {
@@ -212,18 +253,28 @@ impl fmt::Display for Context {
                         }
                     }
                 }
-                write!(f, "\n     |")
             }
             Context::Multiple { contexts } => {
                 for (note, context) in contexts {
-                    writeln!(f, "{}", context)?;
-                    if let Some(note) = note {
-                        writeln!(f, "={}", note)?;
-                    }
+                    context.display(f, note.as_deref())?;
                 }
-                Ok(())
+                tail = false;
             }
         }
+        // Last line
+        if let Some(note) = note {
+            write!(f, "\n{:pad$} ╰{}", "", note, pad = margin)
+        } else if tail {
+            write!(f, "\n{:pad$} ╵", "", pad = margin)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+impl fmt::Display for Context {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.display(f, None)
     }
 }
 

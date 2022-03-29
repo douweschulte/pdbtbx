@@ -60,7 +60,7 @@ impl fmt::Debug for PDBError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{}: {}\n{}\n{}\n",
+            "{}: {}{}\n{}\n",
             self.level, self.short_description, self.context, self.long_description
         )
     }
