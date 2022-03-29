@@ -466,6 +466,7 @@ where
 
     reshuffle_conformers(&mut pdb);
 
+    merge_long_remark_warnings(&mut errors);
     errors.extend(validate_seqres(
         &mut pdb,
         sequence,
@@ -475,7 +476,6 @@ where
     ));
     errors.extend(add_modifications(&mut pdb, modifications));
     errors.extend(add_bonds(&mut pdb, bonds));
-
     errors.extend(validate(&pdb));
 
     if errors.iter().any(|e| e.fails(level)) {
@@ -483,6 +483,74 @@ where
     } else {
         Ok((pdb, errors))
     }
+}
+
+/// Merge all warnings about long REMARK definitions into a single warning
+fn merge_long_remark_warnings(errors: &mut Vec<PDBError>) {
+    // Weed out all remark too long warnings
+    let mut remark_too_long = Vec::new();
+    errors.retain(|error| {
+        if error.short_description() == "Remark too long" {
+            remark_too_long.push(error.context().clone());
+            false
+        } else {
+            true
+        }
+    });
+    // Merge consecutive warnings into a single context to take up less vertical space
+    let mut contexts = Vec::new();
+    let mut lines = Vec::new();
+    let mut highlights = Vec::new();
+    let mut last = usize::MAX;
+    let mut index = 0;
+    for context in remark_too_long {
+        if let Context::Line {
+            linenumber,
+            line,
+            offset,
+            length,
+        } = context
+        {
+            if last == usize::MAX || linenumber - 1 == last {
+                lines.push(line);
+                highlights.push((index, offset, length));
+                last = linenumber;
+                index += 1;
+            } else {
+                if !lines.is_empty() {
+                    contexts.push((
+                        None,
+                        Context::RangeHighlights {
+                            start_linenumber: last - index,
+                            lines,
+                            highlights,
+                        },
+                    ));
+                    index = 0;
+                }
+                lines = vec![line];
+                highlights = vec![(index, offset, length)];
+                last = linenumber;
+            }
+        }
+    }
+    if !lines.is_empty() {
+        contexts.push((
+            None,
+            Context::RangeHighlights {
+                start_linenumber: last - index,
+                lines,
+                highlights,
+            },
+        ));
+    }
+    // Generate the final error message
+    errors.push(PDBError::new(
+        ErrorLevel::LooseWarning,
+        "Remark too long",
+        "The above REMARK definitions are too long, the max is 80 characters.",
+        Context::Multiple { contexts },
+    ));
 }
 
 /// Adds all MODRES records to the Atoms

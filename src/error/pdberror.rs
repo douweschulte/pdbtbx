@@ -54,6 +54,11 @@ impl PDBError {
     pub fn short_description(&self) -> &str {
         &self.short_description
     }
+
+    /// Gives the context for this error
+    pub fn context(&self) -> &Context {
+        &self.context
+    }
 }
 
 impl fmt::Debug for PDBError {
