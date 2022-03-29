@@ -100,7 +100,7 @@ mod tests {
     fn create_empty_error() {
         let a = PDBError::new(ErrorLevel::GeneralWarning, "test", "test", Context::none());
         println!("{}", a);
-        assert_eq!(format!("{}", a), "GeneralWarning: test\n\ntest\n");
+        assert_eq!(format!("{}", a), "GeneralWarning: test\ntest\n");
         assert_eq!(a.level(), ErrorLevel::GeneralWarning);
         assert!(!a.fails(StrictnessLevel::Loose));
     }
@@ -116,7 +116,7 @@ mod tests {
         println!("{}", a);
         assert_eq!(
             format!("{}", a),
-            "StrictWarning: test\n\n     |\n1    | testing line\n     |\n\ntest\n"
+            "StrictWarning: test\n  ╷\n1 │ testing line\n  ╵\ntest\n"
         );
         assert_eq!(a.level(), ErrorLevel::StrictWarning);
         assert!(a.fails(StrictnessLevel::Strict));
@@ -141,7 +141,7 @@ mod tests {
             Context::range(&pos1, &pos2),
         );
         println!("{}", a);
-        assert_eq!(format!("{}", a), "LooseWarning: test\n\n     |\n1    | hello world\n2    | this is a multiline\n3    | piece of teXt\n     |\ntest error\n");
+        assert_eq!(format!("{}", a), "LooseWarning: test\n  ╷\n1 │ hello world\n2 │ this is a multiline\n3 │ piece of teXt\n  ╵\ntest error\n");
         assert_eq!(a.level(), ErrorLevel::LooseWarning);
         assert!(a.fails(StrictnessLevel::Strict));
         assert_eq!(pos2.text, "");
