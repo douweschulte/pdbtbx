@@ -106,7 +106,7 @@ pub struct SequenceDifference {
 impl SequenceDifference {
     /// Create a new DatabaseReference
     #[must_use]
-    pub fn new(
+    pub const fn new(
         residue: (String, isize, Option<String>),
         database_residue: Option<(String, isize)>,
         comment: String,

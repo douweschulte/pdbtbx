@@ -12,7 +12,7 @@ pub struct BuildUpMatrix {
 
 impl BuildUpMatrix {
     /// Create an empty struct
-    pub fn empty() -> Self {
+    pub const fn empty() -> Self {
         BuildUpMatrix {
             row0: None,
             row1: None,
@@ -20,7 +20,7 @@ impl BuildUpMatrix {
         }
     }
     /// Consume this struct and get the transformation matrix, if any row is not defined it returns None
-    pub fn get_matrix(&self) -> Option<TransformationMatrix> {
+    pub const fn get_matrix(&self) -> Option<TransformationMatrix> {
         match self {
             BuildUpMatrix {
                 row0: Some(r1),
@@ -31,7 +31,7 @@ impl BuildUpMatrix {
         }
     }
     /// Determine if all rows are set
-    pub fn is_set(&self) -> bool {
+    pub const fn is_set(&self) -> bool {
         matches!(
             self,
             BuildUpMatrix {
@@ -42,7 +42,7 @@ impl BuildUpMatrix {
         )
     }
     /// Determine if at least one row is set
-    pub fn is_partly_set(&self) -> bool {
+    pub const fn is_partly_set(&self) -> bool {
         self.row0.is_some() || self.row1.is_some() || self.row2.is_some()
     }
     /// Set a specified row

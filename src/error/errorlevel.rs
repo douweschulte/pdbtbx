@@ -22,7 +22,7 @@ pub enum ErrorLevel {
 impl ErrorLevel {
     /// Get the descriptor for this ErrorLevel (Error/Warning). This can be used to display to users to indicate
     /// the severity of the error.
-    pub fn descriptor(&self) -> &str {
+    pub const fn descriptor(&self) -> &str {
         match self {
             ErrorLevel::BreakingError => "BreakingError",
             ErrorLevel::InvalidatingError => "InvalidatingError",
@@ -33,7 +33,7 @@ impl ErrorLevel {
     }
 
     /// Tests if this errors is breaking with the given strictness level
-    pub fn fails(&self, level: StrictnessLevel) -> bool {
+    pub const fn fails(&self, level: StrictnessLevel) -> bool {
         match level {
             StrictnessLevel::Strict => true,
             StrictnessLevel::Medium => !matches!(self, ErrorLevel::GeneralWarning),

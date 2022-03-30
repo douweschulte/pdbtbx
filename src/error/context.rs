@@ -63,7 +63,7 @@ pub enum Context {
 
 impl Context {
     /// Creates a new context when no context can be given
-    pub fn none() -> Context {
+    pub const fn none() -> Context {
         Context::None
     }
 

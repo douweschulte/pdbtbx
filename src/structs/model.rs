@@ -23,7 +23,7 @@ impl<'a> Model {
     /// ## Arguments
     /// * `serial_number` - the serial number
     #[must_use]
-    pub fn new(serial_number: usize) -> Model {
+    pub const fn new(serial_number: usize) -> Model {
         Model {
             serial_number,
             chains: Vec::new(),
@@ -42,7 +42,7 @@ impl<'a> Model {
     }
 
     /// Get the serial number of this Model.
-    pub fn serial_number(&self) -> usize {
+    pub const fn serial_number(&self) -> usize {
         self.serial_number
     }
 

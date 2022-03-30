@@ -181,6 +181,7 @@ println!("There are {} backbone atoms within 3.5Aͦ of the atom at index 42", to
     clippy::unwrap_used,
     clippy::use_debug
 )]
+//#![warn(clippy::missing_const_for_fn)]
 //#![warn(clippy::pedantic)] // Activate if in for a nice evening of clippy love 💖
 #![allow(clippy::upper_case_acronyms)] // Allow PDB (and derived) names to be used
 #![cfg_attr(feature = "unstable-doc-cfg", feature(doc_cfg))]

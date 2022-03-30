@@ -57,7 +57,7 @@ pub enum Term {
 }
 
 impl Term {
-    fn optional_matches_model(&self, model: &Model) -> Option<bool> {
+    const fn optional_matches_model(&self, model: &Model) -> Option<bool> {
         match self {
             Term::ModelSerialNumber(s) => Some(*s == model.serial_number()),
             Term::ModelSerialNumberRange(low, high) => {
@@ -183,7 +183,7 @@ impl Search {
 
     /// Check if the search is done.
     #[must_use]
-    pub fn complete(&self) -> Option<bool> {
+    pub const fn complete(&self) -> Option<bool> {
         match self {
             Search::Known(a) => Some(*a),
             _ => None,

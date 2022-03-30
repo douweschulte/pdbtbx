@@ -84,12 +84,12 @@ impl Atom {
     }
 
     /// Get a unique immutable counter for this atom.
-    pub(crate) fn counter(&self) -> usize {
+    pub(crate) const fn counter(&self) -> usize {
         self.counter
     }
 
     /// Determine if this atom is an hetero atom (`true`), a non standard atom, or a normal atom (`false`).
-    pub fn hetero(&self) -> bool {
+    pub const fn hetero(&self) -> bool {
         self.hetero
     }
 
@@ -100,7 +100,7 @@ impl Atom {
 
     /// Get the position of the atom as a tuple of `f64`, in the following order: (x, y, z).
     /// Given in Å as defined by PDB in the orthogonal coordinate system.
-    pub fn pos(&self) -> (f64, f64, f64) {
+    pub const fn pos(&self) -> (f64, f64, f64) {
         (self.x, self.y, self.z)
     }
 
@@ -124,7 +124,7 @@ impl Atom {
     /// Get the X position of the atom.
     /// Given in Å as defined by PDB in the orthogonal coordinate system.
     /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn x(&self) -> f64 {
+    pub const fn x(&self) -> f64 {
         self.x
     }
 
@@ -146,7 +146,7 @@ impl Atom {
     /// Get the Y position of the atom.
     /// Given in Å as defined by PDB in the orthogonal coordinate system.
     /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn y(&self) -> f64 {
+    pub const fn y(&self) -> f64 {
         self.y
     }
 
@@ -168,7 +168,7 @@ impl Atom {
     /// Get the Z position of the atom.
     /// Given in Å as defined by PDB in the orthogonal coordinate system.
     /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn z(&self) -> f64 {
+    pub const fn z(&self) -> f64 {
         self.z
     }
 
@@ -194,7 +194,7 @@ impl Atom {
     /// continue counting up even if the file from which the atoms were read does not.
     /// Importantly, this will not affect the saving of the file, only the internal handling of
     /// atom serial numbers.
-    pub fn serial_number(&self) -> usize {
+    pub const fn serial_number(&self) -> usize {
         self.serial_number
     }
 
@@ -229,7 +229,7 @@ impl Atom {
 
     /// Get the occupancy or Q factor of the atom. This indicates the fraction of unit cells in which this atom is present, in the normal case this will be one (1) and it can range between 1 and 0 (inclusive).
     /// This number has a precision of 6.2 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn occupancy(&self) -> f64 {
+    pub const fn occupancy(&self) -> f64 {
         self.occupancy
     }
 
@@ -259,7 +259,7 @@ impl Atom {
     /// This indicates the uncertainty in the position of the atom as seen over all unit cells in the whole crystal.
     /// A low uncertainty is modelled with a low B factor, with zero uncertainty being equal to a B factor of 0. A higher uncertainty is modelled by a high B factor.
     /// This number has a precision of 6.2 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn b_factor(&self) -> f64 {
+    pub const fn b_factor(&self) -> f64 {
         self.b_factor
     }
 
@@ -373,7 +373,7 @@ impl Atom {
 
     /// Get the charge of this atom.
     /// In PDB files the charge is one digit with a sign.
-    pub fn charge(&self) -> isize {
+    pub const fn charge(&self) -> isize {
         self.charge
     }
 
@@ -403,7 +403,7 @@ impl Atom {
 
     /// Get the anisotropic temperature factors, if available.
     /// This number has a precision of 8.3 in PDB files and 5 decimal places of precision in mmCIF files.
-    pub fn anisotropic_temperature_factors(&self) -> Option<[[f64; 3]; 3]> {
+    pub const fn anisotropic_temperature_factors(&self) -> Option<[[f64; 3]; 3]> {
         self.atf
     }
 

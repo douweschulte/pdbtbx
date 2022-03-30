@@ -1,7 +1,7 @@
 /// Checks if a char is allowed in a PDB file.
 /// The char has to be ASCII graphic or a space.
 /// Returns `true` if the char is valid.
-pub fn check_char(c: char) -> bool {
+pub const fn check_char(c: char) -> bool {
     (c as u32) < 127 && c as u32 > 31
 }
 

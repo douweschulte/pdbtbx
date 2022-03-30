@@ -64,7 +64,7 @@ impl<'a> Chain {
     }
 
     /// Get the database reference, if any, for this chain.
-    pub fn database_reference(&self) -> Option<&DatabaseReference> {
+    pub const fn database_reference(&self) -> Option<&DatabaseReference> {
         self.database_reference.as_ref()
     }
 

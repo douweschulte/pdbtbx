@@ -41,7 +41,7 @@ impl PDBError {
     }
 
     /// The level of the error
-    pub fn level(&self) -> ErrorLevel {
+    pub const fn level(&self) -> ErrorLevel {
         self.level
     }
 
@@ -56,7 +56,7 @@ impl PDBError {
     }
 
     /// Gives the context for this error
-    pub fn context(&self) -> &Context {
+    pub const fn context(&self) -> &Context {
         &self.context
     }
 }

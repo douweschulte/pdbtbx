@@ -530,7 +530,7 @@ fn trim_whitespace(input: &mut Position<'_>) {
 }
 
 /// Test if the character is an ordinary character, one which can start a line in a multiline string
-fn is_ordinary(c: char) -> bool {
+const fn is_ordinary(c: char) -> bool {
     match c {
         '#' | '$' | '\'' | '\"' | '_' | '[' | ']' | ';' | ' ' | '\t' => false,
         _ => c.is_ascii_graphic(),

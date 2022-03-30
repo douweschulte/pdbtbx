@@ -57,7 +57,7 @@ pub struct PDB {
 /// Creator functions for a PDB file
 impl PDB {
     /// Create an empty PDB struct.
-    pub fn new() -> PDB {
+    pub const fn new() -> PDB {
         PDB {
             identifier: None,
             remarks: Vec::new(),

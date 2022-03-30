@@ -55,7 +55,7 @@ impl<'a> Residue {
     }
 
     /// Get the serial number of the Residue.
-    pub fn serial_number(&self) -> isize {
+    pub const fn serial_number(&self) -> isize {
         self.serial_number
     }
 

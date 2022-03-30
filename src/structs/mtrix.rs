@@ -17,7 +17,7 @@ pub struct MtriX {
 impl MtriX {
     /// Create a new MtriX with the given arguments
     #[must_use]
-    pub fn new(
+    pub const fn new(
         serial_number: usize,
         transformation: TransformationMatrix,
         contained: bool,

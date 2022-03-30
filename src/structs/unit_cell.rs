@@ -27,7 +27,7 @@ impl UnitCell {
     /// * `alpha` - alpha angle in degrees
     /// * `beta` - beta angle in degrees
     /// * `gamma` - gamma angle in degrees
-    pub fn new(a: f64, b: f64, c: f64, alpha: f64, beta: f64, gamma: f64) -> UnitCell {
+    pub const fn new(a: f64, b: f64, c: f64, alpha: f64, beta: f64, gamma: f64) -> UnitCell {
         UnitCell {
             a,
             b,
@@ -38,15 +38,15 @@ impl UnitCell {
         }
     }
     /// Get the a-axis dimension
-    pub fn a(&self) -> f64 {
+    pub const fn a(&self) -> f64 {
         self.a
     }
     /// Get the b-axis dimension
-    pub fn b(&self) -> f64 {
+    pub const fn b(&self) -> f64 {
         self.b
     }
     /// Get the c-axis dimension
-    pub fn c(&self) -> f64 {
+    pub const fn c(&self) -> f64 {
         self.c
     }
     /// Set the a-axis dimension
@@ -83,7 +83,7 @@ impl UnitCell {
         self.c = new_c;
     }
     /// Get the alpha angle in degrees
-    pub fn alpha(&self) -> f64 {
+    pub const fn alpha(&self) -> f64 {
         self.alpha
     }
     /// Set the alpha angle in degrees
@@ -104,7 +104,7 @@ impl UnitCell {
         self.alpha = new_alpha;
     }
     /// Get the beta angle in degrees
-    pub fn beta(&self) -> f64 {
+    pub const fn beta(&self) -> f64 {
         self.beta
     }
     /// Set the beta angle in degrees
@@ -125,7 +125,7 @@ impl UnitCell {
         self.beta = new_beta;
     }
     /// Get the gamma angle in degrees
-    pub fn gamma(&self) -> f64 {
+    pub const fn gamma(&self) -> f64 {
         self.gamma
     }
     /// Set the gamma angle in degrees
@@ -146,7 +146,7 @@ impl UnitCell {
         self.gamma = new_gamma;
     }
     /// Get the dimensions in a tuple (a, b, c)
-    pub fn size(&self) -> (f64, f64, f64) {
+    pub const fn size(&self) -> (f64, f64, f64) {
         (self.a, self.b, self.c)
     }
 }

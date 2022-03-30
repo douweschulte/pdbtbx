@@ -101,7 +101,7 @@ impl Conformer {
     }
 
     /// Get the modification of this Conformer e.g., chemical or post-translational. These is saved in the MODRES records in the PDB file.
-    pub fn modification(&self) -> Option<&(String, String)> {
+    pub const fn modification(&self) -> Option<&(String, String)> {
         self.modification.as_ref()
     }
 
