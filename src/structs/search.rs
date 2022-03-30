@@ -16,7 +16,7 @@ pub enum Term {
     ModelSerialNumberRange(usize, usize),
     /// The chain id eg `A`, see [Chain::id].
     ChainId(String),
-    /// Search for a range of chain ids, using the Ord implementation of std::str [https://doc.rust-lang.org/std/primitive.str.html#impl-Ord], starting at the first number and ending with the last number inclusive.
+    /// Search for a range of chain ids, using the Ord implementation of std::str <https://doc.rust-lang.org/std/primitive.str.html#impl-Ord>, starting at the first number and ending with the last number inclusive.
     ChainIdRange(String, String),
     /// The residue serial number, see [Residue::serial_number].
     ResidueSerialNumber(isize),
