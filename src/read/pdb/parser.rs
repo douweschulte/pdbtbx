@@ -14,6 +14,10 @@ use std::io::{BufRead, BufReader};
 
 /// Parse the given file into a PDB struct.
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+///
+/// # Related
+/// If you want to open a file from memory see [`open_pdb_raw`]. There is also a function to open a mmCIF file directly
+/// see [`crate::open_mmcif`]. If you want to open a general file with no knowledge about the file type see [`crate::open`].
 pub fn open_pdb(
     filename: &str,
     level: StrictnessLevel,
@@ -30,12 +34,16 @@ pub fn open_pdb(
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
-/// It sorts the parsed PDB (see [PDB::full_sort]) for validation of the models.
 ///
 /// ## Arguments
 /// * `input` - the input stream
 /// * `context` - the context of the full stream, to place error messages correctly, for files this is `Context::show(filename)`.
 /// * `level` - the strictness level to operate in. If errors are generated which are breaking in the given level the parsing will fail.
+///
+/// # Related
+/// If you want to open a file see [`open_pdb`]. There is also a function to open a mmCIF file directly
+/// see [`crate::open_mmcif`] and [`crate::open_mmcif_raw`]. If you want to open a general file
+/// with no knowledge about the file type see [`crate::open`] and [`crate::open_raw`].
 pub fn open_pdb_raw<T>(
     input: std::io::BufReader<T>,
     context: Context,

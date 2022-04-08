@@ -8,6 +8,10 @@ use std::io::prelude::*;
 
 /// Parse the given mmCIF file into a PDB struct.
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+///
+/// # Related
+/// If you want to open a file from memory see [`open_mmcif_raw`]. There is also a function to open a PDB file directly
+/// see [`crate::open_pdb`]. If you want to open a general file with no knowledge about the file type see [`crate::open`].
 pub fn open_mmcif(
     filename: &str,
     level: StrictnessLevel,
@@ -26,7 +30,21 @@ pub fn open_mmcif(
             Context::show(filename),
         )]);
     }
-    match super::lexer::lex_cif(&contents) {
+    open_mmcif_raw(&contents, level)
+}
+
+/// Parse the given mmCIF `&str` into a PDB struct. This allows opening mmCIF files directly from memory.
+/// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+///
+/// # Related
+/// If you want to open a file see [`open_mmcif`]. There is also a function to open a PDB file directly
+/// see [`crate::open_pdb`] and [`crate::open_pdb_raw`]. If you want to open a general file
+/// with no knowledge about the file type see [`crate::open`] and [`crate::open_raw`].
+pub fn open_mmcif_raw(
+    input: &str,
+    level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    match super::lexer::lex_cif(input) {
         Ok(data_block) => parse_mmcif(&data_block, level),
         Err(e) => Err(vec![e]),
     }
