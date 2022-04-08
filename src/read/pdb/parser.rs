@@ -153,7 +153,7 @@ where
                         chain
                     } else {
                         current_model.insert(chain_id.clone(), IndexMap::new());
-                        current_model.get_mut(&chain_id).unwrap()
+                        current_model.get_mut(&chain_id).expect("Element that was just inserted into this IndexMap was not found in this IndexMap.")
                     };
 
                     if let Some(residue) = current_chain.get_mut(&(
