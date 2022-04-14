@@ -11,6 +11,8 @@ use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use wasm_bindgen::prelude::*;
+use stringreader::StringReader;
 
 /// Parse the given file into a PDB struct.
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
@@ -31,6 +33,21 @@ pub fn open_pdb(
     let reader = BufReader::new(file);
     open_pdb_raw(reader, Context::show(filename), level)
 }
+
+//// Parse the given string into a PDB struct.
+/// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+#[wasm_bindgen(catch)]
+pub fn parse_pdb_str(
+    input: &str,
+    level: StrictnessLevel,)
+ -> Result<PDB, JsError>
+{
+    let streader = StringReader::new(input);
+    let bufreader = BufReader::new(streader);
+    let (pdb, _errors) = open_pdb_raw(bufreader, Context::None, level).unwrap();
+    Ok(pdb)
+}
+
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.

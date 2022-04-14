@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 
+use wasm_bindgen::prelude::wasm_bindgen;
+
 /// A 3D affine transformation matrix
+#[wasm_bindgen]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct TransformationMatrix {

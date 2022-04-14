@@ -3,7 +3,9 @@ use super::unit_cell::UnitCell;
 use crate::reference_tables;
 use crate::transformation::TransformationMatrix;
 use std::cmp::Ordering;
+use wasm_bindgen::prelude::wasm_bindgen;
 
+#[wasm_bindgen]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 /// A Space group of a crystal

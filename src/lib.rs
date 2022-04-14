@@ -135,7 +135,7 @@ for atom in tree.locate_within_distance(pdb.atom(42).unwrap().pos(), 3.5 * 3.5) 
     println!("{}", atom);
 }
 
-// You can even get information about the hierarchy of these atoms 
+// You can even get information about the hierarchy of these atoms
 // (the chain, residue and conformer that contain this atom)
 let tree = pdb.create_hierarchy_rtree();
 let mut total = 0;
@@ -218,3 +218,9 @@ fn check_extension(filename: &str, extension: &str) -> bool {
         .map(|ext| ext.eq_ignore_ascii_case(extension))
         == Some(true)
 }
+
+// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
+// allocator.
+#[cfg(feature = "wee_alloc")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;

@@ -4,8 +4,11 @@ use crate::StrictnessLevel;
 use std::cmp::Ordering;
 use std::error;
 use std::fmt;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 /// An error surfacing while handling a PDB
+
+#[wasm_bindgen]
 #[derive(PartialEq, Clone, Eq)]
 pub struct PDBError {
     /// The level of the error, defining how it should be handled

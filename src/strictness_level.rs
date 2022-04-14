@@ -1,6 +1,9 @@
 #[cfg(doc)]
 use crate::ErrorLevel;
 
+use wasm_bindgen::prelude::wasm_bindgen;
+
+#[wasm_bindgen]
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 /// The strictness to operate in, this defines at which [`ErrorLevel`] the program should stop execution upon finding an error.
 pub enum StrictnessLevel {
