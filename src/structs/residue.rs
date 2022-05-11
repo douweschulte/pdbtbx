@@ -71,7 +71,7 @@ impl<'a> Residue {
 
     /// Set the insertion code of the Residue.
     /// Fails and returns false if the `new_code` contains invalid characters
-    pub fn set_insertion_code(&mut self, new_code: &str) -> bool {
+    pub fn set_insertion_code(&mut self, new_code: impl AsRef<str>) -> bool {
         if let Some(c) = prepare_identifier(new_code) {
             self.insertion_code = Some(c);
             true
@@ -350,8 +350,9 @@ impl<'a> Residue {
     ///
     /// ## Panics
     /// It panics if the Residue name contains any invalid characters.
-    pub fn add_atom(&mut self, new_atom: Atom, conformer_id: (&str, Option<&str>)) {
+    pub fn add_atom(&mut self, new_atom: Atom, conformer_id: (impl AsRef<str>, Option<&str>)) {
         let mut found = false;
+        let conformer_id = (conformer_id.0.as_ref(), conformer_id.1);
         let mut new_conformer = Conformer::new(conformer_id.0, conformer_id.1, None)
             .expect("Invalid chars in Residue creation");
         let mut current_conformer = &mut new_conformer;

@@ -28,14 +28,14 @@ impl PDBError {
     /// * `context` - The context, in the most general sense this produces output which leads the user to the right place in the code or file
     pub fn new(
         level: ErrorLevel,
-        short_desc: &str,
-        long_descr: &str,
+        short_desc: impl std::string::ToString,
+        long_descr: impl std::string::ToString,
         context: Context,
     ) -> PDBError {
         PDBError {
             level,
-            short_description: short_desc.to_owned(),
-            long_description: long_descr.to_owned(),
+            short_description: short_desc.to_string(),
+            long_description: long_descr.to_string(),
             context,
         }
     }

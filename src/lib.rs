@@ -211,10 +211,11 @@ pub use transformation::*;
 pub use validate::{validate, validate_pdb};
 
 /// Helper function to check extensions in filenames
-fn check_extension(filename: &str, extension: &str) -> bool {
+fn check_extension(filename: impl AsRef<str>, extension: impl AsRef<str>) -> bool {
     filename
+        .as_ref()
         .rsplit('.')
         .next()
-        .map(|ext| ext.eq_ignore_ascii_case(extension))
+        .map(|ext| ext.eq_ignore_ascii_case(extension.as_ref()))
         == Some(true)
 }

@@ -33,8 +33,12 @@ impl Conformer {
     /// ## Fails
     /// It fails and returns `None` if any of the characters making up the name are invalid.
     #[must_use]
-    pub fn new(name: &str, alt_loc: Option<&str>, atom: Option<Atom>) -> Option<Conformer> {
-        if let Some(n) = prepare_identifier(name) {
+    pub fn new(
+        name: impl AsRef<str>,
+        alt_loc: Option<&str>,
+        atom: Option<Atom>,
+    ) -> Option<Conformer> {
+        prepare_identifier(name).map(|n| {
             let mut res = Conformer {
                 name: n,
                 alternative_location: None,
@@ -47,10 +51,8 @@ impl Conformer {
             if let Some(a) = atom {
                 res.atoms.push(a);
             }
-            Some(res)
-        } else {
-            None
-        }
+            res
+        })
     }
 
     /// Get the name of the Conformer
@@ -62,13 +64,10 @@ impl Conformer {
     ///
     /// ## Fails
     /// It fails if any of the characters of the new name are invalid.
-    pub fn set_name(&mut self, new_name: &str) -> bool {
-        if let Some(n) = prepare_identifier(new_name) {
-            self.name = n;
-            true
-        } else {
-            false
-        }
+    pub fn set_name(&mut self, new_name: impl AsRef<str>) -> bool {
+        prepare_identifier(new_name)
+            .map(|n| self.name = n)
+            .is_some()
     }
 
     /// Get the alternative location of the Conformer, if present.
@@ -301,7 +300,8 @@ impl Conformer {
     ///
     /// ## Panics
     /// Panics if the index is out of bounds.
-    pub fn remove_atom_by_name(&mut self, name: &str) -> bool {
+    pub fn remove_atom_by_name(&mut self, name: impl AsRef<str>) -> bool {
+        let name = name.as_ref();
         let index = self.atoms().position(|a| a.name() == name);
 
         if let Some(i) = index {
@@ -321,7 +321,8 @@ impl Conformer {
     /// ## Panics
     /// Panics if the index is out of bounds.
     #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_atom_by_name(&mut self, name: &str) -> bool {
+    pub fn par_remove_atom_by_name(&mut self, name: impl AsRef<str>) -> bool {
+        let name = name.as_ref();
         let index = self.atoms.par_iter().position_first(|a| a.name() == name);
 
         if let Some(i) = index {

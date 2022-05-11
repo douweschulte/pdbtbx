@@ -19,7 +19,12 @@ use std::iter;
 /// # Known Problems
 /// Saving SEQRES lines is experimental, as there are many nitpicky things to consider
 /// when generating SEQRES records, which are not all implemented (yet).
-pub fn save_pdb(pdb: &PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
+pub fn save_pdb(
+    pdb: &PDB,
+    filename: impl AsRef<str>,
+    level: StrictnessLevel,
+) -> Result<(), Vec<PDBError>> {
+    let filename = filename.as_ref();
     let mut errors = validate(pdb);
     errors.extend(validate_pdb(pdb));
     for error in &errors {

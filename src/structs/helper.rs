@@ -7,8 +7,8 @@ pub const fn check_char(c: char) -> bool {
 
 /// Checks a string using `check_char`.
 /// Returns `true` if the text is valid.
-pub fn valid_text(text: &str) -> bool {
-    for c in text.chars() {
+pub fn valid_text(text: impl AsRef<str>) -> bool {
+    for c in text.as_ref().chars() {
         if !check_char(c) {
             return false;
         }
@@ -18,8 +18,8 @@ pub fn valid_text(text: &str) -> bool {
 
 /// Checks a string using `check_char`.
 /// Returns `true` if the text is valid.
-pub fn valid_identifier(text: &str) -> bool {
-    for c in text.chars() {
+pub fn valid_identifier(text: impl AsRef<str>) -> bool {
+    for c in text.as_ref().chars() {
         if !check_char(c) {
             return false;
         }
@@ -27,7 +27,8 @@ pub fn valid_identifier(text: &str) -> bool {
     true
 }
 
-pub fn prepare_identifier(text: &str) -> Option<String> {
+pub fn prepare_identifier(text: impl AsRef<str>) -> Option<String> {
+    let text = text.as_ref();
     if valid_identifier(text) && !text.trim().is_empty() {
         Some(text.trim().to_ascii_uppercase())
     } else {

@@ -5,7 +5,8 @@ use rayon::prelude::*;
 /// Gets the index (into Int. Crys. Handbook Vol A 2016) for the given symbol. First it is
 /// interpreted as a Herman Mauguin symbol, if that is unsuccessful it is interpreted as a
 /// Hall symbol.
-pub fn get_index_for_symbol(symbol: &str) -> Option<usize> {
+pub fn get_index_for_symbol(symbol: impl AsRef<str>) -> Option<usize> {
+    let symbol = symbol.as_ref();
     if let Some(index) = HERMANN_MAUGUIN_SYMBOL.iter().position(|i| *i == symbol) {
         Some(index + 1)
     } else {
@@ -17,7 +18,8 @@ pub fn get_index_for_symbol(symbol: &str) -> Option<usize> {
 /// interpreted as a Herman Mauguin symbol, if that is unsuccessful it is interpreted as a
 /// Hall symbol.
 #[cfg(feature = "rayon")]
-pub fn par_get_index_for_symbol(symbol: &str) -> Option<usize> {
+pub fn par_get_index_for_symbol(symbol: impl AsRef<str>) -> Option<usize> {
+    let symbol = symbol.as_ref();
     if let Some(index) = HERMANN_MAUGUIN_SYMBOL
         .par_iter()
         .position_any(|i| *i == symbol)
@@ -47,9 +49,9 @@ pub fn get_transformation(index: usize) -> Option<&'static [[[f64; 4]; 3]]> {
 }
 
 /// Gets the atomic number for the given element. It is case insensitive for the element name.
-pub fn get_atomic_number(element: &str) -> Option<usize> {
+pub fn get_atomic_number(element: impl AsRef<str>) -> Option<usize> {
     let mut counter = 1;
-    let element = element.to_ascii_uppercase();
+    let element = element.as_ref().to_ascii_uppercase();
     for item in ELEMENT_SYMBOLS {
         if item == &element {
             return Some(counter);
@@ -86,7 +88,8 @@ pub fn get_covalent_bond_radii(atomic_number: usize) -> (f64, Option<f64>, Optio
 }
 
 /// Gets the amino acid number into the table, effectively providing the recognition of it being an amino acid or not
-pub fn get_amino_acid_number(aa: &str) -> Option<usize> {
+pub fn get_amino_acid_number(aa: impl AsRef<str>) -> Option<usize> {
+    let aa = aa.as_ref();
     let mut counter = 1;
     for item in AMINO_ACIDS {
         if *item == aa {
@@ -98,8 +101,8 @@ pub fn get_amino_acid_number(aa: &str) -> Option<usize> {
 }
 
 /// Returns if the given atom name is a name for an atom in the backbone of a protein
-pub fn is_backbone(name: &str) -> bool {
-    BACKBONE_NAMES.contains(&name)
+pub fn is_backbone(name: impl AsRef<str>) -> bool {
+    BACKBONE_NAMES.contains(&name.as_ref())
 }
 
 /// Returns if the given number is a valid remark-type-number (according to wwPDB v 3.30)

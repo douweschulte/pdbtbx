@@ -417,16 +417,16 @@ impl<'a> Model {
     pub fn add_atom(
         &mut self,
         new_atom: Atom,
-        chain_id: &str,
+        chain_id: impl AsRef<str>,
         residue_id: (isize, Option<&str>),
-        conformer_id: (&str, Option<&str>),
+        conformer_id: (impl AsRef<str>, Option<&str>),
     ) {
+        let chain_id = chain_id.as_ref().trim();
         let mut found = false;
-        let mut new_chain =
-            Chain::new(chain_id.trim()).expect("Invalid characters in chain creation");
+        let mut new_chain = Chain::new(chain_id).expect("Invalid characters in chain creation");
         let mut current_chain = &mut new_chain;
         for chain in &mut self.chains {
-            if chain.id() == chain_id.trim() {
+            if chain.id() == chain_id {
                 current_chain = chain;
                 found = true;
                 break;
@@ -505,7 +505,8 @@ impl<'a> Model {
     ///
     /// ## Arguments
     /// * `id` - the id of the Chain to remove
-    pub fn remove_chain_by_id(&mut self, id: &str) -> bool {
+    pub fn remove_chain_by_id(&mut self, id: impl AsRef<str>) -> bool {
+        let id = id.as_ref();
         let index = self.chains().position(|a| a.id() == id);
 
         if let Some(i) = index {
@@ -523,7 +524,8 @@ impl<'a> Model {
     /// ## Arguments
     /// * `id` - the id of the Chain to remove
     #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_chain_by_id(&mut self, id: &str) -> bool {
+    pub fn par_remove_chain_by_id(&mut self, id: impl AsRef<str>) -> bool {
+        let id = id.as_ref();
         let index = self.chains.par_iter().position_first(|a| a.id() == id);
 
         if let Some(i) = index {

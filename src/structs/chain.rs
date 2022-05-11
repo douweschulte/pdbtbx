@@ -27,7 +27,7 @@ impl<'a> Chain {
     /// ## Fails
     /// It returns `None` if the identifier is an invalid character.
     #[must_use]
-    pub fn new(id: &str) -> Option<Chain> {
+    pub fn new(id: impl AsRef<str>) -> Option<Chain> {
         prepare_identifier(id).map(|id| Chain {
             id,
             residues: Vec::new(),
@@ -39,7 +39,10 @@ impl<'a> Chain {
     ///
     /// ## Fails
     /// It returns `None` if the identifier is an invalid character.
-    pub fn from_iter(id: &str, residues: impl Iterator<Item = Residue>) -> Option<Chain> {
+    pub fn from_iter(
+        id: impl AsRef<str>,
+        residues: impl Iterator<Item = Residue>,
+    ) -> Option<Chain> {
         prepare_identifier(id).map(|id| Chain {
             id,
             residues: residues.collect(),
@@ -54,13 +57,8 @@ impl<'a> Chain {
 
     /// Set the ID of the Chain, returns `false` if the new id is an invalid character.
     /// The ID will be changed to uppercase as requested by PDB/PDBx standard.
-    pub fn set_id(&mut self, new_id: &str) -> bool {
-        if valid_identifier(new_id) {
-            self.id = new_id.trim().to_ascii_uppercase();
-            true
-        } else {
-            false
-        }
+    pub fn set_id(&mut self, new_id: impl AsRef<str>) -> bool {
+        prepare_identifier(new_id).map(|id| self.id = id).is_some()
     }
 
     /// Get the database reference, if any, for this chain.
@@ -390,7 +388,7 @@ impl<'a> Chain {
         &mut self,
         new_atom: Atom,
         residue_id: (isize, Option<&str>),
-        conformer_id: (&str, Option<&str>),
+        conformer_id: (impl AsRef<str>, Option<&str>),
     ) {
         let mut found = false;
         let mut new_residue = Residue::new(residue_id.0, residue_id.1, None)

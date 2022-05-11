@@ -19,9 +19,10 @@ use std::io::{BufRead, BufReader};
 /// If you want to open a file from memory see [`open_pdb_raw`]. There is also a function to open a mmCIF file directly
 /// see [`crate::open_mmcif`]. If you want to open a general file with no knowledge about the file type see [`crate::open`].
 pub fn open_pdb(
-    filename: &str,
+    filename: impl AsRef<str>,
     level: StrictnessLevel,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    let filename = filename.as_ref();
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
     let file = if let Ok(f) = File::open(filename) {
         f

@@ -14,8 +14,9 @@ pub struct Symmetry {
 
 impl Symmetry {
     /// Create a new Symmetry based on a fully qualified Herman Mauguin or Hall symbol
-    pub fn new(symbol: &str) -> Option<Self> {
-        reference_tables::get_index_for_symbol(symbol.trim()).map(|index| Symmetry { index })
+    pub fn new(symbol: impl AsRef<str>) -> Option<Self> {
+        reference_tables::get_index_for_symbol(symbol.as_ref().trim())
+            .map(|index| Symmetry { index })
     }
 
     /// Create a new Symmetry based on the index of a symbol in Int. Crys. Handbook Vol A 2016

@@ -11,7 +11,12 @@ use std::io::BufWriter;
 /// # Errors
 /// It validates the PDB. It fails if the validation fails with the given `level`, or if the file could not be opened.
 /// If validation gives rise to problems, use the `save_raw` function.
-pub fn save_mmcif(pdb: &PDB, filename: &str, level: StrictnessLevel) -> Result<(), Vec<PDBError>> {
+pub fn save_mmcif(
+    pdb: &PDB,
+    filename: impl AsRef<str>,
+    level: StrictnessLevel,
+) -> Result<(), Vec<PDBError>> {
+    let filename = filename.as_ref();
     let mut errors = validate(pdb);
     for error in &errors {
         if error.fails(level) {

@@ -14,17 +14,20 @@ use crate::StrictnessLevel;
 /// # Related
 /// If you want to open a file from memory see [`open_raw`]. There are also function to open a specified file type directly
 /// see [`crate::open_pdb`] and [`crate::open_mmcif`] respectively.
-pub fn open(filename: &str, level: StrictnessLevel) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-    if check_extension(filename, "pdb") {
+pub fn open(
+    filename: impl AsRef<str>,
+    level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    if check_extension(&filename, "pdb") {
         open_pdb(filename, level)
-    } else if check_extension(filename, "cif") {
+    } else if check_extension(&filename, "cif") {
         open_mmcif(filename, level)
     } else {
         Err(vec![PDBError::new(
             ErrorLevel::BreakingError,
             "Incorrect extension",
             "Could not determine the type of the given file, make it .pdb or .cif",
-            Context::show(filename),
+            Context::show(filename.as_ref()),
         )])
     }
 }

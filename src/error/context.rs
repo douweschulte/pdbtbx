@@ -68,22 +68,27 @@ impl Context {
     }
 
     /// Creates a new context when only a line (eg filename) can be shown
-    pub fn show(line: &str) -> Context {
+    pub fn show(line: impl std::string::ToString) -> Context {
         Context::Show {
             line: line.to_string(),
         }
     }
 
     /// Creates a new context when a full line is faulty and no special position can be annotated
-    pub fn full_line(linenumber: usize, line: &str) -> Context {
+    pub fn full_line(linenumber: usize, line: impl std::string::ToString) -> Context {
         Context::FullLine {
             linenumber,
-            line: line.to_owned(),
+            line: line.to_string(),
         }
     }
 
     /// Creates a new context when a special position can be annotated on a line
-    pub fn line(linenumber: usize, line: &str, offset: usize, length: usize) -> Context {
+    pub fn line(
+        linenumber: usize,
+        line: impl std::string::ToString,
+        offset: usize,
+        length: usize,
+    ) -> Context {
         Context::Line {
             linenumber,
             line: line.to_string(),

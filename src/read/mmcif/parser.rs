@@ -13,9 +13,10 @@ use std::io::prelude::*;
 /// If you want to open a file from memory see [`open_mmcif_raw`]. There is also a function to open a PDB file directly
 /// see [`crate::open_pdb`]. If you want to open a general file with no knowledge about the file type see [`crate::open`].
 pub fn open_mmcif(
-    filename: &str,
+    filename: impl AsRef<str>,
     level: StrictnessLevel,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    let filename = filename.as_ref();
     let mut file = if let Ok(f) = File::open(filename) {
         f
     } else {
