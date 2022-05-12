@@ -173,72 +173,56 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                                 Context::None,
                             ));
                         }
-                        if atom.occupancy() != 0.0
-                            && (atom.occupancy() > 999.99 || atom.occupancy() < 0.01)
-                        {
+                        if atom.occupancy() > 999.99 {
                             errors.push(PDBError::new(
-                            ErrorLevel::LooseWarning,
-                            "Atom occupancy out of bounds",
-                            &format!(
-                                "Atom {} has a occupancy which is out of bounds, max is 999.99 min is 0.00.",
+                                ErrorLevel::LooseWarning,
+                                "Atom occupancy out of bounds",
+                                &format!(
+                                "Atom {} has a occupancy which is out of bounds, max is 999.99.",
                                 atom.serial_number()
                             ),
-                            Context::None,
-                        ));
+                                Context::None,
+                            ));
                         }
-                        if atom.b_factor() != 0.0
-                            && (atom.b_factor() > 999.99 || atom.b_factor() < 0.01)
-                        {
+                        if atom.b_factor() > 999.99 {
                             errors.push(PDBError::new(
-                            ErrorLevel::LooseWarning,
-                            "Atom b factor out of bounds",
-                            &format!(
-                                "Atom {} has a b factor which is out of bounds, max is 999.99 min is 0.00.",
-                                atom.serial_number()
-                            ),
-                            Context::None,
-                        ));
+                                ErrorLevel::LooseWarning,
+                                "Atom b factor out of bounds",
+                                &format!(
+                                    "Atom {} has a b factor which is out of bounds, max is 999.99.",
+                                    atom.serial_number()
+                                ),
+                                Context::None,
+                            ));
                         }
-                        if atom.x() != 0.0
-                            && (atom.x() > 9999.999
-                                || atom.x().abs() < 0.001
-                                || atom.x() < -999.999)
-                        {
+                        if atom.x() > 9999.999 || atom.x() < -999.999 {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom x position out of bounds",
                             &format!(
-                                "Atom {} has an x which is out of bounds, max is 9999.999 min is -999.999 and the smallest value is 0.001.",
+                                "Atom {} has an x which is out of bounds, max is 9999.999 min is -999.999.",
                                 atom.serial_number()
                             ),
                             Context::None,
                         ));
                         }
-                        if atom.y() != 0.0
-                            && (atom.y() > 9999.999
-                                || atom.y().abs() < 0.001
-                                || atom.y() < -999.999)
-                        {
+                        if atom.y() > 9999.999 || atom.y() < -999.999 {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom y position out of bounds",
                             &format!(
-                                "Atom {} has a y which is out of bounds, max is 9999.999 min is -999.999 and the smallest value is 0.001.",
+                                "Atom {} has a y which is out of bounds, max is 9999.999 min is -999.999.",
                                 atom.serial_number()
                             ),
                             Context::None,
                         ));
                         }
-                        if atom.z() != 0.0
-                            && (atom.z() > 9999.999
-                                || atom.z().abs() < 0.001
-                                || atom.z() < -999.999)
-                        {
+                        if atom.z() > 9999.999 || atom.z() < -999.999 {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom z position out of bounds",
                             &format!(
-                                "Atom {} has a z which is out of bounds, max is 9999.999 min is -999.999 and the smallest value is 0.001.",
+                                "Atom {} has a z which is out of bounds, max is 9999.999 min is -999.999.",
                                 atom.serial_number()
                             ),
                             Context::None,
