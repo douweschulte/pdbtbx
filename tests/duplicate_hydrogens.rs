@@ -9,7 +9,7 @@
 
 #[test]
 fn main() {
-    assert_eq!(22, number_of_h("example-pdbs\\nucleic.pdb"));
+    assert_eq!(22, number_of_h("example-pdbs/nucleic.pdb"));
 }
 
 fn number_of_h(file: &str) -> usize {
