@@ -1,6 +1,13 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/douweschulte/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.9.2
+* Added `open_mmcif_raw`
+* Fixed a bug in atom parsing (#92)
+* Removed below precision errors in validation
+* Changed many functions to accept `AsRef<str>` instead of `&str`
+* Marked all applicable functions as `const`
+
 ### v0.9.1
 * Added more search terms
 * Added angle and dihedral angle calculations on atoms (Thanks to DocKDE)

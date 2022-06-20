@@ -68,14 +68,12 @@ The features where support is planned are planned to be included in the 1.0 rele
 * The crate has many ways of iterating over the PDB structure to allow for convenient access and control over the performance.
 
 ## Latest update
-### v0.9.1
-* Added more search terms
-* Added angle and dihedral angle calculations on atoms (Thanks to DocKDE)
-* Added extra examples (Thanks to DocKDE)
-* Added support for DBREF1/2
-* Improved PDB parsing performance (Thanks to DocKDE)
-* Improved error message styling and merged common errors
-* Additional code and documentation improvements
+### v0.9.2
+* Added `open_mmcif_raw`
+* Fixed a bug in atom parsing (#92)
+* Removed below precision errors in validation
+* Changed many functions to accept `AsRef<str>` instead of `&str`
+* Marked all applicable functions as `const`
 
 Also see [changelog](https://github.com/douweschulte/pdbtbx/blob/master/changelog.md).
 
