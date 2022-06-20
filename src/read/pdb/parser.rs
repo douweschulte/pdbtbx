@@ -340,7 +340,7 @@ where
                     _num_connect,
                     _num_seq,
                 ) => {
-                    // THe last atoms need to be added to make the MASTER checksum work out
+                    // The last atoms need to be added to make the MASTER checksum work out
                     if !current_model.is_empty() {
                         pdb.add_model(Model::from_iter(
                             current_model_number,
