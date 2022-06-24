@@ -38,11 +38,7 @@
 //! avg_b_factor /= pdb.atom_count() as f64;
 //!
 //! println!("The average B factor of the protein is: {}", avg_b_factor);
-<<<<<<< HEAD
 //! pdbtbx::save(&pdb, "dump/1ubq_no_hydrogens.pdb", pdbtbx::StrictnessLevel::Loose);
-=======
-//! pdbtbx::save(pdb, "dump/1ubq_no_hydrogens.pdb", StrictnessLevel::Loose);
->>>>>>> dd35e8c (Fixed examples and changed Atom::set_element)
 //! ```
 //!
 //! ## PDB Hierarchy
