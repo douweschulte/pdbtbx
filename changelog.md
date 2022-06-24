@@ -1,6 +1,13 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/douweschulte/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.10.0 (upcoming) 'Enumerated Elements'
+* Moved from string based elements to enums see Element, this means that the `Atom::set_element`, `Atom::element`, and `Term::element` have changed
+* Deprecated the following functions `Atom::atom_number`, `Atom::atomic_radius`, `Atom::covalent_bond_radii`,
+ and `Atom::vanderwaals_radius` the radius functions are replaced with  `Element::atomic_radius` which contains
+ all these measures the struct `AtomicRadius`
+* Added `Element::weight` and `Element::electro_negativity` data
+
 ### v0.9.2
 * Added `open_mmcif_raw`
 * Fixed a bug in atom parsing (#92)
