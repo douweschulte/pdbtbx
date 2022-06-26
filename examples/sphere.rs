@@ -70,7 +70,7 @@ fn residue_sphere() {
 /// the results in a Vector holding a tuple of the Atoms (plus hierarchy) in question.
 /// This can be used to find any clashes or close contacts.
 /// Results for Atoms within the same Residue are excluded as well as those from the C and N Atoms
-/// constituting the peptide bond of neighbording amino acids.
+/// constituting the peptide bond of neighbouring amino acids.
 /// Also, Atoms are not counted twice.
 fn find_clashes() {
     let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
@@ -83,7 +83,7 @@ fn find_clashes() {
             .element()
             .unwrap()
             .atomic_radius()
-            .van_der_waals
+            .unbound
             .unwrap()
             .powi(2);
         let contacts = tree.locate_within_distance(atom_hier.atom().pos(), radius);
