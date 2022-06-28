@@ -396,7 +396,7 @@ impl Element {
 
     /// Get the atomic weight for the given element. Applicable for all normal materials.
     /// The mean value is given for the uncertainty surrounding the values for all elements.
-    /// Source: CIAAW. Atomic weights of the elements 2020. Available online at https://www.ciaaw.org/atomic-weights.htm.
+    /// Source: CIAAW. Atomic weights of the elements 2020. Available online at <https://www.ciaaw.org/atomic-weights.htm>.
     pub const fn weight(&self) -> Option<f64> {
         ELEMENT_WEIGHT[self.atomic_number() - 1]
     }
