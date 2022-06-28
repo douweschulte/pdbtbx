@@ -7,6 +7,8 @@ All versions are properly annotated on [github](https://github.com/douweschulte/
  and `Atom::vanderwaals_radius` the radius functions are replaced with  `Element::atomic_radius` which contains
  all these measures the struct `AtomicRadius`
 * Added `Element::weight` and `Element::electro_negativity` data
+* Implemented `Extend` for all levels in the PDB hierarchy
+* Implemented `FromIterator` for the `PDB` struct
 
 ### v0.9.2
 * Added `open_mmcif_raw`

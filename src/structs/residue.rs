@@ -471,11 +471,6 @@ impl<'a> Residue {
         self.conformers.extend(other.conformers);
     }
 
-    /// Extend the Conformers on this Residue by the given iterator.
-    pub fn extend<T: IntoIterator<Item = Conformer>>(&mut self, iter: T) {
-        self.conformers.extend(iter);
-    }
-
     /// Sort the Conformers of this Residue
     pub fn sort(&mut self) {
         self.conformers.sort();
@@ -509,6 +504,13 @@ impl PartialOrd for Residue {
 impl Ord for Residue {
     fn cmp(&self, other: &Self) -> Ordering {
         self.id().cmp(&other.id())
+    }
+}
+
+impl Extend<Conformer> for Residue {
+    /// Extend the Conformers on this Residue by the given iterator.
+    fn extend<T: IntoIterator<Item = Conformer>>(&mut self, iter: T) {
+        self.conformers.extend(iter);
     }
 }
 

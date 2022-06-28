@@ -226,7 +226,7 @@ impl Conformer {
 
     /// Returns whether this Conformer is an amino acid.
     pub fn is_amino_acid(&self) -> bool {
-        reference_tables::get_amino_acid_number(self.name()).is_some()
+        reference_tables::is_amino_acid(self.name())
     }
 
     /// Remove all Atoms matching the given predicate. As this is done in place this is the fastest way to remove Atoms from this Conformer.
@@ -354,11 +354,6 @@ impl Conformer {
         self.atoms.extend(other.atoms);
     }
 
-    /// Extend the Atoms on this Conformer by the given iterator over Atoms.
-    pub fn extend<T: IntoIterator<Item = Atom>>(&mut self, iter: T) {
-        self.atoms.extend(iter);
-    }
-
     /// Sort the Atoms of this Conformer.
     pub fn sort(&mut self) {
         self.atoms.sort();
@@ -391,6 +386,13 @@ impl PartialOrd for Conformer {
 impl Ord for Conformer {
     fn cmp(&self, other: &Self) -> Ordering {
         self.id().cmp(&other.id())
+    }
+}
+
+impl Extend<Atom> for Conformer {
+    /// Extend the Atoms on this Conformer by the given iterator over Atoms.
+    fn extend<T: IntoIterator<Item = Atom>>(&mut self, iter: T) {
+        self.atoms.extend(iter);
     }
 }
 

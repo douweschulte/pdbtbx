@@ -571,11 +571,6 @@ impl<'a> Model {
         self.chains.extend(other.chains);
     }
 
-    /// Extend the Chains on this Model by the given iterator of Chains.
-    pub fn extend<T: IntoIterator<Item = Chain>>(&mut self, iter: T) {
-        self.chains.extend(iter);
-    }
-
     /// Sort the Chains of this Model.
     pub fn sort(&mut self) {
         self.chains.sort();
@@ -609,6 +604,13 @@ impl PartialOrd for Model {
 impl Ord for Model {
     fn cmp(&self, other: &Self) -> Ordering {
         self.serial_number.cmp(&other.serial_number)
+    }
+}
+
+impl Extend<Chain> for Model {
+    /// Extend the Chains on this Model by the given iterator of Chains.
+    fn extend<T: IntoIterator<Item = Chain>>(&mut self, iter: T) {
+        self.chains.extend(iter);
     }
 }
 

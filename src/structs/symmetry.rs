@@ -21,11 +21,7 @@ impl Symmetry {
 
     /// Create a new Symmetry based on the index of a symbol in Int. Crys. Handbook Vol A 2016
     pub fn from_index(index: usize) -> Option<Self> {
-        if reference_tables::get_herman_mauguin_symbol_for_index(index).is_some() {
-            Some(Symmetry { index })
-        } else {
-            None
-        }
+        reference_tables::get_herman_mauguin_symbol_for_index(index).map(|_| Symmetry { index })
     }
 
     /// Get the fully qualified Herman Mauguin symbol for the space group

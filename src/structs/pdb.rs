@@ -809,11 +809,6 @@ impl<'a> PDB {
         }
     }
 
-    /// Extend the Models on this PDB by the given iterator of Models.
-    pub fn extend<T: IntoIterator<Item = Model>>(&mut self, iter: T) {
-        self.models.extend(iter);
-    }
-
     /// Sort the Models of this PDB.
     pub fn sort(&mut self) {
         self.models.sort();
@@ -963,6 +958,21 @@ impl fmt::Display for PDB {
 impl Default for PDB {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Extend<Model> for PDB {
+    /// Extend the Models on this PDB by the given iterator of Models.
+    fn extend<T: IntoIterator<Item = Model>>(&mut self, iter: T) {
+        self.models.extend(iter);
+    }
+}
+
+impl FromIterator<Model> for PDB {
+    fn from_iter<T: IntoIterator<Item = Model>>(iter: T) -> Self {
+        let mut pdb = PDB::default();
+        pdb.extend(iter);
+        pdb
     }
 }
 

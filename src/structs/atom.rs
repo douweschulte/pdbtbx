@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 
 static ATOM_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-/// A struct to represent a single Atom in a protein
+/// A struct to represent a single Atom in a protein.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Atom {
@@ -712,8 +712,8 @@ mod tests {
     #[test]
     fn check_equality() {
         let a = Atom::new(false, 0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
-        let b = Atom::new(false, 0, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
-        let c = Atom::new(false, 0, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(false, 1, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let c = Atom::new(false, 1, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
         assert_ne!(a, b);
         assert_eq!(b, c);
         assert_ne!(a, c);

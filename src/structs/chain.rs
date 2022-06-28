@@ -520,11 +520,6 @@ impl<'a> Chain {
         self.residues.extend(other.residues);
     }
 
-    /// Extend the Residues on this Chain by the given iterator of Residues.
-    pub fn extend<T: IntoIterator<Item = Residue>>(&mut self, iter: T) {
-        self.residues.extend(iter);
-    }
-
     /// Sort the residues of this chain
     pub fn sort(&mut self) {
         self.residues.sort();
@@ -558,6 +553,13 @@ impl PartialOrd for Chain {
 impl Ord for Chain {
     fn cmp(&self, other: &Self) -> Ordering {
         self.id().cmp(other.id())
+    }
+}
+
+impl Extend<Residue> for Chain {
+    /// Extend the Residues on this Chain by the given iterator of Residues.
+    fn extend<T: IntoIterator<Item = Residue>>(&mut self, iter: T) {
+        self.residues.extend(iter);
     }
 }
 
