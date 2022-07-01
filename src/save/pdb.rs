@@ -66,9 +66,9 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                 let cell = &text[text.len() - cmp::min(length, text.len())..];
                 let trimmed = cell.trim_start_matches('0');
                 if !cell.is_empty() && trimmed.is_empty() {
-                    line.push_str(&format!("{0:1$}", "0", length));
+                    std::fmt::write(&mut line, format_args!("{0:1$}", "0", length)).unwrap();
                 } else {
-                    line.push_str(&format!("{0:1$}", trimmed, length));
+                    std::fmt::write(&mut line, format_args!("{0:1$}", trimmed, length)).unwrap();
                 }
             } else {
                 line += text;

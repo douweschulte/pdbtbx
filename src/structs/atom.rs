@@ -331,7 +331,7 @@ impl Atom {
             String::new()
         } else {
             let mut sign = '+';
-            let charge = (48 + self.charge.abs() as u8) as char;
+            let charge = (48 + self.charge.unsigned_abs() as u8) as char;
             if self.charge < 0 {
                 sign = '-';
             }
