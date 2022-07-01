@@ -335,10 +335,7 @@ impl Atom {
             if self.charge < 0 {
                 sign = '-';
             }
-            let mut output = String::new();
-            output.push(charge);
-            output.push(sign);
-            output
+            format!("{}{}", charge, sign)
         }
     }
 

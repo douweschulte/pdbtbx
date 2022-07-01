@@ -41,10 +41,9 @@ impl<'a> Residue {
             conformers: Vec::new(),
         };
         if let Some(ic) = insertion_code {
-            if !valid_identifier(ic) {
+            if !res.set_insertion_code(ic) {
                 return None;
             }
-            res.set_insertion_code(ic);
         }
 
         if let Some(c) = conformer {
@@ -72,12 +71,9 @@ impl<'a> Residue {
     /// Set the insertion code of the Residue.
     /// Fails and returns false if the `new_code` contains invalid characters
     pub fn set_insertion_code(&mut self, new_code: impl AsRef<str>) -> bool {
-        if let Some(c) = prepare_identifier(new_code) {
-            self.insertion_code = Some(c);
-            true
-        } else {
-            false
-        }
+        prepare_identifier(new_code)
+            .map(|c| self.insertion_code = Some(c))
+            .is_some()
     }
 
     /// Set the insertion code of the Residue to None.

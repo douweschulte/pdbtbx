@@ -193,20 +193,22 @@ impl<'a> Model {
         } else {
             self.chains
                 .binary_search_by(|chain| {
-                    let low = chain.atoms().next().expect(
-                        "All chains should have at least a single atom for binary_find_atom",
-                    );
-                    let high = chain.atoms().next_back().expect(
-                        "All chains should have at least a single atom for binary_find_atom",
-                    );
-
-                    if low.serial_number() <= serial_number && serial_number <= high.serial_number()
+                    if let (Some(low), Some(high)) =
+                        (chain.atoms().next(), chain.atoms().next_back())
                     {
-                        Ordering::Equal
-                    } else if serial_number < low.serial_number() {
-                        Ordering::Less
+                        if low.serial_number() <= serial_number
+                            && serial_number <= high.serial_number()
+                        {
+                            Ordering::Equal
+                        } else if serial_number < low.serial_number() {
+                            Ordering::Less
+                        } else {
+                            Ordering::Greater
+                        }
                     } else {
-                        Ordering::Greater
+                        panic!(
+                            "All chains should have at least a single atom for binary_find_atom"
+                        );
                     }
                 })
                 .ok()
@@ -235,20 +237,22 @@ impl<'a> Model {
         } else {
             self.chains
                 .binary_search_by(|chain| {
-                    let low = chain.atoms().next().expect(
-                        "All chains should have at least a single atom for binary_find_atom",
-                    );
-                    let high = chain.atoms().next_back().expect(
-                        "All chains should have at least a single atom for binary_find_atom",
-                    );
-
-                    if low.serial_number() <= serial_number && serial_number <= high.serial_number()
+                    if let (Some(low), Some(high)) =
+                        (chain.atoms().next(), chain.atoms().next_back())
                     {
-                        Ordering::Equal
-                    } else if serial_number < low.serial_number() {
-                        Ordering::Less
+                        if low.serial_number() <= serial_number
+                            && serial_number <= high.serial_number()
+                        {
+                            Ordering::Equal
+                        } else if serial_number < low.serial_number() {
+                            Ordering::Less
+                        } else {
+                            Ordering::Greater
+                        }
                     } else {
-                        Ordering::Greater
+                        panic!(
+                            "All chains should have at least a single atom for binary_find_atom"
+                        );
                     }
                 })
                 .ok()

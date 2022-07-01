@@ -8,32 +8,18 @@ pub const fn check_char(c: char) -> bool {
 /// Checks a string using `check_char`.
 /// Returns `true` if the text is valid.
 pub fn valid_text(text: impl AsRef<str>) -> bool {
-    for c in text.as_ref().chars() {
-        if !check_char(c) {
-            return false;
-        }
-    }
-    true
+    text.as_ref().chars().all(check_char)
 }
 
 /// Checks a string using `check_char`.
 /// Returns `true` if the text is valid.
 pub fn valid_identifier(text: impl AsRef<str>) -> bool {
-    for c in text.as_ref().chars() {
-        if !check_char(c) {
-            return false;
-        }
-    }
-    true
+    text.as_ref().chars().all(check_char)
 }
 
 pub fn prepare_identifier(text: impl AsRef<str>) -> Option<String> {
     let text = text.as_ref();
-    if valid_identifier(text) && !text.trim().is_empty() {
-        Some(text.trim().to_ascii_uppercase())
-    } else {
-        None
-    }
+    (valid_identifier(text) && !text.trim().is_empty()).then_some(text.trim().to_ascii_uppercase())
 }
 
 const ALPHABET: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
