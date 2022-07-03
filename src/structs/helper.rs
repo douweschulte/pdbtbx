@@ -19,7 +19,7 @@ pub fn valid_identifier(text: impl AsRef<str>) -> bool {
 
 pub fn prepare_identifier(text: impl AsRef<str>) -> Option<String> {
     let text = text.as_ref();
-    (valid_identifier(text) && !text.trim().is_empty()).then_some(text.trim().to_ascii_uppercase())
+    (valid_identifier(text) && !text.trim().is_empty()).then(|| text.trim().to_ascii_uppercase())
 }
 
 const ALPHABET: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
