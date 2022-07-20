@@ -2,13 +2,15 @@
 All versions are properly annotated on [github](https://github.com/douweschulte/pdbtbx/releases) so there the source code for each version can be retrieved.
 
 ### v0.10.0 (upcoming) 'Enumerated Elements'
-* Moved from string based elements to enums see Element, this means that the `Atom::set_element`, `Atom::element`, and `Term::element` have changed
+* Moved from string based elements to enums see `Element`, this means that the `Atom::set_element`, `Atom::element`, and `Term::element` have changed
 * Deprecated the following functions `Atom::atom_number`, `Atom::atomic_radius`, `Atom::covalent_bond_radii`,
  and `Atom::vanderwaals_radius` the radius functions are replaced with  `Element::atomic_radius` which contains
- all these measures the struct `AtomicRadius`
+ all these measures in the struct `AtomicRadius`
 * Added `Element::weight` and `Element::electro_negativity` data
 * Implemented `Extend` for all levels in the PDB hierarchy
 * Implemented `FromIterator` for the `PDB` struct
+* Removed requirement for `atom_site.pdbx_formal_charge`, `atom_site.group_PDB`, `atom_site.occupancy`, and `atom_site.B_iso_or_equiv` for mmCIF files (thanks to #93)
+* Added support for SCALE, ORIGX, and MTRIX in mmCIF files (open and save)
 
 ### v0.9.2
 * Added `open_mmcif_raw`
