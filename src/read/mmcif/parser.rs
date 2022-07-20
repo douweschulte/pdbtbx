@@ -160,77 +160,67 @@ fn flatten_result<T, E>(value: Result<Result<T, E>, E>) -> Result<T, E> {
 }
 
 /// Parse a loop containing atomic data
-#[allow(clippy::missing_docs_in_private_items)]
 fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
-    const ATOM_ASYM_ID: (usize, &str) = (0, "atom_site.label_asym_id");
-    const ATOM_NAME: (usize, &str) = (1, "atom_site.label_atom_id");
-    const ATOM_B: (usize, &str) = (2, "atom_site.B_iso_or_equiv");
-    const ATOM_COMP_ID: (usize, &str) = (3, "atom_site.label_comp_id");
-    const ATOM_ID: (usize, &str) = (4, "atom_site.id");
-    const ATOM_OCCUPANCY: (usize, &str) = (5, "atom_site.occupancy");
-    const ATOM_SEQ_ID: (usize, &str) = (6, "atom_site.label_seq_id");
-    const ATOM_TYPE: (usize, &str) = (7, "atom_site.type_symbol");
-    const ATOM_X: (usize, &str) = (8, "atom_site.Cartn_x");
-    const ATOM_Y: (usize, &str) = (9, "atom_site.Cartn_y");
-    const ATOM_Z: (usize, &str) = (10, "atom_site.Cartn_z");
-    /// These are the columns needed to fill out the PDB correctly
-    const COLUMNS: &[&str] = &[
-        ATOM_ASYM_ID.1,
-        ATOM_NAME.1,
-        ATOM_B.1,
-        ATOM_COMP_ID.1,
-        ATOM_ID.1,
-        ATOM_OCCUPANCY.1,
-        ATOM_SEQ_ID.1,
-        ATOM_TYPE.1,
-        ATOM_X.1,
-        ATOM_Y.1,
-        ATOM_Z.1,
-    ];
-    const ATOM_ALT_ID: (usize, &str) = (0, "atom_site.label_alt_id");
-    const ATOM_ANISOU_1_1: (usize, &str) = (1, "_atom_site.aniso_U[1][1]");
-    const ATOM_ANISOU_1_2: (usize, &str) = (2, "_atom_site.aniso_U[1][2]");
-    const ATOM_ANISOU_1_3: (usize, &str) = (3, "_atom_site.aniso_U[1][3]");
-    const ATOM_ANISOU_2_1: (usize, &str) = (4, "_atom_site.aniso_U[2][1]");
-    const ATOM_ANISOU_2_2: (usize, &str) = (5, "_atom_site.aniso_U[2][2]");
-    const ATOM_ANISOU_2_3: (usize, &str) = (6, "_atom_site.aniso_U[2][3]");
-    const ATOM_ANISOU_3_1: (usize, &str) = (7, "_atom_site.aniso_U[3][1]");
-    const ATOM_ANISOU_3_2: (usize, &str) = (8, "_atom_site.aniso_U[3][2]");
-    const ATOM_ANISOU_3_3: (usize, &str) = (9, "_atom_site.aniso_U[3][3]");
-    const ATOM_CHARGE: (usize, &str) = (10, "atom_site.pdbx_formal_charge");
-    /// The group of atoms to which the atom site belongs. This data item is provided for compatibility with the original Protein Data Bank format, and only for that purpose.    
-    const ATOM_GROUP: (usize, &str) = (11, "atom_site.group_PDB");
-    const ATOM_INSERTION: (usize, &str) = (12, "atom_site.pdbx_PDB_ins_code");
-    const ATOM_MODEL: (usize, &str) = (13, "atom_site.pdbx_PDB_model_num");
-    /// These are some optional columns with data that will be used but is not required to be present
-    const OPTIONAL_COLUMNS: &[&str] = &[
-        ATOM_ALT_ID.1,
-        ATOM_ANISOU_1_1.1,
-        ATOM_ANISOU_1_2.1,
-        ATOM_ANISOU_1_3.1,
-        ATOM_ANISOU_2_1.1,
-        ATOM_ANISOU_2_2.1,
-        ATOM_ANISOU_2_3.1,
-        ATOM_ANISOU_3_1.1,
-        ATOM_ANISOU_3_2.1,
-        ATOM_ANISOU_3_3.1,
-        ATOM_CHARGE.1,
-        ATOM_GROUP.1,
-        ATOM_INSERTION.1,
-        ATOM_MODEL.1,
-    ];
+    #[derive(Eq, PartialEq)]
+    /// The mode of a column
+    enum Mode {
+        /// A required column (has to be defined)
+        Required,
+        /// An optional column, if undefined it will have a default value
+        Optional,
+    }
+    use Mode::{Optional, Required};
 
-    let positions_: Vec<Result<usize, PDBError>> = COLUMNS
+    /// Easily define all columns
+    macro_rules! define_columns {
+        ($($i:expr, $name:ident, $label:expr, $req:expr);+;) => {
+            $(const $name: (usize, &str, Mode) = ($i, $label, $req);)+
+            const COLUMNS: &[(Mode, &str)] = &[
+                $(($req, $name.1)),+
+            ];
+        };
+    }
+
+    define_columns!(
+        0,  ATOM_ALT_ID, "atom_site.label_alt_id", Optional;
+        1,  ATOM_ANISOU_1_1, "_atom_site.aniso_U[1][1]", Optional;
+        2,  ATOM_ANISOU_1_2, "_atom_site.aniso_U[1][2]", Optional;
+        3,  ATOM_ANISOU_1_3, "_atom_site.aniso_U[1][3]", Optional;
+        4,  ATOM_ANISOU_2_1, "_atom_site.aniso_U[2][1]", Optional;
+        5,  ATOM_ANISOU_2_2, "_atom_site.aniso_U[2][2]", Optional;
+        6,  ATOM_ANISOU_2_3, "_atom_site.aniso_U[2][3]", Optional;
+        7,  ATOM_ANISOU_3_1, "_atom_site.aniso_U[3][1]", Optional;
+        8,  ATOM_ANISOU_3_2, "_atom_site.aniso_U[3][2]", Optional;
+        9,  ATOM_ANISOU_3_3, "_atom_site.aniso_U[3][3]", Optional;
+        10, ATOM_ASYM_ID, "atom_site.label_asym_id", Required;
+        11, ATOM_B, "atom_site.B_iso_or_equiv", Optional;
+        12, ATOM_CHARGE, "atom_site.pdbx_formal_charge", Optional;
+        13, ATOM_COMP_ID, "atom_site.label_comp_id", Required;
+        14, ATOM_GROUP, "atom_site.group_PDB", Optional;
+        15, ATOM_ID, "atom_site.id", Required;
+        16, ATOM_INSERTION, "atom_site.pdbx_PDB_ins_code", Optional;
+        17, ATOM_MODEL, "atom_site.pdbx_PDB_model_num", Optional;
+        18, ATOM_NAME, "atom_site.label_atom_id", Required;
+        19, ATOM_OCCUPANCY, "atom_site.occupancy", Optional;
+        20, ATOM_SEQ_ID, "atom_site.label_seq_id", Required;
+        21, ATOM_TYPE, "atom_site.type_symbol", Required;
+        22, ATOM_X, "atom_site.Cartn_x", Required;
+        23, ATOM_Y, "atom_site.Cartn_y", Required;
+        24, ATOM_Z, "atom_site.Cartn_z", Required;
+    );
+
+    let positions_: Vec<Result<Option<usize>, PDBError>> = COLUMNS
         .iter()
-        .map(|tag| (input.header.iter().position(|t| t == tag), tag))
+        .map(|tag| (input.header.iter().position(|t| t == tag.1), tag))
         .map(|(pos, tag)| match pos {
-            Some(p) => Ok(p),
-            None => Err(PDBError::new(
+            Some(p) => Ok(Some(p)),
+            None if tag.0 == Required => Err(PDBError::new(
                 ErrorLevel::InvalidatingError,
                 "Missing column in coordinate atoms data loop",
                 "The above column is missing",
-                Context::show(tag),
+                Context::show(tag.1),
             )),
+            None => Ok(None),
         })
         .collect();
 
@@ -243,38 +233,18 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         return Some(errors);
     }
 
+    // The previous lines make sure that there is no error in the vector.
     #[allow(clippy::unwrap_used)]
-    let positions: Vec<usize> = positions_.iter().map(|i| *i.as_ref().unwrap()).collect();
-    let optional_positions: Vec<Option<usize>> = OPTIONAL_COLUMNS
-        .iter()
-        .map(|tag| input.header.iter().position(|t| t == tag))
-        .collect();
+    let positions: Vec<Option<usize>> = positions_.iter().map(|i| *i.as_ref().unwrap()).collect();
 
     for (index, row) in input.data.iter().enumerate() {
-        let values: Vec<&Value> = positions.iter().map(|i| &row[*i]).collect();
-        let optional_values: Vec<Option<&Value>> = optional_positions
-            .iter()
-            .map(|i| i.map(|x| &row[x]))
-            .collect();
+        let values: Vec<Option<&Value>> = positions.iter().map(|i| i.map(|x| &row[x])).collect();
         let context = Context::show(&format!("Main atomic data loop row: {}", index));
 
         /// Parse a column given the function to use and the column index
         macro_rules! parse_column {
             ($type:tt, $index:tt) => {
-                match $type(values[$index.0], &context) {
-                    Ok(t) => t,
-                    Err(e) => {
-                        errors.push(e);
-                        continue;
-                    }
-                }
-            };
-        }
-
-        /// Parse a value from an optional column, if in place, with the same format as parse_column!
-        macro_rules! parse_optional {
-            ($type:tt, $index:tt) => {
-                if let Some(value) = optional_values[$index.0] {
+                if let Some(value) = values[$index.0] {
                     match $type(value, &context) {
                         Ok(t) => t,
                         Err(e) => {
@@ -288,7 +258,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             };
         }
 
-        let atom_type = parse_optional!(get_text, ATOM_GROUP).unwrap_or("ATOM");
+        let atom_type = parse_column!(get_text, ATOM_GROUP).unwrap_or("ATOM");
         let name = parse_column!(get_text, ATOM_NAME).expect("Atom name should be provided");
         let serial_number =
             parse_column!(get_usize, ATOM_ID).expect("Atom serial number should be provided");
@@ -305,25 +275,25 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         let pos_z = parse_column!(get_f64, ATOM_Z).expect("Atom Z position should be provided");
         let occupancy = parse_column!(get_f64, ATOM_OCCUPANCY).unwrap_or(1.0);
         let b_factor = parse_column!(get_f64, ATOM_B).unwrap_or(1.0);
-        let charge = parse_optional!(get_isize, ATOM_CHARGE).unwrap_or(0);
-        let model_number = parse_optional!(get_usize, ATOM_MODEL).unwrap_or(1);
-        let alt_loc = parse_optional!(get_text, ATOM_ALT_ID);
-        let insertion_code = parse_optional!(get_text, ATOM_INSERTION);
+        let charge = parse_column!(get_isize, ATOM_CHARGE).unwrap_or(0);
+        let model_number = parse_column!(get_usize, ATOM_MODEL).unwrap_or(1);
+        let alt_loc = parse_column!(get_text, ATOM_ALT_ID);
+        let insertion_code = parse_column!(get_text, ATOM_INSERTION);
         let aniso_temp = [
             [
-                parse_optional!(get_f64, ATOM_ANISOU_1_1),
-                parse_optional!(get_f64, ATOM_ANISOU_1_2),
-                parse_optional!(get_f64, ATOM_ANISOU_1_3),
+                parse_column!(get_f64, ATOM_ANISOU_1_1),
+                parse_column!(get_f64, ATOM_ANISOU_1_2),
+                parse_column!(get_f64, ATOM_ANISOU_1_3),
             ],
             [
-                parse_optional!(get_f64, ATOM_ANISOU_2_1),
-                parse_optional!(get_f64, ATOM_ANISOU_2_2),
-                parse_optional!(get_f64, ATOM_ANISOU_2_3),
+                parse_column!(get_f64, ATOM_ANISOU_2_1),
+                parse_column!(get_f64, ATOM_ANISOU_2_2),
+                parse_column!(get_f64, ATOM_ANISOU_2_3),
             ],
             [
-                parse_optional!(get_f64, ATOM_ANISOU_3_1),
-                parse_optional!(get_f64, ATOM_ANISOU_3_2),
-                parse_optional!(get_f64, ATOM_ANISOU_3_3),
+                parse_column!(get_f64, ATOM_ANISOU_3_1),
+                parse_column!(get_f64, ATOM_ANISOU_3_2),
+                parse_column!(get_f64, ATOM_ANISOU_3_3),
             ],
         ];
 
