@@ -104,7 +104,8 @@ _cell.Z_PDB              {}",
     if let Some(scale) = &pdb.scale {
         let ma = scale.matrix();
         write!(
-            "_atom_sites.entry_id                   '{}'
+            "# Scale definition
+            _atom_sites.entry_id                   '{}'
 _atom_sites.Cartn_transf_matrix[1][1]  {}
 _atom_sites.Cartn_transf_matrix[1][2]  {}
 _atom_sites.Cartn_transf_matrix[1][3]  {}
@@ -137,7 +138,8 @@ _atom_sites.Cartn_transf_vector[3]     {}",
     if let Some(origx) = &pdb.origx {
         let ma = origx.matrix();
         write!(
-            "_database_PDB_matrix.entry_id                   '{}'
+            "# OrigX definition
+_database_PDB_matrix.entry_id                   '{}'
 _database_PDB_matrix.origx[1][1]  {}
 _database_PDB_matrix.origx[1][2]  {}
 _database_PDB_matrix.origx[1][3]  {}
@@ -151,6 +153,46 @@ _database_PDB_matrix.origx_vector[1]     {}
 _database_PDB_matrix.origx_vector[2]     {}
 _database_PDB_matrix.origx_vector[3]     {}",
             name,
+            ma[0][0],
+            ma[0][1],
+            ma[0][2],
+            ma[1][0],
+            ma[1][1],
+            ma[1][2],
+            ma[2][0],
+            ma[2][1],
+            ma[2][2],
+            ma[0][3],
+            ma[1][3],
+            ma[2][3],
+        );
+    }
+
+    // MtriX
+    for mtrix in pdb.mtrix() {
+        let ma = mtrix.transformation.matrix();
+        write!(
+            r#"# OrigX definition
+_struct_ncs_oper.id            '{}'
+_struct_ncs_oper.code          {}
+_struct_ncs_oper.matrix[1][1]  {}
+_struct_ncs_oper.matrix[1][2]  {}
+_struct_ncs_oper.matrix[1][3]  {}
+_struct_ncs_oper.matrix[2][1]  {}
+_struct_ncs_oper.matrix[2][2]  {}
+_struct_ncs_oper.matrix[2][3]  {}
+_struct_ncs_oper.matrix[3][1]  {}
+_struct_ncs_oper.matrix[3][2]  {}
+_struct_ncs_oper.matrix[3][3]  {}
+_struct_ncs_oper.vector[1]     {}
+_struct_ncs_oper.vector[2]     {}
+_struct_ncs_oper.vector[3]     {}"#,
+            mtrix.serial_number,
+            if mtrix.contained {
+                "given"
+            } else {
+                "generated"
+            },
             ma[0][0],
             ma[0][1],
             ma[0][2],

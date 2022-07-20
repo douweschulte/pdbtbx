@@ -32,7 +32,7 @@ As the main goal of this library is to allow access to the atomical data many me
 |        ANISOU | ✔️  |  ✔️  | atom_site                   |
 |         SCALE | ✔️  |  ✔️  | _atom_sites.Cartn_transf    |
 |         ORIGX | ✔️  |  ✔️  | _database_PDB_matrix.origx  |
-|        MATRIX | ✔️  |  ❌  | ?                           |
+|        MATRIX | ✔️  |  ✔️  | struct_ncs_oper             |
 |       CRYSTAL | ✔️  |  ✔️  | cell + symmetry             |
 |         MODEL | ✔️  |  ✔️  | atom_site                   |
 |        MASTER | 〰️  |  ❌  | _pdbx_database_PDB_master   |

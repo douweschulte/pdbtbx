@@ -60,6 +60,7 @@ fn parse_mmcif(
     let mut pdb = PDB::default();
     let mut errors: Vec<PDBError> = Vec::new();
     let mut unit_cell = UnitCell::default();
+    let mut mtrix_id = None;
 
     pdb.identifier = Some(input.name.clone());
 
@@ -139,6 +140,59 @@ fn parse_mmcif(
                             }
                             #[allow(clippy::unwrap_used)]
                             parse_matrix(s, get_f64(&single.content, &context),pdb.origx.as_mut().unwrap(), &context)
+                        }
+                        s if s.starts_with("structs_ncs_oper.") => {
+                            if s.ends_with("id") {
+                                match get_usize(&single.content, &context) {
+                                    Err(e) => Some(e),
+                                    Ok(Some(id)) => {
+                                        mtrix_id = Some(id);
+                                        pdb.add_mtrix(MtriX::new(id, TransformationMatrix::identity(), true));
+                                        None
+                                    }
+                                    Ok(None) => Some(PDBError::new(
+                                        ErrorLevel::InvalidatingError,
+                                        "MtriX with missing ID",
+                                        "If a MtriX id is given it should be a number not a missing value.",
+                                        context.clone(),
+                                    ))
+                                }
+                            } else {
+                                #[allow(clippy::unwrap_used)]
+                                match mtrix_id {
+                                    Some(id) => { 
+                                        let mut mtrix = pdb.mtrix_mut().find(|m| m.serial_number == id).unwrap();
+                                        if s.ends_with("code") {
+                                            match get_text(&single.content, &context) {
+                                                Ok(Some(t)) if t == "given" => {mtrix.contained = true; None},
+                                                Ok(Some(t)) if t == "generate" => {mtrix.contained = false; None},
+                                                Ok(Some(_)) => Some(PDBError::new(
+                                                    ErrorLevel::InvalidatingError,
+                                                    "MtriX code invalid",
+                                                    "Only the values 'generate' and 'given' are valid for `_struct_ncs_oper.code`.",
+                                                    context.clone(),
+                                                )),
+                                                _ => Some(PDBError::new(
+                                                    ErrorLevel::InvalidatingError,
+                                                    "MtriX code invalid",
+                                                    "The value for `_struct_ncs_oper.code` should be a textual value.",
+                                                    context.clone(),
+                                                )),
+                                            }
+                                        } else if s.ends_with("details") {
+                                            None // Ignore the details, it will not be saved somewhere
+                                        } else {
+                                            parse_matrix(s, get_f64(&single.content, &context),&mut mtrix.transformation, &context)
+                                        }
+                                    },
+                                    None => Some(PDBError::new(
+                                        ErrorLevel::InvalidatingError,
+                                        "MtriX matrix given without ID",
+                                        "The MtriX ID (`_struct_ncs_oper.id`) should be given before any matrix information is given.",
+                                        context.clone(),
+                                    ))
+                                }
+                            }
                         }
                         _ => None,
                     }
