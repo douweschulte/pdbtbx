@@ -26,21 +26,21 @@ As the main goal of this library is to allow access to the atomical data many me
 
 | PDB   Feature | PDB | mmCIF | Corresponding in mmCIF      |
 |---------------|:---:|:-----:|-----------------------------|
-|   HEADER (ID) | ✔️ | ✔️ | entry.id                    |
-|        REMARK | ✔️ | ⏲ | _pdbx_database_remark.id    |
-|          ATOM | ✔️ | ✔️ | atom_site                   |
-|        ANISOU | ✔️ | ✔️ | atom_site                   |
-|         SCALE | ✔️ | ⏲ | _database_PDB_matrix.scale  |
-|         ORIGX | ✔️ | ⏲ | _database_PDB_matrix.origx  |
-|        MATRIX | ✔️ | ❌ | ?                           |
-|       CRYSTAL | ✔️ | ✔️ | cell + symmetry             |
-|         MODEL | ✔️ | ✔️ | atom_site                   |
-|        MASTER | 〰️ | ❌ | _pdbx_database_PDB_master   |
-|        SEQRES | 〰️ | ❌ | ?                           |
-|         DBREF | ✔️ | ❌ | pdbx_dbref                  |
-|      DBREF1/2 | ✔️ | ❌ | pdbx_dbref                  |
-|        MODRES | ✔️ | ❌ | ?                           |
-|        SEQADV | ✔️ | ❌ | ?                           |
+|   HEADER (ID) | ✔️  |  ✔️  | entry.id                    |
+|        REMARK | ✔️  |  ❌  | _pdbx_database_remark.id    |
+|          ATOM | ✔️  |  ✔️  | atom_site                   |
+|        ANISOU | ✔️  |  ✔️  | atom_site                   |
+|         SCALE | ✔️  |  ✔️  | _atom_sites.Cartn_transf    |
+|         ORIGX | ✔️  |  ✔️  | _database_PDB_matrix.origx  |
+|        MATRIX | ✔️  |  ❌  | ?                           |
+|       CRYSTAL | ✔️  |  ✔️  | cell + symmetry             |
+|         MODEL | ✔️  |  ✔️  | atom_site                   |
+|        MASTER | 〰️  |  ❌  | _pdbx_database_PDB_master   |
+|        SEQRES | 〰️  |  ❌  | ?                           |
+|         DBREF | ✔️  |  ❌  | pdbx_dbref                  |
+|      DBREF1/2 | ✔️  |  ❌  | pdbx_dbref                  |
+|        MODRES | ✔️  |  ❌  | ?                           |
+|        SEQADV | ✔️  |  ❌  | ?                           |
 
 | Section | Keywords | Support |
 |---|---|---|

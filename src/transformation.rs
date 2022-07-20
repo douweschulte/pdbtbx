@@ -14,6 +14,11 @@ impl TransformationMatrix {
         self.matrix
     }
 
+    /// Get the raw matrix (row major order)
+    pub fn matrix_mut(&mut self) -> &mut [[f64; 4]; 3] {
+        &mut self.matrix
+    }
+
     /// Set the raw matrix (row major order), the user needs to make sure the matrix is valid
     pub fn set_matrix(&mut self, new_matrix: [[f64; 4]; 3]) {
         self.matrix = new_matrix;

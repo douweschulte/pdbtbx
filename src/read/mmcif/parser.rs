@@ -3,6 +3,7 @@ use crate::error::*;
 use crate::structs::*;
 use crate::validate::*;
 use crate::StrictnessLevel;
+use crate::TransformationMatrix;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -125,6 +126,20 @@ fn parse_mmcif(
                                 None
                             }
                         }
+                        s if s.starts_with("atom_sites.Cartn_transf") => {
+                            if pdb.scale.is_none() {
+                                pdb.scale = Some(TransformationMatrix::identity());
+                            }
+                            #[allow(clippy::unwrap_used)]
+                            parse_matrix(s, get_f64(&single.content, &context),pdb.scale.as_mut().unwrap(), &context)
+                        }
+                        s if s.starts_with("database_PDB_matrix.origx") => {
+                            if pdb.origx.is_none() {
+                                pdb.origx = Some(TransformationMatrix::identity());
+                            }
+                            #[allow(clippy::unwrap_used)]
+                            parse_matrix(s, get_f64(&single.content, &context),pdb.origx.as_mut().unwrap(), &context)
+                        }
                         _ => None,
                     }
                     .map(|e| vec![e])
@@ -147,6 +162,65 @@ fn parse_mmcif(
         Err(errors)
     } else {
         Ok((pdb, errors))
+    }
+}
+
+/// Parse the name of this matrix defining line to find out the index it is pointing at and change that value in the given matrix.
+fn parse_matrix(
+    name: &str,
+    value: Result<Option<f64>, PDBError>,
+    matrix: &mut TransformationMatrix,
+    context: &Context,
+) -> Option<PDBError> {
+    let get_index = |n| {
+        if let Some(c) = name.chars().nth_back(n) {
+            if let Some(n) = c.to_digit(10) {
+                Ok((n - 1) as usize)
+            } else {
+                Err(PDBError::new(
+                    ErrorLevel::InvalidatingError,
+                    "Matrix item definition incorrect",
+                    "There are no indices into the matrix. For example this is a valid name: `_database_PDB_matrix.origx[1][1]`",
+                    context.clone(),
+                ))
+            }
+        } else {
+            Err(PDBError::new(
+                ErrorLevel::InvalidatingError,
+                "Matrix definition too short",
+                "This matrix definition item name is too short to contain the matrix indices.",
+                context.clone(),
+            ))
+        }
+    };
+    match value {
+        Ok(o) => {
+            if let Some(value) = o {
+                if name.matches('[').count() == 2 {
+                    // Two sets of braces so a matrix line
+                    let r = match get_index(4) {
+                        Ok(o) => o,
+                        Err(e) => return Some(e),
+                    };
+                    let c = match get_index(1) {
+                        Ok(o) => o,
+                        Err(e) => return Some(e),
+                    };
+                    matrix.matrix_mut()[r][c] = value;
+                } else {
+                    // One set of braces so a vector line
+                    let r = match get_index(1) {
+                        Ok(o) => o,
+                        Err(e) => return Some(e),
+                    };
+                    matrix.matrix_mut()[r][3] = value;
+                }
+                None // Everything went well
+            } else {
+                None // Ignore places where there is no value, assume it to be the default identity
+            }
+        }
+        Err(e) => Some(e),
     }
 }
 
