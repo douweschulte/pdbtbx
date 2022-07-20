@@ -160,37 +160,64 @@ fn flatten_result<T, E>(value: Result<Result<T, E>, E>) -> Result<T, E> {
 }
 
 /// Parse a loop containing atomic data
+#[allow(clippy::missing_docs_in_private_items)]
 fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
+    const ATOM_ASYM_ID: (usize, &str) = (0, "atom_site.label_asym_id");
+    const ATOM_NAME: (usize, &str) = (1, "atom_site.label_atom_id");
+    const ATOM_B: (usize, &str) = (2, "atom_site.B_iso_or_equiv");
+    const ATOM_COMP_ID: (usize, &str) = (3, "atom_site.label_comp_id");
+    const ATOM_ID: (usize, &str) = (4, "atom_site.id");
+    const ATOM_OCCUPANCY: (usize, &str) = (5, "atom_site.occupancy");
+    const ATOM_SEQ_ID: (usize, &str) = (6, "atom_site.label_seq_id");
+    const ATOM_TYPE: (usize, &str) = (7, "atom_site.type_symbol");
+    const ATOM_X: (usize, &str) = (8, "atom_site.Cartn_x");
+    const ATOM_Y: (usize, &str) = (9, "atom_site.Cartn_y");
+    const ATOM_Z: (usize, &str) = (10, "atom_site.Cartn_z");
     /// These are the columns needed to fill out the PDB correctly
     const COLUMNS: &[&str] = &[
-        "atom_site.group_PDB",
-        "atom_site.label_atom_id",
-        "atom_site.id",
-        "atom_site.type_symbol",
-        "atom_site.label_comp_id",
-        "atom_site.label_seq_id",
-        "atom_site.label_asym_id",
-        "atom_site.Cartn_x",
-        "atom_site.Cartn_y",
-        "atom_site.Cartn_z",
-        "atom_site.occupancy",
-        "atom_site.B_iso_or_equiv",
-        "atom_site.pdbx_formal_charge",
+        ATOM_ASYM_ID.1,
+        ATOM_NAME.1,
+        ATOM_B.1,
+        ATOM_COMP_ID.1,
+        ATOM_ID.1,
+        ATOM_OCCUPANCY.1,
+        ATOM_SEQ_ID.1,
+        ATOM_TYPE.1,
+        ATOM_X.1,
+        ATOM_Y.1,
+        ATOM_Z.1,
     ];
+    const ATOM_ALT_ID: (usize, &str) = (0, "atom_site.label_alt_id");
+    const ATOM_ANISOU_1_1: (usize, &str) = (1, "_atom_site.aniso_U[1][1]");
+    const ATOM_ANISOU_1_2: (usize, &str) = (2, "_atom_site.aniso_U[1][2]");
+    const ATOM_ANISOU_1_3: (usize, &str) = (3, "_atom_site.aniso_U[1][3]");
+    const ATOM_ANISOU_2_1: (usize, &str) = (4, "_atom_site.aniso_U[2][1]");
+    const ATOM_ANISOU_2_2: (usize, &str) = (5, "_atom_site.aniso_U[2][2]");
+    const ATOM_ANISOU_2_3: (usize, &str) = (6, "_atom_site.aniso_U[2][3]");
+    const ATOM_ANISOU_3_1: (usize, &str) = (7, "_atom_site.aniso_U[3][1]");
+    const ATOM_ANISOU_3_2: (usize, &str) = (8, "_atom_site.aniso_U[3][2]");
+    const ATOM_ANISOU_3_3: (usize, &str) = (9, "_atom_site.aniso_U[3][3]");
+    const ATOM_CHARGE: (usize, &str) = (10, "atom_site.pdbx_formal_charge");
+    /// The group of atoms to which the atom site belongs. This data item is provided for compatibility with the original Protein Data Bank format, and only for that purpose.    
+    const ATOM_GROUP: (usize, &str) = (11, "atom_site.group_PDB");
+    const ATOM_INSERTION: (usize, &str) = (12, "atom_site.pdbx_PDB_ins_code");
+    const ATOM_MODEL: (usize, &str) = (13, "atom_site.pdbx_PDB_model_num");
     /// These are some optional columns with data that will be used but is not required to be present
     const OPTIONAL_COLUMNS: &[&str] = &[
-        "atom_site.pdbx_PDB_model_num",
-        "atom_site.label_alt_id",
-        "atom_site.pdbx_PDB_ins_code",
-        "_atom_site.aniso_U[1][1]",
-        "_atom_site.aniso_U[1][2]",
-        "_atom_site.aniso_U[1][3]",
-        "_atom_site.aniso_U[2][1]",
-        "_atom_site.aniso_U[2][2]",
-        "_atom_site.aniso_U[2][3]",
-        "_atom_site.aniso_U[3][1]",
-        "_atom_site.aniso_U[3][2]",
-        "_atom_site.aniso_U[3][3]",
+        ATOM_ALT_ID.1,
+        ATOM_ANISOU_1_1.1,
+        ATOM_ANISOU_1_2.1,
+        ATOM_ANISOU_1_3.1,
+        ATOM_ANISOU_2_1.1,
+        ATOM_ANISOU_2_2.1,
+        ATOM_ANISOU_2_3.1,
+        ATOM_ANISOU_3_1.1,
+        ATOM_ANISOU_3_2.1,
+        ATOM_ANISOU_3_3.1,
+        ATOM_CHARGE.1,
+        ATOM_GROUP.1,
+        ATOM_INSERTION.1,
+        ATOM_MODEL.1,
     ];
 
     let positions_: Vec<Result<usize, PDBError>> = COLUMNS
@@ -234,7 +261,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         /// Parse a column given the function to use and the column index
         macro_rules! parse_column {
             ($type:tt, $index:tt) => {
-                match $type(values[$index], &context) {
+                match $type(values[$index.0], &context) {
                     Ok(t) => t,
                     Err(e) => {
                         errors.push(e);
@@ -247,7 +274,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         /// Parse a value from an optional column, if in place, with the same format as parse_column!
         macro_rules! parse_optional {
             ($type:tt, $index:tt) => {
-                if let Some(value) = optional_values[$index] {
+                if let Some(value) = optional_values[$index.0] {
                     match $type(value, &context) {
                         Ok(t) => t,
                         Err(e) => {
@@ -261,40 +288,42 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             };
         }
 
-        let atom_type = parse_column!(get_text, 0).expect("Atom type should be defined");
-        let name = parse_column!(get_text, 1).expect("Atom name should be provided");
+        let atom_type = parse_optional!(get_text, ATOM_GROUP).unwrap_or("ATOM");
+        let name = parse_column!(get_text, ATOM_NAME).expect("Atom name should be provided");
         let serial_number =
-            parse_column!(get_usize, 2).expect("Atom serial number should be provided");
-        let element = parse_column!(get_text, 3).expect("Atom element should be provided");
-        let residue_name = parse_column!(get_text, 4).expect("Residue name should be provided");
+            parse_column!(get_usize, ATOM_ID).expect("Atom serial number should be provided");
+        let element = parse_column!(get_text, ATOM_TYPE).expect("Atom element should be provided");
+        let residue_name =
+            parse_column!(get_text, ATOM_COMP_ID).expect("Residue name should be provided");
         #[allow(clippy::cast_possible_wrap)]
-        let residue_number =
-            parse_column!(get_isize, 5).unwrap_or_else(|| pdb.total_residue_count() as isize);
-        let chain_name = parse_column!(get_text, 6).expect("Chain name should be provided");
-        let pos_x = parse_column!(get_f64, 7).expect("Atom X position should be provided");
-        let pos_y = parse_column!(get_f64, 8).expect("Atom Y position should be provided");
-        let pos_z = parse_column!(get_f64, 9).expect("Atom Z position should be provided");
-        let occupancy = parse_column!(get_f64, 10).unwrap_or(1.0);
-        let b_factor = parse_column!(get_f64, 11).unwrap_or(1.0);
-        let charge = parse_column!(get_isize, 12).unwrap_or(0);
-        let model_number = parse_optional!(get_usize, 0).unwrap_or(1);
-        let alt_loc = parse_optional!(get_text, 1);
-        let insertion_code = parse_optional!(get_text, 2);
+        let residue_number = parse_column!(get_isize, ATOM_SEQ_ID)
+            .unwrap_or_else(|| pdb.total_residue_count() as isize);
+        let chain_name =
+            parse_column!(get_text, ATOM_ASYM_ID).expect("Chain name should be provided");
+        let pos_x = parse_column!(get_f64, ATOM_X).expect("Atom X position should be provided");
+        let pos_y = parse_column!(get_f64, ATOM_Y).expect("Atom Y position should be provided");
+        let pos_z = parse_column!(get_f64, ATOM_Z).expect("Atom Z position should be provided");
+        let occupancy = parse_column!(get_f64, ATOM_OCCUPANCY).unwrap_or(1.0);
+        let b_factor = parse_column!(get_f64, ATOM_B).unwrap_or(1.0);
+        let charge = parse_optional!(get_isize, ATOM_CHARGE).unwrap_or(0);
+        let model_number = parse_optional!(get_usize, ATOM_MODEL).unwrap_or(1);
+        let alt_loc = parse_optional!(get_text, ATOM_ALT_ID);
+        let insertion_code = parse_optional!(get_text, ATOM_INSERTION);
         let aniso_temp = [
             [
-                parse_optional!(get_f64, 3),
-                parse_optional!(get_f64, 4),
-                parse_optional!(get_f64, 5),
+                parse_optional!(get_f64, ATOM_ANISOU_1_1),
+                parse_optional!(get_f64, ATOM_ANISOU_1_2),
+                parse_optional!(get_f64, ATOM_ANISOU_1_3),
             ],
             [
-                parse_optional!(get_f64, 6),
-                parse_optional!(get_f64, 7),
-                parse_optional!(get_f64, 8),
+                parse_optional!(get_f64, ATOM_ANISOU_2_1),
+                parse_optional!(get_f64, ATOM_ANISOU_2_2),
+                parse_optional!(get_f64, ATOM_ANISOU_2_3),
             ],
             [
-                parse_optional!(get_f64, 9),
-                parse_optional!(get_f64, 10),
-                parse_optional!(get_f64, 11),
+                parse_optional!(get_f64, ATOM_ANISOU_3_1),
+                parse_optional!(get_f64, ATOM_ANISOU_3_2),
+                parse_optional!(get_f64, ATOM_ANISOU_3_3),
             ],
         ];
 
