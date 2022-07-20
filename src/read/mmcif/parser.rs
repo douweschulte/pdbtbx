@@ -158,10 +158,9 @@ fn parse_mmcif(
                                     ))
                                 }
                             } else {
-                                #[allow(clippy::unwrap_used)]
                                 match mtrix_id {
-                                    Some(id) => { 
-                                        let mut mtrix = pdb.mtrix_mut().find(|m| m.serial_number == id).unwrap();
+                                    Some(id) => {
+                                        let mut mtrix = pdb.mtrix_mut().find(|m| m.serial_number == id).expect("Could not find the MtriX record with the previously found `_struct_ncs_oper.id`");
                                         if s.ends_with("code") {
                                             match get_text(&single.content, &context) {
                                                 Ok(Some(t)) if t == "given" => {mtrix.contained = true; None},
