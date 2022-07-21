@@ -6,6 +6,7 @@ use crate::transformation::TransformationMatrix;
 use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
+use std::sync::Arc;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
@@ -50,7 +51,7 @@ pub struct PDB {
     /// The Models making up this PDB, containing all chain, residues, conformers, and atoms.
     models: Vec<Model>,
     /// Bonds in this PDB.
-    bonds: Vec<(usize, usize, Bond)>,
+    bonds: Vec<(Arc<Atom>, Arc<Atom>, Bond)>,
 }
 
 /// # Creators
@@ -909,17 +910,9 @@ impl<'a> PDB {
     /// Get the bonds in this PDB file. Runtime is `O(bonds_count * 2 * atom_count)` because it
     /// has to iterate over all atoms to prevent borrowing problems.
     pub fn bonds(&self) -> impl DoubleEndedIterator<Item = (&Atom, &Atom, Bond)> + '_ {
-        self.bonds.iter().map(move |(a, b, bond)| {
-            (
-                self.atoms()
-                    .find(|atom| atom.counter() == *a)
-                    .expect("Could not find an atom in the bonds list"),
-                self.atoms()
-                    .find(|atom| atom.counter() == *b)
-                    .expect("Could not find an atom in the bonds list"),
-                *bond,
-            )
-        })
+        self.bonds
+            .iter()
+            .map(move |(a, b, bond)| (a.as_ref(), b.as_ref(), *bond))
     }
 
     /// Add a bond of the given type to the list of bonds in this PDB.
@@ -934,17 +927,19 @@ impl<'a> PDB {
         bond: Bond,
     ) -> Option<()> {
         self.bonds.push((
-            self.binary_find_atom(atom1.0, atom1.1)?.atom().counter(),
-            self.binary_find_atom(atom2.0, atom2.1)?.atom().counter(),
+            self.binary_find_atom(atom1.0, atom1.1)?
+                .conformer()
+                .atom_arc(atom1.0)
+                .map(Arc::clone)
+                .expect("Could not find atom 1"),
+            self.binary_find_atom(atom2.0, atom2.1)?
+                .conformer()
+                .atom_arc(atom2.0)
+                .map(Arc::clone)
+                .expect("Could not find atom 2"),
             bond,
         ));
         Some(())
-    }
-
-    /// Add a bond of the given type to the list of bonds in this PDB.
-    /// The raw counters of the atoms are given.
-    pub(crate) fn add_bond_counters(&mut self, atom1: usize, atom2: usize, bond: Bond) {
-        self.bonds.push((atom1, atom2, bond));
     }
 }
 

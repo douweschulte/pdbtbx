@@ -7,6 +7,7 @@ use doc_cfg::doc_cfg;
 use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::fmt;
+use std::sync::Arc;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -17,7 +18,7 @@ pub struct Conformer {
     /// The alternative location of this Conformer, None is blank
     alternative_location: Option<String>,
     /// The list of atoms making up this Conformer
-    atoms: Vec<Atom>,
+    atoms: Vec<Arc<Atom>>,
     /// The modification, if present
     modification: Option<(String, String)>,
 }
@@ -49,7 +50,7 @@ impl Conformer {
                 res.alternative_location = prepare_identifier(al);
             }
             if let Some(a) = atom {
-                res.atoms.push(a);
+                res.atoms.push(Arc::new(a));
             }
             res
         })
@@ -137,7 +138,11 @@ impl Conformer {
     /// ## Fails
     /// It returns `None` if the index is out of bounds.
     pub fn atom(&self, index: usize) -> Option<&Atom> {
-        self.atoms.get(index)
+        self.atoms.get(index).map(std::convert::AsRef::as_ref)
+    }
+
+    pub(crate) fn atom_arc(&self, number: usize) -> Option<&Arc<Atom>> {
+        self.atoms.iter().find(|a| a.serial_number() == number)
     }
 
     /// Get a specific atom as a mutable reference from list of atoms making up this Conformer.
@@ -148,7 +153,7 @@ impl Conformer {
     /// ## Fails
     /// It returns `None` if the index is out of bounds.
     pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
-        self.atoms.get_mut(index)
+        self.atoms.get_mut(index).and_then(Arc::get_mut)
     }
 
     /// Get a reference to the specified atom which is unique within a single conformer.
@@ -175,7 +180,7 @@ impl Conformer {
             .atoms
             .binary_search_by(|a| a.serial_number().cmp(&serial_number))
         {
-            unsafe { Some(self.atoms.get_unchecked_mut(i)) }
+            unsafe { Arc::get_mut(self.atoms.get_unchecked_mut(i)) }
         } else {
             None
         }
@@ -196,32 +201,32 @@ impl Conformer {
     /// Get an iterator of references to Atoms making up this Conformer.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
-        self.atoms.iter()
+        self.atoms.iter().map(std::convert::AsRef::as_ref)
     }
 
     /// Get a parallel iterator of references to Atoms making up this Conformer.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.atoms.par_iter()
+        self.atoms.par_iter().map(std::convert::AsRef::as_ref)
     }
 
     /// Get an iterator of mutable references to Atoms making up this Conformer.
     /// Double ended so iterating from the end is just as fast as from the start.
     pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
-        self.atoms.iter_mut()
+        self.atoms.iter_mut().filter_map(Arc::get_mut)
     }
 
     /// Get a parallel iterator of mutable references to Atoms making up this Conformer.
     #[doc_cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.atoms.par_iter_mut()
+        self.atoms.par_iter_mut().filter_map(Arc::get_mut)
     }
 
     /// Add a new atom to the list of atoms making up this Conformer.
     /// ## Arguments
     /// * `new_atom` - the new Atom to add
     pub fn add_atom(&mut self, new_atom: Atom) {
-        self.atoms.push(new_atom);
+        self.atoms.push(Arc::new(new_atom));
     }
 
     /// Returns whether this Conformer is an amino acid.
@@ -392,7 +397,7 @@ impl Ord for Conformer {
 impl Extend<Atom> for Conformer {
     /// Extend the Atoms on this Conformer by the given iterator over Atoms.
     fn extend<T: IntoIterator<Item = Atom>>(&mut self, iter: T) {
-        self.atoms.extend(iter);
+        self.atoms.extend(iter.into_iter().map(Arc::new));
     }
 }
 
