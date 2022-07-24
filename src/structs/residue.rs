@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 use crate::structs::*;
 use crate::transformation::TransformationMatrix;
-use doc_cfg::doc_cfg;
-#[cfg(feature = "rayon")]
-use rayon::prelude::*;
+//use doc_cfg::doc_cfg;
+//#[cfg(feature = "rayon")]
+//use rayon::prelude::*;
+use std::cell::{Ref, RefMut};
 use std::cmp::Ordering;
 use std::fmt;
 
@@ -115,10 +116,10 @@ impl<'a> Residue {
     }
 
     /// Get the number of Atoms making up this Residue in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atom_count(&self) -> usize {
-        self.par_conformers().map(Conformer::atom_count).sum()
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_atom_count(&self) -> usize {
+    //    self.par_conformers().map(Conformer::atom_count).sum()
+    //}
 
     /// Get a reference to a specific Conformer from the list of Conformers making up this Residue.
     ///
@@ -149,7 +150,7 @@ impl<'a> Residue {
     ///
     /// ## Fails
     /// Returns `None` if the index is out of bounds.
-    pub fn atom(&self, index: usize) -> Option<&Atom> {
+    pub fn atom(&self, index: usize) -> Option<Ref<'_, Atom>> {
         self.atoms().nth(index)
     }
 
@@ -160,12 +161,12 @@ impl<'a> Residue {
     ///
     /// ## Fails
     /// Returns `None` if the index is out of bounds.
-    pub fn atom_mut(&mut self, index: usize) -> Option<&mut Atom> {
+    pub fn atom_mut(&mut self, index: usize) -> Option<RefMut<'_, Atom>> {
         self.atoms_mut().nth(index)
     }
 
     /// Get A reference to the specified Atom. Its uniqueness is guaranteed by including the
-    /// `insertion_code`, with its full hierarchy. The algorithm is based
+    /// `alternative_location`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -265,10 +266,10 @@ impl<'a> Residue {
     }
 
     /// Get a parallel iterator of references to Conformers making up this Model.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
-        self.conformers.par_iter()
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
+    //    self.conformers.par_iter()
+    //}
 
     /// Get an iterator of mutable references to Conformers making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -277,34 +278,34 @@ impl<'a> Residue {
     }
 
     /// Get a parallel iterator of mutable references to Conformers making up this Model.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
-        self.conformers.par_iter_mut()
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
+    //    self.conformers.par_iter_mut()
+    //}
 
     /// Get an iterator of references to Atoms making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn atoms(&self) -> impl DoubleEndedIterator<Item = &Atom> + '_ {
+    pub fn atoms(&self) -> impl DoubleEndedIterator<Item = Ref<'_, Atom>> + '_ {
         self.conformers().flat_map(Conformer::atoms)
     }
 
     /// Get a parallel iterator of references to Atoms making up this Model.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.par_conformers().flat_map(Conformer::par_atoms)
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
+    //    self.par_conformers().flat_map(Conformer::par_atoms)
+    //}
 
     /// Get an iterator of mutable references to Atoms making up this Model.
     /// Double ended so iterating from the end is just as fast as from the start.
-    pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Atom> + '_ {
+    pub fn atoms_mut(&mut self) -> impl DoubleEndedIterator<Item = RefMut<'_, Atom>> + '_ {
         self.conformers_mut().flat_map(Conformer::atoms_mut)
     }
 
     /// Get a parallel iterator of mutable references to Atoms making up this Model.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.par_conformers_mut().flat_map(Conformer::par_atoms_mut)
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
+    //    self.par_conformers_mut().flat_map(Conformer::par_atoms_mut)
+    //}
 
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this Model.
     pub fn atoms_with_hierarchy(
@@ -385,7 +386,7 @@ impl<'a> Residue {
     /// Remove all atoms matching the given predicate. As this is done in place this is the fastest way to remove atoms from this Residue.
     pub fn remove_atoms_by<F>(&mut self, predicate: F)
     where
-        F: Fn(&Atom) -> bool,
+        F: Fn(Ref<'_, Atom>) -> bool,
     {
         // for conformer in self.conformers_mut() {
         //     conformer.remove_atoms_by(&predicate);
@@ -434,17 +435,17 @@ impl<'a> Residue {
     ///
     /// ## Panics
     /// Panics when the index is outside bounds.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
-        let index = self.conformers.par_iter().position_first(|a| a.id() == id);
-
-        if let Some(i) = index {
-            self.remove_conformer(i);
-            true
-        } else {
-            false
-        }
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
+    //    let index = self.conformers.par_iter().position_first(|a| a.id() == id);
+    //
+    //    if let Some(i) = index {
+    //        self.remove_conformer(i);
+    //        true
+    //    } else {
+    //        false
+    //    }
+    //}
 
     /// Apply a transformation to the position of all Conformers making up this Residue, the new position is immediately set.
     pub fn apply_transformation(&mut self, transformation: &TransformationMatrix) {
@@ -455,11 +456,11 @@ impl<'a> Residue {
 
     /// Apply a transformation to the position of all Conformers making up this Residue, the new position is immediately set.
     /// Done in parallel
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
-        self.par_conformers_mut()
-            .for_each(|conformer| conformer.apply_transformation(transformation));
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
+    //    self.par_conformers_mut()
+    //        .for_each(|conformer| conformer.apply_transformation(transformation));
+    //}
 
     /// Join this Residue with another Residue, this moves all Conformers from the other Residue
     /// to this Residue. All other (meta) data of this Residue will stay the same.
@@ -472,11 +473,11 @@ impl<'a> Residue {
         self.conformers.sort();
     }
 
-    /// Sort the Conformers of this Residue in parallel
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_sort(&mut self) {
-        self.conformers.par_sort();
-    }
+    // Sort the Conformers of this Residue in parallel
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_sort(&mut self) {
+    //    self.conformers.par_sort();
+    //}
 }
 
 impl fmt::Display for Residue {

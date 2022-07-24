@@ -122,6 +122,12 @@ impl Term {
     }
 }
 
+impl From<Term> for Search {
+    fn from(t: Term) -> Self {
+        Self::Single(t)
+    }
+}
+
 /// A collection of multiple search [Term]s in the search for (an) atom(s) in a PDB.
 /// You can use bitwise and (`&`), or (`|`), and xor (`^`) to chain a search.
 /// In the same way you can use not `!` to negate a search term.

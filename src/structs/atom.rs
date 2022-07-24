@@ -2,19 +2,15 @@
 use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::TransformationMatrix;
+use std::cell::{Ref, RefCell};
 use std::cmp::Ordering;
 use std::convert::TryInto;
 use std::fmt;
-use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
-
-static ATOM_COUNTER: AtomicUsize = AtomicUsize::new(0);
-
+use std::sync::Arc;
 /// A struct to represent a single Atom in a protein.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Atom {
-    /// The unique serial number given to this atom
-    counter: usize,
     /// Determines if this atom is a hetero atom (true), a non standard atom, or a normal atom (false)
     hetero: bool,
     /// The serial number of the Atom, should be unique within its model
@@ -37,6 +33,8 @@ pub struct Atom {
     charge: isize,
     /// The anisotropic temperature factors, if applicable
     atf: Option<[[f64; 3]; 3]>,
+    /// Bonds
+    bonds: Vec<(Arc<RefCell<Atom>>, Bond)>,
 }
 
 impl Atom {
@@ -81,7 +79,6 @@ impl Atom {
                 None
             };
             Some(Atom {
-                counter: ATOM_COUNTER.fetch_add(1, AtomicOrdering::SeqCst),
                 hetero,
                 serial_number,
                 name: atom_name.trim().to_ascii_uppercase(),
@@ -93,15 +90,11 @@ impl Atom {
                 element,
                 charge,
                 atf: None,
+                bonds: Vec::new(),
             })
         } else {
             None
         }
-    }
-
-    /// Get a unique immutable counter for this atom.
-    pub(crate) const fn counter(&self) -> usize {
-        self.counter
     }
 
     /// Determine if this atom is an hetero atom (`true`), a non standard atom, or a normal atom (`false`).
@@ -348,6 +341,23 @@ impl Atom {
     /// Set the anisotropic temperature factors.
     pub fn set_anisotropic_temperature_factors(&mut self, factors: [[f64; 3]; 3]) {
         self.atf = Some(factors);
+    }
+
+    /// Add a bond to this Atom, do not forget to add the reverse bond as well yourself.
+    pub fn add_bond(&mut self, atom: Arc<RefCell<Atom>>, bond: Bond) {
+        self.bonds.push((atom, bond));
+        //atom.add_bond(self, bond);
+    }
+
+    /// Get the number of bonds on this Atom.
+    pub fn bond_count(&self) -> usize {
+        self.bonds.len()
+    }
+
+    /// Get all bonds to this Atom, it returns an `Arc<Atom>` which is a reference counted pointer to the Atom,
+    /// meaning it cannot ever be freed while the value is still being used somewhere.
+    pub fn bonds(&self) -> impl DoubleEndedIterator<Item = (Ref<'_, Atom>, Bond)> + '_ {
+        self.bonds.iter().map(|(a, b)| (a.borrow(), *b))
     }
 
     /// Determine whether this atom is likely to be a part of the backbone of a protein.
