@@ -330,10 +330,11 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         18, ATOM_NAME, "atom_site.label_atom_id", Required;
         19, ATOM_OCCUPANCY, "atom_site.occupancy", Optional;
         20, ATOM_SEQ_ID, "atom_site.label_seq_id", Required;
-        21, ATOM_TYPE, "atom_site.type_symbol", Required;
-        22, ATOM_X, "atom_site.Cartn_x", Required;
-        23, ATOM_Y, "atom_site.Cartn_y", Required;
-        24, ATOM_Z, "atom_site.Cartn_z", Required;
+        21, ATOM_AUTH_SEQ_ID, "atom_site.auth_seq_id", Optional;
+        22, ATOM_TYPE, "atom_site.type_symbol", Required;
+        23, ATOM_X, "atom_site.Cartn_x", Required;
+        24, ATOM_Y, "atom_site.Cartn_y", Required;
+        25, ATOM_Z, "atom_site.Cartn_z", Required;
     );
 
     let positions_: Vec<Result<Option<usize>, PDBError>> = COLUMNS
@@ -393,8 +394,10 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         let residue_name =
             parse_column!(get_text, ATOM_COMP_ID).expect("Residue name should be provided");
         #[allow(clippy::cast_possible_wrap)]
-        let residue_number = parse_column!(get_isize, ATOM_SEQ_ID)
-            .unwrap_or_else(|| pdb.total_residue_count() as isize);
+        let residue_number = parse_column!(get_isize, ATOM_AUTH_SEQ_ID).unwrap_or_else(|| {
+            parse_column!(get_isize, ATOM_SEQ_ID)
+                .unwrap_or_else(|| pdb.total_residue_count() as isize)
+        });
         let chain_name =
             parse_column!(get_text, ATOM_ASYM_ID).expect("Chain name should be provided");
         let pos_x = parse_column!(get_f64, ATOM_X).expect("Atom X position should be provided");
