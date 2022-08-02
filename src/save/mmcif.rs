@@ -44,9 +44,6 @@ pub fn save_mmcif(
 /// Save the given PDB struct to the given BufWriter.
 /// It does not validate or renumber the PDB, so if that is needed that needs to be done in preparation.
 /// It does change the output format based on the StrictnessLevel given.
-///
-/// ## Warning
-/// This function is unstable and unfinished!
 #[allow(clippy::unwrap_used)]
 pub fn save_mmcif_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
     /// Write a piece of text to the file, has the same structure as format!
