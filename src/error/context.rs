@@ -283,7 +283,7 @@ impl fmt::Display for Context {
     }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 /// A position in a file for use in parsing/lexing
 pub struct Position<'a> {
     /// The remaining text (as ref so no copies)
