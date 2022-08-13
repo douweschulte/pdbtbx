@@ -21,7 +21,7 @@ pub use chain::Chain;
 pub use conformer::Conformer;
 pub use database_reference::*;
 pub use elements::{AtomicRadius, Element};
-use helper::*;
+pub(crate) use helper::*;
 pub use hierarchy::*;
 pub use model::Model;
 pub use mtrix::MtriX;

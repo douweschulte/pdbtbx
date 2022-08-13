@@ -231,6 +231,7 @@ _atom_site.label_atom_id
 _atom_site.label_alt_id 
 _atom_site.label_comp_id 
 _atom_site.label_asym_id 
+_atom_site.auth_asym_id 
 _atom_site.label_entity_id 
 _atom_site.label_seq_id 
 _atom_site.auth_seq_id 
@@ -276,8 +277,9 @@ _atom_site.aniso_U[3][3]"
                             atom.name().to_string(),          // Name
                             conformer.alternative_location().unwrap_or(".").to_string(), // Alternative location
                             conformer.name().to_string(), // Residue name
-                            chain.id().to_string(),       // Chain name
-                            chain_index.to_string(),      // Entity ID, using chain serial number
+                            number_to_base26(chain_index), // Label Chain name, defined to be without gaps
+                            chain.id().to_string(),        // Auth Chain name
+                            chain_index.to_string(),       // Entity ID, using chain serial number
                             (residue_index + 1).to_string(), // `label_seq_id` defined to be [1-N] where N is the index
                             residue.serial_number().to_string(), // Residue serial number
                             residue.insertion_code().unwrap_or(".").to_string(), // Insertion code

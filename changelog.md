@@ -11,6 +11,9 @@ All versions are properly annotated on [github](https://github.com/douweschulte/
 * Implemented `FromIterator` for the `PDB` struct
 * Removed requirement for `atom_site.pdbx_formal_charge`, `atom_site.group_PDB`, `atom_site.occupancy`, and `atom_site.B_iso_or_equiv` for mmCIF files (thanks to #93)
 * Added support for SCALE, ORIGX, and MTRIX in mmCIF files (open and save)
+* Fixed ignoring some of the `auth_*` series of mmCIF columns, by giving them precedence over the `label_*` columns in `seq_id` and `asym_id` (thanks to #95)
+* Fixed remark-type-number 400 missing from the valid number list (thanks to #96)
+* Fixed a small bug in saving MtriX records (thanks to #96)
 
 ### v0.9.2
 * Added `open_mmcif_raw`

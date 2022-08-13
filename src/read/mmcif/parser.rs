@@ -320,21 +320,22 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         8,  ATOM_ANISOU_3_2, "_atom_site.aniso_U[3][2]", Optional;
         9,  ATOM_ANISOU_3_3, "_atom_site.aniso_U[3][3]", Optional;
         10, ATOM_ASYM_ID, "atom_site.label_asym_id", Required;
-        11, ATOM_B, "atom_site.B_iso_or_equiv", Optional;
-        12, ATOM_CHARGE, "atom_site.pdbx_formal_charge", Optional;
-        13, ATOM_COMP_ID, "atom_site.label_comp_id", Required;
-        14, ATOM_GROUP, "atom_site.group_PDB", Optional;
-        15, ATOM_ID, "atom_site.id", Required;
-        16, ATOM_INSERTION, "atom_site.pdbx_PDB_ins_code", Optional;
-        17, ATOM_MODEL, "atom_site.pdbx_PDB_model_num", Optional;
-        18, ATOM_NAME, "atom_site.label_atom_id", Required;
-        19, ATOM_OCCUPANCY, "atom_site.occupancy", Optional;
-        20, ATOM_SEQ_ID, "atom_site.label_seq_id", Required;
-        21, ATOM_AUTH_SEQ_ID, "atom_site.auth_seq_id", Optional;
-        22, ATOM_TYPE, "atom_site.type_symbol", Required;
-        23, ATOM_X, "atom_site.Cartn_x", Required;
-        24, ATOM_Y, "atom_site.Cartn_y", Required;
-        25, ATOM_Z, "atom_site.Cartn_z", Required;
+        11, ATOM_AUTH_ASYM_ID, "atom_site.auth_asym_id", Optional;
+        12, ATOM_B, "atom_site.B_iso_or_equiv", Optional;
+        13, ATOM_CHARGE, "atom_site.pdbx_formal_charge", Optional;
+        14, ATOM_COMP_ID, "atom_site.label_comp_id", Required;
+        15, ATOM_GROUP, "atom_site.group_PDB", Optional;
+        16, ATOM_ID, "atom_site.id", Required;
+        17, ATOM_INSERTION, "atom_site.pdbx_PDB_ins_code", Optional;
+        18, ATOM_MODEL, "atom_site.pdbx_PDB_model_num", Optional;
+        19, ATOM_NAME, "atom_site.label_atom_id", Required;
+        20, ATOM_OCCUPANCY, "atom_site.occupancy", Optional;
+        21, ATOM_SEQ_ID, "atom_site.label_seq_id", Required;
+        22, ATOM_AUTH_SEQ_ID, "atom_site.auth_seq_id", Optional;
+        23, ATOM_TYPE, "atom_site.type_symbol", Required;
+        24, ATOM_X, "atom_site.Cartn_x", Required;
+        25, ATOM_Y, "atom_site.Cartn_y", Required;
+        26, ATOM_Z, "atom_site.Cartn_z", Required;
     );
 
     let positions_: Vec<Result<Option<usize>, PDBError>> = COLUMNS
@@ -398,8 +399,9 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             parse_column!(get_isize, ATOM_SEQ_ID)
                 .unwrap_or_else(|| pdb.total_residue_count() as isize)
         });
-        let chain_name =
-            parse_column!(get_text, ATOM_ASYM_ID).expect("Chain name should be provided");
+        let chain_name = parse_column!(get_text, ATOM_AUTH_ASYM_ID).unwrap_or_else(|| {
+            parse_column!(get_text, ATOM_ASYM_ID).expect("Chain name should be provided")
+        });
         let pos_x = parse_column!(get_f64, ATOM_X).expect("Atom X position should be provided");
         let pos_y = parse_column!(get_f64, ATOM_Y).expect("Atom Y position should be provided");
         let pos_z = parse_column!(get_f64, ATOM_Z).expect("Atom Z position should be provided");
