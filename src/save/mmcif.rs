@@ -44,9 +44,6 @@ pub fn save_mmcif(
 /// Save the given PDB struct to the given BufWriter.
 /// It does not validate or renumber the PDB, so if that is needed that needs to be done in preparation.
 /// It does change the output format based on the StrictnessLevel given.
-///
-/// ## Warning
-/// This function is unstable and unfinished!
 #[allow(clippy::unwrap_used)]
 pub fn save_mmcif_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
     /// Write a piece of text to the file, has the same structure as format!
@@ -236,6 +233,7 @@ _atom_site.label_comp_id
 _atom_site.label_asym_id 
 _atom_site.label_entity_id 
 _atom_site.label_seq_id 
+_atom_site.auth_seq_id 
 _atom_site.pdbx_PDB_ins_code 
 _atom_site.Cartn_x 
 _atom_site.Cartn_y 
@@ -266,7 +264,7 @@ _atom_site.aniso_U[3][3]"
         let mut chain_index = 0;
         for chain in model.chains() {
             chain_index += 1;
-            for residue in chain.residues() {
+            for (residue_index, residue) in chain.residues().enumerate() {
                 for conformer in residue.conformers() {
                     for atom in conformer.atoms() {
                         let mut data = vec![
@@ -280,14 +278,15 @@ _atom_site.aniso_U[3][3]"
                             conformer.name().to_string(), // Residue name
                             chain.id().to_string(),       // Chain name
                             chain_index.to_string(),      // Entity ID, using chain serial number
+                            (residue_index + 1).to_string(), // `label_seq_id` defined to be [1-N] where N is the index
                             residue.serial_number().to_string(), // Residue serial number
                             residue.insertion_code().unwrap_or(".").to_string(), // Insertion code
-                            print_float(atom.x()),        // X
-                            print_float(atom.y()),        // Y
-                            print_float(atom.z()),        // Z
-                            print_float(atom.occupancy()), // OCC/Q
-                            print_float(atom.b_factor()), // B
-                            atom.charge().to_string(),    // Charge
+                            print_float(atom.x()),           // X
+                            print_float(atom.y()),           // Y
+                            print_float(atom.z()),           // Z
+                            print_float(atom.occupancy()),   // OCC/Q
+                            print_float(atom.b_factor()),    // B
+                            atom.charge().to_string(),       // Charge
                             model.serial_number().to_string(), // Model serial number
                         ];
                         if anisou {

@@ -10,7 +10,6 @@ use crate::structs::*;
 /// ## Invariants Not Tested
 /// * Numbering of all structs, serial numbers should be unique. To enforce this the `renumber()` function should be called on the PDB struct.
 pub fn validate(pdb: &PDB) -> Vec<PDBError> {
-    // Print warnings/errors and return a bool for success
     let mut errors = Vec::new();
     if pdb.model_count() > 1 {
         errors.append(&mut validate_models(pdb));
@@ -19,17 +18,25 @@ pub fn validate(pdb: &PDB) -> Vec<PDBError> {
     if pdb.atoms().next().is_none() {
         errors.push(PDBError::new(
             ErrorLevel::BreakingError,
-            "No Atoms parsed", 
-            "No Atoms could be parsed from the given file. Please make sure it is a valid PDB/mmCIF file.", 
-            Context::None)
-        )
+            "No Atoms",
+            "No Atoms in the given PDB struct while validating.",
+            Context::None,
+        ))
     }
     errors
 }
 
-/// Validates this models specifically for the PDB format
+/// Validates this models specifically for the PDB format.
+/// It returns PDBErrors with the warning messages.
+/// It extends the validation specified in the [`validate`] function with PDB specific validations.
+///
+/// ## Invariants Tested
+/// * Values fitting in the range of the PDB format columns, both numbers and textual values.
+///
+/// ## Invariants Not Tested
+/// * Numbering of all structs, serial numbers should be unique. To enforce this the `renumber()` function should be called on the PDB struct.
 pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
-    let mut errors = Vec::new();
+    let mut errors = validate(pdb);
     for model in pdb.models() {
         if model.serial_number() > 9999 {
             errors.push(PDBError::new(
