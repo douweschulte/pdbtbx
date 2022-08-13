@@ -6,6 +6,8 @@ use crate::{structs::*, Context};
 use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
+use std::cell::Ref;
+use std::sync::Arc;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
@@ -49,8 +51,6 @@ pub struct PDB {
     pub symmetry: Option<Symmetry>,
     /// The Models making up this PDB, containing all chain, residues, conformers, and atoms.
     models: Vec<Model>,
-    /// Bonds in this PDB.
-    bonds: Vec<(usize, usize, Bond)>,
 }
 
 /// # Creators
@@ -67,7 +67,6 @@ impl PDB {
             unit_cell: None,
             symmetry: None,
             models: Vec::new(),
-            bonds: Vec::new(),
         }
     }
 }
@@ -278,10 +277,10 @@ impl<'a> PDB {
     }
 
     /// Get the number of Chains making up this PDB in parallel. Includes all models.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_total_chain_count(&self) -> usize {
-        self.models.par_iter().map(Model::chain_count).sum()
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_total_chain_count(&self) -> usize {
+    //    self.models.par_iter().map(Model::chain_count).sum()
+    //}
 
     /// Get the number of Residues making up this PDB. Includes all models.
     pub fn total_residue_count(&self) -> usize {
@@ -291,10 +290,10 @@ impl<'a> PDB {
     }
 
     /// Get the number of Residues making up this PDB in parallel. Includes all models.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_total_residue_count(&self) -> usize {
-        self.models.par_iter().map(Model::par_residue_count).sum()
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_total_residue_count(&self) -> usize {
+    //    self.models.par_iter().map(Model::par_residue_count).sum()
+    //}
 
     /// Get the number of Conformer making up this PDB. Includes all models.
     pub fn total_conformer_count(&self) -> usize {
@@ -304,10 +303,10 @@ impl<'a> PDB {
     }
 
     /// Get the number of Conformer making up this PDB in parallel. Includes all models.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_total_conformer_count(&self) -> usize {
-        self.models.par_iter().map(Model::par_conformer_count).sum()
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_total_conformer_count(&self) -> usize {
+    //    self.models.par_iter().map(Model::par_conformer_count).sum()
+    //}
 
     /// Get the number of Atoms making up this PDB. Includes all models.
     pub fn total_atom_count(&self) -> usize {
@@ -317,10 +316,10 @@ impl<'a> PDB {
     }
 
     /// Get the number of Atoms making up this PDB in parallel. Includes all models.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_total_atom_count(&self) -> usize {
-        self.models.par_iter().map(Model::par_atom_count).sum()
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_total_atom_count(&self) -> usize {
+    //    self.models.par_iter().map(Model::par_atom_count).sum()
+    //}
 
     /// Get a reference to a specific Model from the list of Models making up this PDB.
     ///
@@ -433,7 +432,7 @@ impl<'a> PDB {
     }
 
     /// Get a reference to the specified atom. Its uniqueness is guaranteed by including the
-    /// `insertion_code`, with its full hierarchy. The algorithm is based
+    /// `alternative_location`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -449,7 +448,7 @@ impl<'a> PDB {
     }
 
     /// Get a mutable reference to the specified atom. Its uniqueness is guaranteed by
-    /// including the `insertion_code`, with its full hierarchy. The algorithm is based
+    /// including the `alternative_location`, with its full hierarchy. The algorithm is based
     /// on binary search so it is faster than an exhaustive search, but the
     /// full structure is assumed to be sorted. This assumption can be enforced
     /// by using `pdb.full_sort()`.
@@ -510,10 +509,10 @@ impl<'a> PDB {
     }
 
     /// Get a parallel iterator of references to Models making up this PDB.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_models(&self) -> impl ParallelIterator<Item = &Model> + '_ {
-        self.models.par_iter()
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_models(&self) -> impl ParallelIterator<Item = &Model> + '_ {
+    //    self.models.par_iter()
+    //}
 
     /// Get an iterator of mutable references to Models making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -522,10 +521,10 @@ impl<'a> PDB {
     }
 
     /// Get a parallel iterator of mutable references to Models making up this PDB.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_models_mut(&mut self) -> impl ParallelIterator<Item = &mut Model> + '_ {
-        self.models.par_iter_mut()
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_models_mut(&mut self) -> impl ParallelIterator<Item = &mut Model> + '_ {
+    //    self.models.par_iter_mut()
+    //}
 
     /// Get an iterator of references to Chains making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -534,10 +533,10 @@ impl<'a> PDB {
     }
 
     /// Get a parallel iterator of references to Chains making up this PDB.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_chains(&self) -> impl ParallelIterator<Item = &Chain> + '_ {
-        self.par_models().flat_map(Model::par_chains)
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_chains(&self) -> impl ParallelIterator<Item = &Chain> + '_ {
+    //    self.par_models().flat_map(Model::par_chains)
+    //}
 
     /// Get a iterator of mutable references to Chains making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -546,10 +545,10 @@ impl<'a> PDB {
     }
 
     /// Get a parallel iterator of mutable references to Chains making up this PDB.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_chains_mut(&mut self) -> impl ParallelIterator<Item = &mut Chain> + '_ {
-        self.par_models_mut().flat_map(Model::par_chains_mut)
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_chains_mut(&mut self) -> impl ParallelIterator<Item = &mut Chain> + '_ {
+    //    self.par_models_mut().flat_map(Model::par_chains_mut)
+    //}
 
     /// Get an iterator of references to Residues making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -558,10 +557,10 @@ impl<'a> PDB {
     }
 
     /// Get a parallel iterator of references to Residues making up this PDB.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
-        self.par_models().flat_map(Model::par_residues)
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
+    //    self.par_models().flat_map(Model::par_residues)
+    //}
 
     /// Get an iterator of mutable references to Residues making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -570,10 +569,10 @@ impl<'a> PDB {
     }
 
     /// Get a parallel iterator of mutable references to Residues making up this PDB.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
-        self.par_models_mut().flat_map(Model::par_residues_mut)
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
+    //    self.par_models_mut().flat_map(Model::par_residues_mut)
+    //}
 
     /// Get an iterator of references to Conformers making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -582,10 +581,10 @@ impl<'a> PDB {
     }
 
     /// Get a parallel iterator of references to Conformers making up this PDB.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
-        self.par_models().flat_map(Model::par_conformers)
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
+    //    self.par_models().flat_map(Model::par_conformers)
+    //}
 
     /// Get an iterator of mutable references to Conformers making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -594,10 +593,10 @@ impl<'a> PDB {
     }
 
     /// Get a parallel iterator of mutable references to Conformers making up this PDB.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
-        self.par_models_mut().flat_map(Model::par_conformers_mut)
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
+    //    self.par_models_mut().flat_map(Model::par_conformers_mut)
+    //}
 
     /// Get an iterator of references to Atom making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -606,10 +605,10 @@ impl<'a> PDB {
     }
 
     /// Get a parallel iterator of references to Atom making up this PDB.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
-        self.par_models().flat_map(Model::par_atoms)
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
+    //    self.par_models().flat_map(Model::par_atoms)
+    //}
 
     /// Get an iterator of mutable references to Atom making up this PDB.
     /// Double ended so iterating from the end is just as fast as from the start.
@@ -618,10 +617,10 @@ impl<'a> PDB {
     }
 
     /// Get a parallel iterator of mutable references to Atom making up this PDB.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
-        self.par_models_mut().flat_map(Model::par_atoms_mut)
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
+    //    self.par_models_mut().flat_map(Model::par_atoms_mut)
+    //}
 
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this PDB.
     pub fn atoms_with_hierarchy(
@@ -646,7 +645,7 @@ impl<'a> PDB {
     /// As this is done in place this is the fastest way to remove Atoms from this PDB.
     pub fn remove_atoms_by<F>(&mut self, predicate: F)
     where
-        F: Fn(&Atom) -> bool,
+        F: Fn(Ref<'_, Atom>) -> bool,
     {
         for residue in self.residues_mut() {
             residue.remove_atoms_by(&predicate);
@@ -731,20 +730,20 @@ impl<'a> PDB {
     ///
     /// ## Arguments
     /// * `serial_number` - the serial number of the Model to remove
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_model_serial_number(&mut self, serial_number: usize) -> bool {
-        let index = self
-            .models
-            .par_iter()
-            .position_first(|a| a.serial_number() == serial_number);
-
-        if let Some(i) = index {
-            self.remove_model(i);
-            true
-        } else {
-            false
-        }
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_remove_model_serial_number(&mut self, serial_number: usize) -> bool {
+    //    let index = self
+    //        .models
+    //        .par_iter()
+    //        .position_first(|a| a.serial_number() == serial_number);
+    //
+    //    if let Some(i) = index {
+    //        self.remove_model(i);
+    //        true
+    //    } else {
+    //        false
+    //    }
+    //}
 
     /// Remove all empty Models from this PDB, and all empty Chains from the Model, and all empty Residues from the Chains.
     pub fn remove_empty(&mut self) {
@@ -754,11 +753,11 @@ impl<'a> PDB {
 
     /// Remove all empty Models from this PDB, and all empty Chains from the Model, and all empty Residues from the Chains.
     /// Done in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_remove_empty(&mut self) {
-        self.models.par_iter_mut().for_each(Model::remove_empty);
-        self.models.retain(|m| m.chain_count() > 0);
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_remove_empty(&mut self) {
+    //    self.models.par_iter_mut().for_each(Model::remove_empty);
+    //    self.models.retain(|m| m.chain_count() > 0);
+    //}
 
     /// This renumbers all numbered structs in the PDB.
     /// So it renumbers models, atoms, residues, chains and [`MtriX`]s.
@@ -806,11 +805,11 @@ impl<'a> PDB {
 
     /// Apply a transformation to the position of all atoms making up this PDB, the new position is immediately set.
     /// Done in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
-        self.par_atoms_mut()
-            .for_each(|atom| atom.apply_transformation(transformation));
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
+    //    self.par_atoms_mut()
+    //        .for_each(|atom| atom.apply_transformation(transformation));
+    //}
 
     /// Joins two PDBs. If one has multiple models it extends the models of this PDB with the models of the other PDB. If this PDB does
     /// not have any models it moves the models of the other PDB to this PDB. If both have one model it moves all chains/residues/atoms
@@ -834,10 +833,10 @@ impl<'a> PDB {
     }
 
     /// Sort the Models of this PDB in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_sort(&mut self) {
-        self.models.par_sort();
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_sort(&mut self) {
+    //    self.models.par_sort();
+    //}
 
     /// Sort all structs in this PDB.
     pub fn full_sort(&mut self) {
@@ -857,14 +856,14 @@ impl<'a> PDB {
     }
 
     /// Sort all structs in this PDB in parallel.
-    #[doc_cfg(feature = "rayon")]
-    pub fn par_full_sort(&mut self) {
-        self.par_sort();
-        self.par_models_mut().for_each(Model::par_sort);
-        self.par_chains_mut().for_each(Chain::par_sort);
-        self.par_residues_mut().for_each(Residue::par_sort);
-        self.par_conformers_mut().for_each(Conformer::par_sort);
-    }
+    //#[doc_cfg(feature = "rayon")]
+    //pub fn par_full_sort(&mut self) {
+    //    self.par_sort();
+    //    self.par_models_mut().for_each(Model::par_sort);
+    //    self.par_chains_mut().for_each(Chain::par_sort);
+    //    self.par_residues_mut().for_each(Residue::par_sort);
+    //    self.par_conformers_mut().for_each(Conformer::par_sort);
+    //}
 
     /// Create an R star tree of Atoms which can be used for fast lookup of
     /// spatially close atoms. See the crate rstar for documentation
@@ -925,22 +924,6 @@ impl<'a> PDB {
         ((min[0], min[1], min[2]), (max[0], max[1], max[2]))
     }
 
-    /// Get the bonds in this PDB file. Runtime is `O(bonds_count * 2 * atom_count)` because it
-    /// has to iterate over all atoms to prevent borrowing problems.
-    pub fn bonds(&self) -> impl DoubleEndedIterator<Item = (&Atom, &Atom, Bond)> + '_ {
-        self.bonds.iter().map(move |(a, b, bond)| {
-            (
-                self.atoms()
-                    .find(|atom| atom.counter() == *a)
-                    .expect("Could not find an atom in the bonds list"),
-                self.atoms()
-                    .find(|atom| atom.counter() == *b)
-                    .expect("Could not find an atom in the bonds list"),
-                *bond,
-            )
-        })
-    }
-
     /// Add a bond of the given type to the list of bonds in this PDB.
     /// The atoms are selected by serial number and alternative location.
     /// It uses `binary_find_atom` in the background so the PDB should be sorted.
@@ -952,18 +935,39 @@ impl<'a> PDB {
         atom2: (usize, Option<&str>),
         bond: Bond,
     ) -> Option<()> {
-        self.bonds.push((
-            self.binary_find_atom(atom1.0, atom1.1)?.atom().counter(),
-            self.binary_find_atom(atom2.0, atom2.1)?.atom().counter(),
-            bond,
-        ));
-        Some(())
-    }
+        let mut hierarchy1 = self
+            .binary_find_atom_mut(atom1.0, atom1.1)
+            .expect("Could not find Atom1");
+        let conformer1 = hierarchy1.conformer_mut();
+        let atom1_arc = conformer1
+            .atom_arc(atom1.0)
+            .map(Arc::clone)
+            .expect("Could not find atom1 arc");
+        let conformer1: *mut Conformer = conformer1;
+        let mut hierarchy2 = self
+            .binary_find_atom_mut(atom2.0, atom2.1)
+            .expect("Could not find Atom2");
+        let conformer2 = hierarchy2.conformer_mut();
+        let atom2_arc = conformer2
+            .atom_arc(atom2.0)
+            .map(Arc::clone)
+            .expect("Could not find Atom2 arc");
+        dbg!(atom1, atom2, bond);
+        unsafe {
+            dbg!((*conformer1).atoms_mut().collect::<Vec<_>>());
+            (*conformer1)
+                .atoms_mut()
+                .find(|a| a.serial_number() == atom1.0) // Because the underlying vec uses an Arc this will not find the actual Atom because it is borrowed in this same function before. Start to use RefCell?
+                .expect("Could not find atom 1 for bond")
+                .add_bond(atom2_arc, bond);
+        }
+        conformer2
+            .atoms_mut()
+            .find(|a| a.serial_number() == atom2.0)
+            .expect("Could not find atom2 for bond")
+            .add_bond(atom1_arc, bond);
 
-    /// Add a bond of the given type to the list of bonds in this PDB.
-    /// The raw counters of the atoms are given.
-    pub(crate) fn add_bond_counters(&mut self, atom1: usize, atom2: usize, bond: Bond) {
-        self.bonds.push((atom1, atom2, bond));
+        Some(())
     }
 }
 
@@ -1166,7 +1170,8 @@ mod tests {
             (0, None),
             ("MET", None),
         );
-        let pdb = PDB::new();
+        let mut pdb = PDB::new();
+        pdb.add_model(model);
 
         let json = serde_json::to_string(&pdb).unwrap();
         let parsed = serde_json::from_str(&json).unwrap();
@@ -1197,5 +1202,76 @@ mod tests {
         let mut pdb = PDB::new();
         pdb.add_model(model);
         assert_eq!(((-1., -1., -1.), (2., 2., 2.)), pdb.bounding_box());
+    }
+
+    #[test]
+    fn add_bonds() {
+        let mut model = Model::new(0);
+        model.add_atom(
+            Atom::new(false, 0, "A", -1.0, 0.0, 2.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        model.add_atom(
+            Atom::new(false, 1, "B", 1.0, 2.0, -1.0, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        model.add_atom(
+            Atom::new(false, 2, "C", 2.0, -1.0, 0.5, 0.0, 0.0, "", 0).unwrap(),
+            "A",
+            (0, None),
+            ("MET", None),
+        );
+        let mut pdb = PDB::new();
+        pdb.add_model(model);
+        pdb.full_sort();
+
+        println!("{:#?}", pdb);
+        assert!(pdb.binary_find_atom(0, None).is_some());
+
+        assert!(pdb.add_bond((0, None), (1, None), Bond::Covalent).is_some());
+        assert!(pdb.add_bond((1, None), (2, None), Bond::Covalent).is_some());
+
+        assert_eq!(
+            pdb.find(Term::AtomSerialNumber(0).into())
+                .next()
+                .unwrap()
+                .atom()
+                .bond_count(),
+            1
+        );
+        assert_eq!(
+            pdb.find(Term::AtomSerialNumber(1).into())
+                .next()
+                .unwrap()
+                .atom()
+                .bond_count(),
+            2
+        );
+        assert_eq!(
+            pdb.find(Term::AtomSerialNumber(2).into())
+                .next()
+                .unwrap()
+                .atom()
+                .bond_count(),
+            1
+        );
+
+        assert_eq!(
+            pdb.find(Term::AtomSerialNumber(1).into())
+                .next()
+                .unwrap()
+                .atom()
+                .bonds()
+                .map(|(a, b)| (a.name().to_string(), b))
+                .collect::<Vec<_>>(),
+            vec![
+                ("A".to_string(), Bond::Covalent),
+                ("C".to_string(), Bond::Covalent)
+            ]
+        );
     }
 }

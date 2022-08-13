@@ -609,33 +609,35 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
 /// Adds all bonds to the PDB, has to be done after all Atoms are already in place
 #[allow(clippy::unwrap_used)]
 fn add_bonds(pdb: &mut PDB, bonds: Vec<(Context, LexItem)>) -> Vec<PDBError> {
-    let mut errors = Vec::new();
-    for (context, bond) in bonds {
+    let errors = Vec::new();
+    for (_context, bond) in bonds {
         match bond {
             LexItem::SSBond(atom1, atom2, ..) => {
                 let find = |atom: (String, isize, Option<String>, String)| {
-                    pdb.chains()
-                        .find(|c| c.id() == atom.3)
-                        .and_then(|c| {
-                            c.residues()
-                                .find(|r| {
-                                    r.serial_number() == atom.1
-                                        && r.insertion_code() == atom.2.as_deref()
-                                })
-                                .map(|r| {
-                                    r.conformers().find(|c| c.name() == atom.0).map(|c| {
-                                        c.atoms().find(|a| a.name() == "SG").map(Atom::counter)
-                                    })
-                                })
-                        })
-                        .flatten()
-                        .flatten()
+                    let h = pdb
+                        .find(
+                            Term::ConformerName(atom.0)
+                                & Term::ResidueSerialNumber(atom.1)
+                                & Term::ResidueInsertionCode(atom.2),
+                        )
+                        .next()
+                        .unwrap();
+                    (
+                        h.atom().serial_number().to_owned(),
+                        h.conformer()
+                            .alternative_location()
+                            .map(std::borrow::ToOwned::to_owned),
+                    )
                 };
                 let ref1 = find(atom1);
                 let ref2 = find(atom2);
-
+                pdb.add_bond(
+                    (ref1.0, ref1.1.as_deref()),
+                    (ref2.0, ref2.1.as_deref()),
+                    Bond::Disulfide,
+                );
+                /*
                 if let (Some(counter1), Some(counter2)) = (ref1, ref2) {
-                    pdb.add_bond_counters(counter1, counter2, Bond::Disulfide);
                 } else {
                     errors.push(PDBError::new(
                         ErrorLevel::InvalidatingError,
@@ -643,7 +645,7 @@ fn add_bonds(pdb: &mut PDB, bonds: Vec<(Context, LexItem)>) -> Vec<PDBError> {
                         "One of the atoms could not be found while parsing a disulfide bond.",
                         context,
                     ));
-                }
+                } */
             }
             _ => {
                 panic!(
