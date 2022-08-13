@@ -68,12 +68,19 @@ The features where support is planned are planned to be included in the 1.0 rele
 * The crate has many ways of iterating over the PDB structure to allow for convenient access and control over the performance.
 
 ## Latest update
-### v0.9.2
-* Added `open_mmcif_raw`
-* Fixed a bug in atom parsing (#92)
-* Removed below precision errors in validation
-* Changed many functions to accept `AsRef<str>` instead of `&str`
-* Marked all applicable functions as `const`
+### v0.10.0 'Enumerated Elements'
+* Moved from string based elements to enums see `Element`, this means that the `Atom::set_element`, `Atom::element`, and `Term::element` have changed
+* Deprecated the following functions `Atom::atom_number`, `Atom::atomic_radius`, `Atom::covalent_bond_radii`,
+ and `Atom::vanderwaals_radius` the radius functions are replaced with  `Element::atomic_radius` which contains
+ all these measures in the struct `AtomicRadius`
+* Added `Element::weight` and `Element::electro_negativity` data
+* Implemented `Extend` for all levels in the PDB hierarchy
+* Implemented `FromIterator` for the `PDB` struct
+* Removed requirement for `atom_site.pdbx_formal_charge`, `atom_site.group_PDB`, `atom_site.occupancy`, and `atom_site.B_iso_or_equiv` for mmCIF files (thanks to #93)
+* Added support for SCALE, ORIGX, and MTRIX in mmCIF files (open and save)
+* Fixed ignoring some of the `auth_*` series of mmCIF columns, by giving them precedence over the `label_*` columns in `seq_id` and `asym_id` (thanks to #95)
+* Fixed remark-type-number 400 missing from the valid number list (thanks to #96)
+* Fixed a small bug in saving MtriX records (thanks to #96)
 
 Also see [changelog](https://github.com/douweschulte/pdbtbx/blob/master/changelog.md).
 

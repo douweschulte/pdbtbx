@@ -1,6 +1,6 @@
 [package]
 name = "pdbtbx"
-version = "0.9.2"
+version = "0.10.0"
 authors = ["Douwe Schulte <d.schulte@uu.nl>"]
 license = "MIT"
 edition = "2021"
