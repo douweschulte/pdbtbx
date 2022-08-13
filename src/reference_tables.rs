@@ -64,10 +64,10 @@ pub fn valid_remark_type_number(number: usize) -> bool {
 }
 
 /// The valid remark type numbers as of PDB v3.30
-const REMARK_TYPES: [usize; 41] = [
+const REMARK_TYPES: [usize; 42] = [
     0, 1, 2, 3, 4, 5, 100, 200, 205, 210, 215, 217, 230, 240, 245, 247, 250, 265, 280, 285, 290,
-    300, 350, 375, 450, 465, 470, 475, 480, 500, 525, 600, 610, 615, 620, 630, 650, 700, 800, 900,
-    999,
+    300, 350, 375, 400, 450, 465, 470, 475, 480, 500, 525, 600, 610, 615, 620, 630, 650, 700, 800,
+    900, 999,
 ];
 
 /// All amino acids. Includes Amber-specific naming conventions for (de-)protonated versions, CYS involved in

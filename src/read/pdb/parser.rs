@@ -102,7 +102,9 @@ where
             errors.extend(line_errors);
             match result {
                 LexItem::Header(_, _, identifier) => pdb.identifier = Some(identifier),
-                LexItem::Remark(num, text) => pdb.add_remark(num, text.to_string()),
+                LexItem::Remark(num, text) => {
+                    let _ = pdb.add_remark(num, text.to_string()); // Better error messages are created downstream
+                }
                 LexItem::Atom(
                     hetero,
                     serial_number,

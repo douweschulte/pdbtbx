@@ -55,6 +55,11 @@ impl PDBError {
         &self.short_description
     }
 
+    /// Gives the long description for this error
+    pub fn long_description(&self) -> &str {
+        &self.long_description
+    }
+
     /// Gives the context for this error
     pub const fn context(&self) -> &Context {
         &self.context

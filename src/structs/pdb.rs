@@ -1,8 +1,8 @@
 #![allow(dead_code)]
-use crate::reference_tables;
 use crate::structs::hierarchy::*;
-use crate::structs::*;
 use crate::transformation::TransformationMatrix;
+use crate::{reference_tables, PDBError};
+use crate::{structs::*, Context};
 use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
@@ -108,20 +108,39 @@ impl PDB {
     /// * `remark_type` - the remark-type-number
     /// * `remark_text` - the free line of text, containing the actual remark
     ///
-    /// ## Panics
-    /// It panics if the text if too long, the text contains invalid characters or the remark-type-number is not valid (wwPDB v3.30).
-    pub fn add_remark(&mut self, remark_type: usize, remark_text: String) {
-        assert!(reference_tables::valid_remark_type_number(remark_type), "The given remark-type-number is not valid, see wwPDB v3.30 for valid remark-type-numbers");
-        assert!(
-            valid_text(&remark_text),
-            "The given remark text contains invalid characters."
-        );
-        // As the text can only contain ASCII len() on strings is fine (it returns the length in bytes)
-        if remark_text.len() > 70 {
-            println!("WARNING: The given remark text is too long, the maximal length is 68 characters, the given string is {} characters.", remark_text.len());
+    /// ## Fails
+    /// It fails if the text if too long, the text contains invalid characters or the remark-type-number is not valid (wwPDB v3.30).
+    pub fn add_remark(&mut self, remark_type: usize, remark_text: String) -> Result<(), PDBError> {
+        let context = Context::show(format!("REMARK {:3} {}", remark_type, remark_text));
+        if !reference_tables::valid_remark_type_number(remark_type) {
+            return Err(PDBError::new(
+                crate::ErrorLevel::InvalidatingError,
+                "Remark-type-number invalid", 
+                "The given remark-type-number is not valid, see wwPDB v3.30 for valid remark-type-numbers", 
+                context));
+        }
+        if !valid_text(&remark_text) {
+            return Err(PDBError::new(
+                crate::ErrorLevel::InvalidatingError,
+                "Remark text invalid",
+                "The given remark text contains invalid characters.",
+                context,
+            ));
         }
 
+        // As the text can only contain ASCII len() on strings is fine (it returns the length in bytes)
+        let res = if remark_text.len() > 70 {
+            Err(PDBError::new(
+                crate::ErrorLevel::LooseWarning,
+                "Remark text too long", 
+                format!("The given remark text is too long, the maximal length is 68 characters, the given string is {} characters.", remark_text.len()), 
+                context))
+        } else {
+            Ok(())
+        };
+
         self.remarks.push((remark_type, remark_text));
+        res
     }
 
     /// Delete the remarks matching the given predicate.

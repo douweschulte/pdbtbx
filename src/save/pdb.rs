@@ -416,6 +416,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         let m = mtrix.transformation.matrix();
         print_line(vec![
             (0, "MTRIX1"),
+            (0, " "),
             (3, mtrix.serial_number.to_string().as_str()),
             (10, &format!("{:10.6}", m[0][0])),
             (10, &format!("{:10.6}", m[0][1])),
@@ -427,6 +428,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         ]);
         print_line(vec![
             (0, "MTRIX2"),
+            (0, " "),
             (3, mtrix.serial_number.to_string().as_str()),
             (10, &format!("{:10.6}", m[1][0])),
             (10, &format!("{:10.6}", m[1][1])),
@@ -438,6 +440,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
         ]);
         print_line(vec![
             (0, "MTRIX3"),
+            (0, " "),
             (3, mtrix.serial_number.to_string().as_str()),
             (10, &format!("{:10.6}", m[2][0])),
             (10, &format!("{:10.6}", m[2][1])),
