@@ -2,13 +2,14 @@ use crate::error::*;
 use crate::structs::*;
 
 /// Validate a given PDB file in terms of invariants that should be held up.
-/// It returns PDBErrors with the warning messages.
+/// It returns `PDBError`s with the warning messages.
 ///
 /// ## Invariants Tested
 /// * With multiple models the models should all contain atoms that correspond.
 ///
 /// ## Invariants Not Tested
 /// * Numbering of all structs, serial numbers should be unique. To enforce this the `renumber()` function should be called on the PDB struct.
+#[must_use]
 pub fn validate(pdb: &PDB) -> Vec<PDBError> {
     let mut errors = Vec::new();
     if pdb.model_count() > 1 {
@@ -21,13 +22,13 @@ pub fn validate(pdb: &PDB) -> Vec<PDBError> {
             "No Atoms",
             "No Atoms in the given PDB struct while validating.",
             Context::None,
-        ))
+        ));
     }
     errors
 }
 
 /// Validates this models specifically for the PDB format.
-/// It returns PDBErrors with the warning messages.
+/// It returns `PDBError`s with the warning messages.
 /// It extends the validation specified in the [`validate`] function with PDB specific validations.
 ///
 /// ## Invariants Tested
@@ -35,6 +36,7 @@ pub fn validate(pdb: &PDB) -> Vec<PDBError> {
 ///
 /// ## Invariants Not Tested
 /// * Numbering of all structs, serial numbers should be unique. To enforce this the `renumber()` function should be called on the PDB struct.
+#[must_use]
 pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
     let mut errors = validate(pdb);
     for model in pdb.models() {

@@ -95,7 +95,7 @@ fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
         if values.len() % columns == 0 {
             loop_value.data = Vec::with_capacity(values.len() / columns);
             let mut iter = values.into_iter().peekable();
-            while (&mut iter).peek().is_some() {
+            while iter.peek().is_some() {
                 loop_value.data.push((&mut iter).take(columns).collect());
             }
         } else {
@@ -422,25 +422,25 @@ fn parse_multiline_string<'a>(input: &mut Position<'a>) -> Result<&'a str, PDBEr
     let mut eol = false;
     let mut iter = input.text.chars().skip(1).peekable();
 
-    while let Some(c) = (&mut iter).next() {
+    while let Some(c) = iter.next() {
         if eol && c == ';' {
             let trimmed = &input.text[1..chars_to_remove];
             input.text = &input.text[(chars_to_remove + 1)..];
             input.column += 1;
             return Ok(trimmed);
         } else if c == '\n' {
-            if let Some('\r') = (&mut iter).peek() {
+            if let Some('\r') = iter.peek() {
                 chars_to_remove += 1;
-                let _ = (&mut iter).next();
+                let _ = iter.next();
             }
             input.line += 1;
             input.column = 1;
             chars_to_remove += 1;
             eol = true;
         } else if c == '\r' {
-            if let Some('\n') = (&mut iter).peek() {
+            if let Some('\n') = iter.peek() {
                 chars_to_remove += 1;
-                let _ = (&mut iter).next();
+                let _ = iter.next();
             }
             input.line += 1;
             input.column = 1;
@@ -469,9 +469,9 @@ fn skip_to_eol(input: &mut Position<'_>) {
     let mut chars_to_remove = 1;
     let mut iter = input.text.chars().skip(1).peekable();
 
-    while let Some(c) = (&mut iter).next() {
+    while let Some(c) = iter.next() {
         if c == '\n' {
-            if let Some('\r') = (&mut iter).peek() {
+            if let Some('\r') = iter.peek() {
                 chars_to_remove += 1
             }
             input.line += 1;
@@ -480,7 +480,7 @@ fn skip_to_eol(input: &mut Position<'_>) {
             input.text = &input.text[chars_to_remove..];
             return;
         } else if c == '\r' {
-            if let Some('\n') = (&mut iter).peek() {
+            if let Some('\n') = iter.peek() {
                 chars_to_remove += 1
             }
             input.line += 1;
@@ -501,22 +501,22 @@ fn trim_whitespace(input: &mut Position<'_>) {
     let mut chars_to_remove = 0;
     let mut iter = input.text.chars().peekable();
 
-    while let Some(c) = (&mut iter).next() {
+    while let Some(c) = iter.next() {
         if c == ' ' || c == '\t' {
             input.column += 1;
             chars_to_remove += 1;
         } else if c == '\n' {
-            if let Some('\r') = (&mut iter).peek() {
+            if let Some('\r') = iter.peek() {
                 chars_to_remove += 1;
-                let _ = (&mut iter).next();
+                let _ = iter.next();
             }
             input.line += 1;
             input.column = 1;
             chars_to_remove += 1;
         } else if c == '\r' {
-            if let Some('\n') = (&mut iter).peek() {
+            if let Some('\n') = iter.peek() {
                 chars_to_remove += 1;
-                let _ = (&mut iter).next();
+                let _ = iter.next();
             }
             input.line += 1;
             input.column = 1;

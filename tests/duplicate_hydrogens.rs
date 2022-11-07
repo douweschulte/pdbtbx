@@ -30,10 +30,6 @@ fn number_of_h(file: &str) -> usize {
     }
 
     structure.atoms().fold(0, |acc, a| {
-        acc + if a.element() == Some(&Element::H) {
-            1
-        } else {
-            0
-        }
+        acc + usize::from(a.element() == Some(&Element::H))
     })
 }

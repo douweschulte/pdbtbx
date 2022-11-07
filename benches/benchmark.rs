@@ -77,7 +77,7 @@ fn bench_iteration(pdb: PDB) {
 }
 
 fn bench_validate(pdb: PDB) {
-    validate(&pdb);
+    let _ = validate(&pdb);
 }
 
 fn bench_renumber(mut pdb: PDB) {
@@ -118,7 +118,7 @@ fn measure<T: Clone>(
     description: &str,
 ) -> (String, u128, u128, usize) {
     let mut times = Vec::new();
-    let _ = function(subject.clone());
+    function(subject.clone());
     let start = Instant::now();
     let mut now;
 

@@ -206,14 +206,14 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                         (0, " "),
                         (
                             3,
-                            (&dif.database_residue)
+                            dif.database_residue
                                 .as_ref()
                                 .map_or("", |(a, _)| a.as_str()),
                         ),
                         (0, " "),
                         (
                             5,
-                            (&dif.database_residue)
+                            dif.database_residue
                                 .as_ref()
                                 .map_or(&0, |(_, a)| a)
                                 .to_string()

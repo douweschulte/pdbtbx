@@ -440,7 +440,7 @@ impl<'a> Model {
         if !found {
             // As this moves the chain the atom should be added later to keep the reference intact
             self.chains.push(new_chain);
-            current_chain = (&mut self.chains).last_mut().unwrap();
+            current_chain = self.chains.last_mut().unwrap();
         }
 
         current_chain.add_atom(new_atom, residue_id, conformer_id);

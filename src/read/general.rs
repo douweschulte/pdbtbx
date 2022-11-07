@@ -102,9 +102,11 @@ mod tests {
 
     #[test]
     fn open_not_existing() {
-        let pdb = open("file.pdb", StrictnessLevel::Medium).unwrap_err();
+        let pdb =
+            open("file.pdb", StrictnessLevel::Medium).expect_err("This file should not exist.");
         assert_eq!(pdb[0].short_description(), "Could not open file");
-        let cif = open("file.cif", StrictnessLevel::Medium).unwrap_err();
+        let cif =
+            open("file.cif", StrictnessLevel::Medium).expect_err("This file should not exist.");
         assert_eq!(cif[0].short_description(), "Could not open file");
     }
 }

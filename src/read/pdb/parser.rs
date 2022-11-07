@@ -98,264 +98,265 @@ where
         };
 
         // Then immediately add this lines information to the final PDB struct
-        if let Ok((result, line_errors)) = line_result {
-            errors.extend(line_errors);
-            match result {
-                LexItem::Header(_, _, identifier) => pdb.identifier = Some(identifier),
-                LexItem::Remark(num, text) => {
-                    let _ = pdb.add_remark(num, text.to_string()); // Better error messages are created downstream
-                }
-                LexItem::Atom(
-                    hetero,
-                    serial_number,
-                    name,
-                    alt_loc,
-                    residue_name,
-                    mut chain_id,
-                    residue_serial_number,
-                    insertion_code,
-                    x,
-                    y,
-                    z,
-                    occ,
-                    b,
-                    _,
-                    element,
-                    charge,
-                ) => {
-                    if serial_number == 0 && last_atom_serial_number == 99_999 {
-                        atom_serial_addition += 100_000
+        match line_result {
+            Ok((result, line_errors)) => {
+                errors.extend(line_errors);
+                match result {
+                    LexItem::Header(_, _, identifier) => pdb.identifier = Some(identifier),
+                    LexItem::Remark(num, text) => {
+                        let _ = pdb.add_remark(num, text.to_string()); // Better error messages are created downstream
                     }
-
-                    if residue_serial_number == 0 && last_residue_serial_number == 9999 {
-                        residue_serial_addition += 10000;
-                    }
-
-                    if chain_id.trim().is_empty() {
-                        chain_id = chain_id_new
-                            .expect("Chain ID iterator is exhausted")
-                            .to_string();
-                    }
-
-                    let atom = Atom::new(
+                    LexItem::Atom(
                         hetero,
-                        serial_number + atom_serial_addition,
-                        &name,
+                        serial_number,
+                        name,
+                        alt_loc,
+                        residue_name,
+                        mut chain_id,
+                        residue_serial_number,
+                        insertion_code,
                         x,
                         y,
                         z,
                         occ,
                         b,
-                        &element,
+                        _,
+                        element,
                         charge,
-                    )
-                    .expect("Invalid characters in atom creation");
-                    let conformer_id = (residue_name.as_str(), alt_loc.as_deref());
-
-                    let current_chain = if let Some(chain) = current_model.get_mut(&chain_id) {
-                        chain
-                    } else {
-                        current_model.insert(chain_id.clone(), IndexMap::new());
-                        current_model.get_mut(&chain_id).expect("Element that was just inserted into this IndexMap was not found in this IndexMap.")
-                    };
-
-                    if let Some(residue) = current_chain.get_mut(&(
-                        residue_serial_number + residue_serial_addition,
-                        insertion_code.clone(),
-                    )) {
-                        residue.add_atom(atom, conformer_id);
-                    } else {
-                        current_chain.insert(
-                            (
-                                residue_serial_number + residue_serial_addition,
-                                insertion_code.clone(),
-                            ),
-                            Residue::new(
-                                residue_serial_number + residue_serial_addition,
-                                insertion_code.as_deref(),
-                                Some(
-                                    Conformer::new(
-                                        residue_name.as_str(),
-                                        alt_loc.as_deref(),
-                                        Some(atom),
-                                    )
-                                    .expect("Invalid characters in Conformer creation"),
-                                ),
-                            )
-                            .expect("Invalid characters in Residue creation"),
-                        );
-                    }
-
-                    last_residue_serial_number = residue_serial_number;
-                    last_atom_serial_number = serial_number;
-                }
-                LexItem::Anisou(s, n, _, _r, _c, _rs, _, factors, _, _e, _ch) => {
-                    let mut found = false;
-                    for atom in current_model
-                        .values_mut()
-                        .rev()
-                        .flat_map(|residues| residues.values_mut().flat_map(Residue::atoms_mut))
-                    {
-                        if atom.serial_number() == s {
-                            atom.set_anisotropic_temperature_factors(factors);
-                            found = true;
-                            break;
+                    ) => {
+                        if serial_number == 0 && last_atom_serial_number == 99_999 {
+                            atom_serial_addition += 100_000
                         }
+
+                        if residue_serial_number == 0 && last_residue_serial_number == 9999 {
+                            residue_serial_addition += 10000;
+                        }
+
+                        if chain_id.trim().is_empty() {
+                            chain_id = chain_id_new
+                                .expect("Chain ID iterator is exhausted")
+                                .to_string();
+                        }
+
+                        let atom = Atom::new(
+                            hetero,
+                            serial_number + atom_serial_addition,
+                            &name,
+                            x,
+                            y,
+                            z,
+                            occ,
+                            b,
+                            &element,
+                            charge,
+                        )
+                        .expect("Invalid characters in atom creation");
+                        let conformer_id = (residue_name.as_str(), alt_loc.as_deref());
+
+                        let current_chain = if let Some(chain) = current_model.get_mut(&chain_id) {
+                            chain
+                        } else {
+                            current_model.insert(chain_id.clone(), IndexMap::new());
+                            current_model.get_mut(&chain_id).expect("Element that was just inserted into this IndexMap was not found in this IndexMap.")
+                        };
+
+                        if let Some(residue) = current_chain.get_mut(&(
+                            residue_serial_number + residue_serial_addition,
+                            insertion_code.clone(),
+                        )) {
+                            residue.add_atom(atom, conformer_id);
+                        } else {
+                            current_chain.insert(
+                                (
+                                    residue_serial_number + residue_serial_addition,
+                                    insertion_code.clone(),
+                                ),
+                                Residue::new(
+                                    residue_serial_number + residue_serial_addition,
+                                    insertion_code.as_deref(),
+                                    Some(
+                                        Conformer::new(
+                                            residue_name.as_str(),
+                                            alt_loc.as_deref(),
+                                            Some(atom),
+                                        )
+                                        .expect("Invalid characters in Conformer creation"),
+                                    ),
+                                )
+                                .expect("Invalid characters in Residue creation"),
+                            );
+                        }
+
+                        last_residue_serial_number = residue_serial_number;
+                        last_atom_serial_number = serial_number;
                     }
-                    if !found {
-                        println!(
+                    LexItem::Anisou(s, n, _, _r, _c, _rs, _, factors, _, _e, _ch) => {
+                        let mut found = false;
+                        for atom in current_model
+                            .values_mut()
+                            .rev()
+                            .flat_map(|residues| residues.values_mut().flat_map(Residue::atoms_mut))
+                        {
+                            if atom.serial_number() == s {
+                                atom.set_anisotropic_temperature_factors(factors);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if !found {
+                            println!(
                             "Could not find atom for temperature factors, coupled to atom {} {}",
                             s, n
                         )
+                        }
                     }
-                }
-                LexItem::Model(number) => {
-                    if !current_model.is_empty() {
-                        pdb.add_model(Model::from_iter(
-                            current_model_number,
-                            current_model.into_iter().map(|(id, residues)| {
-                                Chain::from_iter(&id, residues.into_values())
-                                    .expect("Invalid characters in Chain definition")
-                            }),
+                    LexItem::Model(number) => {
+                        if !current_model.is_empty() {
+                            pdb.add_model(Model::from_iter(
+                                current_model_number,
+                                current_model.into_iter().map(|(id, residues)| {
+                                    Chain::from_iter(&id, residues.into_values())
+                                        .expect("Invalid characters in Chain definition")
+                                }),
+                            ));
+                        }
+                        current_model_number = number;
+                        current_model = IndexMap::new();
+                    }
+                    LexItem::Scale(n, row) => {
+                        temp_scale.set_row(n, row);
+                    }
+                    LexItem::OrigX(n, row) => {
+                        temp_origx.set_row(n, row);
+                    }
+                    LexItem::MtriX(n, ser, row, given) => {
+                        let mut found = false;
+                        for (index, matrix, contained) in &mut temp_mtrix {
+                            if *index == ser {
+                                matrix.set_row(n, row);
+                                *contained = given;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if !found {
+                            let mut matrix = BuildUpMatrix::empty();
+                            matrix.set_row(n, row);
+                            temp_mtrix.push((ser, matrix, given))
+                        }
+                    }
+                    LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, _z) => {
+                        pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
+                        pdb.symmetry =
+                            Some(Symmetry::new(&spacegroup).unwrap_or_else(|| {
+                                panic!("Invalid space group: \"{}\"", spacegroup)
+                            }));
+                    }
+                    LexItem::Seqres(ser_num, chain_id, num_res, values) => {
+                        seqres_start_linenumber = seqres_start_linenumber.min(linenumber);
+                        if let Some(data) = sequence.get_mut(&chain_id) {
+                            data.push((ser_num, num_res, values));
+                        } else {
+                            sequence.insert(chain_id, vec![(ser_num, num_res, values)]);
+                        }
+                        seqres_lines.push(line);
+                    }
+                    LexItem::Dbref(_pdb_id, chain_id, local_pos, db, db_acc, db_id, db_pos) => {
+                        database_references.push((
+                            chain_id,
+                            DatabaseReference::new(
+                                (db, db_acc, db_id),
+                                SequencePosition::from_tuple(local_pos),
+                                SequencePosition::from_tuple(db_pos),
+                            ),
+                            true,
                         ));
                     }
-                    current_model_number = number;
-                    current_model = IndexMap::new();
-                }
-                LexItem::Scale(n, row) => {
-                    temp_scale.set_row(n, row);
-                }
-                LexItem::OrigX(n, row) => {
-                    temp_origx.set_row(n, row);
-                }
-                LexItem::MtriX(n, ser, row, given) => {
-                    let mut found = false;
-                    for (index, matrix, contained) in &mut temp_mtrix {
-                        if *index == ser {
-                            matrix.set_row(n, row);
-                            *contained = given;
-                            found = true;
-                            break;
+                    LexItem::Dbref1(_pdb_id, chain_id, local_pos, db, db_id) => {
+                        database_references.push((
+                            chain_id,
+                            DatabaseReference::new(
+                                (db, "".to_string(), db_id),
+                                SequencePosition::from_tuple(local_pos),
+                                SequencePosition::new(0, ' ', 0, ' '),
+                            ),
+                            false,
+                        ));
+                    }
+                    LexItem::Dbref2(_pdb_id, chain_id, db_acc, db_start, db_end) => {
+                        let mut found = false;
+                        for dbref in database_references.iter_mut() {
+                            if dbref.0 == chain_id {
+                                dbref.1.database.acc = db_acc;
+                                dbref.1.database_position =
+                                    SequencePosition::new(db_start, ' ', db_end, ' ');
+                                dbref.2 = true;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if !found {
+                            errors.push(PDBError::new(ErrorLevel::BreakingError, "Solitary DBREF2", &format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{}'", chain_id), line_context.clone()))
                         }
                     }
-                    if !found {
-                        let mut matrix = BuildUpMatrix::empty();
-                        matrix.set_row(n, row);
-                        temp_mtrix.push((ser, matrix, given))
-                    }
-                }
-                LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, _z) => {
-                    pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
-                    pdb.symmetry = Some(
-                        Symmetry::new(&spacegroup)
-                            .unwrap_or_else(|| panic!("Invalid space group: \"{}\"", spacegroup)),
-                    );
-                }
-                LexItem::Seqres(ser_num, chain_id, num_res, values) => {
-                    seqres_start_linenumber = seqres_start_linenumber.min(linenumber);
-                    if let Some(data) = sequence.get_mut(&chain_id) {
-                        data.push((ser_num, num_res, values));
-                    } else {
-                        sequence.insert(chain_id, vec![(ser_num, num_res, values)]);
-                    }
-                    seqres_lines.push(line);
-                }
-                LexItem::Dbref(_pdb_id, chain_id, local_pos, db, db_acc, db_id, db_pos) => {
-                    database_references.push((
+                    LexItem::Seqadv(
+                        _id_code,
                         chain_id,
-                        DatabaseReference::new(
-                            (db, db_acc, db_id),
-                            SequencePosition::from_tuple(local_pos),
-                            SequencePosition::from_tuple(db_pos),
-                        ),
-                        true,
-                    ));
-                }
-                LexItem::Dbref1(_pdb_id, chain_id, local_pos, db, db_id) => {
-                    database_references.push((
-                        chain_id,
-                        DatabaseReference::new(
-                            (db, "".to_string(), db_id),
-                            SequencePosition::from_tuple(local_pos),
-                            SequencePosition::new(0, ' ', 0, ' '),
-                        ),
-                        false,
-                    ));
-                }
-                LexItem::Dbref2(_pdb_id, chain_id, db_acc, db_start, db_end) => {
-                    let mut found = false;
-                    for dbref in database_references.iter_mut() {
-                        if dbref.0 == chain_id {
-                            dbref.1.database.acc = db_acc;
-                            dbref.1.database_position =
-                                SequencePosition::new(db_start, ' ', db_end, ' ');
-                            dbref.2 = true;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if !found {
-                        errors.push(PDBError::new(ErrorLevel::BreakingError, "Solitary DBREF2", &format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{}'", chain_id), line_context.clone()))
-                    }
-                }
-                LexItem::Seqadv(
-                    _id_code,
-                    chain_id,
-                    res_name,
-                    seq_num,
-                    insert,
-                    _database,
-                    _database_accession,
-                    db_pos,
-                    comment,
-                ) => {
-                    if let Some((_, db_ref, _)) =
-                        database_references.iter_mut().find(|a| a.0 == chain_id)
-                    {
-                        db_ref.differences.push(SequenceDifference::new(
-                            (res_name, seq_num, insert),
-                            db_pos,
-                            comment,
-                        ))
-                    } else {
-                        errors.push(PDBError::new(
+                        res_name,
+                        seq_num,
+                        insert,
+                        _database,
+                        _database_accession,
+                        db_pos,
+                        comment,
+                    ) => {
+                        if let Some((_, db_ref, _)) =
+                            database_references.iter_mut().find(|a| a.0 == chain_id)
+                        {
+                            db_ref.differences.push(SequenceDifference::new(
+                                (res_name, seq_num, insert),
+                                db_pos,
+                                comment,
+                            ))
+                        } else {
+                            errors.push(PDBError::new(
                             ErrorLevel::StrictWarning,
                             "Sequence Difference Database not found",
                             &format!("For this sequence difference (chain: {}) the corresponding database definition (DBREF) was not found, make sure the DBREF is located before the SEQADV", chain_id),
                             line_context.clone()
                         ))
+                        }
                     }
-                }
-                item @ LexItem::Modres(..) => modifications.push((line_context.clone(), item)),
-                item @ LexItem::SSBond(..) => bonds.push((line_context.clone(), item)),
-                LexItem::Master(
-                    num_remark,
-                    num_empty,
-                    _num_het,
-                    _num_helix,
-                    _num_sheet,
-                    _num_turn,
-                    _num_site,
-                    num_xform,
-                    num_coord,
-                    _num_ter,
-                    _num_connect,
-                    _num_seq,
-                ) => {
-                    // The last atoms need to be added to make the MASTER checksum work out
-                    if !current_model.is_empty() {
-                        pdb.add_model(Model::from_iter(
-                            current_model_number,
-                            current_model.into_iter().map(|(id, residues)| {
-                                Chain::from_iter(&id, residues.into_values())
-                                    .expect("Invalid characters in Chain definition")
-                            }),
-                        ));
-                        current_model = IndexMap::new();
-                    }
-                    // The for now forgotten numbers will have to be added when the appropriate records are added to the parser
-                    if num_remark != pdb.remark_count() {
-                        errors.push(
+                    item @ LexItem::Modres(..) => modifications.push((line_context.clone(), item)),
+                    item @ LexItem::SSBond(..) => bonds.push((line_context.clone(), item)),
+                    LexItem::Master(
+                        num_remark,
+                        num_empty,
+                        _num_het,
+                        _num_helix,
+                        _num_sheet,
+                        _num_turn,
+                        _num_site,
+                        num_xform,
+                        num_coord,
+                        _num_ter,
+                        _num_connect,
+                        _num_seq,
+                    ) => {
+                        // The last atoms need to be added to make the MASTER checksum work out
+                        if !current_model.is_empty() {
+                            pdb.add_model(Model::from_iter(
+                                current_model_number,
+                                current_model.into_iter().map(|(id, residues)| {
+                                    Chain::from_iter(&id, residues.into_values())
+                                        .expect("Invalid characters in Chain definition")
+                                }),
+                            ));
+                            current_model = IndexMap::new();
+                        }
+                        // The for now forgotten numbers will have to be added when the appropriate records are added to the parser
+                        if num_remark != pdb.remark_count() {
+                            errors.push(
                             PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
@@ -363,9 +364,9 @@ where
                                 line_context.clone()
                             )
                         );
-                    }
-                    if num_empty != 0 {
-                        errors.push(
+                        }
+                        if num_empty != 0 {
+                            errors.push(
                             PDBError::new(
                                 ErrorLevel::LooseWarning,
                                 "MASTER checksum failed",
@@ -373,21 +374,21 @@ where
                                 line_context.clone()
                             )
                         );
-                    }
-                    let mut xform = 0;
-                    if temp_origx.is_set() {
-                        xform += 3;
-                    }
-                    if temp_scale.is_set() {
-                        xform += 3;
-                    }
-                    for (_, mtrix, _) in &temp_mtrix {
-                        if mtrix.is_set() {
+                        }
+                        let mut xform = 0;
+                        if temp_origx.is_set() {
                             xform += 3;
                         }
-                    }
-                    if num_xform != xform {
-                        errors.push(
+                        if temp_scale.is_set() {
+                            xform += 3;
+                        }
+                        for (_, mtrix, _) in &temp_mtrix {
+                            if mtrix.is_set() {
+                                xform += 3;
+                            }
+                        }
+                        if num_xform != xform {
+                            errors.push(
                             PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
@@ -395,9 +396,9 @@ where
                                 line_context.clone()
                             )
                         );
-                    }
-                    if num_coord != pdb.total_atom_count() {
-                        errors.push(
+                        }
+                        if num_coord != pdb.total_atom_count() {
+                            errors.push(
                             PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
@@ -405,13 +406,13 @@ where
                                 line_context.clone()
                             )
                         );
+                        }
                     }
+                    LexItem::TER() => chain_id_new = chain_iter.next(),
+                    _ => (),
                 }
-                LexItem::TER() => chain_id_new = chain_iter.next(),
-                _ => (),
             }
-        } else {
-            errors.push(line_result.unwrap_err())
+            Err(e) => errors.push(e),
         }
     }
     if !current_model.is_empty() {
