@@ -13,24 +13,27 @@ pub struct Symmetry {
 }
 
 impl Symmetry {
-    /// Create a new Symmetry based on a fully qualified Herman Mauguin or Hall symbol
+    /// Create a new `Symmetry` based on a fully qualified Herman Mauguin or Hall symbol
+    #[must_use]
     pub fn new(symbol: impl AsRef<str>) -> Option<Self> {
-        reference_tables::get_index_for_symbol(symbol.as_ref().trim())
-            .map(|index| Symmetry { index })
+        reference_tables::get_index_for_symbol(symbol.as_ref().trim()).map(|index| Self { index })
     }
 
-    /// Create a new Symmetry based on the index of a symbol in Int. Crys. Handbook Vol A 2016
+    /// Create a new `Symmetry` based on the index of a symbol in Int. Crys. Handbook Vol A 2016
+    #[must_use]
     pub fn from_index(index: usize) -> Option<Self> {
-        reference_tables::get_herman_mauguin_symbol_for_index(index).map(|_| Symmetry { index })
+        reference_tables::get_herman_mauguin_symbol_for_index(index).map(|_| Self { index })
     }
 
     /// Get the fully qualified Herman Mauguin symbol for the space group
+    #[must_use]
     pub fn herman_mauguin_symbol(&self) -> &str {
         reference_tables::get_herman_mauguin_symbol_for_index(self.index)
             .expect("An invalid index was present in the definition of this symmetry")
     }
 
     /// Get the fully qualified Hall symbol for the space group
+    #[must_use]
     pub fn hall_symbol(&self) -> &str {
         reference_tables::get_hall_symbol_for_index(self.index)
             .expect("An invalid index was present in the definition of this symmetry")
@@ -38,6 +41,7 @@ impl Symmetry {
 
     /// Get the Z value, the number of polymeric sub units in a unit cell, for this space group
     #[allow(clippy::unwrap_used)]
+    #[must_use]
     pub fn z(&self) -> usize {
         reference_tables::get_transformation(self.index)
             .unwrap()
@@ -46,6 +50,7 @@ impl Symmetry {
     }
 
     /// Get the index of this space group in Int. Crys. Handbook Vol A 2016
+    #[must_use]
     pub const fn index(&self) -> usize {
         self.index
     }
@@ -54,6 +59,7 @@ impl Symmetry {
     /// The first transformation is always an identity transformation.
     /// The translation is fractional to the unit cell size.
     #[allow(clippy::unwrap_used)]
+    #[must_use]
     pub fn transformations(&self) -> Vec<TransformationMatrix> {
         let matrices = reference_tables::get_transformation(self.index).unwrap();
         let mut output = Vec::with_capacity(matrices.len() + 1);
@@ -68,6 +74,7 @@ impl Symmetry {
     /// The first transformation is always an identity transformation.
     /// The translation is in Å.
     #[allow(clippy::unwrap_used)]
+    #[must_use]
     pub fn transformations_absolute(&self, unit_cell: &UnitCell) -> Vec<TransformationMatrix> {
         let matrices = reference_tables::get_transformation(self.index).unwrap();
         let mut output = Vec::with_capacity(matrices.len() + 1);

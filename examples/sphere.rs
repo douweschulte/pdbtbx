@@ -20,7 +20,7 @@ fn atom_sphere() {
         .unwrap();
     let tree = pdb.create_atom_rtree();
     let mut sphere_atoms: Vec<&&Atom> = tree
-        .locate_within_distance(origin_atom.pos(), radius.powf(2.0))
+        .locate_within_distance(origin_atom.pos(), radius.powi(2))
         .collect();
 
     // Since the rtree is not ordered, the resulting Vec won't be either.
@@ -43,7 +43,7 @@ fn residue_sphere() {
     let tree = pdb.create_hierarchy_rtree();
     let mut sphere_atoms: Vec<&Atom> = tree
         // This finds all Atoms with their hierarchy within the given sphere.
-        .locate_within_distance(sphere_origin.atom().pos(), radius.powf(2.0))
+        .locate_within_distance(sphere_origin.atom().pos(), radius.powi(2))
         // Find the Residues each found Atom belongs to and return all the Atoms they contain.
         .flat_map(|atom_hier| atom_hier.residue().atoms())
         // Collect the flattened iterator into a Vec

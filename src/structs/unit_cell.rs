@@ -19,7 +19,7 @@ pub struct UnitCell {
 }
 
 impl UnitCell {
-    /// Create a new UnitCell construct.
+    /// Create a new `UnitCell` construct.
     /// ## Arguments
     /// * `a` - a-axis dimension
     /// * `b` - b-axis dimension
@@ -27,8 +27,9 @@ impl UnitCell {
     /// * `alpha` - alpha angle in degrees
     /// * `beta` - beta angle in degrees
     /// * `gamma` - gamma angle in degrees
-    pub const fn new(a: f64, b: f64, c: f64, alpha: f64, beta: f64, gamma: f64) -> UnitCell {
-        UnitCell {
+    #[must_use]
+    pub const fn new(a: f64, b: f64, c: f64, alpha: f64, beta: f64, gamma: f64) -> Self {
+        Self {
             a,
             b,
             c,
@@ -38,14 +39,17 @@ impl UnitCell {
         }
     }
     /// Get the a-axis dimension
+    #[must_use]
     pub const fn a(&self) -> f64 {
         self.a
     }
     /// Get the b-axis dimension
+    #[must_use]
     pub const fn b(&self) -> f64 {
         self.b
     }
     /// Get the c-axis dimension
+    #[must_use]
     pub const fn c(&self) -> f64 {
         self.c
     }
@@ -83,6 +87,7 @@ impl UnitCell {
         self.c = new_c;
     }
     /// Get the alpha angle in degrees
+    #[must_use]
     pub const fn alpha(&self) -> f64 {
         self.alpha
     }
@@ -104,6 +109,7 @@ impl UnitCell {
         self.alpha = new_alpha;
     }
     /// Get the beta angle in degrees
+    #[must_use]
     pub const fn beta(&self) -> f64 {
         self.beta
     }
@@ -125,6 +131,7 @@ impl UnitCell {
         self.beta = new_beta;
     }
     /// Get the gamma angle in degrees
+    #[must_use]
     pub const fn gamma(&self) -> f64 {
         self.gamma
     }
@@ -146,13 +153,14 @@ impl UnitCell {
         self.gamma = new_gamma;
     }
     /// Get the dimensions in a tuple (a, b, c)
+    #[must_use]
     pub const fn size(&self) -> (f64, f64, f64) {
         (self.a, self.b, self.c)
     }
 }
 
 impl Default for UnitCell {
-    /// Default UnitCell with all sizes set to 0.0 and angles to 90.0
+    /// Default `UnitCell` with all sizes set to 0.0 and angles to 90.0
     fn default() -> Self {
         Self::new(0.0, 0.0, 0.0, 90.0, 90.0, 90.0)
     }

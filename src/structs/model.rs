@@ -679,9 +679,9 @@ mod tests {
         );
         // Test if changing properties for each element of the hierarchy is possible
         for mut hierarchy in a.atoms_with_hierarchy_mut() {
-            hierarchy.residue().serial_number();
+            let _ = hierarchy.residue().serial_number();
             hierarchy.chain_mut().set_id("B");
-            hierarchy.residue().serial_number(); // Show that multiple borrows is valid, as long as they do not overlap
+            let _ = hierarchy.residue().serial_number(); // Show that multiple borrows is valid, as long as they do not overlap
             hierarchy.residue_mut().set_serial_number(1);
             hierarchy.chain_mut().set_id("C");
             hierarchy.conformer_mut().set_name("D");

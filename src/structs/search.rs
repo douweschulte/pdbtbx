@@ -59,8 +59,8 @@ pub enum Term {
 impl Term {
     const fn optional_matches_model(&self, model: &Model) -> Option<bool> {
         match self {
-            Term::ModelSerialNumber(s) => Some(*s == model.serial_number()),
-            Term::ModelSerialNumberRange(low, high) => {
+            Self::ModelSerialNumber(s) => Some(*s == model.serial_number()),
+            Self::ModelSerialNumberRange(low, high) => {
                 Some(*low <= model.serial_number() && *high >= model.serial_number())
             }
             _ => None,
@@ -68,8 +68,8 @@ impl Term {
     }
     fn optional_matches_chain(&self, chain: &Chain) -> Option<bool> {
         match self {
-            Term::ChainId(s) => Some(s == chain.id()),
-            Term::ChainIdRange(low, high) => {
+            Self::ChainId(s) => Some(s == chain.id()),
+            Self::ChainIdRange(low, high) => {
                 Some(low.as_str() <= chain.id() && high.as_str() >= chain.id())
             }
             _ => None,
@@ -77,46 +77,46 @@ impl Term {
     }
     fn optional_matches_residue(&self, residue: &Residue) -> Option<bool> {
         match self {
-            Term::ResidueSerialNumber(s) => Some(*s == residue.serial_number()),
-            Term::ResidueSerialNumberRange(low, high) => {
+            Self::ResidueSerialNumber(s) => Some(*s == residue.serial_number()),
+            Self::ResidueSerialNumberRange(low, high) => {
                 Some(*low <= residue.serial_number() && *high >= residue.serial_number())
             }
-            Term::ResidueInsertionCode(ic) => Some(ic.as_deref() == residue.insertion_code()),
-            Term::ResidueId(s, ic) => Some((*s, ic.as_deref()) == residue.id()),
+            Self::ResidueInsertionCode(ic) => Some(ic.as_deref() == residue.insertion_code()),
+            Self::ResidueId(s, ic) => Some((*s, ic.as_deref()) == residue.id()),
             _ => None,
         }
     }
     fn optional_matches_conformer(&self, conformer: &Conformer) -> Option<bool> {
         match self {
-            Term::ConformerName(n) => Some(n == conformer.name()),
-            Term::ConformerAlternativeLocation(al) => {
+            Self::ConformerName(n) => Some(n == conformer.name()),
+            Self::ConformerAlternativeLocation(al) => {
                 Some(al.as_deref() == conformer.alternative_location())
             }
-            Term::ConformerId(n, al) => Some((n.as_str(), al.as_deref()) == conformer.id()),
-            Term::Backbone if !conformer.is_amino_acid() => Some(false),
-            Term::SideChain if !conformer.is_amino_acid() => Some(false),
+            Self::ConformerId(n, al) => Some((n.as_str(), al.as_deref()) == conformer.id()),
+            Self::Backbone if !conformer.is_amino_acid() => Some(false),
+            Self::SideChain if !conformer.is_amino_acid() => Some(false),
             _ => None,
         }
     }
     fn optional_matches_atom(&self, atom: &Atom) -> Option<bool> {
         match self {
-            Term::AtomSerialNumber(n) => Some(atom.serial_number() == *n),
-            Term::AtomSerialNumberRange(low, high) => {
+            Self::AtomSerialNumber(n) => Some(atom.serial_number() == *n),
+            Self::AtomSerialNumberRange(low, high) => {
                 Some(atom.serial_number() >= *low && atom.serial_number() <= *high)
             }
-            Term::AtomName(n) => Some(atom.name() == n),
-            Term::Element(e) => atom.element().map(|a| a == e),
-            Term::BFactor(a) => Some((atom.b_factor() - *a).abs() < f64::EPSILON),
-            Term::BFactorRange(low, high) => {
+            Self::AtomName(n) => Some(atom.name() == n),
+            Self::Element(e) => atom.element().map(|a| a == e),
+            Self::BFactor(a) => Some((atom.b_factor() - *a).abs() < f64::EPSILON),
+            Self::BFactorRange(low, high) => {
                 Some(atom.b_factor() >= *low && atom.b_factor() <= *high)
             }
-            Term::Occupancy(a) => Some((atom.occupancy() - *a).abs() < f64::EPSILON),
-            Term::OccupancyRange(low, high) => {
+            Self::Occupancy(a) => Some((atom.occupancy() - *a).abs() < f64::EPSILON),
+            Self::OccupancyRange(low, high) => {
                 Some(atom.occupancy() >= *low && atom.occupancy() <= *high)
             }
-            Term::Backbone => Some(atom.is_backbone()),
-            Term::SideChain => Some(!atom.is_backbone()),
-            Term::Hetero => Some(atom.hetero()),
+            Self::Backbone => Some(atom.is_backbone()),
+            Self::SideChain => Some(!atom.is_backbone()),
+            Self::Hetero => Some(atom.hetero()),
             _ => None,
         }
     }
@@ -159,23 +159,23 @@ pub enum Ops {
 }
 
 impl Search {
-    fn simplify(self) -> Search {
+    fn simplify(self) -> Self {
         match self {
-            Search::Ops(ops, a, b) => match (ops, a.simplify(), b.simplify()) {
-                (Ops::And, Search::Known(false), _) | (Ops::And, _, Search::Known(false)) => {
-                    Search::Known(false)
+            Self::Ops(ops, a, b) => match (ops, a.simplify(), b.simplify()) {
+                (Ops::And, Self::Known(false), _) | (Ops::And, _, Self::Known(false)) => {
+                    Self::Known(false)
                 }
-                (Ops::And, Search::Known(a), Search::Known(b)) => Search::Known(a & b),
-                (Ops::Or, Search::Known(true), _) | (Ops::Or, _, Search::Known(true)) => {
-                    Search::Known(true)
+                (Ops::And, Self::Known(a), Self::Known(b)) => Self::Known(a & b),
+                (Ops::Or, Self::Known(true), _) | (Ops::Or, _, Self::Known(true)) => {
+                    Self::Known(true)
                 }
-                (Ops::Or, Search::Known(a), Search::Known(b)) => Search::Known(a | b),
-                (Ops::Xor, Search::Known(a), Search::Known(b)) => Search::Known(a ^ b),
-                (ops, a, b) => Search::Ops(ops, Box::new(a), Box::new(b)),
+                (Ops::Or, Self::Known(a), Self::Known(b)) => Self::Known(a | b),
+                (Ops::Xor, Self::Known(a), Self::Known(b)) => Self::Known(a ^ b),
+                (ops, a, b) => Self::Ops(ops, Box::new(a), Box::new(b)),
             },
-            Search::Not(a) => match a.simplify() {
-                Search::Known(a) => Search::Known(!a),
-                a => Search::Not(Box::new(a)),
+            Self::Not(a) => match a.simplify() {
+                Self::Known(a) => Self::Known(!a),
+                a => Self::Not(Box::new(a)),
             },
             _ => self,
         }
@@ -185,113 +185,113 @@ impl Search {
     #[must_use]
     pub const fn complete(&self) -> Option<bool> {
         match self {
-            Search::Known(a) => Some(*a),
+            Self::Known(a) => Some(*a),
             _ => None,
         }
     }
 
     /// Add information about the model into the search, returns a new search with the information integrated
     #[must_use]
-    pub fn add_model_info(&self, model: &Model) -> Search {
+    pub fn add_model_info(&self, model: &Model) -> Self {
         match self {
-            Search::Ops(ops, a, b) => Search::Ops(
+            Self::Ops(ops, a, b) => Self::Ops(
                 *ops,
                 Box::new(a.add_model_info(model)),
                 Box::new(b.add_model_info(model)),
             ),
-            Search::Not(a) => Search::Not(Box::new(a.add_model_info(model))),
-            Search::Single(a) => match a.optional_matches_model(model) {
-                Some(true) => Search::Known(true),
-                Some(false) => Search::Known(false),
+            Self::Not(a) => Self::Not(Box::new(a.add_model_info(model))),
+            Self::Single(a) => match a.optional_matches_model(model) {
+                Some(true) => Self::Known(true),
+                Some(false) => Self::Known(false),
                 None => self.clone(),
             },
-            _ => self.clone(),
+            Self::Known(_) => self.clone(),
         }
         .simplify()
     }
 
     /// Add information about the chain into the search, returns a new search with the information integrated
     #[must_use]
-    pub fn add_chain_info(&self, chain: &Chain) -> Search {
+    pub fn add_chain_info(&self, chain: &Chain) -> Self {
         match self {
-            Search::Ops(ops, a, b) => Search::Ops(
+            Self::Ops(ops, a, b) => Self::Ops(
                 *ops,
                 Box::new(a.add_chain_info(chain)),
                 Box::new(b.add_chain_info(chain)),
             ),
-            Search::Not(a) => Search::Not(Box::new(a.add_chain_info(chain))),
-            Search::Single(a) => match a.optional_matches_chain(chain) {
-                Some(true) => Search::Known(true),
-                Some(false) => Search::Known(false),
+            Self::Not(a) => Self::Not(Box::new(a.add_chain_info(chain))),
+            Self::Single(a) => match a.optional_matches_chain(chain) {
+                Some(true) => Self::Known(true),
+                Some(false) => Self::Known(false),
                 None => self.clone(),
             },
-            _ => self.clone(),
+            Self::Known(_) => self.clone(),
         }
         .simplify()
     }
 
     /// Add information about the residue into the search, returns a new search with the information integrated
     #[must_use]
-    pub fn add_residue_info(&self, residue: &Residue) -> Search {
+    pub fn add_residue_info(&self, residue: &Residue) -> Self {
         match self {
-            Search::Ops(ops, a, b) => Search::Ops(
+            Self::Ops(ops, a, b) => Self::Ops(
                 *ops,
                 Box::new(a.add_residue_info(residue)),
                 Box::new(b.add_residue_info(residue)),
             ),
-            Search::Not(a) => Search::Not(Box::new(a.add_residue_info(residue))),
-            Search::Single(a) => match a.optional_matches_residue(residue) {
-                Some(true) => Search::Known(true),
-                Some(false) => Search::Known(false),
+            Self::Not(a) => Self::Not(Box::new(a.add_residue_info(residue))),
+            Self::Single(a) => match a.optional_matches_residue(residue) {
+                Some(true) => Self::Known(true),
+                Some(false) => Self::Known(false),
                 None => self.clone(),
             },
-            _ => self.clone(),
+            Self::Known(_) => self.clone(),
         }
         .simplify()
     }
 
     /// Add information about the conformer into the search, returns a new search with the information integrated
     #[must_use]
-    pub fn add_conformer_info(&self, conformer: &Conformer) -> Search {
+    pub fn add_conformer_info(&self, conformer: &Conformer) -> Self {
         match self {
-            Search::Ops(ops, a, b) => Search::Ops(
+            Self::Ops(ops, a, b) => Self::Ops(
                 *ops,
                 Box::new(a.add_conformer_info(conformer)),
                 Box::new(b.add_conformer_info(conformer)),
             ),
-            Search::Not(a) => Search::Not(Box::new(a.add_conformer_info(conformer))),
-            Search::Single(a) => match a.optional_matches_conformer(conformer) {
-                Some(true) => Search::Known(true),
-                Some(false) => Search::Known(false),
+            Self::Not(a) => Self::Not(Box::new(a.add_conformer_info(conformer))),
+            Self::Single(a) => match a.optional_matches_conformer(conformer) {
+                Some(true) => Self::Known(true),
+                Some(false) => Self::Known(false),
                 None => self.clone(),
             },
-            _ => self.clone(),
+            Self::Known(_) => self.clone(),
         }
         .simplify()
     }
 
     /// Add information about the atom into the search, returns a new search with the information integrated
     #[must_use]
-    pub fn add_atom_info(&self, atom: &Atom) -> Search {
+    pub fn add_atom_info(&self, atom: &Atom) -> Self {
         match self {
-            Search::Ops(ops, a, b) => Search::Ops(
+            Self::Ops(ops, a, b) => Self::Ops(
                 *ops,
                 Box::new(a.add_atom_info(atom)),
                 Box::new(b.add_atom_info(atom)),
             ),
-            Search::Not(a) => Search::Not(Box::new(a.add_atom_info(atom))),
-            Search::Single(a) => match a.optional_matches_atom(atom) {
-                Some(true) => Search::Known(true),
-                Some(false) => Search::Known(false),
+            Self::Not(a) => Self::Not(Box::new(a.add_atom_info(atom))),
+            Self::Single(a) => match a.optional_matches_atom(atom) {
+                Some(true) => Self::Known(true),
+                Some(false) => Self::Known(false),
                 None => self.clone(),
             },
-            _ => self.clone(),
+            Self::Known(_) => self.clone(),
         }
         .simplify()
     }
 }
 
-impl ops::BitAnd<Term> for Term {
+impl ops::BitAnd<Self> for Term {
     type Output = Search;
     fn bitand(self, rhs: Self) -> Self::Output {
         Search::Ops(
@@ -302,7 +302,7 @@ impl ops::BitAnd<Term> for Term {
     }
 }
 
-impl ops::BitOr<Term> for Term {
+impl ops::BitOr<Self> for Term {
     type Output = Search;
     fn bitor(self, rhs: Self) -> Self::Output {
         Search::Ops(
@@ -313,7 +313,7 @@ impl ops::BitOr<Term> for Term {
     }
 }
 
-impl ops::BitXor<Term> for Term {
+impl ops::BitXor<Self> for Term {
     type Output = Search;
     fn bitxor(self, rhs: Self) -> Self::Output {
         Search::Ops(
@@ -352,52 +352,52 @@ impl ops::BitXor<Search> for Term {
     }
 }
 
-impl ops::BitAnd<Search> for Search {
-    type Output = Search;
+impl ops::BitAnd<Self> for Search {
+    type Output = Self;
     fn bitand(self, rhs: Self) -> Self::Output {
-        Search::Ops(Ops::And, Box::new(self), Box::new(rhs))
+        Self::Ops(Ops::And, Box::new(self), Box::new(rhs))
     }
 }
 
-impl ops::BitOr<Search> for Search {
-    type Output = Search;
+impl ops::BitOr<Self> for Search {
+    type Output = Self;
     fn bitor(self, rhs: Self) -> Self::Output {
-        Search::Ops(Ops::Or, Box::new(self), Box::new(rhs))
+        Self::Ops(Ops::Or, Box::new(self), Box::new(rhs))
     }
 }
 
-impl ops::BitXor<Search> for Search {
-    type Output = Search;
+impl ops::BitXor<Self> for Search {
+    type Output = Self;
     fn bitxor(self, rhs: Self) -> Self::Output {
-        Search::Ops(Ops::Xor, Box::new(self), Box::new(rhs))
+        Self::Ops(Ops::Xor, Box::new(self), Box::new(rhs))
     }
 }
 
 impl ops::Not for Search {
-    type Output = Search;
+    type Output = Self;
     fn not(self) -> Self::Output {
-        Search::Not(Box::new(self))
+        Self::Not(Box::new(self))
     }
 }
 
 impl ops::BitAnd<Term> for Search {
-    type Output = Search;
+    type Output = Self;
     fn bitand(self, rhs: Term) -> Self::Output {
-        Search::Ops(Ops::And, Box::new(self), Box::new(Search::Single(rhs)))
+        Self::Ops(Ops::And, Box::new(self), Box::new(Self::Single(rhs)))
     }
 }
 
 impl ops::BitOr<Term> for Search {
-    type Output = Search;
+    type Output = Self;
     fn bitor(self, rhs: Term) -> Self::Output {
-        Search::Ops(Ops::Or, Box::new(self), Box::new(Search::Single(rhs)))
+        Self::Ops(Ops::Or, Box::new(self), Box::new(Self::Single(rhs)))
     }
 }
 
 impl ops::BitXor<Term> for Search {
-    type Output = Search;
+    type Output = Self;
     fn bitxor(self, rhs: Term) -> Self::Output {
-        Search::Ops(Ops::Xor, Box::new(self), Box::new(Search::Single(rhs)))
+        Self::Ops(Ops::Xor, Box::new(self), Box::new(Self::Single(rhs)))
     }
 }
 

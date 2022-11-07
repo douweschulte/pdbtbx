@@ -989,7 +989,7 @@ impl Extend<Model> for PDB {
 
 impl FromIterator<Model> for PDB {
     fn from_iter<T: IntoIterator<Item = Model>>(iter: T) -> Self {
-        let mut pdb = PDB::default();
+        let mut pdb = Self::default();
         pdb.extend(iter);
         pdb
     }
