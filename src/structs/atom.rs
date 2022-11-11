@@ -376,7 +376,11 @@ impl Atom {
 
     /// Gives the distance between the centers of two atoms in Aͦ.
     pub fn distance(&self, other: &Atom) -> f64 {
-        (other.z - self.z).mul_add(other.z - self.z, (other.y - self.y).mul_add(other.y - self.y, (other.x - self.x).powi(2)))
+        (other.z - self.z)
+            .mul_add(
+                other.z - self.z,
+                (other.y - self.y).mul_add(other.y - self.y, (other.x - self.x).powi(2)),
+            )
             .sqrt()
     }
 
@@ -410,7 +414,12 @@ impl Atom {
             }
         }
 
-        (z - self.z).mul_add(z - self.z, (y - self.y).mul_add(y - self.y, (x - self.x).powi(2))).sqrt()
+        (z - self.z)
+            .mul_add(
+                z - self.z,
+                (y - self.y).mul_add(y - self.y, (x - self.x).powi(2)),
+            )
+            .sqrt()
     }
 
     #[allow(clippy::similar_names)]
@@ -652,7 +661,10 @@ impl RTreeObject for &Atom {
 impl PointDistance for &Atom {
     fn distance_2(&self, other: &(f64, f64, f64)) -> f64 {
         // No square root as that is required by the package
-        (other.2 - self.z).mul_add(other.2 - self.z, (other.1 - self.y).mul_add(other.1 - self.y, (other.0 - self.x).powi(2)))
+        (other.2 - self.z).mul_add(
+            other.2 - self.z,
+            (other.1 - self.y).mul_add(other.1 - self.y, (other.0 - self.x).powi(2)),
+        )
     }
 }
 
