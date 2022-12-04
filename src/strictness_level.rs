@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[cfg(doc)]
 use crate::ErrorLevel;
 
@@ -10,4 +12,18 @@ pub enum StrictnessLevel {
     Medium,
     /// With `Loose` the program will allow [`ErrorLevel::GeneralWarning`] and [`ErrorLevel::LooseWarning`].
     Loose,
+}
+
+impl Display for StrictnessLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                StrictnessLevel::Strict => "Strict",
+                StrictnessLevel::Medium => "Medium",
+                StrictnessLevel::Loose => "Loose",
+            }
+        )
+    }
 }

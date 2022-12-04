@@ -73,9 +73,9 @@ const REMARK_TYPES: [usize; 42] = [
 /// All amino acids. Includes Amber-specific naming conventions for (de-)protonated versions, CYS involved in
 /// disulfide bonding and the like.
 const AMINO_ACIDS: &[&str] = &[
-    "ALA", "ARG", "ASH", "ASN", "ASP", "CYS", "CYX", "GLH", "GLN", "GLU", "GLY", "HID", "HIE",
-    "HIM", "HIP", "HIS", "ILE", "LEU", "LYN", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP",
-    "TYR", "VAL",
+    "ALA", "ARG", "ASH", "ASN", "ASP", "ASX", "CYS", "CYX", "GLH", "GLN", "GLU", "GLY", "HID",
+    "HIE", "HIM", "HIP", "HIS", "ILE", "LEU", "LYN", "LYS", "MET", "PHE", "PRO", "SER", "THR",
+    "TRP", "TYR", "VAL", "SEC", "PYL",
 ];
 
 /// The names of atom in the backbone of proteins
