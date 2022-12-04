@@ -1,6 +1,10 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/douweschulte/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.10.1
+* Added more amino acids for `is_amino_acid`
+* Implemented Display for `StrictnessLevel`
+
 ### v0.10.0 'Enumerated Elements'
 * Moved from string based elements to enums see `Element`, this means that the `Atom::set_element`, `Atom::element`, and `Term::element` have changed
 * Deprecated the following functions `Atom::atom_number`, `Atom::atomic_radius`, `Atom::covalent_bond_radii`,
