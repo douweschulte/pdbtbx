@@ -387,7 +387,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             };
         }
 
-        let atom_type = parse_column!(get_text, ATOM_GROUP).unwrap_or("ATOM");
+        let atom_type = parse_column!(get_text, ATOM_GROUP).unwrap_or_else(|| "ATOM".to_string());
         let name = parse_column!(get_text, ATOM_NAME).expect("Atom name should be provided");
         let serial_number =
             parse_column!(get_usize, ATOM_ID).expect("Atom serial number should be provided");
@@ -517,8 +517,8 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             model.add_atom(
                 atom,
                 chain_name,
-                (residue_number, insertion_code),
-                (residue_name, alt_loc),
+                (residue_number, insertion_code.as_deref()),
+                (residue_name, alt_loc.as_deref()),
             );
         } else {
             errors.push(PDBError::new(
@@ -537,15 +537,16 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
 }
 
 /// Get the Textual content of the value, if available
-fn get_text<'a, 'b>(
-    value: &'a Value,
-    context: &'b Context,
+fn get_text(
+    value: &Value,
+    context: &Context,
     column: Option<&str>,
-) -> Result<Option<&'a str>, PDBError> {
+) -> Result<Option<String>, PDBError> {
     match value {
-        Value::Text(t) => Ok(Some(t)),
+        Value::Text(t) => Ok(Some(t.to_string())),
         Value::Inapplicable => Ok(None),
         Value::Unknown => Ok(None),
+        Value::Numeric(n) => Ok(Some(format!("{}", n))),
         _ => Err(PDBError::new(
             ErrorLevel::InvalidatingError,
             "Not text",
