@@ -77,30 +77,30 @@ fn parse_mmcif(
                 DataItem::Single(single) => {
                     let context = Context::show(&single.name);
                     match &single.name[..] {
-                        "cell.length_a" => get_f64(&single.content, &context)
+                        "cell.length_a" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_a(n.expect("UnitCell length a should be provided")))
                             .err(),
-                        "cell.length_b" => get_f64(&single.content, &context)
+                        "cell.length_b" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_b(n.expect("UnitCell length b should be provided")))
                             .err(),
-                        "cell.length_c" => get_f64(&single.content, &context)
+                        "cell.length_c" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_c(n.expect("UnitCell length c should be provided")))
                             .err(),
-                        "cell.angle_alpha" => get_f64(&single.content, &context)
+                        "cell.angle_alpha" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_alpha(n.expect("UnitCell angle alpha should be provided")))
                             .err(),
-                        "cell.angle_beta" => get_f64(&single.content, &context)
+                        "cell.angle_beta" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_beta(n.expect("UnitCell angle beta should be provided")))
                             .err(),
-                        "cell.angle_gamma" => get_f64(&single.content, &context)
+                        "cell.angle_gamma" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_gamma(n.expect("UnitCell angle gamma should be provided")))
                             .err(),
                         "symmetry.Int_Tables_number" | "space_group.IT_number" => {
                             if pdb.symmetry.is_none() {
-                                get_usize(&single.content, &context)
+                                get_usize(&single.content, &context, None)
                                     .map(|n| pdb.symmetry = Symmetry::from_index(n.expect("Symmetry international tables number should be provided")))
                                     .err()
-                            } else if let Ok(Some(value)) = get_usize(&single.content, &context) {
+                            } else if let Ok(Some(value)) = get_usize(&single.content, &context, None) {
                                 if pdb.symmetry != Symmetry::from_index(value) {
                                     Some(PDBError::new(ErrorLevel::InvalidatingError, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
                                 }
@@ -113,10 +113,10 @@ fn parse_mmcif(
                         }
                         "symmetry.space_group_name_H-M" | "symmetry.space_group_name_Hall" | "space_group.name_H-M_alt" | "space_group.name_Hall" => {
                             if pdb.symmetry.is_none() {
-                                get_text(&single.content, &context)
+                                get_text(&single.content, &context, None)
                                     .map(|t| pdb.symmetry = Symmetry::new(t.expect("Symmetry space group name should be provided")))
                                     .err()
-                            } else if let Ok(Some(value)) = get_text(&single.content, &context) {
+                            } else if let Ok(Some(value)) = get_text(&single.content, &context, None) {
                                 if pdb.symmetry != Symmetry::new(value) {
                                     Some(PDBError::new(ErrorLevel::InvalidatingError, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
                                 }
@@ -132,18 +132,18 @@ fn parse_mmcif(
                                 pdb.scale = Some(TransformationMatrix::identity());
                             }
                             #[allow(clippy::unwrap_used)]
-                            parse_matrix(s, get_f64(&single.content, &context),pdb.scale.as_mut().unwrap(), &context)
+                            parse_matrix(s, get_f64(&single.content, &context, None),pdb.scale.as_mut().unwrap(), &context)
                         }
                         s if s.starts_with("database_PDB_matrix.origx") => {
                             if pdb.origx.is_none() {
                                 pdb.origx = Some(TransformationMatrix::identity());
                             }
                             #[allow(clippy::unwrap_used)]
-                            parse_matrix(s, get_f64(&single.content, &context),pdb.origx.as_mut().unwrap(), &context)
+                            parse_matrix(s, get_f64(&single.content, &context, None),pdb.origx.as_mut().unwrap(), &context)
                         }
                         s if s.starts_with("structs_ncs_oper.") => {
                             if s.ends_with("id") {
-                                match get_usize(&single.content, &context) {
+                                match get_usize(&single.content, &context, None) {
                                     Err(e) => Some(e),
                                     Ok(Some(id)) => {
                                         mtrix_id = Some(id);
@@ -162,7 +162,7 @@ fn parse_mmcif(
                                     Some(id) => {
                                         let mut mtrix = pdb.mtrix_mut().find(|m| m.serial_number == id).expect("Could not find the MtriX record with the previously found `_struct_ncs_oper.id`");
                                         if s.ends_with("code") {
-                                            match get_text(&single.content, &context) {
+                                            match get_text(&single.content, &context, None) {
                                                 Ok(Some(t)) if t == "given" => {mtrix.contained = true; None},
                                                 Ok(Some(t)) if t == "generate" => {mtrix.contained = false; None},
                                                 Ok(Some(_)) => Some(PDBError::new(
@@ -181,7 +181,7 @@ fn parse_mmcif(
                                         } else if s.ends_with("details") {
                                             None // Ignore the details, it will not be saved somewhere
                                         } else {
-                                            parse_matrix(s, get_f64(&single.content, &context),&mut mtrix.transformation, &context)
+                                            parse_matrix(s, get_f64(&single.content, &context, None),&mut mtrix.transformation, &context)
                                         }
                                     },
                                     None => Some(PDBError::new(
@@ -374,7 +374,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         macro_rules! parse_column {
             ($type:tt, $index:tt) => {
                 if let Some(value) = values[$index.0] {
-                    match $type(value, &context) {
+                    match $type(value, &context, Some($index.1)) {
                         Ok(t) => t,
                         Err(e) => {
                             errors.push(e);
@@ -537,7 +537,11 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
 }
 
 /// Get the Textual content of the value, if available
-fn get_text<'a, 'b>(value: &'a Value, context: &'b Context) -> Result<Option<&'a str>, PDBError> {
+fn get_text<'a, 'b>(
+    value: &'a Value,
+    context: &'b Context,
+    column: Option<&str>,
+) -> Result<Option<&'a str>, PDBError> {
     match value {
         Value::Text(t) => Ok(Some(t)),
         Value::Inapplicable => Ok(None),
@@ -545,14 +549,20 @@ fn get_text<'a, 'b>(value: &'a Value, context: &'b Context) -> Result<Option<&'a
         _ => Err(PDBError::new(
             ErrorLevel::InvalidatingError,
             "Not text",
-            "",
+            column.map_or(String::new(), |v| {
+                format!("The '{}' column should contain text.", v)
+            }),
             context.clone(),
         )),
     }
 }
 
 /// Get the Numeric content of the value, if available, it also fails on NumericWithUncertainty
-fn get_f64(value: &Value, context: &Context) -> Result<Option<f64>, PDBError> {
+fn get_f64(
+    value: &Value,
+    context: &Context,
+    column: Option<&str>,
+) -> Result<Option<f64>, PDBError> {
     match value {
         Value::Numeric(num) => Ok(Some(*num)),
         Value::Inapplicable => Ok(None),
@@ -560,15 +570,21 @@ fn get_f64(value: &Value, context: &Context) -> Result<Option<f64>, PDBError> {
         _ => Err(PDBError::new(
             ErrorLevel::InvalidatingError,
             "Not a number",
-            "",
+            column.map_or(String::new(), |v| {
+                format!("The '{}' column should contain a number.", v)
+            }),
             context.clone(),
         )),
     }
 }
 
 /// Get the Numeric content of the value, if available, as a usize
-fn get_usize(value: &Value, context: &Context) -> Result<Option<usize>, PDBError> {
-    flatten_result(get_f64(value, context).map(|result| {
+fn get_usize(
+    value: &Value,
+    context: &Context,
+    column: Option<&str>,
+) -> Result<Option<usize>, PDBError> {
+    flatten_result(get_f64(value, context, column).map(|result| {
         if let Some(num) = result {
             #[allow(
                 clippy::cast_precision_loss,
@@ -582,7 +598,9 @@ fn get_usize(value: &Value, context: &Context) -> Result<Option<usize>, PDBError
                 Err(PDBError::new(
                     ErrorLevel::InvalidatingError,
                     "Not an unsigned integer",
-                    "",
+                    column.map_or(String::new(), |v| {
+                        format!("The '{}' column should contain an unsigned integer.", v)
+                    }),
                     context.clone(),
                 ))
             }
@@ -593,8 +611,12 @@ fn get_usize(value: &Value, context: &Context) -> Result<Option<usize>, PDBError
 }
 
 /// Get the Numeric content of the value, if available, as an isize
-fn get_isize(value: &Value, context: &Context) -> Result<Option<isize>, PDBError> {
-    flatten_result(get_f64(value, context).map(|result| {
+fn get_isize(
+    value: &Value,
+    context: &Context,
+    column: Option<&str>,
+) -> Result<Option<isize>, PDBError> {
+    flatten_result(get_f64(value, context, column).map(|result| {
         if let Some(num) = result {
             #[allow(
                 clippy::cast_precision_loss,
@@ -608,7 +630,9 @@ fn get_isize(value: &Value, context: &Context) -> Result<Option<isize>, PDBError
                 Err(PDBError::new(
                     ErrorLevel::InvalidatingError,
                     "Not an integer",
-                    "",
+                    column.map_or(String::new(), |v| {
+                        format!("The '{}' column should a singed integer.", v)
+                    }),
                     context.clone(),
                 ))
             }
