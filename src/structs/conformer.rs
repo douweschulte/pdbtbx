@@ -366,6 +366,7 @@ impl Conformer {
     }
 }
 
+#[allow(clippy::use_debug)]
 impl fmt::Display for Conformer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(

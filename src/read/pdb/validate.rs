@@ -27,7 +27,7 @@ pub fn validate_seqres(
                     errors.push(PDBError::new(
                         ErrorLevel::StrictWarning,
                         "SEQRES serial number invalid",
-                        &format!("The serial number for SEQRES chain \"{}\" with number \"{}\" does not follow sequentially from the previous row.", chain_id, ser_num),
+                        format!("The serial number for SEQRES chain \"{}\" with number \"{}\" does not follow sequentially from the previous row.", chain_id, ser_num),
                         context.clone()
                     ));
                 }
@@ -38,7 +38,7 @@ pub fn validate_seqres(
                     errors.push(PDBError::new(
                         ErrorLevel::StrictWarning,
                         "SEQRES residue total invalid",
-                        &format!("The residue total for SEQRES chain \"{}\" with number \"{}\" does not match the total on the first row for this chain.", chain_id, ser_num),
+                        format!("The residue total for SEQRES chain \"{}\" with number \"{}\" does not match the total on the first row for this chain.", chain_id, ser_num),
                         context.clone()
                     ));
                 }
@@ -52,7 +52,7 @@ pub fn validate_seqres(
                 errors.push(PDBError::new(
                     ErrorLevel::LooseWarning,
                     "SEQRES residue total invalid",
-                    &format!("The residue total for SEQRES chain \"{}\" does not match the total residues found in the seqres records.", chain_id),
+                    format!("The residue total for SEQRES chain \"{}\" does not match the total residues found in the seqres records.", chain_id),
                     context.clone()
                 ));
             }
@@ -69,7 +69,7 @@ pub fn validate_seqres(
                     errors.push(PDBError::new(
                         ErrorLevel::LooseWarning,
                         "SEQRES residue total invalid",
-                        &format!("The residue total ({}) for SEQRES chain \"{}\" does not match the total residues found in the dbref record ({}).", residues, chain_id, db_ref.pdb_position.end - offset + 1),
+                        format!("The residue total ({}) for SEQRES chain \"{}\" does not match the total residues found in the dbref record ({}).", residues, chain_id, db_ref.pdb_position.end - offset + 1),
                         context.clone()
                     ));
                 }
@@ -103,7 +103,7 @@ pub fn validate_seqres(
                             errors.push(PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "Multiple residues in SEQRES validation",
-                                &format!("The residue index {} in chain {} has no conformers or multiple with different names. The program cannot validate the SEQRES record in this way.", index, chain_id),
+                                format!("The residue index {} in chain {} has no conformers or multiple with different names. The program cannot validate the SEQRES record in this way.", index, chain_id),
                                 context.clone()
                             )); // TODO: show found residues
                         }
@@ -125,7 +125,7 @@ pub fn validate_seqres(
                         errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Chain residue invalid",
-                            &format!("The residue index {} value \"{:?}\" for Chain \"{}\" is not sequentially increasing, value expected: {}.", n.serial_number(), n.name(), chain_id, index),
+                            format!("The residue index {} value \"{:?}\" for Chain \"{}\" is not sequentially increasing, value expected: {}.", n.serial_number(), n.name(), chain_id, index),
                             context.clone()
                         ));
                         #[allow(clippy::while_let_on_iterator)]
@@ -234,7 +234,7 @@ pub fn validate_seqres(
                 errors.push(PDBError::new(
                     ErrorLevel::LooseWarning,
                     "SEQRES residue total invalid",
-                    &format!("The residue total ({}) for SEQRES chain \"{}\" does not match the total residues found in the chain ({}).", chain_sequence.len(), chain_id, total_found),
+                    format!("The residue total ({}) for SEQRES chain \"{}\" does not match the total residues found in the chain ({}).", chain_sequence.len(), chain_id, total_found),
                     context.clone()
                 ));
             }

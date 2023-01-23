@@ -13,7 +13,7 @@ fn low_b_factor_messages() {
         .into_string()
         .unwrap();
 
-    let (pdb, errors) = pdbtbx::open(&filename, StrictnessLevel::Strict).unwrap();
+    let (pdb, errors) = pdbtbx::open(filename, StrictnessLevel::Strict).unwrap();
     let pdb_errors = validate_pdb(&pdb);
     print!("{:?}", errors);
     print!("{:?}", pdb_errors);

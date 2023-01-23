@@ -84,7 +84,7 @@ where
             return Err(vec![PDBError::new(
                 ErrorLevel::BreakingError,
                 "Could read line",
-                &format!(
+                format!(
                     "Could not read line {} while parsing the input file.",
                     linenumber
                 ),
@@ -141,13 +141,13 @@ where
                         let atom = Atom::new(
                             hetero,
                             serial_number + atom_serial_addition,
-                            &name,
+                            name,
                             x,
                             y,
                             z,
                             occ,
                             b,
-                            &element,
+                            element,
                             charge,
                         )
                         .expect("Invalid characters in atom creation");
@@ -204,7 +204,7 @@ where
                             }
                         }
                         if !found {
-                            println!(
+                            eprintln!(
                             "Could not find atom for temperature factors, coupled to atom {} {}",
                             s, n
                         )
@@ -215,7 +215,7 @@ where
                             pdb.add_model(Model::from_iter(
                                 current_model_number,
                                 current_model.into_iter().map(|(id, residues)| {
-                                    Chain::from_iter(&id, residues.into_values())
+                                    Chain::from_iter(id, residues.into_values())
                                         .expect("Invalid characters in Chain definition")
                                 }),
                             ));
@@ -296,7 +296,7 @@ where
                             }
                         }
                         if !found {
-                            errors.push(PDBError::new(ErrorLevel::BreakingError, "Solitary DBREF2", &format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{}'", chain_id), line_context.clone()))
+                            errors.push(PDBError::new(ErrorLevel::BreakingError, "Solitary DBREF2", format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{}'", chain_id), line_context.clone()))
                         }
                     }
                     LexItem::Seqadv(
@@ -322,7 +322,7 @@ where
                             errors.push(PDBError::new(
                             ErrorLevel::StrictWarning,
                             "Sequence Difference Database not found",
-                            &format!("For this sequence difference (chain: {}) the corresponding database definition (DBREF) was not found, make sure the DBREF is located before the SEQADV", chain_id),
+                            format!("For this sequence difference (chain: {}) the corresponding database definition (DBREF) was not found, make sure the DBREF is located before the SEQADV", chain_id),
                             line_context.clone()
                         ))
                         }
@@ -348,7 +348,7 @@ where
                             pdb.add_model(Model::from_iter(
                                 current_model_number,
                                 current_model.into_iter().map(|(id, residues)| {
-                                    Chain::from_iter(&id, residues.into_values())
+                                    Chain::from_iter(id, residues.into_values())
                                         .expect("Invalid characters in Chain definition")
                                 }),
                             ));
@@ -360,7 +360,7 @@ where
                             PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
-                                &format!("The number of REMARKS ({}) is different then posed in the MASTER Record ({})", pdb.remark_count(), num_remark),
+                                format!("The number of REMARKS ({}) is different then posed in the MASTER Record ({})", pdb.remark_count(), num_remark),
                                 line_context.clone()
                             )
                         );
@@ -370,7 +370,7 @@ where
                             PDBError::new(
                                 ErrorLevel::LooseWarning,
                                 "MASTER checksum failed",
-                                &format!("The empty checksum number is not empty (value: {}) while it is defined to be empty.", num_empty),
+                                format!("The empty checksum number is not empty (value: {}) while it is defined to be empty.", num_empty),
                                 line_context.clone()
                             )
                         );
@@ -392,7 +392,7 @@ where
                             PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
-                                &format!("The number of coordinate transformation records ({}) is different then posed in the MASTER Record ({})", xform, num_xform),
+                                format!("The number of coordinate transformation records ({}) is different then posed in the MASTER Record ({})", xform, num_xform),
                                 line_context.clone()
                             )
                         );
@@ -402,7 +402,7 @@ where
                             PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
-                                &format!("The number of Atoms ({}) is different then posed in the MASTER Record ({})", pdb.total_atom_count(), num_coord),
+                                format!("The number of Atoms ({}) is different then posed in the MASTER Record ({})", pdb.total_atom_count(), num_coord),
                                 line_context.clone()
                             )
                         );
@@ -419,7 +419,7 @@ where
         pdb.add_model(Model::from_iter(
             current_model_number,
             current_model.into_iter().map(|(id, residues)| {
-                Chain::from_iter(&id, residues.into_values())
+                Chain::from_iter(id, residues.into_values())
                     .expect("Invalid characters in Chain definition")
             }),
         ));
@@ -430,7 +430,7 @@ where
             errors.push(PDBError::new(
                 ErrorLevel::StrictWarning,
                 "Solitary DBREF1 definition",
-                &format!("The complementary DBREF2 was not found for this DBREF1 definition. For chain id '{}'. For database '{}' with ID code '{}'.", chain_id, reference.database.name, reference.database.id),
+                format!("The complementary DBREF2 was not found for this DBREF1 definition. For chain id '{}'. For database '{}' with ID code '{}'.", chain_id, reference.database.name, reference.database.id),
                 Context::None,
             ))
         } else if let Some(chain) = pdb.chains_mut().find(|a| a.id() == chain_id) {
@@ -467,7 +467,7 @@ where
             errors.push(PDBError::new(
                 ErrorLevel::StrictWarning,
                 "Invalid MATRIX definition",
-                &format!(
+                format!(
                     "Not all rows are set in the MtriX definition, number: {}",
                     index
                 ),
@@ -585,7 +585,7 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
                                 errors.push(PDBError::new(
                                     ErrorLevel::InvalidatingError,
                                     "Invalid characters",
-                                    &e,
+                                    e,
                                     context,
                                 ));
                             }

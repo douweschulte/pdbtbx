@@ -102,7 +102,7 @@ fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
             return Err(PDBError::new(
                 ErrorLevel::BreakingError,
                 "Loop has incorrect number of data items",
-                &format!("A loop has to have a number of data items which is divisible by the amount of headers but here there are {} items left.", values.len() % columns),
+                format!("A loop has to have a number of data items which is divisible by the amount of headers but here there are {} items left.", values.len() % columns),
                 Context::range(&start, input),
             ));
         }
@@ -392,7 +392,7 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
             return Err(PDBError::new(
                 ErrorLevel::BreakingError,
                 "Invalid enclosing",
-                &format!(
+                format!(
                     "This element was enclosed by \'{}\' but the closing delimiter was not found.",
                     pat
                 ),
@@ -408,7 +408,7 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
     Err(PDBError::new(
         ErrorLevel::BreakingError,
         "Invalid enclosing",
-        &format!(
+        format!(
             "This element was enclosed by \'{}\' but the closing delimiter was not found.",
             pat
         ),

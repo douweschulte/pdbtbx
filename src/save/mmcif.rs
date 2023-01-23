@@ -371,6 +371,7 @@ fn print_float(num: f64) -> String {
 }
 
 #[cfg(test)]
+#[allow(clippy::print_stdout)]
 mod tests {
     use super::*;
 

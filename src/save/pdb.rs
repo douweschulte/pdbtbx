@@ -39,7 +39,7 @@ pub fn save_pdb(
             errors.push(PDBError::new(
                 ErrorLevel::BreakingError,
                 "Could not open file",
-                &format!("Could not open the file for writing, make sure you have permission for this file and no other program is currently using it.\n{}", e),
+                format!("Could not open the file for writing, make sure you have permission for this file and no other program is currently using it.\n{}", e),
                 Context::show(filename)
             ));
             return Err(errors);

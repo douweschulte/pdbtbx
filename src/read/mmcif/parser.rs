@@ -28,7 +28,7 @@ pub fn open_mmcif(
         return Err(vec![PDBError::new(
             ErrorLevel::BreakingError,
             "Error while reading file",
-            &format!("Error: {}", e),
+            format!("Error: {}", e),
             Context::show(filename),
         )]);
     }
@@ -368,7 +368,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
 
     for (index, row) in input.data.iter().enumerate() {
         let values: Vec<Option<&Value>> = positions.iter().map(|i| i.map(|x| &row[x])).collect();
-        let context = Context::show(&format!("Main atomic data loop row: {}", index));
+        let context = Context::show(format!("Main atomic data loop row: {}", index));
 
         /// Parse a column given the function to use and the column index
         macro_rules! parse_column {

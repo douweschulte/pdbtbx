@@ -240,6 +240,7 @@ impl TransformationMatrix {
 }
 
 #[cfg(test)]
+#[allow(clippy::print_stdout, clippy::use_debug)]
 mod tests {
     use super::TransformationMatrix;
 

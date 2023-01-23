@@ -504,9 +504,9 @@ impl fmt::Display for Residue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "RESIDUE Number:{}, InsertionCode:{:?}, Conformers:{}",
+            "RESIDUE Number:{}, InsertionCode:{}, Conformers:{}",
             self.serial_number(),
-            self.insertion_code(),
+            self.insertion_code().unwrap_or(""),
             self.conformers.len(),
         )
     }

@@ -14,7 +14,7 @@ fn main() {
         .unwrap();
     save_pdb(
         &create_waterbox((25.0, 25.0, 25.0)),
-        &filename,
+        filename,
         StrictnessLevel::Loose,
     )
     .expect("Save not successful");

@@ -78,7 +78,11 @@ impl fmt::Debug for PDBError {
 
 impl fmt::Display for PDBError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(
+            f,
+            "{}: {}{}\n{}\n",
+            self.level, self.short_description, self.context, self.long_description
+        )
     }
 }
 
@@ -97,6 +101,7 @@ impl Ord for PDBError {
 }
 
 #[cfg(test)]
+#[allow(clippy::print_stdout)]
 mod tests {
     use super::*;
     use crate::Position;

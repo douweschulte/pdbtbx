@@ -103,28 +103,22 @@ fn do_something(file: &str, folder: &str, name: &str) {
     {
         save(
             &pdb,
-            &(folder.to_string() + name + ".pdb"),
+            folder.to_string() + name + ".pdb",
             StrictnessLevel::Loose,
         )
         .expect("PDB resave not successful");
-        let (_saved_pdb, _) = open(
-            &(folder.to_string() + name + ".pdb"),
-            StrictnessLevel::Loose,
-        )
-        .expect("PDB reparse not successful");
+        let (_saved_pdb, _) = open(folder.to_string() + name + ".pdb", StrictnessLevel::Loose)
+            .expect("PDB reparse not successful");
         //assert_eq!(pdb, saved_pdb);
     }
     save(
         &pdb,
-        &(folder.to_string() + name + ".cif"),
+        folder.to_string() + name + ".cif",
         StrictnessLevel::Loose,
     )
     .expect("mmCIF resave not successful");
-    let (_saved_mmcif, _) = open(
-        &(folder.to_string() + name + ".cif"),
-        StrictnessLevel::Loose,
-    )
-    .expect("mmCIF reparse not successful");
+    let (_saved_mmcif, _) = open(folder.to_string() + name + ".cif", StrictnessLevel::Loose)
+        .expect("mmCIF reparse not successful");
 
     // These should be equal in the future
     //assert_eq!(pdb, saved_mmcif);
@@ -139,7 +133,7 @@ fn save_invalid_name() {
         .into_os_string()
         .into_string()
         .unwrap();
-    let res = save(&PDB::new(), &name, StrictnessLevel::Loose);
+    let res = save(&PDB::new(), name, StrictnessLevel::Loose);
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.len(), 1);

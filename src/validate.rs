@@ -44,7 +44,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
             errors.push(PDBError::new(
                 ErrorLevel::LooseWarning,
                 "Model serial number too high",
-                &format!(
+                format!(
                     "Model {} has a serial number which is too high, max 9999.",
                     model.serial_number()
                 ),
@@ -56,7 +56,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                 errors.push(PDBError::new(
                     ErrorLevel::LooseWarning,
                     "Chain id too long",
-                    &format!(
+                    format!(
                         "Chain {} has a name which is too long, max 1 character.",
                         chain.id()
                     ),
@@ -68,7 +68,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                     errors.push(PDBError::new(
                         ErrorLevel::LooseWarning,
                         "Residue serial number too high",
-                        &format!(
+                        format!(
                             "Residue {:?} has a serial number which is too high, max is 9999.",
                             residue.id()
                         ),
@@ -80,7 +80,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                         errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Residue insertion code too long",
-                            &format!(
+                            format!(
                                 "Residue {:?} has an insertion code which is too long, max 1 char.",
                                 residue.id()
                             ),
@@ -93,7 +93,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                         errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Conformer name too long",
-                            &format!(
+                            format!(
                                 "Conformer {:?} has a name which is too long, max 3 chars.",
                                 conformer.id()
                             ),
@@ -105,7 +105,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             errors.push(PDBError::new(
                                 ErrorLevel::LooseWarning,
                                 "Conformer alternative location too long",
-                                &format!(
+                                format!(
                                     "Conformer {:?} has an alternative location which is too long, max 1 char.",
                                     conformer.id()
                                 ),
@@ -118,7 +118,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Residue modification name too long",
-                            &format!(
+                            format!(
                                 "Residue {} has a modification name which is too long, max 3 chars.",
                                 residue.serial_number()
                             ),
@@ -129,7 +129,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Residue modification comment too long",
-                            &format!(
+                            format!(
                                 "Residue {} has a modification comment which is too long, max 41 chars.",
                                 residue.serial_number()
                             ),
@@ -142,7 +142,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             errors.push(PDBError::new(
                                 ErrorLevel::LooseWarning,
                                 "Atom name too long",
-                                &format!(
+                                format!(
                                     "Atom {} has a name which is too long, max 4 chars.",
                                     atom.serial_number()
                                 ),
@@ -153,7 +153,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             errors.push(PDBError::new(
                                 ErrorLevel::LooseWarning,
                                 "Atom serial number too high",
-                                &format!(
+                                format!(
                                     "Atom {} has a serial number which is too high, max is 99999.",
                                     atom.serial_number()
                                 ),
@@ -164,7 +164,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             errors.push(PDBError::new(
                                 ErrorLevel::LooseWarning,
                                 "Atom charge out of bounds",
-                                &format!(
+                                format!(
                                 "Atom {} has a charge which is out of bounds, max is 9 min is -9.",
                                 atom.serial_number()
                             ),
@@ -175,7 +175,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             errors.push(PDBError::new(
                                 ErrorLevel::LooseWarning,
                                 "Atom occupancy out of bounds",
-                                &format!(
+                                format!(
                                 "Atom {} has a occupancy which is out of bounds, max is 999.99.",
                                 atom.serial_number()
                             ),
@@ -186,7 +186,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             errors.push(PDBError::new(
                                 ErrorLevel::LooseWarning,
                                 "Atom b factor out of bounds",
-                                &format!(
+                                format!(
                                     "Atom {} has a b factor which is out of bounds, max is 999.99.",
                                     atom.serial_number()
                                 ),
@@ -197,7 +197,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom x position out of bounds",
-                            &format!(
+                            format!(
                                 "Atom {} has an x which is out of bounds, max is 9999.999 min is -999.999.",
                                 atom.serial_number()
                             ),
@@ -208,7 +208,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom y position out of bounds",
-                            &format!(
+                            format!(
                                 "Atom {} has a y which is out of bounds, max is 9999.999 min is -999.999.",
                                 atom.serial_number()
                             ),
@@ -219,7 +219,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             errors.push(PDBError::new(
                             ErrorLevel::LooseWarning,
                             "Atom z position out of bounds",
-                            &format!(
+                            format!(
                                 "Atom {} has a z which is out of bounds, max is 9999.999 min is -999.999.",
                                 atom.serial_number()
                             ),
@@ -251,7 +251,7 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
             errors.push(PDBError::new(
                 ErrorLevel::LooseWarning,
                 "Invalid Model",
-                &format!(
+                format!(
                     "Model {} does not have the same amount of atoms (Normal + Hetero) ({}) as the first model ({}).",
                     model.serial_number(),
                     model.atom_count(),
@@ -264,7 +264,7 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
             errors.push(PDBError::new(
                 ErrorLevel::StrictWarning,
                 "Invalid Model",
-                &format!(
+                format!(
                     "Model {} does not have the same amount of atoms ({}) as the first model ({}).",
                     model.serial_number(),
                     model.atoms().filter(|a| !a.hetero()).count(),
@@ -281,7 +281,7 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
                 errors.push(PDBError::new(
                     ErrorLevel::StrictWarning,
                     "Atoms in Models not corresponding",
-                    &format!(
+                    format!(
                         "Atom {} in Model {} does not correspond to the respective Atom in the first model.",
                         current_atom.serial_number(),
                         model.serial_number()
