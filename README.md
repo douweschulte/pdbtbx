@@ -75,4 +75,4 @@ The features where support is planned are planned to be included in the 1.0 rele
 Also see [changelog](https://github.com/douweschulte/pdbtbx/blob/master/changelog.md).
 
 ## Support and development
-When I am actively using this crate in my own projects this crate is actively worked on and extended. I am more than happy to receive and work PRs and Issues even if the project seems a bit stale. But if anyone finds this project stale and wants to take over moderation and/or main development feel free to reach out and we can discuss. I would be happy to transfer to project and access to crates.io if that means the project will live on.
+When I am actively using this crate in my own projects this crate is actively worked on and extended. I am more than happy to receive and work on PRs and Issues even if the project seems a bit stale. But if anyone finds this project stale and wants to take over moderation and/or main development feel free to reach out and we can discuss. I would be happy to transfer the project and access to crates.io if that means the project will live on.
