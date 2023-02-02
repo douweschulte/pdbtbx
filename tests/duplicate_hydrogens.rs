@@ -20,11 +20,11 @@ fn number_of_h(file: &str) -> usize {
     println!("{}", structure.atom_count());
 
     for res in structure.residues() {
-        println!("{}", res);
+        println!("{res}");
         for con in res.conformers() {
-            println!("  {}", con);
+            println!("  {con}");
             for a in con.atoms() {
-                println!("    {}", a);
+                println!("    {a}");
             }
         }
     }

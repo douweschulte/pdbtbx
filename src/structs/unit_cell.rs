@@ -59,8 +59,7 @@ impl UnitCell {
     pub fn set_a(&mut self, new_a: f64) {
         assert!(
             new_a.is_finite(),
-            "The new a value of this UnitCell is not finite. Value: {}",
-            new_a
+            "The new a value of this UnitCell is not finite. Value: {new_a}"
         );
         self.a = new_a;
     }
@@ -70,8 +69,7 @@ impl UnitCell {
     pub fn set_b(&mut self, new_b: f64) {
         assert!(
             new_b.is_finite(),
-            "The new b value of this UnitCell is not finite. Value: {}",
-            new_b
+            "The new b value of this UnitCell is not finite. Value: {new_b}"
         );
         self.b = new_b;
     }
@@ -81,8 +79,7 @@ impl UnitCell {
     pub fn set_c(&mut self, new_c: f64) {
         assert!(
             new_c.is_finite(),
-            "The new c value of this UnitCell is not finite. Value: {}",
-            new_c
+            "The new c value of this UnitCell is not finite. Value: {new_c}"
         );
         self.c = new_c;
     }
@@ -98,13 +95,11 @@ impl UnitCell {
     pub fn set_alpha(&mut self, new_alpha: f64) {
         assert!(
             new_alpha.is_finite(),
-            "The new alpha value of this UnitCell is not finite. Value: {}",
-            new_alpha
+            "The new alpha value of this UnitCell is not finite. Value: {new_alpha}"
         );
         assert!(
             (0.0..360.0).contains(&new_alpha),
-            "The new alpha value of this UnitCell is out of bounds [0, 360). Value: {}",
-            new_alpha
+            "The new alpha value of this UnitCell is out of bounds [0, 360). Value: {new_alpha}"
         );
         self.alpha = new_alpha;
     }
@@ -120,13 +115,11 @@ impl UnitCell {
     pub fn set_beta(&mut self, new_beta: f64) {
         assert!(
             new_beta.is_finite(),
-            "The new beta value of this UnitCell is not finite. Value: {}",
-            new_beta
+            "The new beta value of this UnitCell is not finite. Value: {new_beta}"
         );
         assert!(
             (0.0..360.0).contains(&new_beta),
-            "The new beta value of this UnitCell is out of bounds [0, 360).. Value: {}",
-            new_beta
+            "The new beta value of this UnitCell is out of bounds [0, 360).. Value: {new_beta}"
         );
         self.beta = new_beta;
     }
@@ -142,13 +135,11 @@ impl UnitCell {
     pub fn set_gamma(&mut self, new_gamma: f64) {
         assert!(
             new_gamma.is_finite(),
-            "The new gamma value of this UnitCell is not finite. Value: {}",
-            new_gamma
+            "The new gamma value of this UnitCell is not finite. Value: {new_gamma}"
         );
         assert!(
             (0.0..360.0).contains(&new_gamma),
-            "The new gamma value of this UnitCell is out of bounds [0, 360).. Value: {}",
-            new_gamma
+            "The new gamma value of this UnitCell is out of bounds [0, 360).. Value: {new_gamma}"
         );
         self.gamma = new_gamma;
     }

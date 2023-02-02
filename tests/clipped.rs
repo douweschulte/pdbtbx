@@ -8,8 +8,8 @@ use std::io::{BufRead, BufReader};
 fn clipped() {
     let (pdb, errors) = pdbtbx::open("example-pdbs/large.pdb", StrictnessLevel::Strict).unwrap();
     let pdb_errors = save(&pdb, "dump/large.pdb", StrictnessLevel::Loose);
-    print!("{:?}", errors);
-    print!("{:?}", pdb_errors);
+    print!("{errors:?}");
+    print!("{pdb_errors:?}");
     let file = File::open("dump/large.pdb").unwrap();
     let mut buffer = BufReader::new(file).lines();
     let target = "ATOM  8662  H2   WAT C5372       7.739  79.053  26.313  1.00  0.00          H";

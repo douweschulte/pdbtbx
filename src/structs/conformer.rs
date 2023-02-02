@@ -463,7 +463,7 @@ mod tests {
     #[test]
     fn check_display() {
         let a = Conformer::new("A", None, None).unwrap();
-        format!("{:?}", a);
-        format!("{}", a);
+        format!("{a:?}");
+        format!("{a}");
     }
 }

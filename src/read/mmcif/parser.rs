@@ -28,7 +28,7 @@ pub fn open_mmcif(
         return Err(vec![PDBError::new(
             ErrorLevel::BreakingError,
             "Error while reading file",
-            format!("Error: {}", e),
+            format!("Error: {e}"),
             Context::show(filename),
         )]);
     }
@@ -368,7 +368,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
 
     for (index, row) in input.data.iter().enumerate() {
         let values: Vec<Option<&Value>> = positions.iter().map(|i| i.map(|x| &row[x])).collect();
-        let context = Context::show(format!("Main atomic data loop row: {}", index));
+        let context = Context::show(format!("Main atomic data loop row: {index}"));
 
         /// Parse a column given the function to use and the column index
         macro_rules! parse_column {
@@ -546,12 +546,12 @@ fn get_text(
         Value::Text(t) => Ok(Some(t.to_string())),
         Value::Inapplicable => Ok(None),
         Value::Unknown => Ok(None),
-        Value::Numeric(n) => Ok(Some(format!("{}", n))),
+        Value::Numeric(n) => Ok(Some(format!("{n}"))),
         _ => Err(PDBError::new(
             ErrorLevel::InvalidatingError,
             "Not text",
             column.map_or(String::new(), |v| {
-                format!("The '{}' column should contain text.", v)
+                format!("The '{v}' column should contain text.")
             }),
             context.clone(),
         )),
@@ -572,7 +572,7 @@ fn get_f64(
             ErrorLevel::InvalidatingError,
             "Not a number",
             column.map_or(String::new(), |v| {
-                format!("The '{}' column should contain a number.", v)
+                format!("The '{v}' column should contain a number.")
             }),
             context.clone(),
         )),
@@ -600,7 +600,7 @@ fn get_usize(
                     ErrorLevel::InvalidatingError,
                     "Not an unsigned integer",
                     column.map_or(String::new(), |v| {
-                        format!("The '{}' column should contain an unsigned integer.", v)
+                        format!("The '{v}' column should contain an unsigned integer.")
                     }),
                     context.clone(),
                 ))
@@ -632,7 +632,7 @@ fn get_isize(
                     ErrorLevel::InvalidatingError,
                     "Not an integer",
                     column.map_or(String::new(), |v| {
-                        format!("The '{}' column should a singed integer.", v)
+                        format!("The '{v}' column should a singed integer.")
                     }),
                     context.clone(),
                 ))

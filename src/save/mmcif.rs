@@ -366,7 +366,7 @@ fn print_float(num: f64) -> String {
     if (rounded.round() - rounded).abs() < std::f64::EPSILON {
         format!("{}.0", rounded.trunc() as isize)
     } else {
-        format!("{}", rounded)
+        format!("{rounded}")
     }
 }
 

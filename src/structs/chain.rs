@@ -616,7 +616,7 @@ mod tests {
     #[test]
     fn check_display() {
         let a = Chain::new("A").unwrap();
-        format!("{:?}", a);
-        format!("{}", a);
+        format!("{a:?}");
+        format!("{a}");
     }
 }

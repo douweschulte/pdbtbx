@@ -39,7 +39,7 @@ pub fn save_pdb(
             errors.push(PDBError::new(
                 ErrorLevel::BreakingError,
                 "Could not open file",
-                format!("Could not open the file for writing, make sure you have permission for this file and no other program is currently using it.\n{}", e),
+                format!("Could not open the file for writing, make sure you have permission for this file and no other program is currently using it.\n{e}"),
                 Context::show(filename)
             ));
             return Err(errors);
@@ -68,7 +68,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
                 if !cell.is_empty() && trimmed.is_empty() {
                     std::fmt::write(&mut line, format_args!("{0:1$}", "0", length)).unwrap();
                 } else {
-                    std::fmt::write(&mut line, format_args!("{0:1$}", trimmed, length)).unwrap();
+                    std::fmt::write(&mut line, format_args!("{trimmed:length$}")).unwrap();
                 }
             } else {
                 line += text;

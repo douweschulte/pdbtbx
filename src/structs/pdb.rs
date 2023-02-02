@@ -111,7 +111,7 @@ impl PDB {
     /// ## Fails
     /// It fails if the text if too long, the text contains invalid characters or the remark-type-number is not valid (wwPDB v3.30).
     pub fn add_remark(&mut self, remark_type: usize, remark_text: String) -> Result<(), PDBError> {
-        let context = Context::show(format!("REMARK {:3} {}", remark_type, remark_text));
+        let context = Context::show(format!("REMARK {remark_type:3} {remark_text}"));
         if !reference_tables::valid_remark_type_number(remark_type) {
             return Err(PDBError::new(
                 crate::ErrorLevel::InvalidatingError,

@@ -6,8 +6,8 @@ fn insertion_codes() {
         pdbtbx::open("example-pdbs/insertion_codes.pdb", StrictnessLevel::Strict).unwrap();
     let pdb_errors = save(&pdb, "dump/insertion_codes.pdb", StrictnessLevel::Loose);
     let (pdb2, _) = pdbtbx::open("dump/insertion_codes.pdb", StrictnessLevel::Strict).unwrap();
-    print!("{:?}", errors);
-    print!("{:?}", pdb_errors);
+    print!("{errors:?}");
+    print!("{pdb_errors:?}");
     // See that the original file is the same as saved and reopened
     assert_eq!(pdb, pdb2);
     assert_eq!(pdb.residues().count(), 2);

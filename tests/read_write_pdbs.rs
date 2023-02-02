@@ -15,7 +15,7 @@ fn run_pdbs() {
         .unwrap()
         + &String::from(std::path::MAIN_SEPARATOR);
     let _ = fs::create_dir(dump_dir.clone());
-    println!("{:?}", pdb_dir);
+    println!("{pdb_dir:?}");
 
     save_invalid_name();
     save_pdb_strict();
@@ -41,7 +41,7 @@ fn run_pdbs() {
 }
 
 fn do_something(file: &str, folder: &str, name: &str) {
-    println!("Working on file: {}", file);
+    println!("Working on file: {file}");
     let now = Instant::now();
 
     let (pdb, errors) = open(file, StrictnessLevel::Loose).unwrap();
@@ -49,7 +49,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
     let time = now.elapsed();
 
     for error in errors {
-        println!("{}", error);
+        println!("{error}");
     }
 
     println!(
@@ -93,8 +93,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
     println!("Found averages");
 
     println!(
-        "Average B factor: Total: {:.3}, Backbone: {:.3}, Sidechains: {:.3}",
-        avg, avg_back, avg_side
+        "Average B factor: Total: {avg:.3}, Backbone: {avg_back:.3}, Sidechains: {avg_side:.3}"
     );
 
     if validate_pdb(&pdb)
@@ -179,7 +178,7 @@ fn save_mmcif_strict() {
     pdb.add_model(model);
 
     let res = save(&pdb, &name, StrictnessLevel::Strict);
-    println!("{:?}", res);
+    println!("{res:?}");
     assert!(res.is_ok());
     let (_pdb, errors) = crate::open(&name, StrictnessLevel::Strict).unwrap();
     assert_eq!(errors.len(), 0);

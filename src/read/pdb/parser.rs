@@ -84,10 +84,7 @@ where
             return Err(vec![PDBError::new(
                 ErrorLevel::BreakingError,
                 "Could read line",
-                format!(
-                    "Could not read line {} while parsing the input file.",
-                    linenumber
-                ),
+                format!("Could not read line {linenumber} while parsing the input file."),
                 context,
             )]);
         };
@@ -204,10 +201,7 @@ where
                             }
                         }
                         if !found {
-                            eprintln!(
-                            "Could not find atom for temperature factors, coupled to atom {} {}",
-                            s, n
-                        )
+                            eprintln!("Could not find atom for temperature factors, coupled to atom {s} {n}")
                         }
                     }
                     LexItem::Model(number) => {
@@ -249,7 +243,7 @@ where
                         pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
                         pdb.symmetry =
                             Some(Symmetry::new(&spacegroup).unwrap_or_else(|| {
-                                panic!("Invalid space group: \"{}\"", spacegroup)
+                                panic!("Invalid space group: \"{spacegroup}\"")
                             }));
                     }
                     LexItem::Seqres(ser_num, chain_id, num_res, values) => {
@@ -296,7 +290,7 @@ where
                             }
                         }
                         if !found {
-                            errors.push(PDBError::new(ErrorLevel::BreakingError, "Solitary DBREF2", format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{}'", chain_id), line_context.clone()))
+                            errors.push(PDBError::new(ErrorLevel::BreakingError, "Solitary DBREF2", format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{chain_id}'"), line_context.clone()))
                         }
                     }
                     LexItem::Seqadv(
@@ -322,7 +316,7 @@ where
                             errors.push(PDBError::new(
                             ErrorLevel::StrictWarning,
                             "Sequence Difference Database not found",
-                            format!("For this sequence difference (chain: {}) the corresponding database definition (DBREF) was not found, make sure the DBREF is located before the SEQADV", chain_id),
+                            format!("For this sequence difference (chain: {chain_id}) the corresponding database definition (DBREF) was not found, make sure the DBREF is located before the SEQADV"),
                             line_context.clone()
                         ))
                         }
@@ -370,7 +364,7 @@ where
                             PDBError::new(
                                 ErrorLevel::LooseWarning,
                                 "MASTER checksum failed",
-                                format!("The empty checksum number is not empty (value: {}) while it is defined to be empty.", num_empty),
+                                format!("The empty checksum number is not empty (value: {num_empty}) while it is defined to be empty."),
                                 line_context.clone()
                             )
                         );
@@ -392,7 +386,7 @@ where
                             PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
-                                format!("The number of coordinate transformation records ({}) is different then posed in the MASTER Record ({})", xform, num_xform),
+                                format!("The number of coordinate transformation records ({xform}) is different then posed in the MASTER Record ({num_xform})"),
                                 line_context.clone()
                             )
                         );
@@ -467,10 +461,7 @@ where
             errors.push(PDBError::new(
                 ErrorLevel::StrictWarning,
                 "Invalid MATRIX definition",
-                format!(
-                    "Not all rows are set in the MtriX definition, number: {}",
-                    index
-                ),
+                format!("Not all rows are set in the MtriX definition, number: {index}",),
                 context.clone(),
             ))
         }
