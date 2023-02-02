@@ -90,7 +90,7 @@ println!("There are {} backbone atoms within 3.5Aͦ of the atom at index 42", to
 #![doc = "## References"]
 #![doc = "1. [`Perkel, J. M.`] Perkel, J. M. (2020). Why scientists are turning to Rust. Nature, 588(7836), 185–186. [https://doi.org/10.1038/d41586-020-03382-2](https://doi.org/10.1038/d41586-020-03382-2)"]
 // Set linting behaviour
-#![deny(
+#![warn(
     missing_docs,
     trivial_casts,
     trivial_numeric_casts,
@@ -98,7 +98,7 @@ println!("There are {} backbone atoms within 3.5Aͦ of the atom at index 42", to
     unused,
     rust_2018_idioms
 )]
-#![deny(
+#![warn(
     clippy::all,
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
