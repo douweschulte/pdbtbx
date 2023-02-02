@@ -400,7 +400,7 @@ where
                         if num_coord != pdb.total_atom_count() {
                             errors.push(
                             PDBError::new(
-                                ErrorLevel::StrictWarning,
+                                ErrorLevel::LooseWarning,
                                 "MASTER checksum failed",
                                 format!("The number of Atoms ({}) is different then posed in the MASTER Record ({})", pdb.total_atom_count(), num_coord),
                                 line_context.clone()
