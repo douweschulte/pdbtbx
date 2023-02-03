@@ -121,13 +121,7 @@ fn lex_header(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>),
 /// It fails on incorrect numbers for the serial number
 fn lex_model(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
-    let chars = &line.chars().collect::<Vec<char>>()[6..]
-        .iter()
-        .collect::<String>()
-        .trim()
-        .chars()
-        .collect::<Vec<char>>();
-    let number = parse(linenumber, line, 0..chars.len(), &mut errors);
+    let number = parse(linenumber, line, 6..line.len(), &mut errors);
     (LexItem::Model(number), errors)
 }
 
@@ -346,10 +340,15 @@ fn lex_cryst(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let a = parse(linenumber, line, 6..15, &mut errors);
     let b = parse(linenumber, line, 15..24, &mut errors);
     let c = parse(linenumber, line, 24..33, &mut errors);
-    let alpha = parse(linenumber, line, 33..44, &mut errors);
+    let alpha = parse(linenumber, line, 33..40, &mut errors);
     let beta = parse(linenumber, line, 40..47, &mut errors);
     let gamma = parse(linenumber, line, 47..54, &mut errors);
-    let spacegroup = parse(linenumber, line, 55..66, &mut errors);
+    let spacegroup = parse(
+        linenumber,
+        line,
+        55..std::cmp::min(66, chars.len()),
+        &mut errors,
+    );
     let z = if chars.len() > 66 {
         parse(linenumber, line, 66..chars.len(), &mut errors)
     } else {
