@@ -475,7 +475,7 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
             ])
         };
 
-        for chain in model.chains() {
+        for chain in model.chains().filter(|c| c.atoms().next().is_some()) {
             for residue in chain.residues() {
                 for conformer in residue.conformers() {
                     for atom in conformer.atoms() {
