@@ -27,7 +27,7 @@ pub fn validate_seqres(
                     errors.push(PDBError::new(
                         ErrorLevel::StrictWarning,
                         "SEQRES serial number invalid",
-                        format!("The serial number for SEQRES chain \"{}\" with number \"{}\" does not follow sequentially from the previous row.", chain_id, ser_num),
+                        format!("The serial number for SEQRES chain \"{chain_id}\" with number \"{ser_num}\" does not follow sequentially from the previous row."),
                         context.clone()
                     ));
                 }
@@ -38,7 +38,7 @@ pub fn validate_seqres(
                     errors.push(PDBError::new(
                         ErrorLevel::StrictWarning,
                         "SEQRES residue total invalid",
-                        format!("The residue total for SEQRES chain \"{}\" with number \"{}\" does not match the total on the first row for this chain.", chain_id, ser_num),
+                        format!("The residue total for SEQRES chain \"{chain_id}\" with number \"{ser_num}\" does not match the total on the first row for this chain."),
                         context.clone()
                     ));
                 }
@@ -52,7 +52,7 @@ pub fn validate_seqres(
                 errors.push(PDBError::new(
                     ErrorLevel::LooseWarning,
                     "SEQRES residue total invalid",
-                    format!("The residue total for SEQRES chain \"{}\" does not match the total residues found in the seqres records.", chain_id),
+                    format!("The residue total for SEQRES chain \"{chain_id}\" does not match the total residues found in the seqres records."),
                     context.clone()
                 ));
             }
@@ -103,7 +103,7 @@ pub fn validate_seqres(
                             errors.push(PDBError::new(
                                 ErrorLevel::StrictWarning,
                                 "Multiple residues in SEQRES validation",
-                                format!("The residue index {} in chain {} has no conformers or multiple with different names. The program cannot validate the SEQRES record in this way.", index, chain_id),
+                                format!("The residue index {index} in chain {chain_id} has no conformers or multiple with different names. The program cannot validate the SEQRES record in this way."),
                                 context.clone()
                             )); // TODO: show found residues
                         }

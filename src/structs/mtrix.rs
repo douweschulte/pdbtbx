@@ -68,6 +68,6 @@ mod tests {
     #[test]
     fn test_debug() {
         let a = MtriX::default();
-        format!("{:?}", a);
+        format!("{a:?}");
     }
 }

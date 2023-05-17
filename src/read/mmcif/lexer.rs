@@ -392,10 +392,7 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
             return Err(PDBError::new(
                 ErrorLevel::BreakingError,
                 "Invalid enclosing",
-                format!(
-                    "This element was enclosed by \'{}\' but the closing delimiter was not found.",
-                    pat
-                ),
+                format!("This element was enclosed by \'{pat}\' but the closing delimiter was not found."),
                 Context::range(input, &end),
             ));
         }
@@ -408,10 +405,7 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
     Err(PDBError::new(
         ErrorLevel::BreakingError,
         "Invalid enclosing",
-        format!(
-            "This element was enclosed by \'{}\' but the closing delimiter was not found.",
-            pat
-        ),
+        format!("This element was enclosed by \'{pat}\' but the closing delimiter was not found."),
         Context::range(input, &end),
     ))
 }

@@ -215,7 +215,7 @@ impl Context {
                 )?;
                 for line in lines.iter().skip(1) {
                     number += 1;
-                    write!(f, "\n{:<pad$} │ {}", number, line, pad = margin)?;
+                    write!(f, "\n{number:<margin$} │ {line}")?;
                 }
             }
             Context::RangeHighlights {
@@ -229,7 +229,7 @@ impl Context {
                 #[allow(unused)]
                 for (index, line) in lines.iter().enumerate() {
                     number += 1;
-                    write!(f, "\n{:<pad$} │ {}", number, line, pad = margin)?;
+                    write!(f, "\n{number:<margin$} │ {line}")?;
                     let mut first = true;
                     let mut last_offset = 0;
                     while let Some(high) = highlights_peek.peek() {

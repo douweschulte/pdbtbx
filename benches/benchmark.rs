@@ -103,11 +103,7 @@ fn measure_multiple<T: Clone>(
 ) -> Vec<(String, u128, u128, usize)> {
     let mut output = Vec::with_capacity(subjects.len());
     for (name, item) in subjects {
-        output.push(measure(
-            function,
-            item,
-            &format!("{} - {}", description, name),
-        ));
+        output.push(measure(function, item, &format!("{description} - {name}")));
     }
     output
 }

@@ -6,8 +6,8 @@ fn wrapping_residue_number() {
     let (pdb, errors) = pdbtbx::open("example-pdbs/large.pdb", StrictnessLevel::Strict).unwrap();
     let pdb_errors = save(&pdb, "dump/large.pdb", StrictnessLevel::Loose);
     let (pdb2, _) = pdbtbx::open("dump/large.pdb", StrictnessLevel::Strict).unwrap();
-    print!("{:?}", errors);
-    print!("{:?}", pdb_errors);
+    print!("{errors:?}");
+    print!("{pdb_errors:?}");
     // See that the original file is the same as saved and reopened
     assert_eq!(pdb, pdb2);
     // See that it is possible to select atom with 'impossible' atom serial numbers according to the PDB definition

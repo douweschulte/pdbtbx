@@ -99,6 +99,6 @@ fn main() {
         ),
     ];
     for error in errors {
-        println!("{}", error);
+        println!("{error}");
     }
 }

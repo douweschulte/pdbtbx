@@ -335,7 +335,7 @@ impl Atom {
             if self.charge < 0 {
                 sign = '-';
             }
-            format!("{}{}", charge, sign)
+            format!("{charge}{sign}")
         }
     }
 
@@ -810,7 +810,7 @@ mod tests {
     #[test]
     fn check_display() {
         let a = Atom::new(false, 0, "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
-        format!("{:?}", a);
-        format!("{}", a);
+        format!("{a:?}");
+        format!("{a}");
     }
 }

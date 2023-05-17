@@ -661,8 +661,8 @@ mod tests {
     #[test]
     fn test_display() {
         let a = Model::new(0);
-        format!("{:?}", a);
-        format!("{}", a);
+        format!("{a:?}");
+        format!("{a}");
     }
 
     #[test]
