@@ -115,8 +115,8 @@ impl PDB {
         if !reference_tables::valid_remark_type_number(remark_type) {
             return Err(PDBError::new(
                 crate::ErrorLevel::InvalidatingError,
-                "Remark-type-number invalid", 
-                "The given remark-type-number is not valid, see wwPDB v3.30 for valid remark-type-numbers", 
+                "Remark-type-number invalid",
+                "The given remark-type-number is not valid, see wwPDB v3.30 for valid remark-type-numbers",
                 context));
         }
         if !valid_text(&remark_text) {
@@ -132,8 +132,8 @@ impl PDB {
         let res = if remark_text.len() > 70 {
             Err(PDBError::new(
                 crate::ErrorLevel::LooseWarning,
-                "Remark text too long", 
-                format!("The given remark text is too long, the maximal length is 68 characters, the given string is {} characters.", remark_text.len()), 
+                "Remark text too long",
+                format!("The given remark text is too long, the maximal length is 68 characters, the given string is {} characters.", remark_text.len()),
                 context))
         } else {
             Ok(())
@@ -706,6 +706,52 @@ impl<'a> PDB {
         self.models.remove(index);
     }
 
+    /// Remove all Models except for models
+    /// specified by idxs.
+    ///
+    /// ## Arguments
+    /// * `idxs` - the indices of the Models to keep
+    ///
+    /// ## Returns
+    /// `None` if any of the indices are out of bounds or if no models were removed.
+    /// `Some(())` if any models were removed.
+    pub fn remove_models_except(&mut self, idxs: &[usize]) -> Option<()> {
+        let start_count = self.model_count();
+        let mut removed = 0_usize;
+
+        // bounds check the idxs
+        if idxs.iter().max()? >= &start_count {
+            return None;
+        }
+
+        let idxs = (0..start_count).filter(|idx| !idxs.contains(idx));
+
+        for idx in idxs {
+            self.models.swap(idx - removed, start_count - 1);
+            removed += 1;
+        }
+
+        self.models.truncate(start_count - removed);
+
+        if self.model_count() == start_count {
+            None // Nothing was removed
+        } else {
+            Some(()) // Something was removed
+        }
+    }
+
+    /// Remove all Models except for the first one.
+    ///
+    /// ## Panics
+    /// Panics if there are no models.
+    pub fn remove_all_models_except_first(&mut self) {
+        if self.model_count() == 1 {
+            return;
+        }
+
+        self.remove_models_except(&[0]);
+    }
+
     /// Remove the Model specified. It returns `true` if it found a matching Model and removed it.
     /// It removes the first matching Model from the list.
     ///
@@ -998,7 +1044,35 @@ impl FromIterator<Model> for PDB {
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
+    use crate::open_pdb;
+
     use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn remove_model() {
+        let pdb_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("example-pdbs");
+
+        for entry in std::fs::read_dir(pdb_dir).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            if path.extension().unwrap() != "pdb" {
+                continue;
+            }
+            let (pdb, _) = open_pdb(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+
+            let model_count = pdb.model_count();
+            let mut test_pdb = pdb.clone();
+            test_pdb.remove_model(0);
+            assert_eq!(test_pdb.model_count(), model_count - 1);
+
+            let mut test_pdb = pdb.clone();
+            test_pdb.remove_all_models_except_first(); // calls remove_models_except, so no need to test that explicitly
+
+            assert_eq!(test_pdb.model_count(), 1);
+            assert_eq!(test_pdb.model(0).unwrap(), pdb.model(0).unwrap());
+        }
+    }
 
     #[test]
     fn sort_atoms() {
