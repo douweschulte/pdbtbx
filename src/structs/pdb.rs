@@ -713,9 +713,9 @@ impl<'a> PDB {
     /// * `idxs` - the indices of the Models to keep
     ///
     /// ## Returns
-    /// `None` if any of the indices are out of bounds or if no models were removed.
-    /// `Some(())` if any models were removed.
-    pub fn remove_models_except(&mut self, idxs: &[usize]) -> Option<()> {
+    /// `None` if any of the indices are out of bounds.
+    /// `Some(usize)` the number of models removed.
+    pub fn remove_models_except(&mut self, idxs: &[usize]) -> Option<usize> {
         let start_count = self.model_count();
         let mut removed = 0_usize;
 
@@ -733,11 +733,7 @@ impl<'a> PDB {
 
         self.models.truncate(start_count - removed);
 
-        if self.model_count() == start_count {
-            None // Nothing was removed
-        } else {
-            Some(()) // Something was removed
-        }
+        Some(removed)
     }
 
     /// Remove all Models except for the first one.
@@ -745,7 +741,7 @@ impl<'a> PDB {
     /// ## Panics
     /// Panics if there are no models.
     pub fn remove_all_models_except_first(&mut self) {
-        if self.model_count() == 1 {
+        if self.model_count() <= 1 {
             return;
         }
 
@@ -1067,8 +1063,13 @@ mod tests {
             assert_eq!(test_pdb.model_count(), model_count - 1);
 
             let mut test_pdb = pdb.clone();
-            test_pdb.remove_all_models_except_first(); // calls remove_models_except, so no need to test that explicitly
+            test_pdb.remove_all_models_except_first();
 
+            assert_eq!(test_pdb.model_count(), 1);
+            assert_eq!(test_pdb.model(0).unwrap(), pdb.model(0).unwrap());
+
+            let mut test_pdb = pdb.clone();
+            test_pdb.remove_models_except(&[0]);
             assert_eq!(test_pdb.model_count(), 1);
             assert_eq!(test_pdb.model(0).unwrap(), pdb.model(0).unwrap());
         }
