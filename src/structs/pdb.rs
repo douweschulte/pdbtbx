@@ -1076,6 +1076,33 @@ mod tests {
     }
 
     #[test]
+    fn remove_model_except() {
+        // Has 50 models
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("example-pdbs")
+            .join("models.pdb");
+
+        let (pdb, _) = crate::open(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+
+        let model_count = pdb.model_count();
+        assert_eq!(model_count, 6);
+        let mut test_pdb = pdb.clone();
+        assert_eq!(None, test_pdb.remove_models_except(&[6]));
+        assert_eq!(model_count, test_pdb.model_count());
+        assert_eq!(Some(3), test_pdb.remove_models_except(&[5, 1, 3]));
+        dbg!(pdb.models().fold(String::new(), |acc, m| {
+            acc + ", " + m.residue(0).unwrap().name().unwrap()
+        }));
+        dbg!(test_pdb.models().fold(String::new(), |acc, m| {
+            acc + ", " + m.residue(0).unwrap().name().unwrap()
+        }));
+        assert_eq!(3, test_pdb.model_count());
+        assert!(test_pdb.models().any(|m| m == pdb.model(1).unwrap()));
+        assert!(test_pdb.models().any(|m| m == pdb.model(3).unwrap()));
+        assert!(test_pdb.models().any(|m| m == pdb.model(5).unwrap()));
+    }
+
+    #[test]
     fn sort_atoms() {
         let a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         let b = Atom::new(false, 1, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
