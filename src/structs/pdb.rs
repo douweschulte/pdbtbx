@@ -1077,25 +1077,41 @@ mod tests {
 
     #[test]
     fn remove_model_except() {
-        // Has 50 models
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("example-pdbs")
             .join("models.pdb");
 
         let (pdb, _) = crate::open(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
 
+        // Has 6 models
         let model_count = pdb.model_count();
         assert_eq!(model_count, 6);
         let mut test_pdb = pdb.clone();
+
+        // Removing at an index higher than the number is not allowed
         assert_eq!(None, test_pdb.remove_models_except(&[6]));
-        assert_eq!(model_count, test_pdb.model_count());
+
+        // Make sure nothing is altered
+        assert_eq!(pdb, test_pdb);
+
+        // Only keep models 1, 3, 5 (in a not sorted order because it should be able to handle that)
         assert_eq!(Some(3), test_pdb.remove_models_except(&[5, 1, 3]));
-        dbg!(pdb.models().fold(String::new(), |acc, m| {
-            acc + ", " + m.residue(0).unwrap().name().unwrap()
-        }));
-        dbg!(test_pdb.models().fold(String::new(), |acc, m| {
-            acc + ", " + m.residue(0).unwrap().name().unwrap()
-        }));
+
+        // Debug output shows the order of the models (each model contains a single atom `ILX` where X is the model number)
+        eprintln!(
+            "{}",
+            pdb.models().fold("Original".to_string(), |acc, m| {
+                acc + ", " + m.residue(0).unwrap().name().unwrap()
+            })
+        );
+        eprintln!(
+            "{}",
+            test_pdb.models().fold("Removed".to_string(), |acc, m| {
+                acc + ", " + m.residue(0).unwrap().name().unwrap()
+            })
+        );
+
+        // Make sure the retained models are all retained and are the only retained models
         assert_eq!(3, test_pdb.model_count());
         assert!(test_pdb.models().any(|m| m == pdb.model(1).unwrap()));
         assert!(test_pdb.models().any(|m| m == pdb.model(3).unwrap()));
