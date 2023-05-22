@@ -8,8 +8,7 @@ fn insertion_codes() {
     // make dumps directory
     std::fs::create_dir_all(dump_dir).unwrap();
 
-    let (pdb, errors) =
-        pdbtbx::open(path, StrictnessLevel::Strict).unwrap();
+    let (pdb, errors) = pdbtbx::open(path, StrictnessLevel::Strict).unwrap();
     let pdb_errors = save(&pdb, "dump/insertion_codes.pdb", StrictnessLevel::Loose);
     let (pdb2, _) = pdbtbx::open("dump/insertion_codes.pdb", StrictnessLevel::Strict).unwrap();
     print!("{errors:?}");
