@@ -4,9 +4,17 @@ use std::io::{BufRead, BufReader};
 
 /// Open a test file containing more than 9999 residues and 99999 atoms, save it and check if the
 /// saved file was properly clipped.
+
 #[test]
 fn clipped() {
-    let (pdb, errors) = pdbtbx::open("example-pdbs/large.pdb", StrictnessLevel::Strict).unwrap();
+    let root = env!("CARGO_MANIFEST_DIR");
+    let path = format!("{}/{}", root, "example-pdbs/large.pdb");
+    let dump_dir = format!("{}/{}", root, "dump");
+
+    // make dumps directory
+    std::fs::create_dir_all(dump_dir).unwrap();
+
+    let (pdb, errors) = pdbtbx::open(path, StrictnessLevel::Strict).unwrap();
     let pdb_errors = save(&pdb, "dump/large.pdb", StrictnessLevel::Loose);
     print!("{errors:?}");
     print!("{pdb_errors:?}");

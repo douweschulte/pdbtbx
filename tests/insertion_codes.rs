@@ -2,8 +2,13 @@ use pdbtbx::*;
 
 #[test]
 fn insertion_codes() {
-    let (pdb, errors) =
-        pdbtbx::open("example-pdbs/insertion_codes.pdb", StrictnessLevel::Strict).unwrap();
+    let root = env!("CARGO_MANIFEST_DIR");
+    let path = format!("{}/{}", root, "example-pdbs/insertion_codes.pdb");
+    let dump_dir = format!("{}/{}", root, "dump");
+    // make dumps directory
+    std::fs::create_dir_all(dump_dir).unwrap();
+
+    let (pdb, errors) = pdbtbx::open(path, StrictnessLevel::Strict).unwrap();
     let pdb_errors = save(&pdb, "dump/insertion_codes.pdb", StrictnessLevel::Loose);
     let (pdb2, _) = pdbtbx::open("dump/insertion_codes.pdb", StrictnessLevel::Strict).unwrap();
     print!("{errors:?}");
