@@ -697,6 +697,10 @@ impl<'a> PDB {
 
     /// Remove the Model specified.
     ///
+    /// ## Complexity
+    /// * **Time**: amortized O(n) where n is the number of models, best case O(1) if model is the last one.
+    /// * **Memory**: O(1)
+    ///
     /// ## Arguments
     /// * `index` - the index of the Model to remove
     ///
@@ -709,6 +713,10 @@ impl<'a> PDB {
     /// Remove all Models except for models
     /// specified by idxs.
     ///
+    /// ## Complexity
+    /// * **Time**: O(n) where n is the number of models.
+    /// * **Memory**: O(k) where k is the number of models to keep.
+    ///
     /// ## Arguments
     /// * `idxs` - the indices of the Models to keep
     ///
@@ -716,36 +724,38 @@ impl<'a> PDB {
     /// `None` if any of the indices are out of bounds.
     /// `Some(usize)` the number of models removed.
     pub fn remove_models_except(&mut self, idxs: &[usize]) -> Option<usize> {
+        if self.models.is_empty() {
+            #[cfg(debug_assertions)]
+            eprint!("remove_models_except: no models to remove");
+            return None;
+        }
+
         let start_count = self.model_count();
-        let mut removed = 0_usize;
 
         // bounds check the idxs
         if idxs.iter().max()? >= &start_count {
             return None;
         }
 
-        let idxs = (0..start_count).filter(|idx| !idxs.contains(idx));
+        let retained: Vec<_> = self
+            .models
+            .drain(..)
+            .enumerate()
+            .filter(|(i, _)| idxs.contains(i))
+            .map(|(_, m)| m)
+            .collect();
 
-        for idx in idxs {
-            self.models.swap(idx - removed, start_count - 1);
-            removed += 1;
-        }
-
-        self.models.truncate(start_count - removed);
+        let removed = start_count - retained.len();
+        self.models.clear();
+        self.models.extend(retained);
 
         Some(removed)
     }
 
     /// Remove all Models except for the first one.
     ///
-    /// ## Panics
-    /// Panics if there are no models.
-    pub fn remove_all_models_except_first(&mut self) {
-        if self.model_count() <= 1 {
-            return;
-        }
-
-        self.remove_models_except(&[0]);
+    pub fn remove_all_models_except_first(&mut self) -> Option<usize> {
+        self.remove_models_except(&[0])
     }
 
     /// Remove the Model specified. It returns `true` if it found a matching Model and removed it.
