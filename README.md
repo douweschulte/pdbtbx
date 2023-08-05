@@ -20,6 +20,7 @@ It started as a way to use Rust in a scientific project. But it moved to an open
 * Douwe Schulte
 * [Tianyi Shi](https://github.com/TianyiShi2001)
 * [DocKDE](https://github.com/DocKDE)
+* [Oliver Wissett](https://github.com/OWissett)
 
 ## Supported features
 As the main goal of this library is to allow access to the atomical data many metadata features of both PDB and mmCIF are unsupported. For both file formats the recent versions (PDB v3.30 and mmcif v5.338) are used, but as both are quite stable file formats the exact version should not matter to end users.
