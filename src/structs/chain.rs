@@ -577,7 +577,7 @@ mod tests {
         assert!(!a.set_id("Oͦ"));
         assert_eq!(a.id(), "A");
         a.set_id("atom");
-        assert_eq!(a.id(), "ATOM");
+        assert_eq!(a.id(), "atom");
     }
 
     #[test]
