@@ -43,7 +43,7 @@ impl<'a> Chain {
         id: impl AsRef<str>,
         residues: impl Iterator<Item = Residue>,
     ) -> Option<Chain> {
-        prepare_identifier(id).map(|id| Chain {
+        prepare_identifier_case_sensitive(id).map(|id| Chain {
             id,
             residues: residues.collect(),
             database_reference: None,
@@ -58,7 +58,9 @@ impl<'a> Chain {
     /// Set the ID of the Chain, returns `false` if the new id is an invalid character.
     /// The ID will be changed to uppercase as requested by PDB/PDBx standard.
     pub fn set_id(&mut self, new_id: impl AsRef<str>) -> bool {
-        prepare_identifier(new_id).map(|id| self.id = id).is_some()
+        prepare_identifier_case_sensitive(new_id)
+            .map(|id| self.id = id)
+            .is_some()
     }
 
     /// Get the database reference, if any, for this chain.
