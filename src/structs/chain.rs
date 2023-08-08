@@ -28,7 +28,7 @@ impl<'a> Chain {
     /// It returns `None` if the identifier is an invalid character.
     #[must_use]
     pub fn new(id: impl AsRef<str>) -> Option<Chain> {
-        prepare_identifier(id).map(|id| Chain {
+        prepare_identifier_case_sensitive(id).map(|id| Chain {
             id,
             residues: Vec::new(),
             database_reference: None,
