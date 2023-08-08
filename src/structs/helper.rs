@@ -21,7 +21,14 @@ pub fn valid_identifier(text: impl AsRef<str>) -> bool {
 /// Also turns the identifier to uppercase.
 pub fn prepare_identifier(text: impl AsRef<str>) -> Option<String> {
     let text = text.as_ref();
-    (valid_identifier(text) && !text.trim().is_empty()).then(|| text.trim().to_ascii_uppercase())
+    prepare_identifier_case_sensitive(text).map(|s| s.to_uppercase())
+}
+
+/// Creates a valid identifier from the given string slice.
+/// Does not change the case.
+pub fn prepare_identifier_case_sensitive(text: impl AsRef<str>) -> Option<String> {
+    let text = text.as_ref();
+    (valid_identifier(text) && !text.trim().is_empty()).then(|| text.trim().to_string())
 }
 
 const ALPHABET: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
