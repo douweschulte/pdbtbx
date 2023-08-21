@@ -6,11 +6,11 @@ use crate::structs::PDB;
 use crate::StrictnessLevel;
 
 #[cfg(feature = "compression")]
-use std::fs;
+use super::mmcif::open_mmcif_bufread;
 #[cfg(feature = "compression")]
 use flate2::read::GzDecoder;
 #[cfg(feature = "compression")]
-use super::mmcif::open_mmcif_bufread;
+use std::fs;
 
 /// Open an atomic data file, either PDB or mmCIF/PDBx. The correct type will be
 /// determined based on the file extension.
@@ -53,8 +53,6 @@ pub fn open_gz(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-
-
     let filename = filename.as_ref();
 
     if check_extension(filename, "gz") {
@@ -84,8 +82,6 @@ pub fn open_gz(
                 Context::show(filename),
             )])
         }
-
-
     } else {
         Err(vec![PDBError::new(
             ErrorLevel::BreakingError,

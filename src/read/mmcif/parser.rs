@@ -35,6 +35,10 @@ pub fn open_mmcif(
     open_mmcif_raw(&contents, level)
 }
 
+
+/// Open's mmCIF file from a BufRead. This allows opening mmCIF files directly from memory.
+///
+/// This is particularly useful if you want to open a compressed file, as you can use the BufReader
 pub(crate) fn open_mmcif_bufread(
     mut bufreader: impl BufRead,
     level: StrictnessLevel,

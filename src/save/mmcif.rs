@@ -1,5 +1,5 @@
 #[cfg(feature = "compression")]
-use flate2::{Compression, write::GzEncoder};
+use flate2::{write::GzEncoder, Compression};
 
 use crate::error::*;
 use crate::structs::*;
@@ -22,7 +22,6 @@ pub fn save_mmcif(
     save_mmcif_(pdb, filename, level, BufWriter::new)
 }
 
-
 /// Save the given PDB struct to the given file as mmCIF or PDBx and compresses to .gz
 /// # Errors
 /// It validates the PDB. It fails if the validation fails with the given `level`, or if the file could not be opened.
@@ -32,11 +31,13 @@ pub fn save_mmcif_gz(
     pdb: &PDB,
     filename: impl AsRef<str>,
     level: StrictnessLevel,
-    compression_level: Option<Compression>
+    compression_level: Option<Compression>,
 ) -> Result<(), Vec<PDBError>> {
-
-    save_mmcif_(pdb, filename, level, |file|  {
-        BufWriter::new(GzEncoder::new(file, compression_level.unwrap_or(Compression::default())))
+    save_mmcif_(pdb, filename, level, |file| {
+        BufWriter::new(GzEncoder::new(
+            file,
+            compression_level.unwrap_or(Compression::default()),
+        ))
     })
 }
 

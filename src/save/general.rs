@@ -42,7 +42,6 @@ pub fn save_gz(
 ) -> Result<(), Vec<PDBError>> {
     let filename = filename.as_ref();
     if check_extension(filename, "gz") {
-
         // safety check to prevent out of bounds indexing
         if filename.len() < 3 {
             return Err(vec![PDBError::new(
