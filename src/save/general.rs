@@ -40,17 +40,29 @@ pub fn save_gz(
     level: StrictnessLevel,
     compression_level: Option<Compression>,
 ) -> Result<(), Vec<PDBError>> {
-    if check_extension(&filename, ".gz") {
-        if check_extension(&filename, "pdb.gz") {
+    let filename = filename.as_ref();
+    if check_extension(filename, "gz") {
+
+        // safety check to prevent out of bounds indexing
+        if filename.len() < 3 {
+            return Err(vec![PDBError::new(
+                ErrorLevel::BreakingError,
+                "Filename too short",
+                "Could not determine the type of the given file, make it .pdb.gz or .cif.gz",
+                Context::show(filename),
+            )]);
+        }
+
+        if check_extension(&filename[..filename.len() - 3], "pdb") {
             save_pdb_gz(pdb, filename, level, compression_level)
-        } else if check_extension(&filename, "cif.gz") {
+        } else if check_extension(&filename[..filename.len() - 3], "cif") {
             save_mmcif_gz(pdb, filename, level, compression_level)
         } else {
             Err(vec![PDBError::new(
                 ErrorLevel::BreakingError,
                 "Incorrect extension",
                 "Could not determine the type of the given file, make it .pdb.gz or .cif.gz",
-                Context::show(filename.as_ref()),
+                Context::show(filename),
             )])
         }
     } else {
@@ -58,7 +70,7 @@ pub fn save_gz(
             ErrorLevel::BreakingError,
             "Incorrect extension",
             "Could not determine the type of the given file, make it .pdb.gz or .cif.gz",
-            Context::show(filename.as_ref()),
+            Context::show(filename),
         )])
     }
 }

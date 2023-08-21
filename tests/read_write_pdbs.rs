@@ -159,6 +159,24 @@ fn save_pdb_strict() {
     assert!(res.is_ok());
     let (_pdb, errors) = crate::open(&name, StrictnessLevel::Strict).unwrap();
     assert_eq!(errors.len(), 0);
+
+    // Do it also for gzip
+    #[cfg(feature = "compression")]
+    {
+        let name = env::current_dir()
+            .unwrap()
+            .as_path()
+            .join(Path::new("dump"))
+            .join(Path::new("save_test.pdb.gz"))
+            .into_os_string()
+            .into_string()
+            .unwrap();
+
+        let res = save_gz(&pdb, &name, StrictnessLevel::Strict, None);
+        assert!(res.is_ok());
+        let (_pdb, errors) = crate::open_gz(&name, StrictnessLevel::Strict).unwrap();
+        assert_eq!(errors.len(), 0);
+    }
 }
 
 fn save_mmcif_strict() {
@@ -182,4 +200,22 @@ fn save_mmcif_strict() {
     assert!(res.is_ok());
     let (_pdb, errors) = crate::open(&name, StrictnessLevel::Strict).unwrap();
     assert_eq!(errors.len(), 0);
+
+    // Do it also for gzip
+    #[cfg(feature = "compression")]
+    {
+        let name = env::current_dir()
+            .unwrap()
+            .as_path()
+            .join(Path::new("dump"))
+            .join(Path::new("save_test.cif.gz"))
+            .into_os_string()
+            .into_string()
+            .unwrap();
+
+        let res = save_gz(&pdb, &name, StrictnessLevel::Strict, None);
+        assert!(res.is_ok());
+        let (_pdb, errors) = crate::open_gz(&name, StrictnessLevel::Strict).unwrap();
+        assert_eq!(errors.len(), 0);
+    }
 }

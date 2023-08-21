@@ -35,6 +35,22 @@ pub fn open_mmcif(
     open_mmcif_raw(&contents, level)
 }
 
+pub(crate) fn open_mmcif_bufread(
+    mut bufreader: impl BufRead,
+    level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    let mut contents = String::new();
+    if let Err(e) = bufreader.read_to_string(&mut contents) {
+        return Err(vec![PDBError::new(
+            ErrorLevel::BreakingError,
+            "Error while reading file",
+            format!("Error: {e}"),
+            Context::none(),
+        )]);
+    }
+    open_mmcif_raw(&contents, level)
+}
+
 /// Parse the given mmCIF `&str` into a PDB struct. This allows opening mmCIF files directly from memory.
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///

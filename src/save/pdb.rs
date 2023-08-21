@@ -58,6 +58,7 @@ pub fn save_pdb_gz(
     })
 }
 
+/// Generic function to save the given PDB struct to the given file, validating it beforehand.
 fn save_pdb_<T, W>(
     pdb: &PDB,
     filename: impl AsRef<str>,
