@@ -1,3 +1,6 @@
+#[cfg(feature = "compression")]
+use flate2::{Compression, write::GzEncoder};
+
 use crate::error::*;
 use crate::structs::*;
 use crate::validate;
@@ -16,7 +19,42 @@ pub fn save_mmcif(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
 ) -> Result<(), Vec<PDBError>> {
+    save_mmcif_(pdb, filename, level, BufWriter::new)
+}
+
+
+/// Save the given PDB struct to the given file as mmCIF or PDBx and compresses to .gz
+/// # Errors
+/// It validates the PDB. It fails if the validation fails with the given `level`, or if the file could not be opened.
+/// If validation gives rise to problems, use the `save_raw` function.
+#[cfg(feature = "compression")]
+pub fn save_mmcif_gz(
+    pdb: &PDB,
+    filename: impl AsRef<str>,
+    level: StrictnessLevel,
+    compression_level: Option<Compression>
+) -> Result<(), Vec<PDBError>> {
+
+    save_mmcif_(pdb, filename, level, |file|  {
+        BufWriter::new(GzEncoder::new(file, compression_level.unwrap_or(Compression::default())))
+    })
+}
+
+/// Generic function to save the given PDB struct to the given file as mmCIF or PDBx,
+/// to some writer function, e.g. a GzEncoder or BufWriter.
+fn save_mmcif_<T, W>(
+    pdb: &PDB,
+    filename: impl AsRef<str>,
+    level: StrictnessLevel,
+    writer: W,
+) -> Result<(), Vec<PDBError>>
+where
+    T: Write,
+    W: FnOnce(File) -> BufWriter<T>,
+{
+    // Validates the PDB, and returns early if any errors are found
     let filename = filename.as_ref();
+
     let mut errors = validate(pdb);
     for error in &errors {
         if error.fails(level) {
@@ -24,6 +62,7 @@ pub fn save_mmcif(
         }
     }
 
+    // Creates a writer for the file
     let file = match File::create(filename) {
         Ok(f) => f,
         Err(_e) => {
@@ -37,7 +76,11 @@ pub fn save_mmcif(
         }
     };
 
-    save_mmcif_raw(pdb, BufWriter::new(file));
+    let writer = writer(file);
+
+    // Now call the writer function
+    save_mmcif_raw(pdb, writer);
+
     Ok(())
 }
 
@@ -60,11 +103,11 @@ pub fn save_mmcif_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
     // Header
     write!(
         "data_{}
-# 
-_entry.id   {} 
-# 
-_audit_conform.dict_name       mmcif_pdbx.dic 
-_audit_conform.dict_version    5.338 
+#
+_entry.id   {}
+#
+_audit_conform.dict_name       mmcif_pdbx.dic
+_audit_conform.dict_version    5.338
 _audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdbx.dic",
         name,
         name
@@ -75,9 +118,9 @@ _audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdb
         write!(
             "# Unit cell definition
 _cell.entry_id           {}
-_cell.length_a           {} 
-_cell.length_b           {} 
-_cell.length_c           {} 
+_cell.length_a           {}
+_cell.length_b           {}
+_cell.length_c           {}
 _cell.angle_alpha        {}
 _cell.angle_beta         {}
 _cell.angle_gamma        {}
@@ -208,8 +251,8 @@ _struct_ncs_oper.vector[3]     {}"#,
     if let Some(symmetry) = &pdb.symmetry {
         write!(
             "# Space group definition
-_symmetry.entry_id                         {} 
-_symmetry.space_group_name_H-M             '{}' 
+_symmetry.entry_id                         {}
+_symmetry.space_group_name_H-M             '{}'
 _symmetry.pdbx_full_space_group_name_H-M   '{}'
 _symmetry.Int_Tables_number                {}",
             name,
@@ -224,24 +267,24 @@ _symmetry.Int_Tables_number                {}",
         .any(|a| a.anisotropic_temperature_factors().is_some());
     write!(
         "loop_
-_atom_site.group_PDB 
-_atom_site.id 
-_atom_site.type_symbol 
-_atom_site.label_atom_id 
-_atom_site.label_alt_id 
-_atom_site.label_comp_id 
-_atom_site.label_asym_id 
-_atom_site.auth_asym_id 
-_atom_site.label_entity_id 
-_atom_site.label_seq_id 
-_atom_site.auth_seq_id 
-_atom_site.pdbx_PDB_ins_code 
-_atom_site.Cartn_x 
-_atom_site.Cartn_y 
-_atom_site.Cartn_z 
-_atom_site.occupancy 
-_atom_site.B_iso_or_equiv 
-_atom_site.pdbx_formal_charge 
+_atom_site.group_PDB
+_atom_site.id
+_atom_site.type_symbol
+_atom_site.label_atom_id
+_atom_site.label_alt_id
+_atom_site.label_comp_id
+_atom_site.label_asym_id
+_atom_site.auth_asym_id
+_atom_site.label_entity_id
+_atom_site.label_seq_id
+_atom_site.auth_seq_id
+_atom_site.pdbx_PDB_ins_code
+_atom_site.Cartn_x
+_atom_site.Cartn_y
+_atom_site.Cartn_z
+_atom_site.occupancy
+_atom_site.B_iso_or_equiv
+_atom_site.pdbx_formal_charge
 _atom_site.pdbx_PDB_model_num{}",
         if anisou {
             "
