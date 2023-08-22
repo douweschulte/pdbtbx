@@ -1,14 +1,19 @@
-use crate::error::*;
 use crate::structs::*;
 use crate::StrictnessLevel;
 use crate::TransformationMatrix;
-use crate::{validate, validate_pdb};
 
 use std::cmp;
 use std::fs::File;
-use std::io::prelude::*;
 use std::io::BufWriter;
 use std::iter;
+
+use std::io::Write;
+
+use crate::PDB;
+use crate::{validate, validate_pdb, Context, ErrorLevel, PDBError};
+
+#[cfg(feature = "compression")]
+use flate2::{write::GzEncoder, Compression};
 
 /// Save the given PDB struct to the given file, validating it beforehand.
 ///
@@ -24,7 +29,49 @@ pub fn save_pdb(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
 ) -> Result<(), Vec<PDBError>> {
+    save_pdb_(pdb, filename, level, BufWriter::new)
+}
+
+/// Save the given PDB struct to the given file, validating it beforehand, and use gzip compression.
+///
+/// # Errors
+/// It fails if the validation fails with the given `level`.
+/// If validation gives rise to problems, use the `save_raw` function.
+///
+/// # Known Problems
+/// Saving SEQRES lines is experimental, as there are many nitpicky things to consider
+/// when generating SEQRES records, which are not all implemented (yet).
+///
+#[cfg(feature = "compression")]
+pub fn save_pdb_gz(
+    pdb: &PDB,
+    filename: impl AsRef<str>,
+    level: StrictnessLevel,
+    compression_level: Option<Compression>,
+) -> Result<(), Vec<PDBError>> {
+    save_pdb_(pdb, filename, level, |file| {
+        let encoder = match compression_level {
+            Some(level) => GzEncoder::new(file, level),
+            None => GzEncoder::new(file, Compression::default()),
+        };
+        BufWriter::new(encoder)
+    })
+}
+
+/// Generic function to save the given PDB struct to the given file, validating it beforehand.
+fn save_pdb_<T, W>(
+    pdb: &PDB,
+    filename: impl AsRef<str>,
+    level: StrictnessLevel,
+    writer: W,
+) -> Result<(), Vec<PDBError>>
+where
+    T: Write,
+    W: FnOnce(File) -> BufWriter<T>,
+{
+    // Validates the PDB, and returns early if any errors are found
     let filename = filename.as_ref();
+
     let mut errors = validate(pdb);
     errors.extend(validate_pdb(pdb));
     for error in &errors {
@@ -33,20 +80,25 @@ pub fn save_pdb(
         }
     }
 
+    // Creates a writer for the file
     let file = match File::create(filename) {
         Ok(f) => f,
-        Err(e) => {
+        Err(_e) => {
             errors.push(PDBError::new(
                 ErrorLevel::BreakingError,
                 "Could not open file",
-                format!("Could not open the file for writing, make sure you have permission for this file and no other program is currently using it.\n{e}"),
+                "Could not open the file for writing, make sure you have permission for this file and no other program is currently using it.",
                 Context::show(filename)
             ));
             return Err(errors);
         }
     };
 
-    save_pdb_raw(pdb, BufWriter::new(file), level);
+    let writer = writer(file);
+
+    // Now call the writer function
+    save_pdb_raw(pdb, writer, level);
+
     Ok(())
 }
 

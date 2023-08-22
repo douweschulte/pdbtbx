@@ -5,6 +5,13 @@ use crate::error::*;
 use crate::structs::PDB;
 use crate::StrictnessLevel;
 
+#[cfg(feature = "compression")]
+use super::mmcif::open_mmcif_bufread;
+#[cfg(feature = "compression")]
+use flate2::read::GzDecoder;
+#[cfg(feature = "compression")]
+use std::fs;
+
 /// Open an atomic data file, either PDB or mmCIF/PDBx. The correct type will be
 /// determined based on the file extension.
 ///
@@ -28,6 +35,59 @@ pub fn open(
             "Incorrect extension",
             "Could not determine the type of the given file, make it .pdb or .cif",
             Context::show(filename.as_ref()),
+        )])
+    }
+}
+
+/// Open a compressed atomic data file, either PDB or mmCIF/PDBx. The correct type will be
+/// determined based on the file extension (.pdb.gz or .cif.gz).
+///
+/// # Errors
+/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+///
+/// # Related
+/// If you want to open a file from memory see [`open_raw`]. There are also function to open a specified file type directly
+/// see [`crate::open_pdb`] and [`crate::open_mmcif`] respectively.
+#[cfg(feature = "compression")]
+pub fn open_gz(
+    filename: impl AsRef<str>,
+    level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    let filename = filename.as_ref();
+
+    if check_extension(filename, "gz") {
+        // open a decompression stream
+        let file = fs::File::open(filename).map_err(|_| {
+            vec![PDBError::new(
+                ErrorLevel::BreakingError,
+                "Could not open file",
+                "Could not open the given file, make sure it exists and you have the correct permissions",
+                Context::show(filename),
+            )]
+        })?;
+
+        let decompressor = GzDecoder::new(file);
+
+        let reader = std::io::BufReader::new(decompressor);
+
+        if check_extension(&filename[..filename.len() - 3], "pdb") {
+            open_pdb_raw(reader, Context::show(filename), level)
+        } else if check_extension(&filename[..filename.len() - 3], "cif") {
+            open_mmcif_bufread(reader, level)
+        } else {
+            Err(vec![PDBError::new(
+                ErrorLevel::BreakingError,
+                "Incorrect extension",
+                "Could not determine the type of the given file, make it .pdb.gz or .cif.gz",
+                Context::show(filename),
+            )])
+        }
+    } else {
+        Err(vec![PDBError::new(
+            ErrorLevel::BreakingError,
+            "Incorrect extension",
+            "Could not determine the type of the given file, make it .pdb.gz or .cif.gz",
+            Context::show(filename),
         )])
     }
 }
