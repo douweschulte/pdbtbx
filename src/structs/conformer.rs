@@ -38,7 +38,7 @@ impl Conformer {
         alt_loc: Option<&str>,
         atom: Option<Atom>,
     ) -> Option<Conformer> {
-        prepare_identifier(name).map(|n| {
+        prepare_identifier_uppercase(name).map(|n| {
             let mut res = Conformer {
                 name: n,
                 alternative_location: None,
@@ -46,7 +46,7 @@ impl Conformer {
                 modification: None,
             };
             if let Some(al) = alt_loc {
-                res.alternative_location = prepare_identifier(al);
+                res.alternative_location = prepare_identifier_uppercase(al);
             }
             if let Some(a) = atom {
                 res.atoms.push(a);
@@ -65,7 +65,7 @@ impl Conformer {
     /// ## Fails
     /// It fails if any of the characters of the new name are invalid.
     pub fn set_name(&mut self, new_name: impl AsRef<str>) -> bool {
-        prepare_identifier(new_name)
+        prepare_identifier_uppercase(new_name)
             .map(|n| self.name = n)
             .is_some()
     }
@@ -80,7 +80,7 @@ impl Conformer {
     /// ## Fails
     /// It fails if any of the characters of the new alternative location are invalid.
     pub fn set_alternative_location(&mut self, new_loc: &str) -> bool {
-        if let Some(l) = prepare_identifier(new_loc) {
+        if let Some(l) = prepare_identifier_uppercase(new_loc) {
             self.alternative_location = Some(l);
             true
         } else {
