@@ -2,7 +2,7 @@
 ![Compile & Test](https://github.com/douweschulte/pdbtbx/actions/workflows/rust.yml/badge.svg)
 [![pdbtbx documentation](https://docs.rs/pdbtbx/badge.svg)](https://docs.rs/pdbtbx)
 [![Crates.io](https://img.shields.io/crates/v/pdbtbx.svg)](https://crates.io/crates/pdbtbx)
-![rustc 1.46+](https://img.shields.io/badge/msrv-rustc_1.46+-red.svg)
+![rustc 1.56+](https://img.shields.io/badge/msrv-rustc_1.56+-red.svg)
 
 ## Description
 This is a Rust library helping to parse, edit and save crystallographic PDB/mmCIF files. It can read most atomic data from PDB/mmCIF files. Its high level goal is to create a stable, efficient and easy to use interface to PDB/mmCIF files written in pure Rust.
@@ -25,39 +25,39 @@ It started as a way to use Rust in a scientific project. But it moved to an open
 ## Supported features
 As the main goal of this library is to allow access to the atomical data many metadata features of both PDB and mmCIF are unsupported. For both file formats the recent versions (PDB v3.30 and mmcif v5.338) are used, but as both are quite stable file formats the exact version should not matter to end users.
 
-| PDB   Feature | PDB | mmCIF | Corresponding in mmCIF      |
-|---------------|:---:|:-----:|-----------------------------|
-|   HEADER (ID) | ✔️  |  ✔️  | entry.id                    |
-|        REMARK | ✔️  |  ❌  | _pdbx_database_remark.id    |
-|          ATOM | ✔️  |  ✔️  | atom_site                   |
-|        ANISOU | ✔️  |  ✔️  | atom_site                   |
-|         SCALE | ✔️  |  ✔️  | _atom_sites.Cartn_transf    |
-|         ORIGX | ✔️  |  ✔️  | _database_PDB_matrix.origx  |
-|        MATRIX | ✔️  |  ✔️  | struct_ncs_oper             |
-|       CRYSTAL | ✔️  |  ✔️  | cell + symmetry             |
-|         MODEL | ✔️  |  ✔️  | atom_site                   |
-|        MASTER | 〰️  |  ❌  | _pdbx_database_PDB_master   |
-|        SEQRES | 〰️  |  ❌  | ?                           |
-|         DBREF | ✔️  |  ❌  | pdbx_dbref                  |
-|      DBREF1/2 | ✔️  |  ❌  | pdbx_dbref                  |
-|        MODRES | ✔️  |  ❌  | ?                           |
-|        SEQADV | ✔️  |  ❌  | ?                           |
+| PDB   Feature |  PDB  | mmCIF | Corresponding in mmCIF     |
+| ------------- | :---: | :---: | -------------------------- |
+| HEADER (ID)   |   ✔️   |   ✔️   | entry.id                   |
+| REMARK        |   ✔️   |   ❌   | _pdbx_database_remark.id   |
+| ATOM          |   ✔️   |   ✔️   | atom_site                  |
+| ANISOU        |   ✔️   |   ✔️   | atom_site                  |
+| SCALE         |   ✔️   |   ✔️   | _atom_sites.Cartn_transf   |
+| ORIGX         |   ✔️   |   ✔️   | _database_PDB_matrix.origx |
+| MATRIX        |   ✔️   |   ✔️   | struct_ncs_oper            |
+| CRYSTAL       |   ✔️   |   ✔️   | cell + symmetry            |
+| MODEL         |   ✔️   |   ✔️   | atom_site                  |
+| MASTER        |  〰️   |   ❌   | _pdbx_database_PDB_master  |
+| SEQRES        |  〰️   |   ❌   | ?                          |
+| DBREF         |   ✔️   |   ❌   | pdbx_dbref                 |
+| DBREF1/2      |   ✔️   |   ❌   | pdbx_dbref                 |
+| MODRES        |   ✔️   |   ❌   | ?                          |
+| SEQADV        |   ✔️   |   ❌   | ?                          |
 
-| Section | Keywords | Support |
-|---|---|---|
-| Heterogen | HET, HETNAM, HETSYN, FORMUL | 🔍 |
-| Secondary structure | HELIX, SHEET | 🔍 |
-| Connectivity | SSBOND, LINK, CISPEP, CONNECT | 🔍 |
-|Title | OBSLTE, TITLE, SPLIT, CAVEAT, COMPND, SOURCE, KEYWDS, EXPDTA, NUMMDL, MDLTYP, AUTHOR, REVDAT, SPRSDE, JRNL, HEADER (other columns) | ❌ |
-| Misc. | SITE | ❌ |
+| Section             | Keywords                                                                                                                           | Support |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Heterogen           | HET, HETNAM, HETSYN, FORMUL                                                                                                        | 🔍       |
+| Secondary structure | HELIX, SHEET                                                                                                                       | 🔍       |
+| Connectivity        | SSBOND, LINK, CISPEP, CONNECT                                                                                                      | 🔍       |
+| Title               | OBSLTE, TITLE, SPLIT, CAVEAT, COMPND, SOURCE, KEYWDS, EXPDTA, NUMMDL, MDLTYP, AUTHOR, REVDAT, SPRSDE, JRNL, HEADER (other columns) | ❌       |
+| Misc.               | SITE                                                                                                                               | ❌       |
 
-| Symbol | Description |
-|:-:|---|
-| ✔️ | Supported |
-| 〰️ | Partially supported |
-| ⏲ | Support planned (v1.0) |
-| 🔍 | Support envisioned (>v1.0) |
-| ❌ | Support not envisioned |
+| Symbol | Description                |
+| :----: | -------------------------- |
+|   ✔️    | Supported                  |
+|   〰️   | Partially supported        |
+|   ⏲    | Support planned (v1.0)     |
+|   🔍    | Support envisioned (>v1.0) |
+|   ❌    | Support not envisioned     |
 
 The features where support is planned are planned to be included in the 1.0 release. The features where support is envisioned are candidates to be included, but not necessarily in the 1.0 release. The features where support is not planned are thought to be unnecessary for atomic data computations on theses files. If any of these are really needed for your use case, please raise an issue and we can discuss its inclusion. Also if you need a feature that is 'planned' or 'envisioned', feel free to raise an issue to guide development to spots where it can make a real life impact.
 
@@ -69,9 +69,9 @@ The features where support is planned are planned to be included in the 1.0 rele
 * The crate has many ways of iterating over the PDB structure to allow for convenient access and control over the performance.
 
 ## Latest update
-### v0.10.1
-* Added more amino acids for `is_amino_acid`
-* Implemented Display for `StrictnessLevel`
+### v0.11.0
+* Added support for zipped (`.gz`) files (Thanks to OWisset)
+* Does not automatically convert chain names to uppercase anymore (Thanks to OWisset)
 
 Also see [changelog](https://github.com/douweschulte/pdbtbx/blob/master/changelog.md).
 
