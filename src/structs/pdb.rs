@@ -1065,9 +1065,8 @@ impl<'a> PDB {
         let mut resnames = Vec::new();
         for residue in self.residues() {
             let resname = residue.name().unwrap().to_owned();
-            let index = resnames.binary_search(&resname);
-            if index.is_err() {
-                resnames.insert(index.unwrap_err(), resname);
+            if let Some(index) = resnames.binary_search(&resname).ok() {
+                resnames.insert(index, resname);
             }
         }
         resnames
