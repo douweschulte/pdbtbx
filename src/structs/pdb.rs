@@ -1045,6 +1045,7 @@ impl<'a> PDB {
                                 .entry(chain2.id().to_owned())
                                 .or_insert_with(Vec::new)
                                 .push(chain1.id().to_owned());
+                            break;
                         }
                     }
                 }
