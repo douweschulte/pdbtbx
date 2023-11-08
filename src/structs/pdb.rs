@@ -1051,6 +1051,26 @@ impl<'a> PDB {
         }
         chains
     }
+
+    /// Returns a vector of unique residue names present in the PDB file.
+    ///
+    /// # Arguments
+    ///
+    /// * `self` - A reference to the PDB struct.
+    ///
+    /// # Returns
+    ///
+    /// * `Vec<String>` - A vector of unique residue names.
+    pub fn residues_list(&self) -> Vec<String> {
+        let mut resnames = Vec::new();
+        for residue in self.residues() {
+            let resname = residue.name().unwrap().to_owned();
+            if !resnames.contains(&resname) {
+                resnames.push(resname);
+            }
+        }
+        resnames
+    }
 }
 
 use std::collections::HashMap;
@@ -1382,5 +1402,37 @@ mod tests {
         .collect();
 
         assert_eq!(chainmap, my_map);
+    }
+    #[test]
+    fn test_residues_list() {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("example-pdbs")
+            .join("1ubq.pdb");
+        let (pdb, _) = crate::open(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+
+        let reslist = pdb.residues_list();
+        let expected_reslist: Vec<String> = vec![
+            "MET".to_string(),
+            "GLN".to_string(),
+            "ILE".to_string(),
+            "PHE".to_string(),
+            "VAL".to_string(),
+            "LYS".to_string(),
+            "THR".to_string(),
+            "LEU".to_string(),
+            "GLY".to_string(),
+            "GLU".to_string(),
+            "PRO".to_string(),
+            "SER".to_string(),
+            "ASP".to_string(),
+            "ASN".to_string(),
+            "ALA".to_string(),
+            "ARG".to_string(),
+            "TYR".to_string(),
+            "HIS".to_string(),
+            "HOH".to_string(),
+        ];
+
+        assert_eq!(reslist, expected_reslist);
     }
 }
