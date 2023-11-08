@@ -1037,24 +1037,17 @@ impl<'a> PDB {
                 for atom1 in chain1.atoms() {
                     for atom2 in chain2.atoms() {
                         if atom1.distance(atom2) < distance {
-                            chains
-                                .entry(chain1.id().to_owned())
-                                .or_insert_with(Vec::new)
-                                .push(chain2.id().to_owned());
-                            chains
-                                .entry(chain2.id().to_owned())
-                                .or_insert_with(Vec::new)
-                                .push(chain1.id().to_owned());
+                            let chain1_id = chain1.id().to_owned();
+                            let chain2_id = chain2.id().to_owned();
+                            let entry = chains.entry(chain1_id).or_insert_with(Vec::new);
+                            if !entry.contains(&chain2_id) {
+                                entry.push(chain2_id)
+                            }
                             break;
                         }
                     }
                 }
             }
-        }
-
-        for chain in chains.values_mut() {
-            chain.sort_unstable();
-            chain.dedup();
         }
         chains
     }
