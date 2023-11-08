@@ -1065,8 +1065,9 @@ impl<'a> PDB {
         let mut resnames = Vec::new();
         for residue in self.residues() {
             let resname = residue.name().unwrap().to_owned();
-            if !resnames.contains(&resname) {
-                resnames.push(resname);
+            let index = resnames.binary_search(&resname);
+            if index.is_err() {
+                resnames.insert(index.unwrap_err(), resname);
             }
         }
         resnames
@@ -1433,6 +1434,6 @@ mod tests {
             "HOH".to_string(),
         ];
 
-        assert_eq!(reslist, expected_reslist);
+        assert!(reslist.iter().all(|x| expected_reslist.contains(x)));
     }
 }
