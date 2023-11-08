@@ -1017,8 +1017,43 @@ impl<'a> PDB {
     pub(crate) fn add_bond_counters(&mut self, atom1: usize, atom2: usize, bond: Bond) {
         self.bonds.push((atom1, atom2, bond));
     }
+
+    /// Returns a HashMap with the chains in contact within a given distance.
+    ///
+    /// # Arguments
+    ///
+    /// * `distance` - A f64 value representing the maximum distance between two atoms for them to be considered in contact.
+    ///
+    /// # Returns
+    ///
+    /// A HashMap with the chains in contact. The keys are the chain IDs and the values are vectors with the IDs of the chains in contact with the key chain.
+    pub fn chains_in_contact(&self, distance: f64) -> HashMap<String, Vec<String>> {
+        let mut chains = HashMap::new();
+        for chain1 in self.chains() {
+            for chain2 in self.chains() {
+                if chain1.id() == chain2.id() {
+                    continue;
+                }
+                for atom1 in chain1.atoms() {
+                    for atom2 in chain2.atoms() {
+                        if atom1.distance(atom2) < distance {
+                            let chain1_id = chain1.id().to_owned();
+                            let chain2_id = chain2.id().to_owned();
+                            let entry = chains.entry(chain1_id).or_insert_with(Vec::new);
+                            if !entry.contains(&chain2_id) {
+                                entry.push(chain2_id)
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        chains
+    }
 }
 
+use std::collections::HashMap;
 use std::fmt;
 impl fmt::Display for PDB {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1325,5 +1360,27 @@ mod tests {
         let mut pdb = PDB::new();
         pdb.add_model(model);
         assert_eq!(((-1., -1., -1.), (2., 2., 2.)), pdb.bounding_box());
+    }
+
+    #[test]
+    fn chains_in_contact() {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("example-pdbs")
+            .join("1yyf.pdb");
+        let (pdb, _) = crate::open(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+
+        let chainmap = pdb.chains_in_contact(5.0);
+
+        let my_map: HashMap<String, Vec<String>> = [
+            ("B".to_string(), vec!["A".to_string(), "C".to_string()]),
+            ("A".to_string(), vec!["B".to_string(), "D".to_string()]),
+            ("D".to_string(), vec!["A".to_string(), "C".to_string()]),
+            ("C".to_string(), vec!["B".to_string(), "D".to_string()]),
+        ]
+        .iter()
+        .cloned()
+        .collect();
+
+        assert_eq!(chainmap, my_map);
     }
 }
