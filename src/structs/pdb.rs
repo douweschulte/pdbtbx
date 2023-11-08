@@ -1061,7 +1061,7 @@ impl<'a> PDB {
     /// # Returns
     ///
     /// * `Vec<String>` - A vector of unique residue names.
-    pub fn residues_list(&self) -> Vec<String> {
+    pub fn unique_residue_names(&self) -> Vec<String> {
         let mut resnames = Vec::new();
         for residue in self.residues() {
             let resname = residue.name().unwrap().to_owned();
@@ -1404,13 +1404,13 @@ mod tests {
         assert_eq!(chainmap, my_map);
     }
     #[test]
-    fn test_residues_list() {
+    fn test_unique_residue_names() {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("example-pdbs")
             .join("1ubq.pdb");
         let (pdb, _) = crate::open(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
 
-        let reslist = pdb.residues_list();
+        let reslist = pdb.unique_residue_names();
         let expected_reslist: Vec<String> = vec![
             "MET".to_string(),
             "GLN".to_string(),
