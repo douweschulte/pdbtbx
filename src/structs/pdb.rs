@@ -1052,7 +1052,7 @@ impl<'a> PDB {
         chains
     }
 
-    /// Returns a vector of unique conformers present in the PDB file.
+    /// Returns a vector of unique conformer names present in the PDB file.
     ///
     /// # Arguments
     ///
@@ -1060,16 +1060,16 @@ impl<'a> PDB {
     ///
     /// # Returns
     ///
-    /// * `Vec<String>` - A vector of unique residue names.
+    /// * `Vec<String>` - A vector of unique conformer names.
     pub fn unique_conformer_names(&self) -> Vec<String> {
-        let mut resnames = Vec::new();
-        for conformers in self.conformers() {
-            let resname = conformers.name().to_owned();
-            if let Some(index) = resnames.binary_search(&resname).ok() {
-                resnames.insert(index, resname);
+        let mut names = Vec::new();
+        for conformer in self.conformers() {
+            let name = conformer.name().to_owned();
+            if let Some(index) = names.binary_search(&name).err() {
+                names.insert(index, name);
             }
         }
-        resnames
+        names
     }
 }
 
@@ -1434,5 +1434,7 @@ mod tests {
         ];
 
         assert!(reslist.iter().all(|x| expected_reslist.contains(x)));
+        assert!(expected_reslist.iter().all(|x| reslist.contains(x)));
+        assert_eq!(reslist.len(), 19);
     }
 }
