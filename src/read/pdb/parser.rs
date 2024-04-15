@@ -88,7 +88,7 @@ where
                 context,
             )]);
         };
-        let line_result = lex_line(&line, linenumber);
+        let line_result = lex_line(&line, linenumber, level);
         let line_context = Context::FullLine {
             linenumber,
             line: line.clone(),
