@@ -26,19 +26,19 @@ pub type ReadResult = std::result::Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
 /// # Related
 /// If you want to open a file from memory see [`open_raw`]. There are also function to open a specified file type directly
 /// see [`crate::open_pdb`] and [`crate::open_mmcif`] respectively.
-pub fn open(
-    filename: impl AsRef<str>,
-    level: StrictnessLevel,
-) -> ReadResult {
-    open_with_options(filename, &ReadOptions::new().level(level))
+pub fn open(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult {
+    open_with_options(filename, &ReadOptions::new().set_level(level))
 }
 
 /// Opens a files based on the given options.
-pub(in crate::read) fn open_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> ReadResult {
+pub(in crate::read) fn open_with_options(
+    filename: impl AsRef<str>,
+    options: &ReadOptions,
+) -> ReadResult {
     if check_extension(&filename, "pdb") {
-        open_pdb(filename, level)
+        open_pdb(filename, options.level)
     } else if check_extension(&filename, "cif") {
-        open_mmcif(filename, level)
+        open_mmcif(filename, options.level)
     } else {
         Err(vec![PDBError::new(
             ErrorLevel::BreakingError,
@@ -60,10 +60,7 @@ pub(in crate::read) fn open_with_options(filename: impl AsRef<str>, options: &Re
 /// These functions are useful if you are using a non-standard compression algorithm or way of
 /// storing the data.
 #[cfg(feature = "compression")]
-pub fn open_gz(
-    filename: impl AsRef<str>,
-    level: StrictnessLevel,
-) -> ReadResult {
+pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult {
     let filename = filename.as_ref();
 
     if check_extension(filename, "gz") {
