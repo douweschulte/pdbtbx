@@ -1,6 +1,7 @@
 use super::lexitem::*;
 use crate::error::*;
 use crate::reference_tables;
+use crate::StrictnessLevel;
 
 use std::cmp;
 use std::convert::TryFrom;
@@ -8,11 +9,15 @@ use std::ops::Range;
 use std::str::FromStr;
 
 /// Lex a full line. It returns a lexed item with errors if it can lex something, otherwise it will only return an error.
-pub fn lex_line(line: &str, linenumber: usize) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+pub fn lex_line(
+    line: &str,
+    linenumber: usize,
+    level: StrictnessLevel,
+) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     if line.len() > 6 {
         match &line[..6] {
             "HEADER" => lex_header(linenumber, line),
-            "REMARK" => lex_remark(linenumber, line),
+            "REMARK" => lex_remark(linenumber, line, level),
             "ATOM  " => lex_atom(linenumber, line, false),
             "ANISOU" => Ok(lex_anisou(linenumber, line)),
             "HETATM" => lex_atom(linenumber, line, true),
@@ -54,7 +59,11 @@ pub fn lex_line(line: &str, linenumber: usize) -> Result<(LexItem, Vec<PDBError>
 /// Lex a REMARK
 /// ## Fails
 /// It fails on incorrect numbers for the remark-type-number
-fn lex_remark(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_remark(
+    linenumber: usize,
+    line: &str,
+    level: StrictnessLevel,
+) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     let mut errors = Vec::new();
     let number = parse(linenumber, line, 7..10, &mut errors);
 
@@ -70,7 +79,7 @@ fn lex_remark(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>),
         LexItem::Remark(
             number,
             if line.len() > 11 {
-                if line.trim_end().len() >= 80 {
+                if line.trim_end().len() >= 80 && level != StrictnessLevel::Loose {
                     return Err(PDBError::new(
                         ErrorLevel::GeneralWarning,
                         "Remark too long",
