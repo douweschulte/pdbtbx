@@ -12,8 +12,13 @@ use flate2::read::GzDecoder;
 #[cfg(feature = "compression")]
 use std::fs;
 
+/// Standard return type for reading a file.
+pub type ReadResult = std::result::Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
+
 /// Open an atomic data file, either PDB or mmCIF/PDBx. The correct type will be
-/// determined based on the file extension.
+/// determined based on the file extension. This function is equivalent to
+/// [`ReadOptions::read()`] with default options, apart from the `level` which
+/// can be set by the `level` parameter.
 ///
 /// # Errors
 /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
@@ -21,14 +26,19 @@ use std::fs;
 /// # Related
 /// If you want to open a file from memory see [`open_raw`]. There are also function to open a specified file type directly
 /// see [`crate::open_pdb`] and [`crate::open_mmcif`] respectively.
-pub fn open(
+pub fn open(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult {
+    open_with_options(filename, &ReadOptions::new().set_level(level))
+}
+
+/// Opens a files based on the given options.
+pub(in crate::read) fn open_with_options(
     filename: impl AsRef<str>,
-    level: StrictnessLevel,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    options: &ReadOptions,
+) -> ReadResult {
     if check_extension(&filename, "pdb") {
-        open_pdb(filename, level)
+        open_pdb(filename, options.level)
     } else if check_extension(&filename, "cif") {
-        open_mmcif(filename, level)
+        open_mmcif(filename, options.level)
     } else {
         Err(vec![PDBError::new(
             ErrorLevel::BreakingError,
@@ -46,13 +56,11 @@ pub fn open(
 /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
-/// If you want to open a file from memory see [`open_raw`]. There are also function to open a specified file type directly
-/// see [`crate::open_pdb`] and [`crate::open_mmcif`] respectively.
+/// If you want to open a file from memory see [`open_raw`], [`crate::open_pdb_raw`] and [`crate::open_mmcif_bufread`].
+/// These functions are useful if you are using a non-standard compression algorithm or way of
+/// storing the data.
 #[cfg(feature = "compression")]
-pub fn open_gz(
-    filename: impl AsRef<str>,
-    level: StrictnessLevel,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult {
     let filename = filename.as_ref();
 
     if check_extension(filename, "gz") {
@@ -106,7 +114,7 @@ pub fn open_gz(
 pub fn open_raw<T: std::io::Read + std::io::Seek>(
     mut input: std::io::BufReader<T>,
     level: StrictnessLevel,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+) -> ReadResult {
     let mut first_line = String::new();
     if input.read_line(&mut first_line).is_err() {
         return Err(vec![PDBError::new(
