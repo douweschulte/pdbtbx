@@ -69,7 +69,7 @@ fn lex_remark(
 
     if !reference_tables::valid_remark_type_number(number) {
         errors.push(PDBError::new(
-            ErrorLevel::StrictWarning,
+            ErrorLevel::LooseWarning,
             "Remark type number invalid",
             "The remark-type-number is not valid, see wwPDB v3.30 for all valid numbers.",
             Context::line(linenumber, line, 7, 3),
