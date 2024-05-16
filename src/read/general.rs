@@ -1,5 +1,8 @@
 use std::io::{BufRead, Read, Seek};
 
+use self::mmcif::open_mmcif_with_options;
+use self::pdb::open_pdb_with_options;
+
 use super::*;
 use crate::error::*;
 use crate::structs::PDB;
@@ -27,7 +30,7 @@ pub type ReadResult = std::result::Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
 /// If you want to open a file from memory see [`open_raw`]. There are also function to open a specified file type directly
 /// see [`crate::open_pdb`] and [`crate::open_mmcif`] respectively.
 pub fn open(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult {
-    open_with_options(filename, &ReadOptions::new().set_level(level))
+    open_with_options(filename, ReadOptions::new().set_level(level))
 }
 
 /// Opens a files based on the given options.
@@ -35,10 +38,12 @@ pub(in crate::read) fn open_with_options(
     filename: impl AsRef<str>,
     options: &ReadOptions,
 ) -> ReadResult {
-    if check_extension(&filename, "pdb") {
-        open_pdb(filename, options.level)
+    if options.decompress {
+        open_gz(filename, options.level)
+    } else if check_extension(&filename, "pdb") {
+        open_pdb_with_options(filename, options)
     } else if check_extension(&filename, "cif") {
-        open_mmcif(filename, options.level)
+        open_mmcif_with_options(filename, options)
     } else {
         Err(vec![PDBError::new(
             ErrorLevel::BreakingError,

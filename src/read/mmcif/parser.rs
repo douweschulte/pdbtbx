@@ -2,6 +2,7 @@ use super::lexitem::*;
 use crate::error::*;
 use crate::structs::*;
 use crate::validate::*;
+use crate::ReadOptions;
 use crate::StrictnessLevel;
 use crate::TransformationMatrix;
 use std::fs::File;
@@ -33,6 +34,13 @@ pub fn open_mmcif(
         )]);
     }
     open_mmcif_raw(&contents, level)
+}
+
+pub fn open_mmcif_with_options(
+    filename: impl AsRef<str>,
+    options: &ReadOptions,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    todo!()
 }
 
 /// Open's mmCIF file from a BufRead. This allows opening mmCIF files directly from memory.

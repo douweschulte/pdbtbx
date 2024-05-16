@@ -31,7 +31,7 @@ impl From<&str> for Format {
 ///
 /// Generally speaking, when using `ReadOptions`, you'll first call
 /// [`ReadOptions::new`], then chain calls to methods to set each option, then
-/// call [`ReadOptions::read`].
+/// call [`ReadOptions::read`]. All Boolean options are `false` by default.
 ///
 /// # Examples
 ///
@@ -67,6 +67,9 @@ pub struct ReadOptions {
 
     /// Only read the first model
     pub(crate) only_first_model: bool,
+
+    /// Only read atomic coordinates
+    pub(crate) only_atomic_coords: bool,
 }
 
 impl ReadOptions {
@@ -109,6 +112,12 @@ impl ReadOptions {
     /// Sets whether to only keep the first model.
     pub fn set_only_first_model(&mut self, only_first_model: bool) -> &mut Self {
         self.only_first_model = only_first_model;
+        self
+    }
+
+    /// Sets whether to only parse `ATOM` records in the model file.
+    pub fn set_only_atomic_coords(&mut self, only_atomic_coords: bool) -> &mut Self {
+        self.only_atomic_coords = only_atomic_coords;
         self
     }
 

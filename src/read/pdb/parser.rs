@@ -5,6 +5,7 @@ use super::validate::*;
 use crate::error::*;
 use crate::structs::*;
 use crate::validate::*;
+use crate::ReadOptions;
 use crate::StrictnessLevel;
 
 use indexmap::IndexMap;
@@ -31,6 +32,13 @@ pub fn open_pdb(
     };
     let reader = BufReader::new(file);
     open_pdb_raw(reader, Context::show(filename), level)
+}
+
+pub fn open_pdb_with_options(
+    filename: impl AsRef<str>,
+    options: &ReadOptions,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    todo!()
 }
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
