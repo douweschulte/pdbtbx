@@ -2,14 +2,13 @@ use std::io::{BufRead, Read, Seek};
 
 use self::mmcif::open_mmcif_with_options;
 use self::pdb::open_pdb_with_options;
-
 use super::*;
 use crate::error::*;
 use crate::structs::PDB;
 use crate::StrictnessLevel;
 
 #[cfg(feature = "compression")]
-use super::mmcif::open_mmcif_bufread;
+use self::mmcif::open_mmcif_bufread_with_options;
 #[cfg(feature = "compression")]
 use flate2::read::GzDecoder;
 #[cfg(feature = "compression")]
@@ -66,6 +65,17 @@ pub(in crate::read) fn open_with_options(
 /// storing the data.
 #[cfg(feature = "compression")]
 pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult {
+    open_gz_with_options(filename, ReadOptions::default().set_level(level))
+}
+
+/// Opens a compressed atomic data file with [`ReadOptions`].
+///
+/// # Related
+/// See [`open_gz`] for a version of this function with sane defaults.
+#[cfg(feature = "compression")]
+pub fn open_gz_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> ReadResult {
+    use self::pdb::open_pdb_raw_with_options;
+
     let filename = filename.as_ref();
 
     if check_extension(filename, "gz") {
@@ -84,9 +94,9 @@ pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult 
         let reader = std::io::BufReader::new(decompressor);
 
         if check_extension(&filename[..filename.len() - 3], "pdb") {
-            open_pdb_raw(reader, Context::show(filename), level)
+            open_pdb_raw_with_options(reader, Context::show(filename), options)
         } else if check_extension(&filename[..filename.len() - 3], "cif") {
-            open_mmcif_bufread(reader, level)
+            open_mmcif_bufread_with_options(reader, options)
         } else {
             Err(vec![PDBError::new(
                 ErrorLevel::BreakingError,

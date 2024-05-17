@@ -18,6 +18,17 @@ pub fn open_mmcif(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    open_mmcif_with_options(filename, ReadOptions::default().set_level(level))
+}
+
+/// Parse the given mmCIF file into a PDB struct with [`ReadOptions`].
+///
+/// # Related
+/// See [`open_mmcif`] for a version of this function with sane defaults.
+pub fn open_mmcif_with_options(
+    filename: impl AsRef<str>,
+    options: &ReadOptions,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     let filename = filename.as_ref();
     let mut file = if let Ok(f) = File::open(filename) {
         f
@@ -33,22 +44,26 @@ pub fn open_mmcif(
             Context::show(filename),
         )]);
     }
-    open_mmcif_raw(&contents, level)
-}
-
-pub fn open_mmcif_with_options(
-    filename: impl AsRef<str>,
-    options: &ReadOptions,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-    todo!()
+    open_mmcif_raw_with_options(&contents, options)
 }
 
 /// Open's mmCIF file from a BufRead. This allows opening mmCIF files directly from memory.
 ///
 /// This is particularly useful if you want to open a compressed file, as you can use the BufReader
 pub fn open_mmcif_bufread(
-    mut bufreader: impl BufRead,
+    bufreader: impl BufRead,
     level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    open_mmcif_bufread_with_options(bufreader, ReadOptions::default().set_level(level))
+}
+
+/// Opens mmCIF file from a BufRead with [`ReadOptions`].
+///
+/// # Related
+/// See [`open_mmcif_bufread`] for a version of this function with sane defaults.
+pub fn open_mmcif_bufread_with_options(
+    mut bufreader: impl BufRead,
+    options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     let mut contents = String::new();
     if let Err(e) = bufreader.read_to_string(&mut contents) {
@@ -59,7 +74,7 @@ pub fn open_mmcif_bufread(
             Context::none(),
         )]);
     }
-    open_mmcif_raw(&contents, level)
+    open_mmcif_raw_with_options(&contents, options)
 }
 
 /// Parse the given mmCIF `&str` into a PDB struct. This allows opening mmCIF files directly from memory.
@@ -79,10 +94,35 @@ pub fn open_mmcif_raw(
     }
 }
 
+/// Parse the given mmCIF `&str` into a PDB struct with [`ReadOptions`].
+///
+/// # Related
+/// See [`open_mmcif_raw`] for a version of this function with sane defaults.
+pub fn open_mmcif_raw_with_options(
+    input: &str,
+    options: &ReadOptions,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    match super::lexer::lex_cif(input) {
+        Ok(data_block) => parse_mmcif_with_options(&data_block, options),
+        Err(e) => Err(vec![e]),
+    }
+}
+
 /// Parse a CIF intermediate structure into a PDB
 fn parse_mmcif(
     input: &DataBlock,
     level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    parse_mmcif_with_options(input, ReadOptions::default().set_level(level))
+}
+
+/// Parse a CIF intermediate structure into a PDB with [`ReadOptions`].
+///
+/// # Related
+/// See [`parse_mmcif`] for a version of this function with sane defaults.
+fn parse_mmcif_with_options(
+    input: &DataBlock,
+    options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     let mut pdb = PDB::default();
     let mut errors: Vec<PDBError> = Vec::new();
@@ -238,7 +278,7 @@ fn parse_mmcif(
 
     reshuffle_conformers(&mut pdb);
     errors.extend(validate(&pdb));
-    if errors.iter().any(|e| e.fails(level)) {
+    if errors.iter().any(|e| e.fails(options.level)) {
         Err(errors)
     } else {
         Ok((pdb, errors))

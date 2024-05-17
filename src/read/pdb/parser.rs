@@ -23,6 +23,17 @@ pub fn open_pdb(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    open_pdb_with_options(filename, ReadOptions::default().set_level(level))
+}
+
+/// Parse the given file into a PDB struct with [`ReadOptions`].
+///
+/// # Related
+/// See [`open_pdb`] for a version of this function with sane defaults.
+pub fn open_pdb_with_options(
+    filename: impl AsRef<str>,
+    options: &ReadOptions,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     let filename = filename.as_ref();
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
     let file = if let Ok(f) = File::open(filename) {
@@ -31,14 +42,7 @@ pub fn open_pdb(
         return Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
     };
     let reader = BufReader::new(file);
-    open_pdb_raw(reader, Context::show(filename), level)
-}
-
-pub fn open_pdb_with_options(
-    filename: impl AsRef<str>,
-    options: &ReadOptions,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-    todo!()
+    open_pdb_raw_with_options(reader, Context::show(filename), options)
 }
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
@@ -57,6 +61,21 @@ pub fn open_pdb_raw<T>(
     input: std::io::BufReader<T>,
     context: Context,
     level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+where
+    T: std::io::Read,
+{
+    open_pdb_raw_with_options(input, context, ReadOptions::default().set_level(level))
+}
+
+/// Parse the input stream into a PDB struct with [`ReadOptions`].
+///
+/// # Related
+/// See [`open_pdb_raw`] for a version of this function with sane defaults.
+pub fn open_pdb_raw_with_options<T>(
+    input: std::io::BufReader<T>,
+    context: Context,
+    options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
 where
     T: std::io::Read,
@@ -96,7 +115,7 @@ where
                 context,
             )]);
         };
-        let line_result = lex_line(&line, linenumber, level);
+        let line_result = lex_line(&line, linenumber, options);
         let line_context = Context::FullLine {
             linenumber,
             line: line.clone(),
@@ -489,7 +508,7 @@ where
     errors.extend(add_bonds(&mut pdb, bonds));
     errors.extend(validate(&pdb));
 
-    if errors.iter().any(|e| e.fails(level)) {
+    if errors.iter().any(|e| e.fails(options.level)) {
         Err(errors)
     } else {
         Ok((pdb, errors))

@@ -1,6 +1,7 @@
 use super::lexitem::*;
 use crate::error::*;
 use crate::reference_tables;
+use crate::ReadOptions;
 use crate::StrictnessLevel;
 
 use std::cmp;
@@ -12,12 +13,12 @@ use std::str::FromStr;
 pub fn lex_line(
     line: &str,
     linenumber: usize,
-    level: StrictnessLevel,
+    options: &ReadOptions,
 ) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     if line.len() > 6 {
         match &line[..6] {
             "HEADER" => lex_header(linenumber, line),
-            "REMARK" => lex_remark(linenumber, line, level),
+            "REMARK" => lex_remark(linenumber, line, options.level),
             "ATOM  " => lex_atom(linenumber, line, false),
             "ANISOU" => Ok(lex_anisou(linenumber, line)),
             "HETATM" => lex_atom(linenumber, line, true),
