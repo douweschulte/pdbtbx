@@ -7,13 +7,6 @@ use crate::error::*;
 use crate::structs::PDB;
 use crate::StrictnessLevel;
 
-#[cfg(feature = "compression")]
-use self::mmcif::open_mmcif_bufread_with_options;
-#[cfg(feature = "compression")]
-use flate2::read::GzDecoder;
-#[cfg(feature = "compression")]
-use std::fs;
-
 /// Standard return type for reading a file.
 pub type ReadResult = std::result::Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
 
@@ -29,16 +22,16 @@ pub type ReadResult = std::result::Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
 /// If you want to open a file from memory see [`open_raw`]. There are also function to open a specified file type directly
 /// see [`crate::open_pdb`] and [`crate::open_mmcif`] respectively.
 pub fn open(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult {
-    open_with_options(filename, ReadOptions::new().set_level(level))
+    open_with_options(filename, ReadOptions::default().set_level(level))
 }
 
 /// Opens a files based on the given options.
-pub(in crate::read) fn open_with_options(
-    filename: impl AsRef<str>,
-    options: &ReadOptions,
-) -> ReadResult {
+///
+/// # Related
+/// See [`open`] for a version of this function with sane defaults.
+pub fn open_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> ReadResult {
     if options.decompress {
-        open_gz(filename, options.level)
+        open_gz_with_options(filename, options)
     } else if check_extension(&filename, "pdb") {
         open_pdb_with_options(filename, options)
     } else if check_extension(&filename, "cif") {
@@ -74,6 +67,10 @@ pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult 
 /// See [`open_gz`] for a version of this function with sane defaults.
 #[cfg(feature = "compression")]
 pub fn open_gz_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> ReadResult {
+    use flate2::read::GzDecoder;
+    use std::fs;
+
+    use self::mmcif::open_mmcif_bufread_with_options;
     use self::pdb::open_pdb_raw_with_options;
 
     let filename = filename.as_ref();
