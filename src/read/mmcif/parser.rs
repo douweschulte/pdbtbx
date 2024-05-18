@@ -227,7 +227,7 @@ fn parse_mmcif_with_options(
                             } else {
                                 match mtrix_id {
                                     Some(id) => {
-                                        let mut mtrix = pdb.mtrix_mut().find(|m| m.serial_number == id).expect("Could not find the MtriX record with the previously found `_struct_ncs_oper.id`");
+                                        let mtrix = pdb.mtrix_mut().find(|m| m.serial_number == id).expect("Could not find the MtriX record with the previously found `_struct_ncs_oper.id`");
                                         if s.ends_with("code") {
                                             match get_text(&single.content, &context, None) {
                                                 Ok(Some(t)) if t == "given" => {mtrix.contained = true; None},
@@ -561,7 +561,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
             } else {
                 (*pdb_pointer).add_model(Model::new(model_number));
                 #[allow(clippy::unwrap_used)]
-                (*pdb_pointer).models_mut().rev().next().unwrap()
+                (*pdb_pointer).models_mut().next_back().unwrap()
             }
         };
 
