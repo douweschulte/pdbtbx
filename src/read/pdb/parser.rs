@@ -102,7 +102,7 @@ where
     // Initialize chain_id value
     let mut chain_id_new = chain_iter.next();
 
-    for (mut linenumber, read_line) in input.lines().enumerate() {
+    'all_lines: for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
 
         let line = if let Ok(l) = read_line {
@@ -243,6 +243,11 @@ where
                                         .expect("Invalid characters in Chain definition")
                                 }),
                             ));
+
+                            if options.only_first_model {
+                                current_model = IndexMap::new();
+                                break 'all_lines;
+                            }
                         }
                         current_model_number = number;
                         current_model = IndexMap::new();

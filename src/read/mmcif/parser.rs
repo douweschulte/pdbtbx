@@ -432,7 +432,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
     // The previous lines make sure that there is no error in the vector.
     #[allow(clippy::unwrap_used)]
     let positions: Vec<Option<usize>> = positions_.iter().map(|i| *i.as_ref().unwrap()).collect();
-
+    let mut first_model_number: usize = 0;
     for (index, row) in input.data.iter().enumerate() {
         let values: Vec<Option<&Value>> = positions.iter().map(|i| i.map(|x| &row[x])).collect();
         let context = Context::show(format!("Main atomic data loop row: {index}"));
@@ -454,11 +454,21 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
             };
         }
 
+        // Early return cases
         let element = parse_column!(get_text, ATOM_TYPE).expect("Atom element should be provided");
         if options.discard_hydrogens & (element == "H") {
             continue;
         }
+        let model_number = parse_column!(get_usize, ATOM_MODEL).unwrap_or(1);
+        if options.only_first_model {
+            if index == 0 {
+                first_model_number = model_number;
+            } else if model_number != first_model_number {
+                break;
+            }
+        }
 
+        // Parse remaining fields in the order they appear in the line
         let atom_type = parse_column!(get_text, ATOM_GROUP).unwrap_or_else(|| "ATOM".to_string());
         let name = parse_column!(get_text, ATOM_NAME).expect("Atom name should be provided");
         let serial_number =
@@ -479,7 +489,6 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
         let occupancy = parse_column!(get_f64, ATOM_OCCUPANCY).unwrap_or(1.0);
         let b_factor = parse_column!(get_f64, ATOM_B).unwrap_or(1.0);
         let charge = parse_column!(get_isize, ATOM_CHARGE).unwrap_or(0);
-        let model_number = parse_column!(get_usize, ATOM_MODEL).unwrap_or(1);
         let alt_loc = parse_column!(get_text, ATOM_ALT_ID);
         let insertion_code = parse_column!(get_text, ATOM_INSERTION);
         let aniso_temp = [
