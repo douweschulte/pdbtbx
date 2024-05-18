@@ -4,28 +4,31 @@ use pdbtbx::*;
 
 #[test]
 fn main() {
-    let (full_structure, _errors) = pdbtbx::open_with_options(
-        "example-pdbs/rosetta_model.pdb",
-        ReadOptions::default().set_level(StrictnessLevel::Loose),
-    )
-    .unwrap();
+    // PDB parser
+    assert_eq!(
+        947,
+        count_hydrogens("example-pdbs/rosetta_model.pdb", false)
+    );
+    assert_eq!(0, count_hydrogens("example-pdbs/rosetta_model.pdb", true));
 
-    let num_h = full_structure.atoms().fold(0, |acc, a| {
-        acc + usize::from(a.element() == Some(&Element::H))
-    });
+    // mmCIF parser
+    assert_eq!(
+        947,
+        count_hydrogens("example-pdbs/rosetta_model.cif", false)
+    );
+    assert_eq!(0, count_hydrogens("example-pdbs/rosetta_model.cif", true));
+}
 
+fn count_hydrogens(filename: &str, discard_hydrogens: bool) -> usize {
     let (structure, _errors) = pdbtbx::open_with_options(
-        "example-pdbs/rosetta_model.pdb",
+        filename,
         ReadOptions::default()
             .set_level(StrictnessLevel::Loose)
-            .set_discard_hydrogens(true),
+            .set_discard_hydrogens(discard_hydrogens),
     )
     .unwrap();
 
-    let num_without_h = structure.atoms().fold(0, |acc, a| {
+    structure.atoms().fold(0, |acc, a| {
         acc + usize::from(a.element() == Some(&Element::H))
-    });
-
-    assert_eq!(947, num_h);
-    assert_eq!(0, num_without_h);
+    })
 }

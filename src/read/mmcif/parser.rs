@@ -136,7 +136,7 @@ fn parse_mmcif_with_options(
             Item::DataItem(di) => match di {
                 DataItem::Loop(multiple) => {
                     if multiple.header.contains(&"atom_site.group_PDB".to_string()) {
-                        parse_atoms(multiple, &mut pdb)
+                        parse_atoms(multiple, &mut pdb, options)
                     } else {
                         None
                     }
@@ -354,7 +354,7 @@ fn flatten_result<T, E>(value: Result<Result<T, E>, E>) -> Result<T, E> {
 }
 
 /// Parse a loop containing atomic data
-fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
+fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec<PDBError>> {
     #[derive(Eq, PartialEq)]
     /// The mode of a column
     enum Mode {
@@ -454,11 +454,15 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             };
         }
 
+        let element = parse_column!(get_text, ATOM_TYPE).expect("Atom element should be provided");
+        if options.discard_hydrogens & (element == "H") {
+            continue;
+        }
+
         let atom_type = parse_column!(get_text, ATOM_GROUP).unwrap_or_else(|| "ATOM".to_string());
         let name = parse_column!(get_text, ATOM_NAME).expect("Atom name should be provided");
         let serial_number =
             parse_column!(get_usize, ATOM_ID).expect("Atom serial number should be provided");
-        let element = parse_column!(get_text, ATOM_TYPE).expect("Atom element should be provided");
         let residue_name =
             parse_column!(get_text, ATOM_COMP_ID).expect("Residue name should be provided");
         #[allow(clippy::cast_possible_wrap)]
