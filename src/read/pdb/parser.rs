@@ -148,6 +148,9 @@ where
                         element,
                         charge,
                     ) => {
+                        if options.discard_hydrogens & (element == "H") {
+                            continue;
+                        }
                         if serial_number == 0 && last_atom_serial_number == 99_999 {
                             atom_serial_addition += 100_000
                         }
