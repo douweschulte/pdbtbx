@@ -3,7 +3,7 @@
 use pdbtbx::*;
 
 #[test]
-fn main() {
+fn only_read_first_model() {
     // PDB parser
     assert_eq!(50, count_models("example-pdbs/pTLS-6484.pdb", false));
     assert_eq!(1, count_models("example-pdbs/pTLS-6484.pdb", true));

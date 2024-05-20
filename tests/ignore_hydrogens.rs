@@ -3,7 +3,7 @@
 use pdbtbx::*;
 
 #[test]
-fn main() {
+fn ignore_hydrogens_in_pdb() {
     // PDB parser
     assert_eq!(
         947,

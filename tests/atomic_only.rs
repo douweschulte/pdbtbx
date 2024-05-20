@@ -3,7 +3,7 @@
 use pdbtbx::*;
 
 #[test]
-fn main() {
+fn only_read_atoms() {
     // PDB parser
     assert_eq!(1871, count_atoms("example-pdbs/rosetta_model.pdb", false));
     assert_eq!(1871, count_atoms("example-pdbs/rosetta_model.pdb", true));
