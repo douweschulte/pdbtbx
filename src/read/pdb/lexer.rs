@@ -15,70 +15,43 @@ pub fn lex_line(
     linenumber: usize,
     options: &ReadOptions,
 ) -> Result<(LexItem, Vec<PDBError>), PDBError> {
-    match options.only_atomic_coords {
-        false => {
-            if line.len() > 6 {
-                match &line[..6] {
-                    "HEADER" => lex_header(linenumber, line),
-                    "REMARK" => lex_remark(linenumber, line, options.level),
-                    "ATOM  " => lex_atom(linenumber, line, false),
-                    "ANISOU" => Ok(lex_anisou(linenumber, line)),
-                    "HETATM" => lex_atom(linenumber, line, true),
-                    "CRYST1" => Ok(lex_cryst(linenumber, line)),
-                    "SCALE1" => Ok(lex_scale(linenumber, line, 0)),
-                    "SCALE2" => Ok(lex_scale(linenumber, line, 1)),
-                    "SCALE3" => Ok(lex_scale(linenumber, line, 2)),
-                    "ORIGX1" => Ok(lex_origx(linenumber, line, 0)),
-                    "ORIGX2" => Ok(lex_origx(linenumber, line, 1)),
-                    "ORIGX3" => Ok(lex_origx(linenumber, line, 2)),
-                    "MTRIX1" => Ok(lex_mtrix(linenumber, line, 0)),
-                    "MTRIX2" => Ok(lex_mtrix(linenumber, line, 1)),
-                    "MTRIX3" => Ok(lex_mtrix(linenumber, line, 2)),
-                    "MODEL " => Ok(lex_model(linenumber, line)),
-                    "MASTER" => Ok(lex_master(linenumber, line)),
-                    "DBREF " => Ok(lex_dbref(linenumber, line)),
-                    "DBREF1" => Ok(lex_dbref1(linenumber, line)),
-                    "DBREF2" => Ok(lex_dbref2(linenumber, line)),
-                    "SEQRES" => Ok(lex_seqres(linenumber, line)),
-                    "SEQADV" => Ok(lex_seqadv(linenumber, line)),
-                    "MODRES" => Ok(lex_modres(linenumber, line)),
-                    "SSBOND" => Ok(lex_ssbond(linenumber, line)),
-                    "ENDMDL" => Ok((LexItem::EndModel(), Vec::new())),
-                    "TER   " => Ok((LexItem::TER(), Vec::new())),
-                    "END   " => Ok((LexItem::End(), Vec::new())),
-                    _ => Ok((LexItem::Empty(), Vec::new())),
-                }
-            } else if line.len() > 2 {
-                match &line[..3] {
-                    "TER" => Ok((LexItem::TER(), Vec::new())),
-                    "END" => Ok((LexItem::End(), Vec::new())),
-                    _ => Ok((LexItem::Empty(), Vec::new())),
-                }
-            } else {
-                Ok((LexItem::Empty(), Vec::new()))
-            }
-        }
-        true => {
-            if line.len() > 6 {
-                match &line[..6] {
-                    "ATOM  " => lex_atom(linenumber, line, false),
-                    "HETATM" => lex_atom(linenumber, line, true),
-                    "MODEL " => Ok(lex_model(linenumber, line)),
-                    "ENDMDL" => Ok((LexItem::EndModel(), Vec::new())),
-                    "TER   " => Ok((LexItem::TER(), Vec::new())),
-                    "END   " => Ok((LexItem::End(), Vec::new())),
-                    _ => Ok((LexItem::Empty(), Vec::new())),
-                }
-            } else if line.len() > 2 {
-                match &line[..3] {
-                    "TER" => Ok((LexItem::TER(), Vec::new())),
-                    "END" => Ok((LexItem::End(), Vec::new())),
-                    _ => Ok((LexItem::Empty(), Vec::new())),
-                }
-            } else {
-                Ok((LexItem::Empty(), Vec::new()))
-            }
-        }
+    match line.len() {
+        len if len > 6 => match (options.only_atomic_coords, &line[..6]) {
+            (false, "HEADER") => lex_header(linenumber, line),
+            (false, "REMARK") => lex_remark(linenumber, line, options.level),
+            (_, "ATOM  ") => lex_atom(linenumber, line, false),
+            (false, "ANISOU") => Ok(lex_anisou(linenumber, line)),
+            (_, "HETATM") => lex_atom(linenumber, line, true),
+            (false, "CRYST1") => Ok(lex_cryst(linenumber, line)),
+            (false, "SCALE1") => Ok(lex_scale(linenumber, line, 0)),
+            (false, "SCALE2") => Ok(lex_scale(linenumber, line, 1)),
+            (false, "SCALE3") => Ok(lex_scale(linenumber, line, 2)),
+            (false, "ORIGX1") => Ok(lex_origx(linenumber, line, 0)),
+            (false, "ORIGX2") => Ok(lex_origx(linenumber, line, 1)),
+            (false, "ORIGX3") => Ok(lex_origx(linenumber, line, 2)),
+            (false, "MTRIX1") => Ok(lex_mtrix(linenumber, line, 0)),
+            (false, "MTRIX2") => Ok(lex_mtrix(linenumber, line, 1)),
+            (false, "MTRIX3") => Ok(lex_mtrix(linenumber, line, 2)),
+            (_, "MODEL ") => Ok(lex_model(linenumber, line)),
+            (false, "MASTER") => Ok(lex_master(linenumber, line)),
+            (false, "DBREF ") => Ok(lex_dbref(linenumber, line)),
+            (false, "DBREF1") => Ok(lex_dbref1(linenumber, line)),
+            (false, "DBREF2") => Ok(lex_dbref2(linenumber, line)),
+            (false, "SEQRES") => Ok(lex_seqres(linenumber, line)),
+            (false, "SEQADV") => Ok(lex_seqadv(linenumber, line)),
+            (false, "MODRES") => Ok(lex_modres(linenumber, line)),
+            (false, "SSBOND") => Ok(lex_ssbond(linenumber, line)),
+            (_, "ENDMDL") => Ok((LexItem::EndModel(), Vec::new())),
+            (_, "TER   ") => Ok((LexItem::TER(), Vec::new())),
+            (_, "END   ") => Ok((LexItem::End(), Vec::new())),
+            (_, _) => Ok((LexItem::Empty(), Vec::new())),
+        },
+        len if len > 2 => match &line[..3] {
+            "TER" => Ok((LexItem::TER(), Vec::new())),
+            "END" => Ok((LexItem::End(), Vec::new())),
+            _ => Ok((LexItem::Empty(), Vec::new())),
+        },
+        _ => Ok((LexItem::Empty(), Vec::new())),
     }
 }
 
