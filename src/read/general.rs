@@ -12,8 +12,7 @@ pub type ReadResult = std::result::Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
 
 /// Open an atomic data file, either PDB or mmCIF/PDBx. The correct type will be
 /// determined based on the file extension. This function is equivalent to
-/// [`ReadOptions::read()`] with default options, apart from the `level` which
-/// can be set by the `level` parameter.
+/// [`ReadOptions::read()`] with default options.
 ///
 /// # Errors
 /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
@@ -21,8 +20,8 @@ pub type ReadResult = std::result::Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
 /// # Related
 /// If you want to open a file from memory see [`open_raw`]. There are also function to open a specified file type directly
 /// see [`crate::open_pdb`] and [`crate::open_mmcif`] respectively.
-pub fn open(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult {
-    open_with_options(filename, ReadOptions::default().set_level(level))
+pub fn open(filename: impl AsRef<str>) -> ReadResult {
+    open_with_options(filename, &ReadOptions::default())
 }
 
 /// Opens a files based on the given options.
@@ -174,19 +173,17 @@ mod tests {
 
     #[test]
     fn open_invalid() {
-        assert!(open("file.png", StrictnessLevel::Medium).is_err());
-        assert!(open("file.mmcif", StrictnessLevel::Medium).is_err());
-        assert!(open("file.pdbml", StrictnessLevel::Medium).is_err());
-        assert!(open("file.pd", StrictnessLevel::Medium).is_err());
+        assert!(open("file.png").is_err());
+        assert!(open("file.mmcif").is_err());
+        assert!(open("file.pdbml").is_err());
+        assert!(open("file.pd").is_err());
     }
 
     #[test]
     fn open_not_existing() {
-        let pdb =
-            open("file.pdb", StrictnessLevel::Medium).expect_err("This file should not exist.");
+        let pdb = open("file.pdb").expect_err("This file should not exist.");
         assert_eq!(pdb[0].short_description(), "Could not open file");
-        let cif =
-            open("file.cif", StrictnessLevel::Medium).expect_err("This file should not exist.");
+        let cif = open("file.cif").expect_err("This file should not exist.");
         assert_eq!(cif[0].short_description(), "Could not open file");
     }
 }

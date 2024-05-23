@@ -56,7 +56,10 @@ fn main() {
 }
 
 fn bench_open(filename: &str) {
-    let (_pdb, _errors) = open(filename, StrictnessLevel::Loose).unwrap();
+    let (_pdb, _errors) = ReadOptions::default()
+        .set_level(crate::StrictnessLevel::Loose)
+        .read(filename)
+        .unwrap();
 }
 
 fn bench_transformation(mut pdb: PDB) {

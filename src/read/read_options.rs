@@ -122,7 +122,7 @@ impl ReadOptions {
     }
 
     /// Reads a file into a [`PDB`] structure.
-    pub fn read(&self, path: &str) -> ReadResult {
+    pub fn read<T: AsRef<str>>(&self, path: T) -> ReadResult {
         open_with_options(path, self)
     }
 }

@@ -16,10 +16,7 @@ use rayon::prelude::*;
 ///
 /// ```rust
 /// use pdbtbx::*;
-/// let (mut pdb, _errors) = pdbtbx::open(
-///         "example-pdbs/1ubq.pdb",
-///         StrictnessLevel::Medium
-///     ).unwrap();
+/// let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb").unwrap();
 ///
 /// pdb.remove_atoms_by(|atom| atom.element() == Some(&Element::H)); // Remove all H atoms
 ///
@@ -1105,7 +1102,7 @@ impl FromIterator<Model> for PDB {
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
-    use crate::open_pdb;
+    use crate::{open_pdb, ReadOptions};
 
     use super::*;
     use std::path::Path;
@@ -1146,7 +1143,10 @@ mod tests {
             .join("example-pdbs")
             .join("models.pdb");
 
-        let (pdb, _) = crate::open(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+        let (pdb, _) = ReadOptions::default()
+            .set_level(crate::StrictnessLevel::Loose)
+            .read(path.to_str().unwrap())
+            .unwrap();
 
         // Has 6 models
         let model_count = pdb.model_count();
@@ -1387,7 +1387,10 @@ mod tests {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("example-pdbs")
             .join("1yyf.pdb");
-        let (pdb, _) = crate::open(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+        let (pdb, _) = ReadOptions::default()
+            .set_level(crate::StrictnessLevel::Loose)
+            .read(path.to_str().unwrap())
+            .unwrap();
 
         let chainmap = pdb.chains_in_contact(5.0);
 
@@ -1408,7 +1411,10 @@ mod tests {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("example-pdbs")
             .join("1ubq.pdb");
-        let (pdb, _) = crate::open(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+        let (pdb, _) = ReadOptions::default()
+            .set_level(crate::StrictnessLevel::Loose)
+            .read(path.to_str().unwrap())
+            .unwrap();
 
         let reslist = pdb.unique_conformer_names();
         let expected_reslist: Vec<String> = vec![

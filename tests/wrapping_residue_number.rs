@@ -3,9 +3,15 @@ use pdbtbx::*;
 /// Open a test file containing 87449 waters so with more than 29000 residues which leads to residue serial numbers that are wrapped
 #[test]
 fn wrapping_residue_number() {
-    let (pdb, errors) = pdbtbx::open("example-pdbs/eq.pdb", StrictnessLevel::Strict).unwrap();
+    let (pdb, errors) = ReadOptions::default()
+        .set_level(crate::StrictnessLevel::Strict)
+        .read("example-pdbs/eq.pdb")
+        .unwrap();
     let pdb_errors = save(&pdb, "dump/eq.pdb", StrictnessLevel::Loose);
-    let (pdb2, _) = pdbtbx::open("dump/eq.pdb", StrictnessLevel::Strict).unwrap();
+    let (pdb2, _) = ReadOptions::default()
+        .set_level(crate::StrictnessLevel::Strict)
+        .read("dump/eq.pdb")
+        .unwrap();
     print!("{errors:?}");
     print!("{pdb_errors:?}");
     // See that the original file is the same as saved and reopened

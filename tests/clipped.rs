@@ -14,7 +14,10 @@ fn clipped() {
     // make dumps directory
     std::fs::create_dir_all(dump_dir).unwrap();
 
-    let (pdb, errors) = pdbtbx::open(path, StrictnessLevel::Strict).unwrap();
+    let (pdb, errors) = ReadOptions::default()
+        .set_level(crate::StrictnessLevel::Strict)
+        .read(path)
+        .unwrap();
     let pdb_errors = save(&pdb, "dump/large.pdb", StrictnessLevel::Loose);
     print!("{errors:?}");
     print!("{pdb_errors:?}");
