@@ -56,6 +56,10 @@ pub fn open_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> Re
 /// These functions are useful if you are using a non-standard compression algorithm or way of
 /// storing the data.
 #[cfg(feature = "compression")]
+#[deprecated(
+    since = "0.12.0",
+    note = "Please use `ReadOptions::default().set_decompress(true).read(filename)` instead"
+)]
 pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult {
     open_gz_with_options(filename, ReadOptions::default().set_level(level))
 }
@@ -65,7 +69,7 @@ pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult 
 /// # Related
 /// See [`open_gz`] for a version of this function with sane defaults.
 #[cfg(feature = "compression")]
-pub fn open_gz_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> ReadResult {
+fn open_gz_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> ReadResult {
     use flate2::read::GzDecoder;
     use std::fs;
 

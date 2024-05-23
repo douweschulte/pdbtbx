@@ -9,7 +9,7 @@ mod read_options;
 mod pdb;
 use super::check_extension;
 
-pub use general::{open, open_gz, open_gz_with_options, open_raw, open_with_options};
+pub use general::{open, open_gz, open_raw, open_with_options};
 pub use mmcif::{
     open_mmcif, open_mmcif_bufread, open_mmcif_bufread_with_options, open_mmcif_raw,
     open_mmcif_raw_with_options, open_mmcif_with_options,
