@@ -1,7 +1,5 @@
 use std::io::{BufRead, Read, Seek};
 
-use self::mmcif::open_mmcif_with_options;
-use self::pdb::open_pdb_with_options;
 use super::*;
 use crate::error::*;
 use crate::structs::PDB;
@@ -29,20 +27,7 @@ pub fn open(filename: impl AsRef<str>) -> ReadResult {
 /// # Related
 /// See [`open`] for a version of this function with sane defaults.
 pub fn open_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> ReadResult {
-    if options.decompress {
-        open_gz_with_options(filename, options)
-    } else if check_extension(&filename, "pdb") {
-        open_pdb_with_options(filename, options)
-    } else if check_extension(&filename, "cif") {
-        open_mmcif_with_options(filename, options)
-    } else {
-        Err(vec![PDBError::new(
-            ErrorLevel::BreakingError,
-            "Incorrect extension",
-            "Could not determine the type of the given file, make it .pdb or .cif",
-            Context::show(filename.as_ref()),
-        )])
-    }
+    options.read(filename)
 }
 
 /// Open a compressed atomic data file, either PDB or mmCIF/PDBx. The correct type will be
@@ -69,7 +54,7 @@ pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult 
 /// # Related
 /// See [`open_gz`] for a version of this function with sane defaults.
 #[cfg(feature = "compression")]
-fn open_gz_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> ReadResult {
+pub(crate) fn open_gz_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> ReadResult {
     use flate2::read::GzDecoder;
     use std::fs;
 

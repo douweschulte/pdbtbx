@@ -1,6 +1,6 @@
-use crate::StrictnessLevel;
+use crate::{Context, PDBError, StrictnessLevel, PDB};
 
-use super::general::{open_with_options, ReadResult};
+use super::general::ReadResult;
 
 /// Used to set which format to read the file in.
 #[derive(Debug, Clone, Copy, Default)]
@@ -122,7 +122,58 @@ impl ReadOptions {
     }
 
     /// Reads a file into a [`PDB`] structure.
-    pub fn read<T: AsRef<str>>(&self, path: T) -> ReadResult {
-        open_with_options(path, self)
+    pub fn read(&self, path: impl AsRef<str>) -> ReadResult {
+        // open_with_options(path, self)
+        if self.decompress {
+            super::general::open_gz_with_options(path, self)
+        } else {
+            match self.format {
+                Format::Pdb => super::pdb::open_pdb_with_options(path, self),
+                Format::Mmcif => super::mmcif::open_mmcif_with_options(path, self),
+                Format::Auto => {
+                    if let Some(file_ext) = path.as_ref().rsplit('.').next() {
+                        match file_ext {
+                            "pdb" | "pdb1" => super::pdb::open_pdb_with_options(path, self),
+                            "cif" | "mmcif" => super::mmcif::open_mmcif_with_options(path, self),
+                            _ => Err(vec![PDBError::new(
+                                crate::ErrorLevel::BreakingError,
+                                "Incorrect extension",
+                                "Could not determine the type of the given file extension, make it .pdb or .cif",
+                                Context::show(path.as_ref()),
+
+                            )])
+                        }
+                    } else {
+                        Err(vec![PDBError::new(
+                            crate::ErrorLevel::BreakingError,
+                            "Missing extension",
+                            "The given file does not have an extension, make it .pdb or .cif",
+                            Context::show(path.as_ref()),
+                        )])
+                    }
+                }
+            }
+        }
+    }
+
+    /// Parse the input stream into a [`PDB`] struct. To allow for direct streaming from sources, like from RCSB.org.
+    /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+    ///
+    /// ## Arguments
+    /// * `input` - the input stream
+    /// * `context` - the context of the full stream, to place error messages correctly, for files this is `Context::show(filename)`.
+    /// * `options` - the options for configuring how a file/stream is parsed.
+    ///
+    /// # Related
+    /// If you want to open a file see [`crate::open_pdb`] and [`crate::open_mmcif`].
+    /// If you want to open a general file with no knowledge about the file type, see [`ReadOptions::read`].
+    pub fn read_raw<T>(
+        input: std::io::BufReader<T>,
+        context: Context,
+    ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+    where
+        T: std::io::Read,
+    {
+        todo!()
     }
 }
