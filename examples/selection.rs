@@ -1,7 +1,11 @@
 use pdbtbx::*;
 
 fn main() {
-    let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
+    let (pdb, _errors) = open_pdb_with_options(
+        "example-pdbs/1ubq.pdb",
+        ReadOptions::default().set_level(StrictnessLevel::Loose),
+    )
+    .unwrap();
 
     // Two ways of selecting the following atom in the PDB file, the first search can be somewhat faster
     // because it can discard other chains which the second search has to test.

@@ -19,11 +19,8 @@ use std::io::{BufRead, BufReader};
 /// # Related
 /// If you want to open a file from memory see [`open_pdb_raw`]. There is also a function to open a mmCIF file directly
 /// see [`crate::open_mmcif`]. If you want to open a general file with no knowledge about the file type see [`crate::open`].
-pub fn open_pdb(
-    filename: impl AsRef<str>,
-    level: StrictnessLevel,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-    open_pdb_with_options(filename, ReadOptions::default().set_level(level))
+pub fn open_pdb(filename: impl AsRef<str>) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    open_pdb_with_options(filename, &ReadOptions::default())
 }
 
 /// Parse the given file into a PDB struct with [`ReadOptions`].

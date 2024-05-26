@@ -465,7 +465,7 @@ impl<'a> PDB {
     /// Find all hierarchies matching the given search. For more details see [Search].
     /// ```
     /// use pdbtbx::*;
-    /// let (pdb, errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
+    /// let (pdb, errors) = open_pdb_with_options("example-pdbs/1ubq.pdb", ReadOptions::new().set_level(StrictnessLevel::Loose)).unwrap();
     /// let selection = pdb.find(
     ///     Term::ChainId("A".to_owned())
     ///     & Term::ConformerName("GLY".to_owned())
@@ -1102,7 +1102,7 @@ impl FromIterator<Model> for PDB {
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
-    use crate::{open_pdb, ReadOptions};
+    use crate::{open_pdb_with_options, ReadOptions};
 
     use super::*;
     use std::path::Path;
@@ -1117,7 +1117,11 @@ mod tests {
             if path.extension().unwrap() != "pdb" {
                 continue;
             }
-            let (pdb, _) = open_pdb(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+            let (pdb, _) = open_pdb_with_options(
+                path.to_str().unwrap(),
+                ReadOptions::default().set_level(crate::StrictnessLevel::Loose),
+            )
+            .unwrap();
 
             let model_count = pdb.model_count();
             let mut test_pdb = pdb.clone();

@@ -23,8 +23,11 @@ fn main() {
 fn create_waterbox(size: (f64, f64, f64)) -> PDB {
     let now = Instant::now();
 
-    let (mut liquid, _errors) =
-        open_pdb("example-pdbs/liquid.pdb", StrictnessLevel::Loose).unwrap();
+    let (mut liquid, _errors) = open_pdb_with_options(
+        "example-pdbs/liquid.pdb",
+        ReadOptions::new().set_level(StrictnessLevel::Loose),
+    )
+    .unwrap();
 
     let time = now.elapsed();
 

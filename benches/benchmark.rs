@@ -20,7 +20,15 @@ fn main() {
     ];
     let mut models = Vec::with_capacity(pdb_names.len());
     for (name, path) in &pdb_names {
-        models.push((*name, open_pdb(path, StrictnessLevel::Loose).unwrap().0))
+        models.push((
+            *name,
+            open_pdb_with_options(
+                path,
+                ReadOptions::default().set_level(crate::StrictnessLevel::Loose),
+            )
+            .unwrap()
+            .0,
+        ))
     }
     let mut results = Vec::new();
 

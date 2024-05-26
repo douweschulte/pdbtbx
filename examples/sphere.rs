@@ -10,7 +10,11 @@ fn main() {
 /// Find all Atoms in a sphere around a single origin Atom with a user-defined radius
 /// This is using the features `rstar` and `rayon`.
 fn atom_sphere() {
-    let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
+    let (pdb, _errors) = open_pdb_with_options(
+        "example-pdbs/1ubq.pdb",
+        ReadOptions::new().set_level(StrictnessLevel::Loose),
+    )
+    .unwrap();
     let (origin_id, radius): (usize, f64) = (12, 3.5);
 
     // Leverage parallel searching
@@ -32,7 +36,11 @@ fn atom_sphere() {
 /// user-defined origin and radius.
 /// This is using the features `rstar` and `rayon`.
 fn residue_sphere() {
-    let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
+    let (pdb, _errors) = open_pdb_with_options(
+        "example-pdbs/1ubq.pdb",
+        ReadOptions::new().set_level(StrictnessLevel::Loose),
+    )
+    .unwrap();
     let (origin_id, radius): (usize, f64) = (12, 3.5);
 
     let sphere_origin = pdb
@@ -73,7 +81,11 @@ fn residue_sphere() {
 /// constituting the peptide bond of neighbouring amino acids.
 /// Also, Atoms are not counted twice.
 fn find_clashes() {
-    let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
+    let (pdb, _errors) = open_pdb_with_options(
+        "example-pdbs/1ubq.pdb",
+        ReadOptions::new().set_level(StrictnessLevel::Loose),
+    )
+    .unwrap();
     let tree = pdb.create_hierarchy_rtree();
 
     let mut clashing_atoms = Vec::new();
