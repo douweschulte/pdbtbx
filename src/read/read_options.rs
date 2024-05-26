@@ -1,4 +1,5 @@
 use crate::{Context, PDBError, StrictnessLevel, PDB};
+use std::io::Read;
 
 use super::general::ReadResult;
 
@@ -121,7 +122,14 @@ impl ReadOptions {
         self
     }
 
-    /// Reads a file into a [`PDB`] structure.
+    /// Open an atomic data file, either PDB or mmCIF/PDBx, into a [`PDB`] structure.
+    /// The correct type will be determined based on the file extension.
+    ///
+    /// # Errors
+    /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+    ///
+    /// # Related
+    /// If you want to open a file from memory see [`ReadOptions::read_raw`].
     pub fn read(&self, path: impl AsRef<str>) -> ReadResult {
         // open_with_options(path, self)
         if self.decompress {
@@ -168,12 +176,33 @@ impl ReadOptions {
     /// If you want to open a file see [`crate::open_pdb`] and [`crate::open_mmcif`].
     /// If you want to open a general file with no knowledge about the file type, see [`ReadOptions::read`].
     pub fn read_raw<T>(
-        input: std::io::BufReader<T>,
-        context: Context,
+        &self,
+        mut input: std::io::BufReader<T>,
     ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
     where
         T: std::io::Read,
     {
-        todo!()
+        match self.format {
+            Format::Pdb => super::pdb::open_pdb_raw_with_options(input, Context::None, self),
+            Format::Mmcif => {
+                let mut contents = String::new();
+                if input.read_to_string(&mut contents).is_ok() {
+                    super::mmcif::open_mmcif_raw_with_options(&contents, self)
+                } else {
+                    Err(vec![PDBError::new(
+                        crate::ErrorLevel::BreakingError,
+                        "Buffer could not be read",
+                        "The buffer provided to `open_raw` could not be read to end.",
+                        Context::None,
+                    )])
+                }
+            }
+            Format::Auto => Err(vec![PDBError::new(
+                crate::ErrorLevel::BreakingError,
+                "Could not determine file type",
+                "Could not determine the type of the input stream, set self.format",
+                Context::None,
+            )]),
+        }
     }
 }

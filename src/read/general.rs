@@ -1,5 +1,3 @@
-use std::io::{BufRead, Read, Seek};
-
 use super::*;
 use crate::error::*;
 use crate::structs::PDB;
@@ -111,49 +109,8 @@ pub(crate) fn open_gz_with_options(filename: impl AsRef<str>, options: &ReadOpti
 /// # Related
 /// If you want to open a file see [`open`]. There are also function to open a specified file type directly
 /// see [`crate::open_pdb_raw`] and [`crate::open_mmcif_raw`] respectively.
-pub fn open_raw<T: std::io::Read + std::io::Seek>(
-    mut input: std::io::BufReader<T>,
-    level: StrictnessLevel,
-) -> ReadResult {
-    let mut first_line = String::new();
-    if input.read_line(&mut first_line).is_err() {
-        return Err(vec![PDBError::new(
-            ErrorLevel::BreakingError,
-            "Buffer could not be read",
-            "The buffer provided to `open_raw` could not be read.",
-            Context::None,
-        )]);
-    }
-    if input.rewind().is_err() {
-        return Err(vec![PDBError::new(
-            ErrorLevel::BreakingError,
-            "Buffer could not be read",
-            "The buffer provided to `open_raw` could not be rewound to the start.",
-            Context::None,
-        )]);
-    }
-    if first_line.starts_with("HEADER") {
-        open_pdb_raw(input, Context::None, level)
-    } else if first_line.starts_with("data_") {
-        let mut contents = String::new();
-        if input.read_to_string(&mut contents).is_ok() {
-            open_mmcif_raw(&contents, level)
-        } else {
-            Err(vec![PDBError::new(
-                ErrorLevel::BreakingError,
-                "Buffer could not be read",
-                "The buffer provided to `open_raw` could not be read to end.",
-                Context::show(&first_line),
-            )])
-        }
-    } else {
-        Err(vec![PDBError::new(
-            ErrorLevel::BreakingError,
-            "Could not determine file type",
-            "Could not determine the type of the given file, make it .pdb or .cif",
-            Context::show(&first_line),
-        )])
-    }
+pub fn open_raw<T: std::io::Read + std::io::Seek>(input: std::io::BufReader<T>) -> ReadResult {
+    ReadOptions::default().read_raw(input)
 }
 
 #[cfg(test)]
