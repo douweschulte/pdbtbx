@@ -188,7 +188,7 @@ fn save_pdb_strict() {
             &name,
             ReadOptions::default()
                 .set_level(StrictnessLevel::Strict)
-                .set_decompress(true),
+                .guess_format(name.as_str()),
         )
         .unwrap();
         assert_eq!(errors.len(), 0);
@@ -238,7 +238,7 @@ fn save_mmcif_strict() {
             &name,
             ReadOptions::default()
                 .set_level(StrictnessLevel::Strict)
-                .set_decompress(true),
+                .guess_format(name.as_str()),
         )
         .unwrap();
         assert_eq!(errors.len(), 0);
