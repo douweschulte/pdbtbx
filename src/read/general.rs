@@ -56,7 +56,6 @@ pub(crate) fn open_gz_with_options(filename: impl AsRef<str>, options: &ReadOpti
     use flate2::read::GzDecoder;
     use std::fs;
 
-    use self::mmcif::open_mmcif_bufread_with_options;
     use self::pdb::open_pdb_raw_with_options;
 
     let filename = filename.as_ref();
@@ -79,7 +78,7 @@ pub(crate) fn open_gz_with_options(filename: impl AsRef<str>, options: &ReadOpti
         if check_extension(&filename[..filename.len() - 3], "pdb") {
             open_pdb_raw_with_options(reader, Context::show(filename), options)
         } else if check_extension(&filename[..filename.len() - 3], "cif") {
-            open_mmcif_bufread_with_options(reader, options)
+            open_mmcif_raw_with_options(reader, options)
         } else {
             Err(vec![PDBError::new(
                 ErrorLevel::BreakingError,

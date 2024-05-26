@@ -1,5 +1,4 @@
 use crate::{Context, PDBError, StrictnessLevel, PDB};
-use std::io::Read;
 
 use super::general::ReadResult;
 
@@ -177,26 +176,14 @@ impl ReadOptions {
     /// If you want to open a general file with no knowledge about the file type, see [`ReadOptions::read`].
     pub fn read_raw<T>(
         &self,
-        mut input: std::io::BufReader<T>,
+        input: std::io::BufReader<T>,
     ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
     where
         T: std::io::Read,
     {
         match self.format {
             Format::Pdb => super::pdb::open_pdb_raw_with_options(input, Context::None, self),
-            Format::Mmcif => {
-                let mut contents = String::new();
-                if input.read_to_string(&mut contents).is_ok() {
-                    super::mmcif::open_mmcif_raw_with_options(&contents, self)
-                } else {
-                    Err(vec![PDBError::new(
-                        crate::ErrorLevel::BreakingError,
-                        "Buffer could not be read",
-                        "The buffer provided to `open_raw` could not be read to end.",
-                        Context::None,
-                    )])
-                }
-            }
+            Format::Mmcif => super::mmcif::open_mmcif_raw_with_options(input, self),
             Format::Auto => Err(vec![PDBError::new(
                 crate::ErrorLevel::BreakingError,
                 "Could not determine file type",

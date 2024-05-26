@@ -54,6 +54,10 @@ pub fn open_pdb_with_options(
 /// If you want to open a file see [`open_pdb`]. There is also a function to open a mmCIF file directly
 /// see [`crate::open_mmcif`] and [`crate::open_mmcif_raw`]. If you want to open a general file
 /// with no knowledge about the file type see [`crate::open`] and [`crate::open_raw`].
+#[deprecated(
+    since = "0.12.0",
+    note = "Please use `ReadOptions::default().read_raw(input, context)` instead"
+)]
 pub fn open_pdb_raw<T>(
     input: std::io::BufReader<T>,
     context: Context,

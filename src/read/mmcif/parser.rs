@@ -27,51 +27,31 @@ pub fn open_mmcif_with_options(
     options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     let filename = filename.as_ref();
-    let mut file = if let Ok(f) = File::open(filename) {
+    let file = if let Ok(f) = File::open(filename) {
         f
     } else {
         return Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
     };
-    let mut contents = String::new();
-    if let Err(e) = file.read_to_string(&mut contents) {
-        return Err(vec![PDBError::new(
-            ErrorLevel::BreakingError,
-            "Error while reading file",
-            format!("Error: {e}"),
-            Context::show(filename),
-        )]);
-    }
-    open_mmcif_raw_with_options(&contents, options)
+    let reader = std::io::BufReader::new(file);
+    open_mmcif_raw_with_options(reader, options)
 }
 
 /// Open's mmCIF file from a BufRead. This allows opening mmCIF files directly from memory.
 ///
 /// This is particularly useful if you want to open a compressed file, as you can use the BufReader
-pub fn open_mmcif_bufread(
-    bufreader: impl BufRead,
-    level: StrictnessLevel,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-    open_mmcif_bufread_with_options(bufreader, ReadOptions::default().set_level(level))
-}
-
-/// Opens mmCIF file from a BufRead with [`ReadOptions`].
-///
-/// # Related
-/// See [`open_mmcif_bufread`] for a version of this function with sane defaults.
-pub fn open_mmcif_bufread_with_options(
-    mut bufreader: impl BufRead,
-    options: &ReadOptions,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-    let mut contents = String::new();
-    if let Err(e) = bufreader.read_to_string(&mut contents) {
-        return Err(vec![PDBError::new(
-            ErrorLevel::BreakingError,
-            "Error while reading file",
-            format!("Error: {e}"),
-            Context::none(),
-        )]);
-    }
-    open_mmcif_raw_with_options(&contents, options)
+#[deprecated(
+    since = "0.12.0",
+    note = "Please use `ReadOptions::default().set_format(Format::Mmcif).read_raw(input)` instead"
+)]
+pub fn open_mmcif_bufread<T>(
+    bufreader: std::io::BufReader<T>,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+where
+    T: std::io::Read,
+{
+    ReadOptions::default()
+        .set_format(crate::Format::Mmcif)
+        .read_raw(bufreader)
 }
 
 /// Parse the given mmCIF `&str` into a PDB struct. This allows opening mmCIF files directly from memory.
@@ -81,6 +61,10 @@ pub fn open_mmcif_bufread_with_options(
 /// If you want to open a file see [`open_mmcif`]. There is also a function to open a PDB file directly
 /// see [`crate::open_pdb`] and [`crate::open_pdb_raw`]. If you want to open a general file
 /// with no knowledge about the file type see [`crate::open`] and [`crate::open_raw`].
+#[deprecated(
+    since = "0.12.0",
+    note = "Please use `ReadOptions::default().set_format(Format::Mmcif).read_raw(input)` instead"
+)]
 pub fn open_mmcif_raw(
     input: &str,
     level: StrictnessLevel,
@@ -95,13 +79,26 @@ pub fn open_mmcif_raw(
 ///
 /// # Related
 /// See [`open_mmcif_raw`] for a version of this function with sane defaults.
-pub fn open_mmcif_raw_with_options(
-    input: &str,
+pub fn open_mmcif_raw_with_options<T>(
+    mut input: std::io::BufReader<T>,
     options: &ReadOptions,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-    match super::lexer::lex_cif(input) {
-        Ok(data_block) => parse_mmcif_with_options(&data_block, options),
-        Err(e) => Err(vec![e]),
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+where
+    T: std::io::Read,
+{
+    let mut contents = String::new();
+    if input.read_to_string(&mut contents).is_ok() {
+        match super::lexer::lex_cif(contents.as_str()) {
+            Ok(data_block) => parse_mmcif_with_options(&data_block, options),
+            Err(e) => Err(vec![e]),
+        }
+    } else {
+        Err(vec![PDBError::new(
+            crate::ErrorLevel::BreakingError,
+            "Buffer could not be read",
+            "The buffer provided to `open_raw` could not be read to end.",
+            Context::None,
+        )])
     }
 }
 
