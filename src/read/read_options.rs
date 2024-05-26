@@ -1,4 +1,4 @@
-use crate::{Context, PDBError, StrictnessLevel, PDB};
+use crate::{Context, PDBError, StrictnessLevel};
 
 use super::general::ReadResult;
 
@@ -84,6 +84,28 @@ impl ReadOptions {
         self
     }
 
+    /// Guess the file format based on the file name extensions.
+    pub fn guess_format(&mut self, filename: &str) -> &mut Self {
+        let extensions: Vec<&str> = filename.split('.').collect();
+        match extensions[extensions.len() - 1] {
+            "pdb" | "pdb1" => self.set_format(Format::Pdb),
+            "cif" | "mmcif" => self.set_format(Format::Mmcif),
+            "gz" => {
+                self.set_decompress(true);
+                if extensions.len() > 1 {
+                    match extensions[extensions.len() - 2] {
+                        "pdb" | "pdb1" => self.set_format(Format::Pdb),
+                        "cif" | "mmcif" => self.set_format(Format::Mmcif),
+                        _ => self,
+                    }
+                } else {
+                    self
+                }
+            }
+            _ => self,
+        }
+    }
+
     /// Sets the strictness level to use when reading the file.
     pub fn set_level(&mut self, level: StrictnessLevel) -> &mut Self {
         self.level = level;
@@ -130,36 +152,52 @@ impl ReadOptions {
     /// # Related
     /// If you want to open a file from memory see [`ReadOptions::read_raw`].
     pub fn read(&self, path: impl AsRef<str>) -> ReadResult {
-        // open_with_options(path, self)
         if self.decompress {
-            super::general::open_gz_with_options(path, self)
+            // open a decompression stream
+            let filename = path.as_ref();
+            let file = std::fs::File::open(filename).map_err(|_| {
+                vec![PDBError::new(
+                    crate::ErrorLevel::BreakingError,
+                    "Could not open file",
+                    "Could not open the given file, make sure it exists and you have the correct permissions",
+                    Context::show(filename),
+                )]
+            })?;
+
+            let decompressor = flate2::read::GzDecoder::new(file);
+            let reader = std::io::BufReader::new(decompressor);
+            self.read_raw(reader)
         } else {
             match self.format {
                 Format::Pdb => super::pdb::open_pdb_with_options(path, self),
                 Format::Mmcif => super::mmcif::open_mmcif_with_options(path, self),
-                Format::Auto => {
-                    if let Some(file_ext) = path.as_ref().rsplit('.').next() {
-                        match file_ext {
-                            "pdb" | "pdb1" => super::pdb::open_pdb_with_options(path, self),
-                            "cif" | "mmcif" => super::mmcif::open_mmcif_with_options(path, self),
-                            _ => Err(vec![PDBError::new(
-                                crate::ErrorLevel::BreakingError,
-                                "Incorrect extension",
-                                "Could not determine the type of the given file extension, make it .pdb or .cif",
-                                Context::show(path.as_ref()),
-
-                            )])
-                        }
-                    } else {
-                        Err(vec![PDBError::new(
-                            crate::ErrorLevel::BreakingError,
-                            "Missing extension",
-                            "The given file does not have an extension, make it .pdb or .cif",
-                            Context::show(path.as_ref()),
-                        )])
-                    }
-                }
+                Format::Auto => self.read_auto(path),
             }
+        }
+    }
+
+    /// Open an atomic data file, either PDB or mmCIF/PDBx, into a [`PDB`] structure
+    /// and automatically determine the file type based on the extension of `path`.
+    fn read_auto(&self, path: impl AsRef<str>) -> ReadResult {
+        if let Some(file_ext) = path.as_ref().rsplit('.').next() {
+            match file_ext {
+                "pdb" | "pdb1" => super::pdb::open_pdb_with_options(path, self),
+                "cif" | "mmcif" => super::mmcif::open_mmcif_with_options(path, self),
+                _ => Err(vec![PDBError::new(
+                    crate::ErrorLevel::BreakingError,
+                    "Incorrect extension",
+                    "Could not determine the type of the given file extension, make it .pdb or .cif",
+                    Context::show(path.as_ref()),
+
+                )])
+            }
+        } else {
+            Err(vec![PDBError::new(
+                crate::ErrorLevel::BreakingError,
+                "Missing extension",
+                "The given file does not have an extension, make it .pdb or .cif",
+                Context::show(path.as_ref()),
+            )])
         }
     }
 
@@ -174,10 +212,7 @@ impl ReadOptions {
     /// # Related
     /// If you want to open a file see [`crate::open_pdb`] and [`crate::open_mmcif`].
     /// If you want to open a general file with no knowledge about the file type, see [`ReadOptions::read`].
-    pub fn read_raw<T>(
-        &self,
-        input: std::io::BufReader<T>,
-    ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+    pub fn read_raw<T>(&self, input: std::io::BufReader<T>) -> ReadResult
     where
         T: std::io::Read,
     {

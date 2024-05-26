@@ -7,7 +7,6 @@ mod read_options;
 
 /// Parse PDB files
 mod pdb;
-use super::check_extension;
 
 pub use general::{open, open_gz, open_raw, open_with_options};
 pub use mmcif::{

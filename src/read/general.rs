@@ -44,57 +44,10 @@ pub fn open_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> Re
     note = "Please use `ReadOptions::default().set_decompress(true).read(filename)` instead"
 )]
 pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult {
-    open_gz_with_options(filename, ReadOptions::default().set_level(level))
-}
-
-/// Opens a compressed atomic data file with [`ReadOptions`].
-///
-/// # Related
-/// See [`open_gz`] for a version of this function with sane defaults.
-#[cfg(feature = "compression")]
-pub(crate) fn open_gz_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> ReadResult {
-    use flate2::read::GzDecoder;
-    use std::fs;
-
-    use self::pdb::open_pdb_raw_with_options;
-
-    let filename = filename.as_ref();
-
-    if check_extension(filename, "gz") {
-        // open a decompression stream
-        let file = fs::File::open(filename).map_err(|_| {
-            vec![PDBError::new(
-                ErrorLevel::BreakingError,
-                "Could not open file",
-                "Could not open the given file, make sure it exists and you have the correct permissions",
-                Context::show(filename),
-            )]
-        })?;
-
-        let decompressor = GzDecoder::new(file);
-
-        let reader = std::io::BufReader::new(decompressor);
-
-        if check_extension(&filename[..filename.len() - 3], "pdb") {
-            open_pdb_raw_with_options(reader, Context::show(filename), options)
-        } else if check_extension(&filename[..filename.len() - 3], "cif") {
-            open_mmcif_raw_with_options(reader, options)
-        } else {
-            Err(vec![PDBError::new(
-                ErrorLevel::BreakingError,
-                "Incorrect extension",
-                "Could not determine the type of the given file, make it .pdb.gz or .cif.gz",
-                Context::show(filename),
-            )])
-        }
-    } else {
-        Err(vec![PDBError::new(
-            ErrorLevel::BreakingError,
-            "Incorrect extension",
-            "Could not determine the type of the given file, make it .pdb.gz or .cif.gz",
-            Context::show(filename),
-        )])
-    }
+    ReadOptions::default()
+        .set_level(level)
+        .guess_format(filename.as_ref())
+        .read(filename)
 }
 
 /// Open a stream with either PDB or mmCIF data. The distinction is made on the start of the first line.
