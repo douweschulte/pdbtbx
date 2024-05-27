@@ -1,6 +1,7 @@
 use crate::{Context, PDBError, StrictnessLevel};
 
 use super::general::ReadResult;
+use std::{ffi::OsStr, path::Path};
 
 /// Used to set which format to read the file in.
 #[derive(Debug, Clone, Copy, Default)]
@@ -86,23 +87,10 @@ impl ReadOptions {
 
     /// Guess the file format based on the file name extensions.
     pub fn guess_format(&mut self, filename: &str) -> &mut Self {
-        let extensions: Vec<&str> = filename.split('.').collect();
-        match extensions[extensions.len() - 1] {
-            "pdb" | "pdb1" => self.set_format(Format::Pdb),
-            "cif" | "mmcif" => self.set_format(Format::Mmcif),
-            "gz" => {
-                self.set_decompress(true);
-                if extensions.len() > 1 {
-                    match extensions[extensions.len() - 2] {
-                        "pdb" | "pdb1" => self.set_format(Format::Pdb),
-                        "cif" | "mmcif" => self.set_format(Format::Mmcif),
-                        _ => self,
-                    }
-                } else {
-                    self
-                }
-            }
-            _ => self,
+        if let Some((file_format, is_compressed)) = guess_format(filename) {
+            self.set_decompress(is_compressed).set_format(file_format)
+        } else {
+            self
         }
     }
 
@@ -179,10 +167,10 @@ impl ReadOptions {
     /// Open an atomic data file, either PDB or mmCIF/PDBx, into a [`PDB`] structure
     /// and automatically determine the file type based on the extension of `path`.
     fn read_auto(&self, path: impl AsRef<str>) -> ReadResult {
-        if let Some(file_ext) = path.as_ref().rsplit('.').next() {
-            match file_ext {
-                "pdb" | "pdb1" => super::pdb::open_pdb_with_options(path, self),
-                "cif" | "mmcif" => super::mmcif::open_mmcif_with_options(path, self),
+        if let Some((file_format, _)) = guess_format(path.as_ref()) {
+            match file_format {
+                Format::Pdb => super::pdb::open_pdb_with_options(path, self),
+                Format::Mmcif => super::mmcif::open_mmcif_with_options(path, self),
                 _ => Err(vec![PDBError::new(
                     crate::ErrorLevel::BreakingError,
                     "Incorrect extension",
@@ -226,5 +214,24 @@ impl ReadOptions {
                 Context::None,
             )]),
         }
+    }
+}
+
+/// Guess the file format based on the file name extensions.
+fn guess_format(filename: &str) -> Option<(Format, bool)> {
+    let path = Path::new(filename);
+
+    match path.extension().and_then(OsStr::to_str) {
+        Some("pdb") | Some("pdb1") => Some((Format::Pdb, false)),
+        Some("cif") | Some("mmcif") => Some((Format::Mmcif, false)),
+        Some("gz") => {
+            let path_ext = Path::new(path.file_stem().and_then(OsStr::to_str).unwrap_or(""));
+            match path_ext.extension().and_then(OsStr::to_str) {
+                Some("pdb") | Some("pdb1") => Some((Format::Pdb, true)),
+                Some("cif") | Some("mmcif") => Some((Format::Mmcif, true)),
+                _ => None,
+            }
+        }
+        _ => None,
     }
 }
