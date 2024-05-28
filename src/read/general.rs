@@ -4,7 +4,7 @@ use crate::structs::PDB;
 use crate::StrictnessLevel;
 
 /// Standard return type for reading a file.
-pub type ReadResult = std::result::Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
+pub type ReadResult = Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
 
 /// Open an atomic data file, either PDB or mmCIF/PDBx. The correct type will be
 /// determined based on the file extension. This function is equivalent to
@@ -15,7 +15,7 @@ pub type ReadResult = std::result::Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
 ///
 /// # Related
 /// If you want to open a file from memory see [`open_raw`]. There are also function to open a specified file type directly
-/// see [`crate::open_pdb`] and [`crate::open_mmcif`] respectively.
+/// see [`open_pdb`] and [`open_mmcif`] respectively.
 pub fn open(filename: impl AsRef<str>) -> ReadResult {
     open_with_options(filename, &ReadOptions::default())
 }
@@ -35,7 +35,7 @@ pub fn open_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> Re
 /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
-/// If you want to open a file from memory see [`open_raw`], [`crate::open_pdb_raw`] and [`crate::open_mmcif_bufread`].
+/// If you want to open a file from memory see [`open_raw`], [`open_pdb_raw`] and [`open_mmcif_bufread`].
 /// These functions are useful if you are using a non-standard compression algorithm or way of
 /// storing the data.
 #[cfg(feature = "compression")]
@@ -60,7 +60,7 @@ pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult 
 ///
 /// # Related
 /// If you want to open a file see [`open`]. There are also function to open a specified file type directly
-/// see [`crate::open_pdb_raw`] and [`crate::open_mmcif_raw`] respectively.
+/// see [`open_pdb_raw`] and [`open_mmcif_raw`] respectively.
 pub fn open_raw<T: std::io::Read + std::io::Seek>(input: std::io::BufReader<T>) -> ReadResult {
     ReadOptions::default().read_raw(input)
 }
