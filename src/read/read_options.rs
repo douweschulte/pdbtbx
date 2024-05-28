@@ -1,7 +1,8 @@
+use std::{ffi::OsStr, path::Path};
+
 use crate::{Context, PDBError, StrictnessLevel};
 
 use super::general::ReadResult;
-use std::{ffi::OsStr, path::Path};
 
 /// Used to set which format to read the file in.
 #[derive(Debug, Clone, Copy, Default)]
@@ -143,18 +144,8 @@ impl ReadOptions {
         if self.decompress {
             // open a decompression stream
             let filename = path.as_ref();
-            let file = std::fs::File::open(filename).map_err(|_| {
-                vec![PDBError::new(
-                    crate::ErrorLevel::BreakingError,
-                    "Could not open file",
-                    "Could not open the given file, make sure it exists and you have the correct permissions",
-                    Context::show(filename),
-                )]
-            })?;
 
-            let decompressor = flate2::read::GzDecoder::new(file);
-            let reader = std::io::BufReader::new(decompressor);
-            self.read_raw(reader)
+            self.read_auto(filename)
         } else {
             match self.format {
                 Format::Pdb => super::pdb::open_pdb_with_options(path, self),
@@ -167,17 +158,42 @@ impl ReadOptions {
     /// Open an atomic data file, either PDB or mmCIF/PDBx, into a [`PDB`] structure
     /// and automatically determine the file type based on the extension of `path`.
     fn read_auto(&self, path: impl AsRef<str>) -> ReadResult {
-        if let Some((file_format, _)) = guess_format(path.as_ref()) {
-            match file_format {
-                Format::Pdb => super::pdb::open_pdb_with_options(path, self),
-                Format::Mmcif => super::mmcif::open_mmcif_with_options(path, self),
-                _ => Err(vec![PDBError::new(
-                    crate::ErrorLevel::BreakingError,
-                    "Incorrect extension",
-                    "Could not determine the type of the given file extension, make it .pdb or .cif",
-                    Context::show(path.as_ref()),
-
-                )])
+        let filename = path.as_ref();
+        if let Some((file_format, is_compressed)) = guess_format(filename) {
+            if is_compressed {
+                let file = std::fs::File::open(filename).map_err(|_| {
+                    vec![PDBError::new(
+                        crate::ErrorLevel::BreakingError,
+                        "Could not open file",
+                        "Could not open the given file, make sure it exists and you have the correct permissions",
+                        Context::show(filename),
+                    )]
+                })?;
+                let decompressor = flate2::read::GzDecoder::new(file);
+                let reader = std::io::BufReader::new(decompressor);
+                match file_format {
+                    Format::Pdb => {
+                        super::pdb::open_pdb_raw_with_options(reader, Context::None, self)
+                    }
+                    Format::Mmcif => super::mmcif::open_mmcif_raw_with_options(reader, self),
+                    Format::Auto => Err(vec![PDBError::new(
+                        crate::ErrorLevel::BreakingError,
+                        "Could not determine file type",
+                        "Could not determine the type of the gzipped file, use .pdb.gz or .cif.gz",
+                        Context::show(filename),
+                    )]),
+                }
+            } else {
+                match file_format {
+                    Format::Pdb => super::pdb::open_pdb_with_options(path, self),
+                    Format::Mmcif => super::mmcif::open_mmcif_with_options(path, self),
+                    _ => Err(vec![PDBError::new(
+                        crate::ErrorLevel::BreakingError,
+                        "Incorrect extension",
+                        "Could not determine the type of the given file extension, make it .pdb or .cif",
+                        Context::show(path.as_ref()),
+                    )])
+                }
             }
         } else {
             Err(vec![PDBError::new(
