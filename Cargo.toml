@@ -27,6 +27,7 @@ serde_json = "~1.0"
 default = ["rayon", "rstar", "serde", "compression"]
 unstable-doc-cfg = []
 compression = ["flate2"]
+auto-fix = []
 
 [package.metadata.docs.rs]
 all-features = true
