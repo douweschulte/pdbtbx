@@ -50,21 +50,6 @@ pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult 
         .read(filename)
 }
 
-/// Open a stream with either PDB or mmCIF data. The distinction is made on the start of the first line.
-/// If it starts with `HEADER` it is a PDB file, if it starts with `data_` it is a mmCIF file.
-///
-/// # Errors
-/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
-/// It returns a breaking error if the buffer could not be read, the file type could not be determined form the first line, or there was a breaking error in the file itself.
-/// See the `PDBError` for more details.
-///
-/// # Related
-/// If you want to open a file see [`open`]. There are also function to open a specified file type directly
-/// see [`open_pdb_raw`] and [`open_mmcif_raw`] respectively.
-pub fn open_raw<T: std::io::Read + std::io::Seek>(input: std::io::BufReader<T>) -> ReadResult {
-    ReadOptions::default().read_raw(input)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
