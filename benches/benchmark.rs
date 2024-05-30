@@ -1,8 +1,9 @@
-use pdbtbx::*;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufWriter;
 use std::time::{Duration, Instant};
+
+use pdbtbx::*;
 
 fn main() {
     // Setup the data needed
@@ -19,16 +20,11 @@ fn main() {
         ("big", "example-pdbs/pTLS-6484.cif"),
     ];
     let mut models = Vec::with_capacity(pdb_names.len());
+    let parser = ReadOptions::default()
+        .set_level(crate::StrictnessLevel::Loose)
+        .set_format(Format::Pdb);
     for (name, path) in &pdb_names {
-        models.push((
-            *name,
-            open_pdb_with_options(
-                path,
-                ReadOptions::default().set_level(crate::StrictnessLevel::Loose),
-            )
-            .unwrap()
-            .0,
-        ))
+        models.push((*name, parser.read(path).unwrap().0))
     }
     let mut results = Vec::new();
 

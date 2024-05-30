@@ -1,17 +1,19 @@
-use super::lexer::*;
-use super::lexitem::*;
-use super::temporary_structs::*;
-use super::validate::*;
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+
+use indexmap::IndexMap;
+
 use crate::error::*;
 use crate::structs::*;
 use crate::validate::*;
 use crate::ReadOptions;
 use crate::StrictnessLevel;
 
-use indexmap::IndexMap;
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use super::lexer::*;
+use super::lexitem::*;
+use super::temporary_structs::*;
+use super::validate::*;
 
 /// Parse the given file into a PDB struct.
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
@@ -19,15 +21,16 @@ use std::io::{BufRead, BufReader};
 /// # Related
 /// If you want to open a file from memory see [`ReadOptions::read_raw`]. There is also a function to open a mmCIF file directly
 /// see [`crate::open_mmcif`]. If you want to open a general file with no knowledge about the file type see [`crate::open`].
+#[deprecated(
+    since = "0.12.0",
+    note = "Please use `ReadOptions::default().set_format(Format::Pdb).read(filename)` instead"
+)]
 pub fn open_pdb(filename: impl AsRef<str>) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     open_pdb_with_options(filename, &ReadOptions::default())
 }
 
 /// Parse the given file into a PDB struct with [`ReadOptions`].
-///
-/// # Related
-/// See [`open_pdb`] for a version of this function with sane defaults.
-pub fn open_pdb_with_options(
+pub(crate) fn open_pdb_with_options(
     filename: impl AsRef<str>,
     options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
@@ -56,7 +59,7 @@ pub fn open_pdb_with_options(
 /// with no knowledge about the file type see [`crate::open`] and [`crate::open_raw`].
 #[deprecated(
     since = "0.12.0",
-    note = "Please use `ReadOptions::default().read_raw(input, context)` instead"
+    note = "Please use `ReadOptions::default().read_raw(input)` instead"
 )]
 pub fn open_pdb_raw<T>(
     input: std::io::BufReader<T>,
@@ -69,11 +72,12 @@ where
     open_pdb_raw_with_options(input, context, ReadOptions::default().set_level(level))
 }
 
-/// Parse the input stream into a PDB struct with [`ReadOptions`].
+/// Parse the input stream into a [`PDB`] struct.
 ///
 /// # Related
-/// See [`open_pdb_raw`] for a version of this function with sane defaults.
-pub fn open_pdb_raw_with_options<T>(
+/// See [`ReadOptions::read_raw`] for a version of this function with sane defaults.
+/// Note that the file type should be set explicitly with [`ReadOptions::set_format`].
+pub(crate) fn open_pdb_raw_with_options<T>(
     input: std::io::BufReader<T>,
     context: Context,
     options: &ReadOptions,

@@ -3,7 +3,7 @@ pub use mmcif::{
     open_mmcif, open_mmcif_bufread, open_mmcif_raw, open_mmcif_raw_with_options,
     open_mmcif_with_options,
 };
-pub use pdb::{open_pdb, open_pdb_raw, open_pdb_raw_with_options, open_pdb_with_options};
+pub use pdb::{open_pdb, open_pdb_raw};
 pub use read_options::{Format, ReadOptions};
 
 /// Give a high level interface for users
@@ -15,4 +15,3 @@ mod read_options;
 
 /// Parse PDB files
 mod pdb;
-
