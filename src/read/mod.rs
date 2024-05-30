@@ -1,8 +1,5 @@
 pub use general::{open, open_gz};
-pub use mmcif::{
-    open_mmcif, open_mmcif_bufread, open_mmcif_raw, open_mmcif_raw_with_options,
-    open_mmcif_with_options,
-};
+pub use mmcif::{open_mmcif, open_mmcif_bufread, open_mmcif_raw};
 pub use pdb::{open_pdb, open_pdb_raw};
 pub use read_options::{Format, ReadOptions};
 

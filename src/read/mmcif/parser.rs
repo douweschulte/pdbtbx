@@ -12,17 +12,17 @@ use std::io::prelude::*;
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
-/// If you want to open a file from memory see [`open_mmcif_raw`]. There is also a function to open a PDB file directly
-/// see [`crate::open_pdb`]. If you want to open a general file with no knowledge about the file type see [`crate::open`].
+/// If you want to open a file from memory, see [`ReadOptions::read_raw`].
+#[deprecated(
+    since = "0.12.0",
+    note = "Please use `ReadOptions::default().set_format(Format::Mmcif).read(filename)` instead"
+)]
 pub fn open_mmcif(filename: impl AsRef<str>) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     open_mmcif_with_options(filename, &ReadOptions::default())
 }
 
 /// Parse the given mmCIF file into a PDB struct with [`ReadOptions`].
-///
-/// # Related
-/// See [`open_mmcif`] for a version of this function with sane defaults.
-pub fn open_mmcif_with_options(
+pub(crate) fn open_mmcif_with_options(
     filename: impl AsRef<str>,
     options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
@@ -75,11 +75,8 @@ pub fn open_mmcif_raw(
     }
 }
 
-/// Parse the given mmCIF `&str` into a PDB struct with [`ReadOptions`].
-///
-/// # Related
-/// See [`open_mmcif_raw`] for a version of this function with sane defaults.
-pub fn open_mmcif_raw_with_options<T>(
+/// Parse the given stream into a [`PDB`] struct.
+pub(crate) fn open_mmcif_raw_with_options<T>(
     mut input: std::io::BufReader<T>,
     options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
