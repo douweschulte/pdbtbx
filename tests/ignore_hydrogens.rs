@@ -20,13 +20,11 @@ fn ignore_hydrogens_in_pdb() {
 }
 
 fn count_hydrogens(filename: &str, discard_hydrogens: bool) -> usize {
-    let (structure, _errors) = pdbtbx::open_with_options(
-        filename,
-        ReadOptions::default()
-            .set_level(StrictnessLevel::Loose)
-            .set_discard_hydrogens(discard_hydrogens),
-    )
-    .unwrap();
+    let (structure, _errors) = ReadOptions::default()
+        .set_level(StrictnessLevel::Loose)
+        .set_discard_hydrogens(discard_hydrogens)
+        .read(filename)
+        .unwrap();
 
     structure.atoms().fold(0, |acc, a| {
         acc + usize::from(a.element() == Some(&Element::H))

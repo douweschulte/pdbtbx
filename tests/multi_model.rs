@@ -14,13 +14,11 @@ fn only_read_first_model() {
 }
 
 fn count_models(filename: &str, only_first_model: bool) -> usize {
-    let (structure, _errors) = pdbtbx::open_with_options(
-        filename,
-        ReadOptions::default()
-            .set_level(StrictnessLevel::Loose)
-            .set_only_first_model(only_first_model),
-    )
-    .unwrap();
+    let (structure, _errors) = ReadOptions::default()
+        .set_level(StrictnessLevel::Loose)
+        .set_only_first_model(only_first_model)
+        .read(filename)
+        .unwrap();
 
     structure.model_count()
 }

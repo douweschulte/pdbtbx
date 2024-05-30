@@ -1,31 +1,29 @@
-use super::*;
 use crate::error::*;
-use crate::structs::PDB;
 use crate::StrictnessLevel;
+use crate::structs::PDB;
+
+use super::*;
 
 /// Standard return type for reading a file.
 pub type ReadResult = Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
 
-/// Open an atomic data file, either PDB or mmCIF/PDBx. The correct type will be
-/// determined based on the file extension. This function is equivalent to
-/// [`ReadOptions::read()`] with default options.
+/// Open an atomic data file, either PDB or mmCIF/PDBx.
+///
+/// This function is equivalent to [`ReadOptions::read()`] with default options.
+/// The correct type will be determined based on the file extension.
+/// Gzipped files can also be opened directly if file extensions are
+/// `.pdb.gz`, `.pdb1.gz`, `.mmcif.gz`, or `.cif.gz`.
 ///
 /// # Errors
 /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
-/// If you want to open a file from memory see [`open_raw`]. There are also function to open a specified file type directly
-/// see [`open_pdb`] and [`open_mmcif`] respectively.
+/// If you want to open a file from memory see [`ReadOptions::read_raw`].
+/// The file type can be set explicitly with [`ReadOptions::set_format`].
+/// These functions are useful if you are using a non-standard compression algorithm or way of
+/// storing the data.
 pub fn open(filename: impl AsRef<str>) -> ReadResult {
-    open_with_options(filename, &ReadOptions::default())
-}
-
-/// Opens a files based on the given options.
-///
-/// # Related
-/// See [`open`] for a version of this function with sane defaults.
-pub fn open_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> ReadResult {
-    options.read(filename)
+    ReadOptions::default().read(filename)
 }
 
 /// Open a compressed atomic data file, either PDB or mmCIF/PDBx. The correct type will be
@@ -35,7 +33,8 @@ pub fn open_with_options(filename: impl AsRef<str>, options: &ReadOptions) -> Re
 /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
-/// If you want to open a file from memory see [`open_raw`], [`open_pdb_raw`] and [`open_mmcif_bufread`].
+/// If you want to open a file from memory see [`ReadOptions::read_raw`].
+/// The file type can be set explicitly with [`ReadOptions::set_format`].
 /// These functions are useful if you are using a non-standard compression algorithm or way of
 /// storing the data.
 #[cfg(feature = "compression")]

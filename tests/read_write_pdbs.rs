@@ -1,7 +1,8 @@
-use pdbtbx::*;
+use std::{env, fs};
 use std::path::Path;
 use std::time::Instant;
-use std::{env, fs};
+
+use pdbtbx::*;
 
 #[test]
 fn run_pdbs() {
@@ -184,13 +185,11 @@ fn save_pdb_strict() {
 
         let res = save_gz(&pdb, &name, StrictnessLevel::Strict, None);
         assert!(res.is_ok());
-        let (_pdb, errors) = crate::open_with_options(
-            &name,
-            ReadOptions::default()
-                .set_level(StrictnessLevel::Strict)
-                .guess_format(name.as_str()),
-        )
-        .unwrap();
+        let (_pdb, errors) = ReadOptions::default()
+            .set_level(StrictnessLevel::Strict)
+            .guess_format(name.as_str())
+            .read(&name)
+            .unwrap();
         assert_eq!(errors.len(), 0);
     }
 }
@@ -234,13 +233,11 @@ fn save_mmcif_strict() {
 
         let res = save_gz(&pdb, &name, StrictnessLevel::Strict, None);
         assert!(res.is_ok());
-        let (_pdb, errors) = crate::open_with_options(
-            &name,
-            ReadOptions::default()
-                .set_level(StrictnessLevel::Strict)
-                .guess_format(name.as_str()),
-        )
-        .unwrap();
+        let (_pdb, errors) = ReadOptions::default()
+            .set_level(StrictnessLevel::Strict)
+            .guess_format(name.as_str())
+            .read(&name)
+            .unwrap();
         assert_eq!(errors.len(), 0);
     }
 }

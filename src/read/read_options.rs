@@ -47,8 +47,10 @@ impl From<&str> for Format {
 ///     .set_level(StrictnessLevel::Loose)
 ///     .set_discard_hydrogens(true)
 ///     .read("1CRN.pdb");
-//
 /// ```
+///
+/// The format of the file is inferred by [`ReadOptions::guess_format`]
+/// when it is not set explicitly with [`ReadOptions::set_format`].
 #[derive(Debug, Default)]
 pub struct ReadOptions {
     /// The format to read the file in.
@@ -139,7 +141,8 @@ impl ReadOptions {
     /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
     ///
     /// # Related
-    /// If you want to open a file from memory see [`ReadOptions::read_raw`].
+    /// If you want to open a file from memory, see [`ReadOptions::read_raw`].
+    /// If your file extensions are not canonical, set the format explicitly with [`ReadOptions::set_format`].
     pub fn read(&self, path: impl AsRef<str>) -> ReadResult {
         if self.decompress {
             // open a decompression stream
@@ -206,16 +209,11 @@ impl ReadOptions {
     }
 
     /// Parse the input stream into a [`PDB`] struct. To allow for direct streaming from sources, like from RCSB.org.
+    /// The file format **must** be set explicitly with [`ReadOptions::set_format`].
     /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
     ///
-    /// ## Arguments
-    /// * `input` - the input stream
-    /// * `context` - the context of the full stream, to place error messages correctly, for files this is `Context::show(filename)`.
-    /// * `options` - the options for configuring how a file/stream is parsed.
-    ///
     /// # Related
-    /// If you want to open a file see [`crate::open_pdb`] and [`crate::open_mmcif`].
-    /// If you want to open a general file with no knowledge about the file type, see [`ReadOptions::read`].
+    /// If you want to open a file, see [`ReadOptions::read`].
     pub fn read_raw<T>(&self, input: std::io::BufReader<T>) -> ReadResult
     where
         T: std::io::Read,

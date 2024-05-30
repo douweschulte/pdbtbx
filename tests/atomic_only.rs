@@ -14,13 +14,11 @@ fn only_read_atoms() {
 }
 
 fn count_atoms(filename: &str, only_atoms: bool) -> usize {
-    let (structure, _errors) = pdbtbx::open_with_options(
-        filename,
-        ReadOptions::default()
-            .set_level(StrictnessLevel::Loose)
-            .set_only_atomic_coords(only_atoms),
-    )
-    .unwrap();
+    let (structure, _errors) = ReadOptions::default()
+        .set_level(StrictnessLevel::Loose)
+        .set_only_atomic_coords(only_atoms)
+        .read(filename)
+        .unwrap();
 
     structure.atom_count()
 }

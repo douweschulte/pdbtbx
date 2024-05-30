@@ -17,7 +17,7 @@ use std::io::{BufRead, BufReader};
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
-/// If you want to open a file from memory see [`open_pdb_raw`]. There is also a function to open a mmCIF file directly
+/// If you want to open a file from memory see [`ReadOptions::read_raw`]. There is also a function to open a mmCIF file directly
 /// see [`crate::open_mmcif`]. If you want to open a general file with no knowledge about the file type see [`crate::open`].
 pub fn open_pdb(filename: impl AsRef<str>) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     open_pdb_with_options(filename, &ReadOptions::default())
