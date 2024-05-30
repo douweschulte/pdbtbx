@@ -1,6 +1,6 @@
 use crate::error::*;
-use crate::StrictnessLevel;
 use crate::structs::PDB;
+use crate::StrictnessLevel;
 
 use super::*;
 

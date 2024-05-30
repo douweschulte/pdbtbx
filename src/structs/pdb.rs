@@ -7,10 +7,10 @@ use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
 
-use crate::{PDBError, reference_tables};
-use crate::{Context, structs::*};
 use crate::structs::hierarchy::*;
 use crate::transformation::TransformationMatrix;
+use crate::{reference_tables, PDBError};
+use crate::{structs::*, Context};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq)]

@@ -1,6 +1,6 @@
-use std::{env, fs};
 use std::path::Path;
 use std::time::Instant;
+use std::{env, fs};
 
 use pdbtbx::*;
 
