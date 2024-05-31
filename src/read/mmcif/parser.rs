@@ -17,8 +17,11 @@ use std::io::prelude::*;
     since = "0.12.0",
     note = "Please use `ReadOptions::default().set_format(Format::Mmcif).read(filename)` instead"
 )]
-pub fn open_mmcif(filename: impl AsRef<str>) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-    open_mmcif_with_options(filename, &ReadOptions::default())
+pub fn open_mmcif(
+    filename: impl AsRef<str>,
+    level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    open_mmcif_with_options(filename, ReadOptions::default().set_level(level))
 }
 
 /// Parse the given mmCIF file into a PDB struct with [`ReadOptions`].
