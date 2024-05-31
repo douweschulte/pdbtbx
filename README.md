@@ -77,3 +77,10 @@ Also see [changelog](https://github.com/douweschulte/pdbtbx/blob/master/changelo
 
 ## Support and development
 When I am actively using this crate in my own projects this crate is actively worked on and extended. I am more than happy to receive and work on PRs and Issues even if the project seems a bit stale. But if anyone finds this project stale and wants to take over moderation and/or main development feel free to reach out and we can discuss. I would be happy to transfer the project and access to crates.io if that means the project will live on.
+
+## Join the Discussion
+If you are interested in helping develop this crate and want to share ideas and plans, feel free to join our discord server.
+
+https://discord.gg/wbjRznTVZ7
+
+
