@@ -558,22 +558,15 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
 /// Get the Textual content of the value, if available
 fn get_text(
     value: &Value,
-    context: &Context,
-    column: Option<&str>,
+    _context: &Context,
+    _column: Option<&str>,
 ) -> Result<Option<String>, PDBError> {
     match value {
         Value::Text(t) => Ok(Some(t.to_string())),
         Value::Inapplicable => Ok(None),
         Value::Unknown => Ok(None),
         Value::Numeric(n) => Ok(Some(format!("{n}"))),
-        _ => Err(PDBError::new(
-            ErrorLevel::InvalidatingError,
-            "Not text",
-            column.map_or(String::new(), |v| {
-                format!("The '{v}' column should contain text.")
-            }),
-            context.clone(),
-        )),
+        Value::NumericWithUncertainty(n, u) => Ok(Some(format!("{n}({u})"))),
     }
 }
 
