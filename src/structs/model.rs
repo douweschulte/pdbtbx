@@ -688,7 +688,7 @@ mod tests {
             hierarchy.atom_mut().set_serial_number(123);
         }
         // Test that casting it to a 'normal' hierarchy works (needs some 'magic' to get an owned variant)
-        let hierarchy = a.atoms_with_hierarchy_mut().into_iter().next().unwrap();
+        let hierarchy = a.atoms_with_hierarchy_mut().next().unwrap();
         assert_eq!(hierarchy.without_mut().chain().id(), "C");
 
         // Test that all changes were properly executed

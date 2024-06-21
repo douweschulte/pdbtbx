@@ -3,9 +3,15 @@ use pdbtbx::*;
 /// Open a test file containing more than 9999 residues and 99999 atoms which leads to atom and residue serial numbers that are wrapped
 #[test]
 fn wrapping_residue_number() {
-    let (pdb, errors) = pdbtbx::open("example-pdbs/large.pdb", StrictnessLevel::Strict).unwrap();
+    let (pdb, errors) = ReadOptions::default()
+        .set_level(crate::StrictnessLevel::Strict)
+        .read("example-pdbs/large.pdb")
+        .unwrap();
     let pdb_errors = save(&pdb, "dump/large.pdb", StrictnessLevel::Loose);
-    let (pdb2, _) = pdbtbx::open("dump/large.pdb", StrictnessLevel::Strict).unwrap();
+    let (pdb2, _) = ReadOptions::default()
+        .set_level(crate::StrictnessLevel::Strict)
+        .read("dump/large.pdb")
+        .unwrap();
     print!("{errors:?}");
     print!("{pdb_errors:?}");
     // See that the original file is the same as saved and reopened

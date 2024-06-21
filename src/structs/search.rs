@@ -128,7 +128,7 @@ impl Term {
 ///
 /// ```
 /// use pdbtbx::*;
-/// let (pdb, _errors) = open("example-pdbs/1ubq.pdb", StrictnessLevel::Medium).unwrap();
+/// let (pdb, _errors) = open("example-pdbs/1ubq.pdb").unwrap();
 /// let selection = pdb.find(
 ///     Term::ConformerName("ALA".to_owned()) & !Term::Element(Element::N));
 /// for hierarchy in selection {

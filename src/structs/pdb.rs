@@ -1,11 +1,16 @@
 #![allow(dead_code)]
+
+use std::collections::HashMap;
+use std::fmt;
+
+use doc_cfg::doc_cfg;
+#[cfg(feature = "rayon")]
+use rayon::prelude::*;
+
 use crate::structs::hierarchy::*;
 use crate::transformation::TransformationMatrix;
 use crate::{reference_tables, PDBError};
 use crate::{structs::*, Context};
-use doc_cfg::doc_cfg;
-#[cfg(feature = "rayon")]
-use rayon::prelude::*;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
@@ -16,10 +21,7 @@ use rayon::prelude::*;
 ///
 /// ```rust
 /// use pdbtbx::*;
-/// let (mut pdb, _errors) = pdbtbx::open(
-///         "example-pdbs/1ubq.pdb",
-///         StrictnessLevel::Medium
-///     ).unwrap();
+/// let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb").unwrap();
 ///
 /// pdb.remove_atoms_by(|atom| atom.element() == Some(&Element::H)); // Remove all H atoms
 ///
@@ -468,7 +470,7 @@ impl<'a> PDB {
     /// Find all hierarchies matching the given search. For more details see [Search].
     /// ```
     /// use pdbtbx::*;
-    /// let (pdb, errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
+    /// let (pdb, errors) = ReadOptions::new().set_level(StrictnessLevel::Loose).read("example-pdbs/1ubq.pdb").unwrap();
     /// let selection = pdb.find(
     ///     Term::ChainId("A".to_owned())
     ///     & Term::ConformerName("GLY".to_owned())
@@ -1073,8 +1075,6 @@ impl<'a> PDB {
     }
 }
 
-use std::collections::HashMap;
-use std::fmt;
 impl fmt::Display for PDB {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PDB Models: {}", self.models.len())
@@ -1105,10 +1105,11 @@ impl FromIterator<Model> for PDB {
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
-    use crate::open_pdb;
+    use std::path::Path;
+
+    use crate::ReadOptions;
 
     use super::*;
-    use std::path::Path;
 
     #[test]
     fn remove_model() {
@@ -1120,7 +1121,10 @@ mod tests {
             if path.extension().unwrap() != "pdb" {
                 continue;
             }
-            let (pdb, _) = open_pdb(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+            let (pdb, _) = ReadOptions::default()
+                .set_level(crate::StrictnessLevel::Loose)
+                .read(path.to_str().unwrap())
+                .unwrap();
 
             let model_count = pdb.model_count();
             let mut test_pdb = pdb.clone();
@@ -1146,7 +1150,10 @@ mod tests {
             .join("example-pdbs")
             .join("models.pdb");
 
-        let (pdb, _) = crate::open(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+        let (pdb, _) = ReadOptions::default()
+            .set_level(crate::StrictnessLevel::Loose)
+            .read(path.to_str().unwrap())
+            .unwrap();
 
         // Has 6 models
         let model_count = pdb.model_count();
@@ -1387,7 +1394,10 @@ mod tests {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("example-pdbs")
             .join("1yyf.pdb");
-        let (pdb, _) = crate::open(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+        let (pdb, _) = ReadOptions::default()
+            .set_level(crate::StrictnessLevel::Loose)
+            .read(path.to_str().unwrap())
+            .unwrap();
 
         let chainmap = pdb.chains_in_contact(5.0);
 
@@ -1408,7 +1418,10 @@ mod tests {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("example-pdbs")
             .join("1ubq.pdb");
-        let (pdb, _) = crate::open(path.to_str().unwrap(), crate::StrictnessLevel::Loose).unwrap();
+        let (pdb, _) = ReadOptions::default()
+            .set_level(crate::StrictnessLevel::Loose)
+            .read(path.to_str().unwrap())
+            .unwrap();
 
         let reslist = pdb.unique_conformer_names();
         let expected_reslist: Vec<String> = vec![

@@ -1,7 +1,8 @@
-use pdbtbx::*;
 use std::path::Path;
 use std::time::Instant;
 use std::{env, fs};
+
+use pdbtbx::*;
 
 #[test]
 fn run_pdbs() {
@@ -44,7 +45,10 @@ fn do_something(file: &str, folder: &str, name: &str) {
     println!("Working on file: {file}");
     let now = Instant::now();
 
-    let (pdb, errors) = open(file, StrictnessLevel::Loose).unwrap();
+    let (pdb, errors) = ReadOptions::default()
+        .set_level(crate::StrictnessLevel::Loose)
+        .read(file)
+        .unwrap();
 
     let time = now.elapsed();
 
@@ -106,7 +110,9 @@ fn do_something(file: &str, folder: &str, name: &str) {
             StrictnessLevel::Loose,
         )
         .expect("PDB resave not successful");
-        let (_saved_pdb, _) = open(folder.to_string() + name + ".pdb", StrictnessLevel::Loose)
+        let (_saved_pdb, _) = ReadOptions::default()
+            .set_level(crate::StrictnessLevel::Loose)
+            .read(folder.to_string() + name + ".pdb")
             .expect("PDB reparse not successful");
         //assert_eq!(pdb, saved_pdb);
     }
@@ -116,7 +122,9 @@ fn do_something(file: &str, folder: &str, name: &str) {
         StrictnessLevel::Loose,
     )
     .expect("mmCIF resave not successful");
-    let (_saved_mmcif, _) = open(folder.to_string() + name + ".cif", StrictnessLevel::Loose)
+    let (_saved_mmcif, _) = ReadOptions::default()
+        .set_level(crate::StrictnessLevel::Loose)
+        .read(folder.to_string() + name + ".cif")
         .expect("mmCIF reparse not successful");
 
     // These should be equal in the future
@@ -157,7 +165,10 @@ fn save_pdb_strict() {
 
     let res = save(&pdb, &name, StrictnessLevel::Strict);
     assert!(res.is_ok());
-    let (_pdb, errors) = crate::open(&name, StrictnessLevel::Strict).unwrap();
+    let (_pdb, errors) = ReadOptions::default()
+        .set_level(crate::StrictnessLevel::Strict)
+        .read(&name)
+        .unwrap();
     assert_eq!(errors.len(), 0);
 
     // Do it also for gzip
@@ -174,7 +185,11 @@ fn save_pdb_strict() {
 
         let res = save_gz(&pdb, &name, StrictnessLevel::Strict, None);
         assert!(res.is_ok());
-        let (_pdb, errors) = crate::open_gz(&name, StrictnessLevel::Strict).unwrap();
+        let (_pdb, errors) = ReadOptions::default()
+            .set_level(StrictnessLevel::Strict)
+            .guess_format(name.as_str())
+            .read(&name)
+            .unwrap();
         assert_eq!(errors.len(), 0);
     }
 }
@@ -198,7 +213,10 @@ fn save_mmcif_strict() {
     let res = save(&pdb, &name, StrictnessLevel::Strict);
     println!("{res:?}");
     assert!(res.is_ok());
-    let (_pdb, errors) = crate::open(&name, StrictnessLevel::Strict).unwrap();
+    let (_pdb, errors) = ReadOptions::default()
+        .set_level(crate::StrictnessLevel::Strict)
+        .read(&name)
+        .unwrap();
     assert_eq!(errors.len(), 0);
 
     // Do it also for gzip
@@ -215,7 +233,11 @@ fn save_mmcif_strict() {
 
         let res = save_gz(&pdb, &name, StrictnessLevel::Strict, None);
         assert!(res.is_ok());
-        let (_pdb, errors) = crate::open_gz(&name, StrictnessLevel::Strict).unwrap();
+        let (_pdb, errors) = ReadOptions::default()
+            .set_level(StrictnessLevel::Strict)
+            .guess_format(name.as_str())
+            .read(&name)
+            .unwrap();
         assert_eq!(errors.len(), 0);
     }
 }

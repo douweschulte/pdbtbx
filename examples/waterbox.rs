@@ -1,7 +1,8 @@
-use pdbtbx::*;
 use std::env;
 use std::path::Path;
 use std::time::Instant;
+
+use pdbtbx::*;
 
 fn main() {
     let filename = env::current_dir()
@@ -23,8 +24,11 @@ fn main() {
 fn create_waterbox(size: (f64, f64, f64)) -> PDB {
     let now = Instant::now();
 
-    let (mut liquid, _errors) =
-        open_pdb("example-pdbs/liquid.pdb", StrictnessLevel::Loose).unwrap();
+    let (mut liquid, _errors) = ReadOptions::new()
+        .set_level(StrictnessLevel::Loose)
+        .set_format(Format::Pdb)
+        .read("example-pdbs/liquid.pdb")
+        .unwrap();
 
     let time = now.elapsed();
 

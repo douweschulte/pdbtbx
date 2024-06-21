@@ -1,6 +1,8 @@
-use crate::StrictnessLevel;
+use std::{ffi::OsStr, path::Path};
 
-use super::general::{open_with_options, ReadResult};
+use crate::{Context, PDBError, StrictnessLevel};
+
+use super::general::ReadResult;
 
 /// Used to set which format to read the file in.
 #[derive(Debug, Clone, Copy, Default)]
@@ -31,7 +33,7 @@ impl From<&str> for Format {
 ///
 /// Generally speaking, when using `ReadOptions`, you'll first call
 /// [`ReadOptions::new`], then chain calls to methods to set each option, then
-/// call [`ReadOptions::read`].
+/// call [`ReadOptions::read`]. All Boolean options are `false` by default.
 ///
 /// # Examples
 ///
@@ -45,8 +47,10 @@ impl From<&str> for Format {
 ///     .set_level(StrictnessLevel::Loose)
 ///     .set_discard_hydrogens(true)
 ///     .read("1CRN.pdb");
-//
 /// ```
+///
+/// The format of the file is inferred by [`ReadOptions::guess_format`]
+/// when it is not set explicitly with [`ReadOptions::set_format`].
 #[derive(Debug, Default)]
 pub struct ReadOptions {
     /// The format to read the file in.
@@ -67,6 +71,9 @@ pub struct ReadOptions {
 
     /// Only read the first model
     pub(crate) only_first_model: bool,
+
+    /// Only read atomic coordinates
+    pub(crate) only_atomic_coords: bool,
 }
 
 impl ReadOptions {
@@ -79,6 +86,15 @@ impl ReadOptions {
     pub fn set_format(&mut self, format: Format) -> &mut Self {
         self.format = format;
         self
+    }
+
+    /// Guess the file format based on the file name extensions.
+    pub fn guess_format(&mut self, filename: &str) -> &mut Self {
+        if let Some((file_format, is_compressed)) = guess_format(filename) {
+            self.set_decompress(is_compressed).set_format(file_format)
+        } else {
+            self
+        }
     }
 
     /// Sets the strictness level to use when reading the file.
@@ -112,8 +128,124 @@ impl ReadOptions {
         self
     }
 
-    /// Reads a file into a [`PDB`] structure.
-    pub fn read(&self, path: &str) -> ReadResult {
-        open_with_options(path, self)
+    /// Sets whether to only parse `ATOM` records in the model file.
+    pub fn set_only_atomic_coords(&mut self, only_atomic_coords: bool) -> &mut Self {
+        self.only_atomic_coords = only_atomic_coords;
+        self
+    }
+
+    /// Open an atomic data file, either PDB or mmCIF/PDBx, into a [`PDB`] structure.
+    /// The correct type will be determined based on the file extension.
+    ///
+    /// # Errors
+    /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+    ///
+    /// # Related
+    /// If you want to open a file from memory, see [`ReadOptions::read_raw`].
+    /// If your file extensions are not canonical, set the format explicitly with [`ReadOptions::set_format`].
+    pub fn read(&self, path: impl AsRef<str>) -> ReadResult {
+        if self.decompress {
+            // open a decompression stream
+            let filename = path.as_ref();
+
+            self.read_auto(filename)
+        } else {
+            match self.format {
+                Format::Pdb => super::pdb::open_pdb_with_options(path, self),
+                Format::Mmcif => super::mmcif::open_mmcif_with_options(path, self),
+                Format::Auto => self.read_auto(path),
+            }
+        }
+    }
+
+    /// Open an atomic data file, either PDB or mmCIF/PDBx, into a [`PDB`] structure
+    /// and automatically determine the file type based on the extension of `path`.
+    fn read_auto(&self, path: impl AsRef<str>) -> ReadResult {
+        let filename = path.as_ref();
+        if let Some((file_format, is_compressed)) = guess_format(filename) {
+            if is_compressed {
+                let file = std::fs::File::open(filename).map_err(|_| {
+                    vec![PDBError::new(
+                        crate::ErrorLevel::BreakingError,
+                        "Could not open file",
+                        "Could not open the given file, make sure it exists and you have the correct permissions",
+                        Context::show(filename),
+                    )]
+                })?;
+                let decompressor = flate2::read::GzDecoder::new(file);
+                let reader = std::io::BufReader::new(decompressor);
+                match file_format {
+                    Format::Pdb => {
+                        super::pdb::open_pdb_raw_with_options(reader, Context::None, self)
+                    }
+                    Format::Mmcif => super::mmcif::open_mmcif_raw_with_options(reader, self),
+                    Format::Auto => Err(vec![PDBError::new(
+                        crate::ErrorLevel::BreakingError,
+                        "Could not determine file type",
+                        "Could not determine the type of the gzipped file, use .pdb.gz or .cif.gz",
+                        Context::show(filename),
+                    )]),
+                }
+            } else {
+                match file_format {
+                    Format::Pdb => super::pdb::open_pdb_with_options(path, self),
+                    Format::Mmcif => super::mmcif::open_mmcif_with_options(path, self),
+                    _ => Err(vec![PDBError::new(
+                        crate::ErrorLevel::BreakingError,
+                        "Incorrect extension",
+                        "Could not determine the type of the given file extension, make it .pdb or .cif",
+                        Context::show(path.as_ref()),
+                    )])
+                }
+            }
+        } else {
+            Err(vec![PDBError::new(
+                crate::ErrorLevel::BreakingError,
+                "Missing extension",
+                "The given file does not have an extension, make it .pdb or .cif",
+                Context::show(path.as_ref()),
+            )])
+        }
+    }
+
+    /// Parse the input stream into a [`PDB`] struct. To allow for direct streaming from sources, like from RCSB.org.
+    /// The file format **must** be set explicitly with [`ReadOptions::set_format`].
+    /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+    ///
+    /// # Related
+    /// If you want to open a file, see [`ReadOptions::read`].
+    pub fn read_raw<T>(&self, input: std::io::BufReader<T>) -> ReadResult
+    where
+        T: std::io::Read,
+    {
+        match self.format {
+            Format::Pdb => super::pdb::open_pdb_raw_with_options(input, Context::None, self),
+            Format::Mmcif => super::mmcif::open_mmcif_raw_with_options(input, self),
+            Format::Auto => Err(vec![PDBError::new(
+                crate::ErrorLevel::BreakingError,
+                "Could not determine file type",
+                "Could not determine the type of the input stream, set self.format",
+                Context::None,
+            )]),
+        }
+    }
+}
+
+/// Guess the file format based on the file name extensions.
+fn guess_format(filename: &str) -> Option<(Format, bool)> {
+    let path = Path::new(filename);
+
+    match path.extension().and_then(OsStr::to_str) {
+        Some("pdb") | Some("pdb1") => Some((Format::Pdb, false)),
+        Some("cif") | Some("mmcif") => Some((Format::Mmcif, false)),
+        Some("gz") => {
+            let path_ext = Path::new(path.file_stem().and_then(OsStr::to_str).unwrap_or(""));
+            match path_ext.extension().and_then(OsStr::to_str) {
+                Some("pdb") | Some("pdb1") => Some((Format::Pdb, true)),
+                Some("cif") | Some("mmcif") => Some((Format::Mmcif, true)),
+                _ => None,
+            }
+        }
+        _ => None,
     }
 }

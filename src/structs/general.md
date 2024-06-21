@@ -21,10 +21,7 @@ This library follows the hierarchy presented by CCTBX [`Grosse-Kunstleve, R. W. 
 # Iterating over the PDB Hierarchy
 ```rust
 use pdbtbx::*;
-let (mut pdb, _errors) = pdbtbx::open(
-    "example-pdbs/1ubq.pdb",
-    pdbtbx::StrictnessLevel::Medium
-).unwrap();
+let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb").unwrap();
 // Iterating over all levels
 for model in pdb.models() {
     for chain in model.chains() {

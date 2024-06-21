@@ -2,6 +2,7 @@ use super::lexitem::*;
 use crate::error::*;
 use crate::structs::*;
 use crate::validate::*;
+use crate::ReadOptions;
 use crate::StrictnessLevel;
 use crate::TransformationMatrix;
 use std::fs::File;
@@ -11,47 +12,49 @@ use std::io::prelude::*;
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
-/// If you want to open a file from memory see [`open_mmcif_raw`]. There is also a function to open a PDB file directly
-/// see [`crate::open_pdb`]. If you want to open a general file with no knowledge about the file type see [`crate::open`].
+/// If you want to open a file from memory, see [`ReadOptions::read_raw`].
+#[deprecated(
+    since = "0.12.0",
+    note = "Please use `ReadOptions::default().set_format(Format::Mmcif).read(filename)` instead"
+)]
 pub fn open_mmcif(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    open_mmcif_with_options(filename, ReadOptions::default().set_level(level))
+}
+
+/// Parse the given mmCIF file into a PDB struct with [`ReadOptions`].
+pub(crate) fn open_mmcif_with_options(
+    filename: impl AsRef<str>,
+    options: &ReadOptions,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     let filename = filename.as_ref();
-    let mut file = if let Ok(f) = File::open(filename) {
+    let file = if let Ok(f) = File::open(filename) {
         f
     } else {
         return Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
     };
-    let mut contents = String::new();
-    if let Err(e) = file.read_to_string(&mut contents) {
-        return Err(vec![PDBError::new(
-            ErrorLevel::BreakingError,
-            "Error while reading file",
-            format!("Error: {e}"),
-            Context::show(filename),
-        )]);
-    }
-    open_mmcif_raw(&contents, level)
+    let reader = std::io::BufReader::new(file);
+    open_mmcif_raw_with_options(reader, options)
 }
 
 /// Open's mmCIF file from a BufRead. This allows opening mmCIF files directly from memory.
 ///
 /// This is particularly useful if you want to open a compressed file, as you can use the BufReader
-pub fn open_mmcif_bufread(
-    mut bufreader: impl BufRead,
-    level: StrictnessLevel,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-    let mut contents = String::new();
-    if let Err(e) = bufreader.read_to_string(&mut contents) {
-        return Err(vec![PDBError::new(
-            ErrorLevel::BreakingError,
-            "Error while reading file",
-            format!("Error: {e}"),
-            Context::none(),
-        )]);
-    }
-    open_mmcif_raw(&contents, level)
+#[deprecated(
+    since = "0.12.0",
+    note = "Please use `ReadOptions::default().set_format(Format::Mmcif).read_raw(input)` instead"
+)]
+pub fn open_mmcif_bufread<T>(
+    bufreader: std::io::BufReader<T>,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+where
+    T: std::io::Read,
+{
+    ReadOptions::default()
+        .set_format(crate::Format::Mmcif)
+        .read_raw(bufreader)
 }
 
 /// Parse the given mmCIF `&str` into a PDB struct. This allows opening mmCIF files directly from memory.
@@ -61,6 +64,10 @@ pub fn open_mmcif_bufread(
 /// If you want to open a file see [`open_mmcif`]. There is also a function to open a PDB file directly
 /// see [`crate::open_pdb`] and [`crate::open_pdb_raw`]. If you want to open a general file
 /// with no knowledge about the file type see [`crate::open`] and [`crate::open_raw`].
+#[deprecated(
+    since = "0.12.0",
+    note = "Please use `ReadOptions::default().set_format(Format::Mmcif).read_raw(input)` instead"
+)]
 pub fn open_mmcif_raw(
     input: &str,
     level: StrictnessLevel,
@@ -71,10 +78,45 @@ pub fn open_mmcif_raw(
     }
 }
 
+/// Parse the given stream into a [`PDB`] struct.
+pub(crate) fn open_mmcif_raw_with_options<T>(
+    mut input: std::io::BufReader<T>,
+    options: &ReadOptions,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+where
+    T: std::io::Read,
+{
+    let mut contents = String::new();
+    if input.read_to_string(&mut contents).is_ok() {
+        match super::lexer::lex_cif(contents.as_str()) {
+            Ok(data_block) => parse_mmcif_with_options(&data_block, options),
+            Err(e) => Err(vec![e]),
+        }
+    } else {
+        Err(vec![PDBError::new(
+            crate::ErrorLevel::BreakingError,
+            "Buffer could not be read",
+            "The buffer provided to `open_raw` could not be read to end.",
+            Context::None,
+        )])
+    }
+}
+
 /// Parse a CIF intermediate structure into a PDB
 fn parse_mmcif(
     input: &DataBlock,
     level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    parse_mmcif_with_options(input, ReadOptions::default().set_level(level))
+}
+
+/// Parse a CIF intermediate structure into a PDB with [`ReadOptions`].
+///
+/// # Related
+/// See [`parse_mmcif`] for a version of this function with sane defaults.
+fn parse_mmcif_with_options(
+    input: &DataBlock,
+    options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     let mut pdb = PDB::default();
     let mut errors: Vec<PDBError> = Vec::new();
@@ -88,7 +130,7 @@ fn parse_mmcif(
             Item::DataItem(di) => match di {
                 DataItem::Loop(multiple) => {
                     if multiple.header.contains(&"atom_site.group_PDB".to_string()) {
-                        parse_atoms(multiple, &mut pdb)
+                        parse_atoms(multiple, &mut pdb, options)
                     } else {
                         None
                     }
@@ -179,7 +221,7 @@ fn parse_mmcif(
                             } else {
                                 match mtrix_id {
                                     Some(id) => {
-                                        let mut mtrix = pdb.mtrix_mut().find(|m| m.serial_number == id).expect("Could not find the MtriX record with the previously found `_struct_ncs_oper.id`");
+                                        let mtrix = pdb.mtrix_mut().find(|m| m.serial_number == id).expect("Could not find the MtriX record with the previously found `_struct_ncs_oper.id`");
                                         if s.ends_with("code") {
                                             match get_text(&single.content, &context, None) {
                                                 Ok(Some(t)) if t == "given" => {mtrix.contained = true; None},
@@ -230,7 +272,7 @@ fn parse_mmcif(
 
     reshuffle_conformers(&mut pdb);
     errors.extend(validate(&pdb));
-    if errors.iter().any(|e| e.fails(level)) {
+    if errors.iter().any(|e| e.fails(options.level)) {
         Err(errors)
     } else {
         Ok((pdb, errors))
@@ -306,7 +348,7 @@ fn flatten_result<T, E>(value: Result<Result<T, E>, E>) -> Result<T, E> {
 }
 
 /// Parse a loop containing atomic data
-fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
+fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec<PDBError>> {
     #[derive(Eq, PartialEq)]
     /// The mode of a column
     enum Mode {
@@ -384,7 +426,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
     // The previous lines make sure that there is no error in the vector.
     #[allow(clippy::unwrap_used)]
     let positions: Vec<Option<usize>> = positions_.iter().map(|i| *i.as_ref().unwrap()).collect();
-
+    let mut first_model_number: usize = 0;
     for (index, row) in input.data.iter().enumerate() {
         let values: Vec<Option<&Value>> = positions.iter().map(|i| i.map(|x| &row[x])).collect();
         let context = Context::show(format!("Main atomic data loop row: {index}"));
@@ -406,11 +448,25 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             };
         }
 
+        // Early return cases
+        let element = parse_column!(get_text, ATOM_TYPE).expect("Atom element should be provided");
+        if options.discard_hydrogens & (element == "H") {
+            continue;
+        }
+        let model_number = parse_column!(get_usize, ATOM_MODEL).unwrap_or(1);
+        if options.only_first_model {
+            if index == 0 {
+                first_model_number = model_number;
+            } else if model_number != first_model_number {
+                break;
+            }
+        }
+
+        // Parse remaining fields in the order they appear in the line
         let atom_type = parse_column!(get_text, ATOM_GROUP).unwrap_or_else(|| "ATOM".to_string());
         let name = parse_column!(get_text, ATOM_NAME).expect("Atom name should be provided");
         let serial_number =
             parse_column!(get_usize, ATOM_ID).expect("Atom serial number should be provided");
-        let element = parse_column!(get_text, ATOM_TYPE).expect("Atom element should be provided");
         let residue_name =
             parse_column!(get_text, ATOM_COMP_ID).expect("Residue name should be provided");
         #[allow(clippy::cast_possible_wrap)]
@@ -427,7 +483,6 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
         let occupancy = parse_column!(get_f64, ATOM_OCCUPANCY).unwrap_or(1.0);
         let b_factor = parse_column!(get_f64, ATOM_B).unwrap_or(1.0);
         let charge = parse_column!(get_isize, ATOM_CHARGE).unwrap_or(0);
-        let model_number = parse_column!(get_usize, ATOM_MODEL).unwrap_or(1);
         let alt_loc = parse_column!(get_text, ATOM_ALT_ID);
         let insertion_code = parse_column!(get_text, ATOM_INSERTION);
         let aniso_temp = [
@@ -500,7 +555,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB) -> Option<Vec<PDBError>> {
             } else {
                 (*pdb_pointer).add_model(Model::new(model_number));
                 #[allow(clippy::unwrap_used)]
-                (*pdb_pointer).models_mut().rev().next().unwrap()
+                (*pdb_pointer).models_mut().next_back().unwrap()
             }
         };
 

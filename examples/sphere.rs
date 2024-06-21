@@ -1,16 +1,22 @@
-use pdbtbx::*;
 use rayon::iter::ParallelIterator;
 
+use pdbtbx::*;
+
 fn main() {
-    atom_sphere();
-    residue_sphere();
-    find_clashes();
+    let (pdb, _errors) = ReadOptions::new()
+        .set_level(StrictnessLevel::Loose)
+        .set_format(Format::Pdb)
+        .read("example-pdbs/1ubq.pdb")
+        .unwrap();
+
+    atom_sphere(&pdb);
+    residue_sphere(&pdb);
+    find_clashes(&pdb);
 }
 
 /// Find all Atoms in a sphere around a single origin Atom with a user-defined radius
 /// This is using the features `rstar` and `rayon`.
-fn atom_sphere() {
-    let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
+fn atom_sphere(pdb: &PDB) {
     let (origin_id, radius): (usize, f64) = (12, 3.5);
 
     // Leverage parallel searching
@@ -31,8 +37,7 @@ fn atom_sphere() {
 /// Find all Atoms belonging to a Residue that has at least one Atom within a sphere of
 /// user-defined origin and radius.
 /// This is using the features `rstar` and `rayon`.
-fn residue_sphere() {
-    let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
+fn residue_sphere(pdb: &PDB) {
     let (origin_id, radius): (usize, f64) = (12, 3.5);
 
     let sphere_origin = pdb
@@ -72,8 +77,7 @@ fn residue_sphere() {
 /// Results for Atoms within the same Residue are excluded as well as those from the C and N Atoms
 /// constituting the peptide bond of neighbouring amino acids.
 /// Also, Atoms are not counted twice.
-fn find_clashes() {
-    let (pdb, _errors) = open_pdb("example-pdbs/1ubq.pdb", StrictnessLevel::Loose).unwrap();
+fn find_clashes(pdb: &PDB) {
     let tree = pdb.create_hierarchy_rtree();
 
     let mut clashing_atoms = Vec::new();

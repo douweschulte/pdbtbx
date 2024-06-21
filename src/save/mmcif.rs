@@ -34,10 +34,7 @@ pub fn save_mmcif_gz(
     compression_level: Option<Compression>,
 ) -> Result<(), Vec<PDBError>> {
     save_mmcif_(pdb, filename, level, |file| {
-        BufWriter::new(GzEncoder::new(
-            file,
-            compression_level.unwrap_or(Compression::default()),
-        ))
+        BufWriter::new(GzEncoder::new(file, compression_level.unwrap_or_default()))
     })
 }
 

@@ -15,7 +15,7 @@ fn main() {
 }
 
 fn number_of_h(file: &str) -> usize {
-    let (structure, _errors) = pdbtbx::open(file, pdbtbx::StrictnessLevel::Medium).unwrap();
+    let (structure, _errors) = pdbtbx::open(file).unwrap();
 
     println!("{}", structure.atom_count());
 

@@ -1,26 +1,41 @@
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+
+use indexmap::IndexMap;
+
+use crate::error::*;
+use crate::structs::*;
+use crate::validate::*;
+use crate::ReadOptions;
+use crate::StrictnessLevel;
+
 use super::lexer::*;
 use super::lexitem::*;
 use super::temporary_structs::*;
 use super::validate::*;
-use crate::error::*;
-use crate::structs::*;
-use crate::validate::*;
-use crate::StrictnessLevel;
-
-use indexmap::IndexMap;
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 
 /// Parse the given file into a PDB struct.
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
-/// If you want to open a file from memory see [`open_pdb_raw`]. There is also a function to open a mmCIF file directly
+/// If you want to open a file from memory see [`ReadOptions::read_raw`]. There is also a function to open a mmCIF file directly
 /// see [`crate::open_mmcif`]. If you want to open a general file with no knowledge about the file type see [`crate::open`].
+#[deprecated(
+    since = "0.12.0",
+    note = "Please use `ReadOptions::default().set_format(Format::Pdb).read(filename)` instead"
+)]
 pub fn open_pdb(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    open_pdb_with_options(filename, ReadOptions::default().set_level(level))
+}
+
+/// Parse the given file into a PDB struct with [`ReadOptions`].
+pub(crate) fn open_pdb_with_options(
+    filename: impl AsRef<str>,
+    options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     let filename = filename.as_ref();
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
@@ -30,7 +45,7 @@ pub fn open_pdb(
         return Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
     };
     let reader = BufReader::new(file);
-    open_pdb_raw(reader, Context::show(filename), level)
+    open_pdb_raw_with_options(reader, Context::show(filename), options)
 }
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
@@ -45,10 +60,30 @@ pub fn open_pdb(
 /// If you want to open a file see [`open_pdb`]. There is also a function to open a mmCIF file directly
 /// see [`crate::open_mmcif`] and [`crate::open_mmcif_raw`]. If you want to open a general file
 /// with no knowledge about the file type see [`crate::open`] and [`crate::open_raw`].
+#[deprecated(
+    since = "0.12.0",
+    note = "Please use `ReadOptions::default().read_raw(input)` instead"
+)]
 pub fn open_pdb_raw<T>(
     input: std::io::BufReader<T>,
     context: Context,
     level: StrictnessLevel,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+where
+    T: std::io::Read,
+{
+    open_pdb_raw_with_options(input, context, ReadOptions::default().set_level(level))
+}
+
+/// Parse the input stream into a [`PDB`] struct.
+///
+/// # Related
+/// See [`ReadOptions::read_raw`] for a version of this function with sane defaults.
+/// Note that the file type should be set explicitly with [`ReadOptions::set_format`].
+pub(crate) fn open_pdb_raw_with_options<T>(
+    input: std::io::BufReader<T>,
+    context: Context,
+    options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
 where
     T: std::io::Read,
@@ -75,7 +110,7 @@ where
     // Initialize chain_id value
     let mut chain_id_new = chain_iter.next();
 
-    for (mut linenumber, read_line) in input.lines().enumerate() {
+    'all_lines: for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
 
         let line = if let Ok(l) = read_line {
@@ -88,7 +123,7 @@ where
                 context,
             )]);
         };
-        let line_result = lex_line(&line, linenumber, level);
+        let line_result = lex_line(&line, linenumber, options);
         let line_context = Context::FullLine {
             linenumber,
             line: line.clone(),
@@ -121,6 +156,9 @@ where
                         element,
                         charge,
                     ) => {
+                        if options.discard_hydrogens & (element == "H") {
+                            continue;
+                        }
                         if serial_number == 0 && last_atom_serial_number == 99_999 {
                             atom_serial_addition += 100_000
                         }
@@ -213,6 +251,11 @@ where
                                         .expect("Invalid characters in Chain definition")
                                 }),
                             ));
+
+                            if options.only_first_model {
+                                current_model = IndexMap::new();
+                                break 'all_lines;
+                            }
                         }
                         current_model_number = number;
                         current_model = IndexMap::new();
@@ -481,7 +524,7 @@ where
     errors.extend(add_bonds(&mut pdb, bonds));
     errors.extend(validate(&pdb));
 
-    if errors.iter().any(|e| e.fails(level)) {
+    if errors.iter().any(|e| e.fails(options.level)) {
         Err(errors)
     } else {
         Ok((pdb, errors))

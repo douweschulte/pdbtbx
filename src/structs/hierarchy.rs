@@ -6,10 +6,7 @@
 //! Using the traits you can write more generic functions.
 //! ```rust
 //! use pdbtbx::*;
-//! let (mut pdb, _errors) = pdbtbx::open(
-//!     "example-pdbs/1ubq.pdb",
-//!     pdbtbx::StrictnessLevel::Medium
-//! ).unwrap();
+//! let (mut pdb, _errors) = pdbtbx::open("example-pdbs/1ubq.pdb").unwrap();
 //!
 //! // Return the X Y coordinates if the conformer name is "HOH"
 //! fn find_position(hierarchy: impl ContainsAtomConformer) -> Option<(f64, f64)> {
