@@ -43,7 +43,7 @@ pub(crate) fn open_pdb_with_options(
     let file = if let Ok(f) = File::open(filename) {
         f
     } else {
-        return (Duration::days(1),Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]));
+        return (Duration::from_millis(10),Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]));
     };
     let reader = BufReader::new(file);
     let duration = start.elapsed();
