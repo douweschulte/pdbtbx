@@ -28,7 +28,7 @@ use super::validate::*;
 pub fn open_pdb(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
-) -> Result<((Duration,PDB), Vec<PDBError>), Vec<PDBError>> {
+) -> (Duration,Result<(PDB, Vec<PDBError>), Vec<PDBError>>) {
     open_pdb_with_options(filename, ReadOptions::default().set_level(level))
 }
 
@@ -36,7 +36,7 @@ pub fn open_pdb(
 pub(crate) fn open_pdb_with_options(
     filename: impl AsRef<str>,
     options: &ReadOptions,
-) -> Result<((Duration,PDB), Vec<PDBError>), Vec<PDBError>> {
+) -> (Duration,Result<(PDB, Vec<PDBError>), Vec<PDBError>>) {
     let start = Instant::now();
     let filename = filename.as_ref();
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
