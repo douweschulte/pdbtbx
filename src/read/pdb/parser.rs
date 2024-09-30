@@ -1,8 +1,8 @@
+use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::time::{Duration, Instant};
-use indexmap::IndexMap;
 
 use crate::error::*;
 use crate::structs::*;
@@ -28,26 +28,30 @@ use super::validate::*;
 pub fn open_pdb(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
-) -> (Duration,Result<(PDB, Vec<PDBError>), Vec<PDBError>>) {
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     open_pdb_with_options(filename, ReadOptions::default().set_level(level))
+}
+
+pub(crate) fn read_file(filename: &str) -> BufReader<File> {
+    // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
+    let file = if let Ok(f) = File::open(filename) {
+        f
+    } else {
+        panic!("Uh oh");
+        // return Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
+    };
+    let reader = BufReader::new(file);
+    reader
 }
 
 /// Parse the given file into a PDB struct with [`ReadOptions`].
 pub(crate) fn open_pdb_with_options(
     filename: impl AsRef<str>,
     options: &ReadOptions,
-) -> (Duration,Result<(PDB, Vec<PDBError>), Vec<PDBError>>) {
-    let start = Instant::now();
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
     let filename = filename.as_ref();
-    // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
-    let file = if let Ok(f) = File::open(filename) {
-        f
-    } else {
-        return (Duration::from_millis(10),Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]));
-    };
-    let reader = BufReader::new(file);
-    let duration = start.elapsed();
-    (duration,open_pdb_raw_with_options(reader, Context::show(filename), options))
+    let reader = read_file(filename);
+    open_pdb_raw_with_options(reader, Context::show(filename), options)
 }
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
