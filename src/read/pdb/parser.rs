@@ -32,6 +32,7 @@ pub fn open_pdb(
     open_pdb_with_options(filename, ReadOptions::default().set_level(level))
 }
 
+#[inline(never)]
 pub(crate) fn read_file(filename: &str) -> BufReader<File> {
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
     let file = if let Ok(f) = File::open(filename) {
