@@ -1,6 +1,12 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/douweschulte/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.12.0
+* Added unified file read logic, see `ReadOptions` (Thanks to y1zhou and OWisset)
+  - This deprecates the original read functions `open_gz` (still around for ease of updating) and `open_raw` (fully removed in this update)
+* Added `unique_conformer_names` for a `PDB` (Thanks to rvhonorato)
+* Added `chains_in_contact` for a `PDB` (Thanks to rvhonorato)
+
 ### v0.11.0
 * Added support for zipped (`.gz`) files (Thanks to OWisset)
 * Does not automatically convert chain names to uppercase anymore (Thanks to OWisset)

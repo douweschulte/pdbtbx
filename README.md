@@ -2,7 +2,7 @@
 ![Compile & Test](https://github.com/douweschulte/pdbtbx/actions/workflows/rust.yml/badge.svg)
 [![pdbtbx documentation](https://docs.rs/pdbtbx/badge.svg)](https://docs.rs/pdbtbx)
 [![Crates.io](https://img.shields.io/crates/v/pdbtbx.svg)](https://crates.io/crates/pdbtbx)
-![rustc 1.56+](https://img.shields.io/badge/msrv-rustc_1.56+-red.svg)
+![rustc 1.64+](https://img.shields.io/badge/msrv-rustc_1.64+-red.svg)
 
 ## Description
 This is a Rust library helping to parse, edit and save crystallographic PDB/mmCIF files. It can read most atomic data from PDB/mmCIF files. Its high level goal is to create a stable, efficient and easy to use interface to PDB/mmCIF files written in pure Rust.
@@ -15,12 +15,6 @@ MIT
 
 ## Why
 It started as a way to use Rust in a scientific project. But it moved to an open source project because I think that using Rust in scientific computing is be really helpful and a great addition alongside the ubiquitous Python. So by creating it I hope to extend the usability of Rust a little bit more. Since Nature published an [article](https://www.nature.com/articles/d41586-020-03382-2) (technology feature) which laid out the benefits of using Rust and showed that Rust is used more and more, I am planning on working more with Rust in scientific projects. And I think that the best way to help Rust move forward (in the scientific community) is by creating more support for scientific projects in Rust.
-
-## Contributors
-* Douwe Schulte
-* [Tianyi Shi](https://github.com/TianyiShi2001)
-* [DocKDE](https://github.com/DocKDE)
-* [Oliver Wissett](https://github.com/OWissett)
 
 ## Supported features
 As the main goal of this library is to allow access to the atomical data many metadata features of both PDB and mmCIF are unsupported. For both file formats the recent versions (PDB v3.30 and mmcif v5.338) are used, but as both are quite stable file formats the exact version should not matter to end users.
@@ -69,9 +63,11 @@ The features where support is planned are planned to be included in the 1.0 rele
 * The crate has many ways of iterating over the PDB structure to allow for convenient access and control over the performance.
 
 ## Latest update
-### v0.11.0
-* Added support for zipped (`.gz`) files (Thanks to OWisset)
-* Does not automatically convert chain names to uppercase anymore (Thanks to OWisset)
+### v0.12.0
+* Added unified file read logic, see `ReadOptions` (Thanks to y1zhou and OWisset)
+  - This deprecates the original read functions `open_gz` (still around for ease of updating) and `open_raw` (fully removed in this update)
+* Added `unique_conformer_names` for a `PDB` (Thanks to rvhonorato)
+* Added `chains_in_contact` for a `PDB` (Thanks to rvhonorato)
 
 Also see [changelog](https://github.com/douweschulte/pdbtbx/blob/master/changelog.md).
 
