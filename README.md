@@ -5,7 +5,7 @@
 ![rustc 1.64+](https://img.shields.io/badge/msrv-rustc_1.64+-red.svg)
 
 ## Description
-This is a Rust library helping to parse, edit and save crystallographic PDB/mmCIF files. It can read most atomic data from PDB/mmCIF files. Its high level goal is to create a stable, efficient and easy to use interface to PDB/mmCIF files written in pure Rust.
+This is a Rust library helping to parse, edit and save crystallographic PDB/mmCIF files. It can read most atomic data from PDB/mmCIF files. Its high level goal is to create a stable, efficient and easy to use interface to PDB/mmCIF files written in pure Rust. For detailed documentation check out the official API [docs](https://docs.rs/pdbtbx/0.12.0/pdbtbx/).
 
 ## Contributing
 As this is a library in active development, feel free to share your thoughts, ideas, hopes, and criticisms. Every comment will be read and discussed so that this library is as useful as possible for all users. Of course we all like a civilised discussion so please follow the community guidelines, but over all please be a civilised human being.
