@@ -6,6 +6,8 @@ mod lexitem;
 mod parser;
 /// Structs to help in building up the PDB struct
 mod temporary_structs;
+/// Utility methods for lexer
+mod utils;
 /// Methods to validate the parsed structure
 mod validate;
 
