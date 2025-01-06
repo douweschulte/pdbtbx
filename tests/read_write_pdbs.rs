@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::time::Instant;
 use std::{env, fs};
-
+use std::ptr::read;
 use pdbtbx::*;
 
 #[test]
@@ -157,7 +157,7 @@ fn save_pdb_strict() {
         .into_string()
         .unwrap();
 
-    let atom = Atom::new(false, 0, "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
+    let atom = Atom::new(false, 0, "0", "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
     let mut model = Model::new(0);
     model.add_atom(atom, "A", (0, None), ("LYS", None));
     let mut pdb = PDB::new();
@@ -204,7 +204,7 @@ fn save_mmcif_strict() {
         .into_string()
         .unwrap();
 
-    let atom = Atom::new(false, 0, "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
+    let atom = Atom::new(false, 0, "0", "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
     let mut model = Model::new(0);
     model.add_atom(atom, "A", (0, None), ("LYS", None));
     let mut pdb = PDB::new();

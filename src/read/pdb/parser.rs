@@ -176,6 +176,7 @@ where
                         let atom = Atom::new(
                             hetero,
                             serial_number + atom_serial_addition,
+                            ".",  // TODO: calculate sequentially
                             name,
                             x,
                             y,

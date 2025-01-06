@@ -19,6 +19,8 @@ pub struct Atom {
     hetero: bool,
     /// The serial number of the Atom, should be unique within its model
     serial_number: usize,
+    /// The global ID of the Atom (mmCIF item _atom_site.id), should be globally unique
+    id: String,
     /// The name of the Atom, can only use the standard allowed characters
     name: String,
     /// The X position of the Atom (Å)
@@ -47,6 +49,7 @@ impl Atom {
     pub fn new(
         hetero: bool,
         serial_number: usize,
+        id: impl Into<String>,
         atom_name: impl Into<String>,
         x: f64,
         y: f64,
@@ -56,9 +59,12 @@ impl Atom {
         element: impl Into<String>,
         charge: isize,
     ) -> Option<Atom> {
+        let id = id.into().trim().to_string();
         let atom_name = atom_name.into().trim().to_string();
         let element = element.into().trim().to_string();
-        if valid_identifier(&atom_name)
+        if valid_identifier(&id)
+            && id.len() > 0
+            && valid_identifier(&atom_name)
             && valid_identifier(&element)
             && x.is_finite()
             && y.is_finite()
@@ -84,6 +90,7 @@ impl Atom {
                 counter: ATOM_COUNTER.fetch_add(1, AtomicOrdering::SeqCst),
                 hetero,
                 serial_number,
+                id,
                 name: atom_name.trim().to_ascii_uppercase(),
                 x,
                 y,
@@ -216,8 +223,35 @@ impl Atom {
 
     /// Set the serial number of the atom.
     /// This number, combined with the `alt_loc` from the Conformer, of this Atom is defined to be unique in the containing model, which is not enforced.
+    ///
+    /// Note that this may not be used when exporting to mmCIF files (see also: `set_id()`).
     pub fn set_serial_number(&mut self, new_serial_number: usize) {
         self.serial_number = new_serial_number;
+    }
+
+    /// Get the atom ID (_atom_site.id for mmCIF files)
+    /// This number should be globally unique, but this is not enforced.
+    pub fn id(&self) -> &str { &self.id }
+
+    /// Set the atom ID
+    ///
+    /// Note that this may not be used when exporting to PDB files (see also: `set_serial_number()`).
+    pub fn set_id(&mut self, new_id: impl Into<String>) -> Result<(), String> {
+        let new_id = new_id.into();
+        if !valid_identifier(&new_id) {
+            Err(format!(
+                "New ID has invalid characters for atom {} id {}",
+                self.serial_number, new_id
+            ))
+        } else if new_id.len() == 0 {
+            Err(format!(
+                "New ID is empty for atom {}",
+                self.serial_number
+            ))
+        } else {
+            self.id = new_id.trim().to_string();
+            Ok(())
+        }
     }
 
     /// Get the name of the atom. The name will be trimmed (whitespace removed) and changed to ASCII uppercase.
@@ -580,7 +614,8 @@ impl fmt::Display for Atom {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "ATOM ID: {}, Number: {}, Element: {}, X: {}, Y: {}, Z: {}, OCC: {}, B: {}, ANISOU: {}",
+            "ATOM ID: {}, Name: {}, Number: {}, Element: {}, X: {}, Y: {}, Z: {}, OCC: {}, B: {}, ANISOU: {}",
+            self.id(),
             self.name(),
             self.serial_number(),
             self.element()
@@ -601,6 +636,7 @@ impl Clone for Atom {
         let mut atom = Atom::new(
             self.hetero,
             self.serial_number,
+            &self.id,
             &self.name,
             self.x,
             self.y,
@@ -618,7 +654,8 @@ impl Clone for Atom {
 
 impl PartialEq for Atom {
     fn eq(&self, other: &Self) -> bool {
-        self.serial_number == other.serial_number
+        self.id == other.id
+            && self.serial_number == other.serial_number
             && self.name() == other.name()
             && self.element() == other.element()
             && self.charge() == other.charge()
@@ -674,9 +711,16 @@ mod tests {
     use super::Atom;
     use super::UnitCell;
 
+    fn set_id() {
+        let mut a = Atom::new(false, 0, ".", "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
+        assert!(a.set_id("Å").is_err());
+        assert!(a.set_id("").is_err());
+        assert!(a.set_id("1").is_ok());
+    }
+
     #[test]
     fn set_name() {
-        let mut a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
+        let mut a = Atom::new(false, 0, ".", "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         assert!(a.set_name("Å").is_err());
         assert!(a.set_name("ATOMS").is_ok());
         a.set_name("ATOM").unwrap();
@@ -688,8 +732,8 @@ mod tests {
 
     #[test]
     fn distance() {
-        let a = Atom::new(false, 0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
-        let b = Atom::new(false, 0, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let a = Atom::new(false, 0, ".", "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(false, 0, ".", "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
         let cell = UnitCell::new(10.0, 10.0, 10.0, 90.0, 90.0, 90.0);
         assert!(!a.overlaps(&b).unwrap());
         assert!(a.overlaps_wrapping(&b, &cell).unwrap());
@@ -699,11 +743,11 @@ mod tests {
 
     #[test]
     fn angles() {
-        let a = Atom::new(false, 0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
-        let b = Atom::new(false, 0, "", 0.0, 1.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
-        let c = Atom::new(false, 0, "", 0.0, 0.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
-        let d = Atom::new(false, 0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
-        let e = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let a = Atom::new(false, 0, ".", "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(false, 0, ".", "", 0.0, 1.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let c = Atom::new(false, 0, ".", "", 0.0, 0.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
+        let d = Atom::new(false, 0, ".", "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
+        let e = Atom::new(false, 0, ".", "", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
 
         assert!((a.angle(&b, &c) - 60.0).abs() < 0.0001);
         assert!((a.dihedral(&e, &c, &d) - 45.0).abs() < 0.0001);
@@ -711,8 +755,8 @@ mod tests {
 
     #[test]
     fn distance_all_axes() {
-        let a = Atom::new(false, 0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
-        let b = Atom::new(false, 0, "", 9.0, 9.0, 9.0, 0.0, 0.0, "C", 0).unwrap();
+        let a = Atom::new(false, 0, ".", "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(false, 0, ".", "", 9.0, 9.0, 9.0, 0.0, 0.0, "C", 0).unwrap();
         let cell = UnitCell::new(10.0, 10.0, 10.0, 90.0, 90.0, 90.0);
         assert!(!a.overlaps(&b).unwrap());
         assert!(a.overlaps_wrapping(&b, &cell).unwrap());
@@ -720,9 +764,9 @@ mod tests {
 
     #[test]
     fn check_equality() {
-        let a = Atom::new(false, 0, "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
-        let b = Atom::new(false, 1, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
-        let c = Atom::new(false, 1, "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let a = Atom::new(false, 0, ".", "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let b = Atom::new(false, 1, ".", "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
+        let c = Atom::new(false, 1, ".", "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
         assert_ne!(a, b);
         assert_eq!(b, c);
         assert_ne!(a, c);
@@ -730,9 +774,9 @@ mod tests {
 
     #[test]
     fn invalid_new_values() {
-        let mut a = Atom::new(false, 0, "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
-        assert!(Atom::new(false, 0, "Rͦ", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).is_none());
-        assert!(Atom::new(false, 0, "R", 1.0, 1.0, 1.0, 0.0, 0.0, "Cͦ", 0).is_none());
+        let mut a = Atom::new(false, 0, ".", "", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).unwrap();
+        assert!(Atom::new(false, 0, ".", "Rͦ", 1.0, 1.0, 1.0, 0.0, 0.0, "C", 0).is_none());
+        assert!(Atom::new(false, 0, ".", "R", 1.0, 1.0, 1.0, 0.0, 0.0, "Cͦ", 0).is_none());
         assert!(a.set_x(f64::INFINITY).is_err());
         assert!(a.set_x(f64::NAN).is_err());
         assert!(a.set_x(f64::NEG_INFINITY).is_err());
@@ -749,7 +793,7 @@ mod tests {
 
     #[test]
     fn check_setters() {
-        let mut a = Atom::new(false, 0, "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
+        let mut a = Atom::new(false, 0, "1", "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         assert!(a.set_x(2.0).is_ok());
         assert_eq!(a.x(), 2.0);
         assert!(a.set_y(2.0).is_ok());
@@ -769,6 +813,8 @@ mod tests {
         assert!(a.set_b_factor(0.0).is_ok());
         a.set_hetero(true);
         assert!(a.hetero());
+        a.set_id("2").unwrap();
+        assert_eq!(a.id(), "2");
         a.set_serial_number(42);
         assert_eq!(a.serial_number(), 42);
         assert_eq!(a.element().unwrap().atomic_number(), 6);
@@ -781,7 +827,7 @@ mod tests {
     fn check_radii() {
         use crate::Element;
         // No element defined because that should be taken from the atom name (out of PDB spec but common in PDB files)
-        let a = Atom::new(false, 0, "H", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
+        let a = Atom::new(false, 0, ".", "H", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         let radii = a.element().unwrap().atomic_radius();
         assert_eq!(radii.unbound, Some(1.54));
         assert_eq!(radii.van_der_waals, Some(1.20));
@@ -789,7 +835,7 @@ mod tests {
         assert_eq!(radii.covalent_double, None);
         assert_eq!(radii.covalent_triple, None);
         assert_eq!(a.element().unwrap(), &Element::H);
-        let a = Atom::new(false, 0, "Cl", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
+        let a = Atom::new(false, 0, ".", "Cl", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         let radii = a.element().unwrap().atomic_radius();
         assert_eq!(radii.unbound, Some(2.06));
         assert_eq!(radii.van_der_waals, Some(1.82));
@@ -797,7 +843,7 @@ mod tests {
         assert_eq!(radii.covalent_double, Some(0.95));
         assert_eq!(radii.covalent_triple, Some(0.93));
         assert_eq!(a.element().unwrap(), &Element::Cl);
-        let a = Atom::new(false, 0, "H3", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
+        let a = Atom::new(false, 0, ".", "H3", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         let radii = a.element().unwrap().atomic_radius();
         assert_eq!(radii.unbound, Some(1.54));
         assert_eq!(radii.van_der_waals, Some(1.20));
@@ -809,7 +855,7 @@ mod tests {
 
     #[test]
     fn check_display() {
-        let a = Atom::new(false, 0, "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
+        let a = Atom::new(false, 0, ".", "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
         format!("{a:?}");
         format!("{a}");
     }

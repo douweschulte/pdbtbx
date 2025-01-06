@@ -575,6 +575,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
         if let Some(mut atom) = Atom::new(
             hetero,
             serial_number,
+            ".",  // TODO: use _atom_site.id
             name,
             pos_x,
             pos_y,

@@ -672,7 +672,7 @@ mod tests {
         let mut a = Model::new(0);
         a.add_chain(Chain::new("A").unwrap());
         a.add_atom(
-            Atom::new(false, 0, "ATOM", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap(),
+            Atom::new(false, 0, "0", "ATOM", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap(),
             "A",
             (0, None),
             ("ALA", None),
