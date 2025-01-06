@@ -45,10 +45,11 @@ fn do_something(file: &str, folder: &str, name: &str) {
     println!("Working on file: {file}");
     let now = Instant::now();
 
-    let (pdb, errors) = ReadOptions::default()
+    let read_result = ReadOptions::default()
         .set_level(crate::StrictnessLevel::Loose)
-        .read(file)
-        .unwrap();
+        .read(file);
+    assert!(read_result.is_ok());
+    let (pdb, errors) = read_result.unwrap();
 
     let time = now.elapsed();
 

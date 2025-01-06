@@ -27,11 +27,12 @@ fn only_read_first_model() {
 }
 
 fn count_models(filename: &str, only_first_model: bool) -> usize {
-    let (structure, _errors) = ReadOptions::default()
+    let read_result = ReadOptions::default()
         .set_level(StrictnessLevel::Loose)
         .set_only_first_model(only_first_model)
-        .read(filename)
-        .unwrap();
+        .read(filename);
+    assert!(read_result.is_ok());
+    let (structure, _errors) = read_result.unwrap();
 
     structure.model_count()
 }
