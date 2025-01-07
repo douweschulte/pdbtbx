@@ -109,6 +109,7 @@ where
     let mut chain_iter = ('A'..='Z').cycle();
     // Initialize chain_id value
     let mut chain_id_new = chain_iter.next();
+    let mut id_iter = (0u128..).map(|i| i.to_string());
 
     'all_lines: for (mut linenumber, read_line) in input.lines().enumerate() {
         linenumber += 1; // 1 based indexing in files
@@ -176,7 +177,7 @@ where
                         let atom = Atom::new(
                             hetero,
                             serial_number + atom_serial_addition,
-                            ".",  // TODO: calculate sequentially
+                            id_iter.next().unwrap(),
                             name,
                             x,
                             y,
