@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::time::Instant;
 use std::{env, fs};
-use std::ptr::read;
+
 use pdbtbx::*;
 
 #[test]
