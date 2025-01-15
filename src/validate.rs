@@ -160,17 +160,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                                 Context::None,
                             ));
                         }
-                        if atom.charge() > 9 || atom.charge() < -9 {
-                            errors.push(PDBError::new(
-                                ErrorLevel::LooseWarning,
-                                "Atom charge out of bounds",
-                                format!(
-                                "Atom {} has a charge which is out of bounds, max is 9 min is -9.",
-                                atom.serial_number()
-                            ),
-                                Context::None,
-                            ));
-                        }
                         if atom.occupancy() > 999.99 {
                             errors.push(PDBError::new(
                                 ErrorLevel::LooseWarning,

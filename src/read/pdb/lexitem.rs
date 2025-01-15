@@ -28,6 +28,7 @@ pub enum LexItem {
     /// * segment id
     /// * element
     /// * charge
+    /// * autodock type
     Atom(
         bool,
         usize,
@@ -44,7 +45,8 @@ pub enum LexItem {
         f64,
         String,
         String,
-        isize,
+        f32,
+        String,
     ),
     /// An Anisou record with all its information, including the deprecated and rarely used fields.
     /// * serial number

@@ -155,6 +155,7 @@ where
                         _,
                         element,
                         charge,
+                        autodock_type,
                     ) => {
                         if options.discard_hydrogens & (element == "H") {
                             continue;
@@ -184,6 +185,7 @@ where
                             b,
                             element,
                             charge,
+                            autodock_type,
                         )
                         .expect("Invalid characters in atom creation");
                         let conformer_id = (residue_name.as_str(), alt_loc.as_deref());
