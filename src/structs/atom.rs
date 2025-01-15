@@ -34,9 +34,11 @@ pub struct Atom {
     /// The element of the Atom, can only use the standard allowed characters
     element: Option<Element>,
     /// The charge of the Atom
-    charge: isize,
+    charge: f32,
     /// The anisotropic temperature factors, if applicable
     atf: Option<[[f64; 3]; 3]>,
+    /// Autodock type
+    autodock_type: String,
 }
 
 impl Atom {
@@ -54,7 +56,8 @@ impl Atom {
         occupancy: f64,
         b_factor: f64,
         element: impl Into<String>,
-        charge: isize,
+        charge: f32,
+        autodock_type: impl Into<String>,
     ) -> Option<Atom> {
         let atom_name = atom_name.into().trim().to_string();
         let element = element.into().trim().to_string();
@@ -80,6 +83,7 @@ impl Atom {
             } else {
                 None
             };
+            let autodock_type = autodock_type.into().trim().to_string();
             Some(Atom {
                 counter: ATOM_COUNTER.fetch_add(1, AtomicOrdering::SeqCst),
                 hetero,
@@ -93,6 +97,7 @@ impl Atom {
                 element,
                 charge,
                 atf: None,
+                autodock_type,
             })
         } else {
             None
@@ -314,29 +319,26 @@ impl Atom {
 
     /// Get the charge of the atom.
     /// In PDB files the charge is one digit with a sign.
-    pub const fn charge(&self) -> isize {
+    pub const fn charge(&self) -> f32 {
         self.charge
     }
 
     /// Set the charge of this atom.
     /// In PDB files the charge is one digit with a sign.
-    pub fn set_charge(&mut self, new_charge: isize) {
+    pub fn set_charge(&mut self, new_charge: f32) {
         self.charge = new_charge;
     }
 
     /// Get the charge in the PDB format `[0-9][-+]`. If the charge is 0 or outside bounds (below -9 or above 9) it returns an empty string.
+    /// note: temporary (?) modification for f32
     #[allow(clippy::cast_possible_truncation)]
     pub fn pdb_charge(&self) -> String {
-        if self.charge == 0 || self.charge < -9 || self.charge > 9 {
-            String::new()
-        } else {
-            let mut sign = '+';
-            let charge = (48 + self.charge.unsigned_abs() as u8) as char;
-            if self.charge < 0 {
-                sign = '-';
-            }
-            format!("{charge}{sign}")
+        let mut sign: char = '+';
+        let charge = self.charge;
+        if self.charge < 0. {
+            sign = '-';
         }
+        format!("{charge}{sign}")
     }
 
     /// Get the anisotropic temperature factors, if available.
@@ -580,7 +582,7 @@ impl fmt::Display for Atom {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "ATOM ID: {}, Number: {}, Element: {}, X: {}, Y: {}, Z: {}, OCC: {}, B: {}, ANISOU: {}",
+            "ATOM ID: {}, Number: {}, Element: {}, X: {}, Y: {}, Z: {}, OCC: {}, B: {}, ANISOU: {}, Q: {}, AT: {}",
             self.name(),
             self.serial_number(),
             self.element()
@@ -590,7 +592,9 @@ impl fmt::Display for Atom {
             self.z(),
             self.occupancy(),
             self.b_factor(),
-            self.atf.is_some()
+            self.atf.is_some(),
+            self.charge,
+            self.autodock_type
         )
     }
 }
@@ -609,6 +613,7 @@ impl Clone for Atom {
             self.b_factor,
             self.element.map_or_else(|| "", |e| e.symbol()),
             self.charge,
+            &self.autodock_type,
         )
         .expect("Invalid Atom properties in a clone");
         atom.atf = self.atf;

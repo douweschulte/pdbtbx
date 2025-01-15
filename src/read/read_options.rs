@@ -14,6 +14,8 @@ pub enum Format {
     /// Automatically detect the format
     #[default]
     Auto,
+
+    Pdbqt,
 }
 
 impl From<&str> for Format {
@@ -151,7 +153,7 @@ impl ReadOptions {
             self.read_auto(filename)
         } else {
             match self.format {
-                Format::Pdb => super::pdb::open_pdb_with_options(path, self),
+                Format::Pdb | Format::Pdbqt => super::pdb::open_pdb_with_options(path, self),
                 Format::Mmcif => super::mmcif::open_mmcif_with_options(path, self),
                 Format::Auto => self.read_auto(path),
             }
@@ -175,7 +177,7 @@ impl ReadOptions {
                 let decompressor = flate2::read::GzDecoder::new(file);
                 let reader = std::io::BufReader::new(decompressor);
                 match file_format {
-                    Format::Pdb => {
+                    Format::Pdb | Format::Pdbqt => {
                         super::pdb::open_pdb_raw_with_options(reader, Context::None, self)
                     }
                     Format::Mmcif => super::mmcif::open_mmcif_raw_with_options(reader, self),
@@ -188,7 +190,7 @@ impl ReadOptions {
                 }
             } else {
                 match file_format {
-                    Format::Pdb => super::pdb::open_pdb_with_options(path, self),
+                    Format::Pdb | Format::Pdbqt => super::pdb::open_pdb_with_options(path, self),
                     Format::Mmcif => super::mmcif::open_mmcif_with_options(path, self),
                     _ => Err(vec![PDBError::new(
                         crate::ErrorLevel::BreakingError,
@@ -202,7 +204,7 @@ impl ReadOptions {
             Err(vec![PDBError::new(
                 crate::ErrorLevel::BreakingError,
                 "Missing extension",
-                "The given file does not have an extension, make it .pdb or .cif",
+                "The given file does not have an extension, make it .pdbqt",
                 Context::show(path.as_ref()),
             )])
         }
@@ -219,7 +221,9 @@ impl ReadOptions {
         T: std::io::Read,
     {
         match self.format {
-            Format::Pdb => super::pdb::open_pdb_raw_with_options(input, Context::None, self),
+            Format::Pdb | Format::Pdbqt => {
+                super::pdb::open_pdb_raw_with_options(input, Context::None, self)
+            }
             Format::Mmcif => super::mmcif::open_mmcif_raw_with_options(input, self),
             Format::Auto => Err(vec![PDBError::new(
                 crate::ErrorLevel::BreakingError,
@@ -236,6 +240,7 @@ fn guess_format(filename: &str) -> Option<(Format, bool)> {
     let path = Path::new(filename);
 
     match path.extension().and_then(OsStr::to_str) {
+        Some("pdbqt") => Some((Format::Pdbqt, false)),
         Some("pdb") | Some("pdb1") => Some((Format::Pdb, false)),
         Some("cif") | Some("mmcif") => Some((Format::Mmcif, false)),
         Some("gz") => {

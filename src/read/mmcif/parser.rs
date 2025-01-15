@@ -572,36 +572,38 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
                 context.clone(),
             ))
         }
-        if let Some(mut atom) = Atom::new(
-            hetero,
-            serial_number,
-            name,
-            pos_x,
-            pos_y,
-            pos_z,
-            occupancy,
-            b_factor,
-            element,
-            charge,
-        ) {
-            if let Some(matrix) = aniso {
-                atom.set_anisotropic_temperature_factors(matrix);
-            }
+        // not used for .pdbqt
+        todo!()
+        // if let Some(mut atom) = Atom::new(
+        //     hetero,
+        //     serial_number,
+        //     name,
+        //     pos_x,
+        //     pos_y,
+        //     pos_z,
+        //     occupancy,
+        //     b_factor,
+        //     element,
+        //     charge,
+        // ) {
+        //     if let Some(matrix) = aniso {
+        //         atom.set_anisotropic_temperature_factors(matrix);
+        //     }
 
-            model.add_atom(
-                atom,
-                chain_name,
-                (residue_number, insertion_code.as_deref()),
-                (residue_name, alt_loc.as_deref()),
-            );
-        } else {
-            errors.push(PDBError::new(
-                ErrorLevel::InvalidatingError,
-                "Atom definition incorrect",
-                "The atom name and element should only contain valid characters.",
-                context.clone(),
-            ))
-        }
+        //     model.add_atom(
+        //         atom,
+        //         chain_name,
+        //         (residue_number, insertion_code.as_deref()),
+        //         (residue_name, alt_loc.as_deref()),
+        //     );
+        // } else {
+        //     errors.push(PDBError::new(
+        //         ErrorLevel::InvalidatingError,
+        //         "Atom definition incorrect",
+        //         "The atom name and element should only contain valid characters.",
+        //         context.clone(),
+        //     ))
+        // }
     }
     if !errors.is_empty() {
         Some(errors)
