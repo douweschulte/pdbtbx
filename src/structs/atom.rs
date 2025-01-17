@@ -63,7 +63,6 @@ impl Atom {
         let atom_name = atom_name.into().trim().to_string();
         let element = element.into().trim().to_string();
         if valid_identifier(&id)
-            && id.len() > 0
             && valid_identifier(&atom_name)
             && valid_identifier(&element)
             && x.is_finite()
@@ -223,19 +222,15 @@ impl Atom {
 
     /// Set the serial number of the atom.
     /// This number, combined with the `alt_loc` from the Conformer, of this Atom is defined to be unique in the containing model, which is not enforced.
-    ///
-    /// Note that this may not be used when exporting to mmCIF files (see also: `set_id()`).
     pub fn set_serial_number(&mut self, new_serial_number: usize) {
         self.serial_number = new_serial_number;
     }
 
-    /// Get the atom ID (_atom_site.id for mmCIF files)
+    /// Get the atom ID (mmCIF item `_atom_site.id`)
     /// This number should be globally unique, but this is not enforced.
     pub fn id(&self) -> &str { &self.id }
 
-    /// Set the atom ID
-    ///
-    /// Note that this may not be used when exporting to PDB files (see also: `set_serial_number()`).
+    /// Set the atom ID (mmCIF item `_atom_site.id`)
     pub fn set_id(&mut self, new_id: impl Into<String>) -> Result<(), String> {
         let new_id = new_id.into();
         if !valid_identifier(&new_id) {
@@ -711,6 +706,7 @@ mod tests {
     use super::Atom;
     use super::UnitCell;
 
+    #[test]
     fn set_id() {
         let mut a = Atom::new(false, 0, ".", "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         assert!(a.set_id("Å").is_err());
