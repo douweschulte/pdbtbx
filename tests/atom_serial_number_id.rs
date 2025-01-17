@@ -96,7 +96,7 @@ fn atom_id_unique_globally_pdb() {
 #[test]
 fn atom_id_unique_if_unique_in_input_mmcif() {
     let filename_unique_ids = "example-pdbs/3pdz.cif";
-    let (structure, errors) = get_structure_with_errors(filename_unique_ids);
+    let (structure, _errors) = get_structure_with_errors(filename_unique_ids);
     assert!(structure.atoms().map(|atom| atom.id()).all_unique());
 }
 
