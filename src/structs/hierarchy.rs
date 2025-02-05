@@ -270,7 +270,7 @@ impl<'a> AtomConformer<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformer for AtomConformer<'a> {
+impl ContainsAtomConformer for AtomConformer<'_> {
     fn atom(&self) -> &Atom {
         self.atom
     }
@@ -312,7 +312,7 @@ impl<'a> AtomConformerResidue<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformer for AtomConformerResidue<'a> {
+impl ContainsAtomConformer for AtomConformerResidue<'_> {
     fn atom(&self) -> &Atom {
         self.atom
     }
@@ -321,7 +321,7 @@ impl<'a> ContainsAtomConformer for AtomConformerResidue<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformerResidue for AtomConformerResidue<'a> {
+impl ContainsAtomConformerResidue for AtomConformerResidue<'_> {
     fn residue(&self) -> &Residue {
         self.residue
     }
@@ -364,7 +364,7 @@ impl<'a> AtomConformerResidueChain<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformer for AtomConformerResidueChain<'a> {
+impl ContainsAtomConformer for AtomConformerResidueChain<'_> {
     fn atom(&self) -> &Atom {
         self.atom
     }
@@ -373,13 +373,13 @@ impl<'a> ContainsAtomConformer for AtomConformerResidueChain<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformerResidue for AtomConformerResidueChain<'a> {
+impl ContainsAtomConformerResidue for AtomConformerResidueChain<'_> {
     fn residue(&self) -> &Residue {
         self.residue
     }
 }
 
-impl<'a> ContainsAtomConformerResidueChain for AtomConformerResidueChain<'a> {
+impl ContainsAtomConformerResidueChain for AtomConformerResidueChain<'_> {
     fn chain(&self) -> &Chain {
         self.chain
     }
@@ -416,7 +416,7 @@ impl<'a> AtomConformerResidueChainModel<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformer for AtomConformerResidueChainModel<'a> {
+impl ContainsAtomConformer for AtomConformerResidueChainModel<'_> {
     fn atom(&self) -> &Atom {
         self.atom
     }
@@ -425,19 +425,19 @@ impl<'a> ContainsAtomConformer for AtomConformerResidueChainModel<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformerResidue for AtomConformerResidueChainModel<'a> {
+impl ContainsAtomConformerResidue for AtomConformerResidueChainModel<'_> {
     fn residue(&self) -> &Residue {
         self.residue
     }
 }
 
-impl<'a> ContainsAtomConformerResidueChain for AtomConformerResidueChainModel<'a> {
+impl ContainsAtomConformerResidueChain for AtomConformerResidueChainModel<'_> {
     fn chain(&self) -> &Chain {
         self.chain
     }
 }
 
-impl<'a> ContainsAtomConformerResidueChainModel for AtomConformerResidueChainModel<'a> {
+impl ContainsAtomConformerResidueChainModel for AtomConformerResidueChainModel<'_> {
     fn model(&self) -> &Model {
         self.model
     }
@@ -479,7 +479,7 @@ impl<'a> AtomConformerMut<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformer for AtomConformerMut<'a> {
+impl ContainsAtomConformer for AtomConformerMut<'_> {
     fn atom(&self) -> &Atom {
         unsafe { self.atom.as_ref().unwrap() }
     }
@@ -488,7 +488,7 @@ impl<'a> ContainsAtomConformer for AtomConformerMut<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformerMut for AtomConformerMut<'a> {
+impl ContainsAtomConformerMut for AtomConformerMut<'_> {
     fn atom_mut(&mut self) -> &mut Atom {
         unsafe { self.atom.as_mut().unwrap() }
     }
@@ -543,7 +543,7 @@ impl<'a> AtomConformerResidueMut<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformer for AtomConformerResidueMut<'a> {
+impl ContainsAtomConformer for AtomConformerResidueMut<'_> {
     fn atom(&self) -> &Atom {
         unsafe { self.atom.as_ref().unwrap() }
     }
@@ -552,7 +552,7 @@ impl<'a> ContainsAtomConformer for AtomConformerResidueMut<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformerMut for AtomConformerResidueMut<'a> {
+impl ContainsAtomConformerMut for AtomConformerResidueMut<'_> {
     fn atom_mut(&mut self) -> &mut Atom {
         unsafe { self.atom.as_mut().unwrap() }
     }
@@ -561,13 +561,13 @@ impl<'a> ContainsAtomConformerMut for AtomConformerResidueMut<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformerResidue for AtomConformerResidueMut<'a> {
+impl ContainsAtomConformerResidue for AtomConformerResidueMut<'_> {
     fn residue(&self) -> &Residue {
         unsafe { self.residue.as_ref().unwrap() }
     }
 }
 
-impl<'a> ContainsAtomConformerResidueMut for AtomConformerResidueMut<'a> {
+impl ContainsAtomConformerResidueMut for AtomConformerResidueMut<'_> {
     fn residue_mut(&mut self) -> &mut Residue {
         unsafe { self.residue.as_mut().unwrap() }
     }
@@ -624,7 +624,7 @@ impl<'a> AtomConformerResidueChainMut<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformer for AtomConformerResidueChainMut<'a> {
+impl ContainsAtomConformer for AtomConformerResidueChainMut<'_> {
     fn atom(&self) -> &Atom {
         unsafe { self.atom.as_ref().unwrap() }
     }
@@ -633,7 +633,7 @@ impl<'a> ContainsAtomConformer for AtomConformerResidueChainMut<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformerMut for AtomConformerResidueChainMut<'a> {
+impl ContainsAtomConformerMut for AtomConformerResidueChainMut<'_> {
     fn atom_mut(&mut self) -> &mut Atom {
         unsafe { self.atom.as_mut().unwrap() }
     }
@@ -642,25 +642,25 @@ impl<'a> ContainsAtomConformerMut for AtomConformerResidueChainMut<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformerResidue for AtomConformerResidueChainMut<'a> {
+impl ContainsAtomConformerResidue for AtomConformerResidueChainMut<'_> {
     fn residue(&self) -> &Residue {
         unsafe { self.residue.as_ref().unwrap() }
     }
 }
 
-impl<'a> ContainsAtomConformerResidueMut for AtomConformerResidueChainMut<'a> {
+impl ContainsAtomConformerResidueMut for AtomConformerResidueChainMut<'_> {
     fn residue_mut(&mut self) -> &mut Residue {
         unsafe { self.residue.as_mut().unwrap() }
     }
 }
 
-impl<'a> ContainsAtomConformerResidueChain for AtomConformerResidueChainMut<'a> {
+impl ContainsAtomConformerResidueChain for AtomConformerResidueChainMut<'_> {
     fn chain(&self) -> &Chain {
         unsafe { self.chain.as_ref().unwrap() }
     }
 }
 
-impl<'a> ContainsAtomConformerResidueChainMut for AtomConformerResidueChainMut<'a> {
+impl ContainsAtomConformerResidueChainMut for AtomConformerResidueChainMut<'_> {
     fn chain_mut(&mut self) -> &mut Chain {
         unsafe { self.chain.as_mut().unwrap() }
     }
@@ -717,7 +717,7 @@ impl<'a> AtomConformerResidueChainModelMut<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformer for AtomConformerResidueChainModelMut<'a> {
+impl ContainsAtomConformer for AtomConformerResidueChainModelMut<'_> {
     fn atom(&self) -> &Atom {
         unsafe { self.atom.as_ref().unwrap() }
     }
@@ -726,7 +726,7 @@ impl<'a> ContainsAtomConformer for AtomConformerResidueChainModelMut<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformerMut for AtomConformerResidueChainModelMut<'a> {
+impl ContainsAtomConformerMut for AtomConformerResidueChainModelMut<'_> {
     fn atom_mut(&mut self) -> &mut Atom {
         unsafe { self.atom.as_mut().unwrap() }
     }
@@ -735,37 +735,37 @@ impl<'a> ContainsAtomConformerMut for AtomConformerResidueChainModelMut<'a> {
     }
 }
 
-impl<'a> ContainsAtomConformerResidue for AtomConformerResidueChainModelMut<'a> {
+impl ContainsAtomConformerResidue for AtomConformerResidueChainModelMut<'_> {
     fn residue(&self) -> &Residue {
         unsafe { self.residue.as_ref().unwrap() }
     }
 }
 
-impl<'a> ContainsAtomConformerResidueMut for AtomConformerResidueChainModelMut<'a> {
+impl ContainsAtomConformerResidueMut for AtomConformerResidueChainModelMut<'_> {
     fn residue_mut(&mut self) -> &mut Residue {
         unsafe { self.residue.as_mut().unwrap() }
     }
 }
 
-impl<'a> ContainsAtomConformerResidueChain for AtomConformerResidueChainModelMut<'a> {
+impl ContainsAtomConformerResidueChain for AtomConformerResidueChainModelMut<'_> {
     fn chain(&self) -> &Chain {
         unsafe { self.chain.as_ref().unwrap() }
     }
 }
 
-impl<'a> ContainsAtomConformerResidueChainMut for AtomConformerResidueChainModelMut<'a> {
+impl ContainsAtomConformerResidueChainMut for AtomConformerResidueChainModelMut<'_> {
     fn chain_mut(&mut self) -> &mut Chain {
         unsafe { self.chain.as_mut().unwrap() }
     }
 }
 
-impl<'a> ContainsAtomConformerResidueChainModel for AtomConformerResidueChainModelMut<'a> {
+impl ContainsAtomConformerResidueChainModel for AtomConformerResidueChainModelMut<'_> {
     fn model(&self) -> &Model {
         unsafe { self.model.as_ref().unwrap() }
     }
 }
 
-impl<'a> ContainsAtomConformerResidueChainModelMut for AtomConformerResidueChainModelMut<'a> {
+impl ContainsAtomConformerResidueChainModelMut for AtomConformerResidueChainModelMut<'_> {
     fn model_mut(&mut self) -> &mut Model {
         unsafe { self.model.as_mut().unwrap() }
     }

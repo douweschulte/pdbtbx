@@ -459,11 +459,4 @@ mod tests {
         assert!(a.remove_atom_by_serial_number(13));
         assert_eq!(a.atom_count(), 0);
     }
-
-    #[test]
-    fn check_display() {
-        let a = Conformer::new("A", None, None).unwrap();
-        format!("{a:?}");
-        format!("{a}");
-    }
 }

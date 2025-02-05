@@ -1,4 +1,3 @@
-use std::collections::{HashMap, HashSet};
 use super::lexitem::*;
 use crate::error::*;
 use crate::structs::*;
@@ -6,6 +5,7 @@ use crate::validate::*;
 use crate::ReadOptions;
 use crate::StrictnessLevel;
 use crate::TransformationMatrix;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -476,8 +476,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
         // Parse remaining fields in the order they appear in the line
         let atom_type = parse_column!(get_text, ATOM_GROUP).unwrap_or_else(|| "ATOM".to_string());
         let name = parse_column!(get_text, ATOM_NAME).expect("Atom name should be provided");
-        let id =
-            parse_column!(get_text, ATOM_ID).expect("Atom ID should be provided");
+        let id = parse_column!(get_text, ATOM_ID).expect("Atom ID should be provided");
         let residue_name =
             parse_column!(get_text, ATOM_COMP_ID).expect("Residue name should be provided");
         #[allow(clippy::cast_possible_wrap)]
@@ -569,15 +568,14 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
                 (*pdb_pointer).models_mut().next_back().unwrap()
             }
         };
-        let current_model_atom_count =
-            if let Some(c) = model_atom_counts.get(&model_number) {
-                *c
-            } else {
-                // cache value
-                let c = model.atom_count();
-                model_atom_counts.insert(model_number, c.clone());
-                c
-            };
+        let current_model_atom_count = if let Some(c) = model_atom_counts.get(&model_number) {
+            *c
+        } else {
+            // cache value
+            let c = model.atom_count();
+            model_atom_counts.insert(model_number, c);
+            c
+        };
 
         let mut hetero = false;
         if atom_type == "ATOM" {
@@ -594,7 +592,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
         }
         if let Some(mut atom) = Atom::new(
             hetero,
-            current_model_atom_count,  // serial number -> increments in same order as atom definitions in file
+            current_model_atom_count, // serial number -> increments in same order as atom definitions in file
             id,
             name,
             pos_x,
@@ -610,7 +608,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
             }
 
             let id = atom.id();
-            if ! atom_ids.insert(id.to_string()) {
+            if !atom_ids.insert(id.to_string()) {
                 atom_ids_duplicated.insert(id.to_string());
             }
 
@@ -631,11 +629,14 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
             ))
         }
     }
-    if atom_ids_duplicated.len() > 0 {
+    if !atom_ids_duplicated.is_empty() {
         errors.push(PDBError::new(
             ErrorLevel::LooseWarning,
             "Duplicated atom IDs",
-            format!("{} atom IDs occurred more than once", atom_ids_duplicated.len()),
+            format!(
+                "{} atom IDs occurred more than once",
+                atom_ids_duplicated.len()
+            ),
             Context::None,
         ));
     }
@@ -696,7 +697,7 @@ fn get_usize(
                 clippy::cast_sign_loss,
                 clippy::float_cmp
             )]
-            if (0.0..std::usize::MAX as f64).contains(&num) && num.trunc() == num {
+            if (0.0..usize::MAX as f64).contains(&num) && num.trunc() == num {
                 Ok(Some(num as usize))
             } else {
                 Err(PDBError::new(
@@ -727,8 +728,7 @@ fn get_isize(
                 clippy::cast_possible_truncation,
                 clippy::float_cmp
             )]
-            if (std::isize::MIN as f64..std::isize::MAX as f64).contains(&num) && num.trunc() == num
-            {
+            if (isize::MIN as f64..isize::MAX as f64).contains(&num) && num.trunc() == num {
                 Ok(Some(num as isize))
             } else {
                 Err(PDBError::new(

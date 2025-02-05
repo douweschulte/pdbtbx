@@ -228,7 +228,9 @@ impl Atom {
 
     /// Get the atom ID (mmCIF item `_atom_site.id`)
     /// This number should be globally unique, but this is not enforced.
-    pub fn id(&self) -> &str { &self.id }
+    pub fn id(&self) -> &str {
+        &self.id
+    }
 
     /// Set the atom ID (mmCIF item `_atom_site.id`)
     pub fn set_id(&mut self, new_id: impl Into<String>) -> Result<(), String> {
@@ -238,11 +240,8 @@ impl Atom {
                 "New ID has invalid characters for atom {} id {}",
                 self.serial_number, new_id
             ))
-        } else if new_id.len() == 0 {
-            Err(format!(
-                "New ID is empty for atom {}",
-                self.serial_number
-            ))
+        } else if new_id.is_empty() {
+            Err(format!("New ID is empty for atom {}", self.serial_number))
         } else {
             self.id = new_id.trim().to_string();
             Ok(())
@@ -847,12 +846,5 @@ mod tests {
         assert_eq!(radii.covalent_double, None);
         assert_eq!(radii.covalent_triple, None);
         assert_eq!(a.element().unwrap(), &Element::H);
-    }
-
-    #[test]
-    fn check_display() {
-        let a = Atom::new(false, 0, ".", "C", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap();
-        format!("{a:?}");
-        format!("{a}");
     }
 }

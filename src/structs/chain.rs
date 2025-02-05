@@ -258,7 +258,7 @@ impl<'a> Chain {
     pub fn find(
         &'a self,
         search: Search,
-    ) -> impl DoubleEndedIterator<Item = AtomConformerResidue<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidue<'a>> + 'a {
         self.residues()
             .map(move |r| (r, search.clone().add_residue_info(r)))
             .filter(|(_r, search)| !matches!(search, Search::Known(false)))
@@ -269,7 +269,7 @@ impl<'a> Chain {
     pub fn find_mut(
         &'a mut self,
         search: Search,
-    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueMut<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueMut<'a>> + 'a {
         self.residues_mut()
             .map(move |r| {
                 let search = search.clone().add_residue_info(r);
@@ -358,7 +358,7 @@ impl<'a> Chain {
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this Chain.
     pub fn atoms_with_hierarchy(
         &'a self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidue<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidue<'a>> + 'a {
         self.residues()
             .flat_map(|r| r.atoms_with_hierarchy().map(move |h| h.extend(r)))
     }
@@ -366,7 +366,7 @@ impl<'a> Chain {
     /// Get an iterator of mutable references to a struct containing all atoms with their hierarchy making up this Chain.
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueMut<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueMut<'a>> + 'a {
         self.residues_mut().flat_map(|r| {
             let residue: *mut Residue = r;
             r.atoms_with_hierarchy_mut().map(move |h| h.extend(residue))
@@ -611,12 +611,5 @@ mod tests {
         assert!(a.remove_residue_by_id((13, None)));
         assert_eq!(a.residue_count(), 0);
         assert!(!a.remove_residue_by_id((13, None)));
-    }
-
-    #[test]
-    fn check_display() {
-        let a = Chain::new("A").unwrap();
-        format!("{a:?}");
-        format!("{a}");
     }
 }

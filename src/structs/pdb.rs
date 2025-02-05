@@ -481,7 +481,7 @@ impl<'a> PDB {
     pub fn find(
         &'a self,
         search: Search,
-    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModel<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModel<'a>> + 'a {
         self.models()
             .map(move |m| (m, search.clone().add_model_info(m)))
             .filter(|(_m, search)| !matches!(search, Search::Known(false)))
@@ -492,7 +492,7 @@ impl<'a> PDB {
     pub fn find_mut(
         &'a mut self,
         search: Search,
-    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModelMut<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModelMut<'a>> + 'a {
         self.models_mut()
             .map(move |m| {
                 let search = search.clone().add_model_info(m);
@@ -628,7 +628,7 @@ impl<'a> PDB {
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this PDB.
     pub fn atoms_with_hierarchy(
         &'a self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModel<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModel<'a>> + 'a {
         self.models()
             .flat_map(|m| m.atoms_with_hierarchy().map(move |h| h.extend(m)))
     }
@@ -636,7 +636,7 @@ impl<'a> PDB {
     /// Get an iterator of mutable references to a struct containing all atoms with their hierarchy making up this PDB.
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModelMut<'a>> + '_
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModelMut<'a>> + 'a
     {
         self.models_mut().flat_map(|m| {
             let model: *mut Model = m;
@@ -845,7 +845,7 @@ impl<'a> PDB {
             }
             counter = 0;
             for chain in model.chains_mut() {
-                chain.set_id(&number_to_base26(counter));
+                chain.set_id(number_to_base26(counter));
                 counter += 1;
             }
         }

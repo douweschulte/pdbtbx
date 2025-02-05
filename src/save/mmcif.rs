@@ -311,11 +311,11 @@ _atom_site.aniso_U[3][3]"
                     for atom in conformer.atoms() {
                         let mut data = vec![
                             (if atom.hetero() { "HETATM" } else { "ATOM" }).to_string(), // ATOM or HETATM
-                            atom.id().to_string(), // ID
+                            atom.id().to_string(),                                       // ID
                             atom.element()
                                 .map_or_else(|| "", Element::symbol)
                                 .to_string(), // Element
-                            atom.name().to_string(),          // Name
+                            atom.name().to_string(),                                     // Name
                             conformer.alternative_location().unwrap_or(".").to_string(), // Alternative location
                             conformer.name().to_string(), // Residue name
                             number_to_base26(chain_index), // Label Chain name, defined to be without gaps
@@ -404,7 +404,7 @@ _atom_site.aniso_U[3][3]"
 #[allow(clippy::cast_possible_truncation)]
 fn print_float(num: f64) -> String {
     let rounded = (num * 100000.).round() / 100000.;
-    if (rounded.round() - rounded).abs() < std::f64::EPSILON {
+    if (rounded.round() - rounded).abs() < f64::EPSILON {
         format!("{}.0", rounded.trunc() as isize)
     } else {
         format!("{rounded}")
