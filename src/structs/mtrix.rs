@@ -64,10 +64,4 @@ mod tests {
         assert_eq!(a.serial_number, 0);
         assert_eq!(a.transformation, TransformationMatrix::identity());
     }
-
-    #[test]
-    fn test_debug() {
-        let a = MtriX::default();
-        format!("{a:?}");
-    }
 }

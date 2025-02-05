@@ -244,7 +244,7 @@ impl<'a> Residue {
     pub fn find(
         &'a self,
         search: Search,
-    ) -> impl DoubleEndedIterator<Item = AtomConformer<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = AtomConformer<'a>> + 'a {
         self.conformers()
             .map(move |c| (c, search.clone().add_conformer_info(c)))
             .filter(|(_c, search)| !matches!(search, Search::Known(false)))
@@ -259,7 +259,7 @@ impl<'a> Residue {
     pub fn find_mut(
         &'a mut self,
         search: Search,
-    ) -> impl DoubleEndedIterator<Item = AtomConformerMut<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerMut<'a>> + 'a {
         self.conformers_mut()
             .map(move |c| {
                 let search = search.clone().add_conformer_info(c);
@@ -333,7 +333,7 @@ impl<'a> Residue {
     #[must_use]
     pub fn atoms_with_hierarchy(
         &'a self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformer<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformer<'a>> + 'a {
         self.conformers()
             .flat_map(|c| c.atoms().map(move |a| (a, c)))
             .map(hierarchy::AtomConformer::from_tuple)
@@ -344,7 +344,7 @@ impl<'a> Residue {
     #[must_use]
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerMut<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerMut<'a>> + 'a {
         self.conformers_mut()
             .flat_map(|c| {
                 let conformer: *mut Conformer = c;
@@ -587,12 +587,5 @@ mod tests {
         a.extend(vec![conformer1]);
 
         assert_eq!(a.conformer_count(), 2);
-    }
-
-    #[test]
-    fn check_display() {
-        let a = Residue::new(1, None, None).unwrap();
-        format!("{a:?}");
-        format!("{a}");
     }
 }

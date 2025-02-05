@@ -481,7 +481,7 @@ impl<'a> PDB {
     pub fn find(
         &'a self,
         search: Search,
-    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModel<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModel<'a>> + 'a {
         self.models()
             .map(move |m| (m, search.clone().add_model_info(m)))
             .filter(|(_m, search)| !matches!(search, Search::Known(false)))
@@ -492,7 +492,7 @@ impl<'a> PDB {
     pub fn find_mut(
         &'a mut self,
         search: Search,
-    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModelMut<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModelMut<'a>> + 'a {
         self.models_mut()
             .map(move |m| {
                 let search = search.clone().add_model_info(m);
@@ -628,7 +628,7 @@ impl<'a> PDB {
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this PDB.
     pub fn atoms_with_hierarchy(
         &'a self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModel<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModel<'a>> + 'a {
         self.models()
             .flat_map(|m| m.atoms_with_hierarchy().map(move |h| h.extend(m)))
     }
@@ -636,7 +636,7 @@ impl<'a> PDB {
     /// Get an iterator of mutable references to a struct containing all atoms with their hierarchy making up this PDB.
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModelMut<'a>> + '_
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModelMut<'a>> + 'a
     {
         self.models_mut().flat_map(|m| {
             let model: *mut Model = m;
@@ -845,7 +845,7 @@ impl<'a> PDB {
             }
             counter = 0;
             for chain in model.chains_mut() {
-                chain.set_id(&number_to_base26(counter));
+                chain.set_id(number_to_base26(counter));
                 counter += 1;
             }
         }
@@ -1270,8 +1270,8 @@ mod tests {
 
     #[test]
     fn sort_atoms() {
-        let a = Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
-        let b = Atom::new(false, 1, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
+        let a = Atom::new(false, 0, "0", "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
+        let b = Atom::new(false, 1, "1", "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap();
         let mut model = Model::new(0);
         model.add_atom(b, "A", (0, None), ("LYS", None));
         model.add_atom(a, "A", (0, None), ("LYS", None));
@@ -1288,19 +1288,19 @@ mod tests {
     fn binary_lookup() {
         let mut model = Model::new(0);
         model.add_atom(
-            Atom::new(false, 1, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 1, "1", "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", Some("A")),
         );
         model.add_atom(
-            Atom::new(false, 1, "", 1.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 1, "1", "", 1.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", Some("B")),
         );
         model.add_atom(
-            Atom::new(false, 1, "", 2.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 1, "1", "", 2.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
@@ -1319,19 +1319,19 @@ mod tests {
     fn spatial_lookup() {
         let mut model = Model::new(0);
         model.add_atom(
-            Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 0, "0", "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
         );
         model.add_atom(
-            Atom::new(false, 1, "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 1, "1", "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
         );
         model.add_atom(
-            Atom::new(false, 2, "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 2, "2", "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
@@ -1363,19 +1363,19 @@ mod tests {
     fn spatial_lookup_with_hierarchy() {
         let mut model = Model::new(0);
         model.add_atom(
-            Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 0, "0", "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
         );
         model.add_atom(
-            Atom::new(false, 1, "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 1, "1", "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
         );
         model.add_atom(
-            Atom::new(false, 2, "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 2, "2", "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "B",
             (0, None),
             ("MET", None),
@@ -1417,19 +1417,19 @@ mod tests {
 
         let mut model = Model::new(0);
         model.add_atom(
-            Atom::new(false, 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 0, "0", "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
         );
         model.add_atom(
-            Atom::new(false, 1, "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 1, "1", "", 1.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
         );
         model.add_atom(
-            Atom::new(false, 2, "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 2, "2", "", 0.0, 1.0, 1.0, 0.0, 0.0, "", 0).unwrap(),
             "B",
             (0, None),
             ("MET", None),
@@ -1445,19 +1445,19 @@ mod tests {
     fn bounding_box() {
         let mut model = Model::new(0);
         model.add_atom(
-            Atom::new(false, 0, "", -1.0, 0.0, 2.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 0, "0", "", -1.0, 0.0, 2.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
         );
         model.add_atom(
-            Atom::new(false, 1, "", 1.0, 2.0, -1.0, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 1, "1", "", 1.0, 2.0, -1.0, 0.0, 0.0, "", 0).unwrap(),
             "A",
             (0, None),
             ("MET", None),
         );
         model.add_atom(
-            Atom::new(false, 2, "", 2.0, -1.0, 0.5, 0.0, 0.0, "", 0).unwrap(),
+            Atom::new(false, 2, "2", "", 2.0, -1.0, 0.5, 0.0, 0.0, "", 0).unwrap(),
             "B",
             (0, None),
             ("MET", None),

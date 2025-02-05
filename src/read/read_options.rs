@@ -51,7 +51,7 @@ impl From<&str> for Format {
 ///
 /// The format of the file is inferred by [`ReadOptions::guess_format`]
 /// when it is not set explicitly with [`ReadOptions::set_format`].
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ReadOptions {
     /// The format to read the file in.
     pub(crate) format: Format,
