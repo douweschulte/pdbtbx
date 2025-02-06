@@ -1093,6 +1093,7 @@ impl<'a> PDB {
         const LEN_C_C: f64 = 1.54;
         const LEN_C_N: f64 = 1.48;
         const LEN_C_O: f64 = 1.43;
+        const LEN_C_O_DOUBLE: f64 = 1.23;
 
         // Hydrogen
         const LEN_OH_OH: f64 = 2.8;
@@ -1119,6 +1120,7 @@ impl<'a> PDB {
             LEN_N_H,
             LEN_C_H,
             LEN_O_H,
+            LEN_C_O_DOUBLE,
         ];
 
         let lens_hydrogen = vec![LEN_OH_OH, LEN_NH_OC, LEN_OH_OC];
@@ -1142,6 +1144,9 @@ impl<'a> PDB {
                 ] {
                     for &bond_len in lens {
                         if (dist - bond_len).abs() < BOND_LEN_THRESH {
+                            if bond_len == LEN_C_O_DOUBLE {
+                                bonds.push((atom.counter(), other_atom.counter(), bond_type));
+                            }
                             bonds.push((atom.counter(), other_atom.counter(), bond_type));
                             break;
                         }
