@@ -25,7 +25,7 @@ pub use helper::*;
 pub use hierarchy::*;
 pub use model::Model;
 pub use mtrix::MtriX;
-pub use pdb::PDB;
+pub use pdb::{Helix, SecondaryStructure, Sheet, PDB};
 pub use residue::Residue;
 pub use search::*;
 pub use symmetry::Symmetry;
