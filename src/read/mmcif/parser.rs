@@ -164,7 +164,7 @@ fn parse_mmcif_with_options(
                                     .err()
                             } else if let Ok(Some(value)) = get_usize(&single.content, &context, None) {
                                 if pdb.symmetry != Symmetry::from_index(value) {
-                                    Some(PDBError::new(ErrorLevel::InvalidatingError, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
+                                    None
                                 }
                                 else {
                                     None
@@ -180,7 +180,7 @@ fn parse_mmcif_with_options(
                                     .err()
                             } else if let Ok(Some(value)) = get_text(&single.content, &context, None) {
                                 if pdb.symmetry != Symmetry::new(value) {
-                                    Some(PDBError::new(ErrorLevel::InvalidatingError, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
+                                    None
                                 }
                                 else {
                                     None
