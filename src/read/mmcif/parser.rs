@@ -405,12 +405,12 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
         .map(|tag| (input.header.iter().position(|t| t == tag.1), tag))
         .map(|(pos, tag)| match pos {
             Some(p) => Ok(Some(p)),
-            None if tag.0 == Required => Err(PDBError::new(
-                ErrorLevel::InvalidatingError,
-                "Missing column in coordinate atoms data loop",
-                "The above column is missing",
-                Context::show(tag.1),
-            )),
+            // None if tag.0 == Required => Err(PDBError::new(
+            //     ErrorLevel::InvalidatingError,
+            //     "Missing column in coordinate atoms data loop",
+            //     "The above column is missing",
+            //     Context::show(tag.1),
+            // )),
             None => Ok(None),
         })
         .collect();
