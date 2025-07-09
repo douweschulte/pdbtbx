@@ -22,7 +22,8 @@ fn main() {
     let mut models = Vec::with_capacity(pdb_names.len());
     let parser = ReadOptions::default()
         .set_level(crate::StrictnessLevel::Loose)
-        .set_format(Format::Pdb);
+        .set_format(Format::Pdb)
+        .clone();
     for (name, path) in &pdb_names {
         models.push((*name, parser.read(path).unwrap().0))
     }

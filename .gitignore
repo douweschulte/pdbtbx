@@ -1,6 +1,7 @@
 /target
 /dump
 .vscode
+.idea
 default.profraw
 *.txt
 __pycache__

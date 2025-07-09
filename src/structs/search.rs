@@ -408,7 +408,7 @@ mod tests {
 
     #[test]
     fn atom_find() {
-        let a = Atom::new(true, 123, "CA", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 1).unwrap();
+        let a = Atom::new(true, 123, "123", "CA", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 1).unwrap();
         assert_eq!(
             Search::Single(Term::AtomSerialNumber(123))
                 .add_atom_info(&a)
@@ -437,7 +437,7 @@ mod tests {
 
     #[test]
     fn search_combinations() {
-        let a = Atom::new(true, 123, "CA", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 1).unwrap();
+        let a = Atom::new(true, 123, "123", "CA", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 1).unwrap();
         assert_eq!(
             (Term::AtomName("CA".to_string()) & Term::Element(Element::C))
                 .add_atom_info(&a)

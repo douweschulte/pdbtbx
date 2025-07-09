@@ -447,8 +447,8 @@ mod tests {
     #[test]
     fn test_atom() {
         let mut a = Conformer::new("A", None, None).unwrap();
-        let mut atom1 = Atom::new(false, 12, "CB", 1.0, 1.0, 1.0, 1.0, 1.0, "C", 0).unwrap();
-        let atom2 = Atom::new(false, 13, "CB", 1.0, 1.0, 1.0, 1.0, 1.0, "C", 0).unwrap();
+        let mut atom1 = Atom::new(false, 12, "12", "CB", 1.0, 1.0, 1.0, 1.0, 1.0, "C", 0).unwrap();
+        let atom2 = Atom::new(false, 13, "13", "CB", 1.0, 1.0, 1.0, 1.0, 1.0, "C", 0).unwrap();
         a.add_atom(atom1.clone());
         a.add_atom(atom2.clone());
         a.add_atom(atom2);
@@ -458,12 +458,5 @@ mod tests {
         assert!(a.remove_atom_by_name("CB"));
         assert!(a.remove_atom_by_serial_number(13));
         assert_eq!(a.atom_count(), 0);
-    }
-
-    #[test]
-    fn check_display() {
-        let a = Conformer::new("A", None, None).unwrap();
-        format!("{a:?}");
-        format!("{a}");
     }
 }

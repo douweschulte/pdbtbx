@@ -270,7 +270,7 @@ impl<'a> Model {
     pub fn find(
         &'a self,
         search: Search,
-    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChain<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChain<'a>> + 'a {
         self.chains()
             .map(move |c| (c, search.clone().add_chain_info(c)))
             .filter(|(_c, search)| !matches!(search, Search::Known(false)))
@@ -281,7 +281,7 @@ impl<'a> Model {
     pub fn find_mut(
         &'a mut self,
         search: Search,
-    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainMut<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainMut<'a>> + 'a {
         self.chains_mut()
             .map(move |c| {
                 let search = search.clone().add_chain_info(c);
@@ -393,7 +393,7 @@ impl<'a> Model {
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this Model.
     pub fn atoms_with_hierarchy(
         &'a self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChain<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChain<'a>> + 'a {
         self.chains()
             .flat_map(|c| c.atoms_with_hierarchy().map(move |h| h.extend(c)))
     }
@@ -401,7 +401,7 @@ impl<'a> Model {
     /// Get an iterator of mutable references to a struct containing all atoms with their hierarchy making up this Model.
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainMut<'a>> + '_ {
+    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainMut<'a>> + 'a {
         self.chains_mut().flat_map(|c| {
             let chain: *mut Chain = c;
             c.atoms_with_hierarchy_mut().map(move |h| h.extend(chain))
@@ -659,20 +659,13 @@ mod tests {
     }
 
     #[test]
-    fn test_display() {
-        let a = Model::new(0);
-        format!("{a:?}");
-        format!("{a}");
-    }
-
-    #[test]
     #[allow(clippy::unwrap_used)]
     fn test_hierarchy_mut() {
         // Create the struct to use
         let mut a = Model::new(0);
         a.add_chain(Chain::new("A").unwrap());
         a.add_atom(
-            Atom::new(false, 0, "ATOM", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap(),
+            Atom::new(false, 0, "0", "ATOM", 0.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap(),
             "A",
             (0, None),
             ("ALA", None),

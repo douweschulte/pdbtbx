@@ -45,10 +45,11 @@ fn do_something(file: &str, folder: &str, name: &str) {
     println!("Working on file: {file}");
     let now = Instant::now();
 
-    let (pdb, errors) = ReadOptions::default()
+    let read_result = ReadOptions::default()
         .set_level(crate::StrictnessLevel::Loose)
-        .read(file)
-        .unwrap();
+        .read(file);
+    assert!(read_result.is_ok());
+    let (pdb, errors) = read_result.unwrap();
 
     let time = now.elapsed();
 
@@ -157,7 +158,7 @@ fn save_pdb_strict() {
         .into_string()
         .unwrap();
 
-    let atom = Atom::new(false, 0, "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
+    let atom = Atom::new(false, 0, "0", "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
     let mut model = Model::new(0);
     model.add_atom(atom, "A", (0, None), ("LYS", None));
     let mut pdb = PDB::new();
@@ -204,7 +205,7 @@ fn save_mmcif_strict() {
         .into_string()
         .unwrap();
 
-    let atom = Atom::new(false, 0, "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
+    let atom = Atom::new(false, 0, "0", "H", 0.0, 0.0, 0.0, 0.0, 0.0, "H", 0).unwrap();
     let mut model = Model::new(0);
     model.add_atom(atom, "A", (0, None), ("LYS", None));
     let mut pdb = PDB::new();

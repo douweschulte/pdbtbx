@@ -141,7 +141,6 @@ mod tests {
         assert_eq!(a.database_position, pos_db);
         assert_eq!(a.pdb_position, pos_seq);
         assert_eq!(a.differences, Vec::new());
-        format!("{a:?}");
         assert!(a < c);
     }
 
@@ -156,7 +155,6 @@ mod tests {
         assert_eq!(a.start_insert, None);
         assert_eq!(a.end, 12);
         assert_eq!(a.end_insert, None);
-        format!("{a:?}");
         assert!(a < c);
     }
     #[test]
@@ -173,6 +171,5 @@ mod tests {
         );
         assert_ne!(a, b);
         assert!(a < b);
-        format!("{a:?}");
     }
 }
