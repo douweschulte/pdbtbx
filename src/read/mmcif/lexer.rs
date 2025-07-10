@@ -775,6 +775,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn parse_numeric_float_no_integer_negative_exp() {
         let res = parse_numeric(".42e-10");
         assert_numeric!(res, 0.420 / 10000000000.0);

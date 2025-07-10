@@ -726,6 +726,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn distance() {
         let a = Atom::new(false, 0, ".", "", 1.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();
         let b = Atom::new(false, 0, ".", "", 9.0, 0.0, 0.0, 0.0, 0.0, "C", 0).unwrap();

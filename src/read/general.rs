@@ -54,6 +54,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn open_invalid() {
         assert!(open("file.png").is_err());
         assert!(open("file.mmcif").is_err());
@@ -62,6 +63,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn open_not_existing() {
         let pdb = open("file.pdb").expect_err("This file should not exist.");
         assert_eq!(pdb[0].short_description(), "Could not open file");

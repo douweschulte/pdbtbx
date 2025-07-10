@@ -23,7 +23,6 @@ pub(crate) fn fast_parse_u64_from_string(s: &str) -> Result<u64, String> {
     Ok(result)
 }
 
-//TODO: Implement miri tests and fuzzing
 pub(crate) fn fast_trim(s: &str) -> &str {
     let bytes = s.as_bytes();
     let mut start = 0;
@@ -42,4 +41,29 @@ pub(crate) fn fast_trim(s: &str) -> &str {
     // SAFETY: We only slice within the original string boundaries
     // SAFETY: We know the sliced bytes are valid UTF-8 because all rust strings are valid UTF-8 and it came from a string in the first place.
     unsafe { std::str::from_utf8_unchecked(&bytes[start..end]) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_u64_parse() {
+        assert_eq!(fast_parse_u64_from_string("  100").unwrap(), 100);
+        assert_eq!(fast_parse_u64_from_string("    32").unwrap(), 32);
+        assert_eq!(fast_parse_u64_from_string("9999").unwrap(), 9999);
+        assert_eq!(fast_parse_u64_from_string("     1234").unwrap(), 1234);
+        assert!(fast_parse_u64_from_string(" abc ").is_err());
+        assert!(fast_parse_u64_from_string(" ").is_err());
+        assert!(fast_parse_u64_from_string("     ").is_err());
+        assert!(fast_parse_u64_from_string("").is_err());
+    }
+
+    #[test]
+    fn test_trim() {
+        assert_eq!(fast_trim("   hello   "), "hello");
+        assert_eq!(fast_trim("  world"), "world");
+        assert_eq!(fast_trim("rust"), "rust");
+        assert_eq!(fast_trim("   "), "");
+    }
 }
