@@ -6,7 +6,6 @@ use crate::reference_tables;
 use crate::ReadOptions;
 use crate::StrictnessLevel;
 
-use core::str;
 use std::cmp;
 
 use std::ops::Range;

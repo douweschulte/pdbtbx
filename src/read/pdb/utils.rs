@@ -39,10 +39,7 @@ pub(crate) fn fast_trim(s: &str) -> &str {
         }
     }
 
-    // SAFETY: This is safe because:
-    // 1. We only slice within the original string boundaries (0 <= start <= end <= bytes.len())
-    // 2. We only check and skip ASCII whitespace characters, which are always single-byte in UTF-8
-    // 3. Since we're only moving past ASCII characters, we can't split a multi-byte UTF-8 sequence
-    // 4. The original string was valid UTF-8, and we're creating a substring of it
+    // SAFETY: We only slice within the original string boundaries
+    // SAFETY: We know the sliced bytes are valid UTF-8 because all rust strings are valid UTF-8 and it came from a string in the first place.
     unsafe { std::str::from_utf8_unchecked(&bytes[start..end]) }
 }
