@@ -1,4 +1,4 @@
-pub(crate) fn fast_parse_u64_from_string(s: &str) -> u64 {
+pub(crate) fn fast_parse_u64_from_string(s: &str) -> Result<u64, String> {
     let bytes = s.as_bytes();
     let mut result: u64 = 0;
     let mut i = 0;
@@ -10,12 +10,17 @@ pub(crate) fn fast_parse_u64_from_string(s: &str) -> u64 {
     }
 
     // Parse digits
+    let start = i;
     while i < len && bytes[i].is_ascii_digit() {
         result = result * 10 + (bytes[i] - b'0') as u64;
         i += 1;
     }
 
-    result
+    if i == start {
+        return Err("No digits found".to_string());
+    }
+
+    Ok(result)
 }
 
 //TODO: Implement miri tests and fuzzing
@@ -34,7 +39,10 @@ pub(crate) fn fast_trim(s: &str) -> &str {
         }
     }
 
-    // SAFETY: We only slice within the original string boundaries
-    // SAFETY: We know the sliced bytes are valid UTF-8 because all rust strings are valid UTF-8 and it came from a string in the first place.
+    // SAFETY: This is safe because:
+    // 1. We only slice within the original string boundaries (0 <= start <= end <= bytes.len())
+    // 2. We only check and skip ASCII whitespace characters, which are always single-byte in UTF-8
+    // 3. Since we're only moving past ASCII characters, we can't split a multi-byte UTF-8 sequence
+    // 4. The original string was valid UTF-8, and we're creating a substring of it
     unsafe { std::str::from_utf8_unchecked(&bytes[start..end]) }
 }

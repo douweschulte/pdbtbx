@@ -8,9 +8,7 @@ use crate::StrictnessLevel;
 
 use core::str;
 use std::cmp;
-use std::convert::TryFrom;
-use std::io::Read;
-use std::mem::transmute;
+
 use std::ops::Range;
 use std::str::FromStr;
 
@@ -312,10 +310,18 @@ fn lex_atom_basics(
                 Context::line(linenumber, line, 79, 1),
             ));
         } else {
-            let c = chars[78] as char;
-            charge = isize::try_from(c.to_digit(10).unwrap()).unwrap();
-            if chars[79] == b'-' {
-                charge *= -1;
+            if let Some(digit) = chars[78].checked_sub(b'0').filter(|&n| n <= 9) {
+                charge = digit as isize;
+                if chars[79] == b'-' {
+                    charge *= -1;
+                }
+            } else {
+                errors.push(PDBError::new(
+                    ErrorLevel::InvalidatingError,
+                    "Invalid charge digit",
+                    format!("Expected a digit but found '{}'", chars[78] as char),
+                    Context::line(linenumber, line, 78, 1),
+                ));
             }
         }
     }
@@ -588,7 +594,7 @@ fn lex_seqadv(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let database_accession = parse(linenumber, line, 29..38, &mut errors);
 
     let mut db_pos = None;
-    if !chars[39..48].iter().all(|c| *c as char == ' ') {
+    if !chars[39..48].iter().all(|c| *c == b' ') {
         let db_res_name = parse(linenumber, line, 39..42, &mut errors);
         let db_seq_num = parse(linenumber, line, 43..48, &mut errors);
         db_pos = Some((db_res_name, db_seq_num));
@@ -654,7 +660,7 @@ fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let res_1 = parse(linenumber, line, 11..14, &mut errors);
     let chain_1 = parse_char(linenumber, chars, 15, &mut errors);
     let res_seq_1: isize = parse(linenumber, line, 17..21, &mut errors);
-    let icode_1 = if chars[21] as char == ' ' {
+    let icode_1 = if chars[21] == b' ' {
         None
     } else {
         Some(String::from(parse_char(linenumber, chars, 21, &mut errors)))
@@ -662,7 +668,7 @@ fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let res_2 = parse(linenumber, line, 25..28, &mut errors);
     let chain_2 = parse_char(linenumber, chars, 29, &mut errors);
     let res_seq_2 = parse(linenumber, line, 31..35, &mut errors);
-    let icode_2 = if chars[35] as char == ' ' {
+    let icode_2 = if chars[35] == b' ' {
         None
     } else {
         Some(String::from(parse_char(linenumber, chars, 35, &mut errors)))
@@ -719,7 +725,20 @@ fn fast_parse_u64(
         return default;
     }
 
-    fast_parse_u64_from_string(&line[range])
+    let range_start = range.start;
+    let range_len = range.len();
+    match fast_parse_u64_from_string(&line[range]) {
+        Ok(value) => value,
+        Err(e) => {
+            errors.push(PDBError::new(
+                ErrorLevel::InvalidatingError,
+                "Invalid number format",
+                format!("Could not parse number: {}", e),
+                Context::line(linenumber, line, range_start, range_len),
+            ));
+            default
+        }
+    }
 }
 /// Parse a field from a line, with the given default as fall back, leave errors in the given mutable vec
 fn parse_default<T: FromStr>(
