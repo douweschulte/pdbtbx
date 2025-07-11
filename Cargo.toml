@@ -39,3 +39,8 @@ opt-level = 3
 name = "benchmark"
 harness = false
 path = "benches/benchmark.rs"
+
+[[bench]]
+name = "load_e_coli"
+harness = false
+path = "benches/E_coli.rs"

@@ -19,11 +19,11 @@ pub fn lex_line(
 ) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     match line.len() {
         len if len > 6 => match (options.only_atomic_coords, &line[..6]) {
+            (_, "HETATM") => lex_atom(linenumber, line, true),
+            (_, "ATOM  ") => lex_atom(linenumber, line, false),
             (false, "HEADER") => lex_header(linenumber, line),
             (false, "REMARK") => lex_remark(linenumber, line, options.level),
-            (_, "ATOM  ") => lex_atom(linenumber, line, false),
             (false, "ANISOU") => Ok(lex_anisou(linenumber, line)),
-            (_, "HETATM") => lex_atom(linenumber, line, true),
             (false, "CRYST1") => Ok(lex_cryst(linenumber, line)),
             (false, "SCALE1") => Ok(lex_scale(linenumber, line, 0)),
             (false, "SCALE2") => Ok(lex_scale(linenumber, line, 1)),
@@ -47,12 +47,12 @@ pub fn lex_line(
             (_, "TER   ") => Ok((LexItem::TER(), Vec::new())),
             (_, "END   ") => Ok((LexItem::End(), Vec::new())),
             (_, _) => Ok((LexItem::Empty(), Vec::new())),
-        },
+        }
         len if len > 2 => match &line[..3] {
             "TER" => Ok((LexItem::TER(), Vec::new())),
             "END" => Ok((LexItem::End(), Vec::new())),
             _ => Ok((LexItem::Empty(), Vec::new())),
-        },
+        }
         _ => Ok((LexItem::Empty(), Vec::new())),
     }
 }
