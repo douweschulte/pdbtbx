@@ -47,12 +47,12 @@ pub fn lex_line(
             (_, "TER   ") => Ok((LexItem::TER(), Vec::new())),
             (_, "END   ") => Ok((LexItem::End(), Vec::new())),
             (_, _) => Ok((LexItem::Empty(), Vec::new())),
-        }
+        },
         len if len > 2 => match &line[..3] {
             "TER" => Ok((LexItem::TER(), Vec::new())),
             "END" => Ok((LexItem::End(), Vec::new())),
             _ => Ok((LexItem::Empty(), Vec::new())),
-        }
+        },
         _ => Ok((LexItem::Empty(), Vec::new())),
     }
 }
@@ -308,20 +308,18 @@ fn lex_atom_basics(
                 "The charge is not properly signed, it is defined to be [0-9][+-], so two characters in total.",
                 Context::line(linenumber, line, 79, 1),
             ));
-        } else {
-            if let Some(digit) = chars[78].checked_sub(b'0').filter(|&n| n <= 9) {
-                charge = digit as isize;
-                if chars[79] == b'-' {
-                    charge *= -1;
-                }
-            } else {
-                errors.push(PDBError::new(
-                    ErrorLevel::InvalidatingError,
-                    "Invalid charge digit",
-                    format!("Expected a digit but found '{}'", chars[78] as char),
-                    Context::line(linenumber, line, 78, 1),
-                ));
+        } else if let Some(digit) = chars[78].checked_sub(b'0').filter(|&n| n <= 9) {
+            charge = digit as isize;
+            if chars[79] == b'-' {
+                charge *= -1;
             }
+        } else {
+            errors.push(PDBError::new(
+                ErrorLevel::InvalidatingError,
+                "Invalid charge digit",
+                format!("Expected a digit but found '{}'", chars[78] as char),
+                Context::line(linenumber, line, 78, 1),
+            ));
         }
     }
 
@@ -480,7 +478,8 @@ fn lex_seqres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut index = 19;
     let max = cmp::min(chars.len(), 71);
     while index + 3 <= max {
-        let seq = String::from_utf8(chars[index..index + 3].to_vec()).unwrap(); //TODO
+        let seq =
+            String::from_utf8(chars[index..index + 3].to_vec()).expect("Failed to parse sequence");
         if seq == "   " {
             break;
         }
@@ -732,7 +731,7 @@ fn fast_parse_u64(
             errors.push(PDBError::new(
                 ErrorLevel::InvalidatingError,
                 "Invalid number format",
-                format!("Could not parse number: {}", e),
+                format!("Could not parse number: {e}"),
                 Context::line(linenumber, line, range_start, range_len),
             ));
             default
@@ -761,20 +760,19 @@ fn parse_default<T: FromStr>(
         return default;
     }
 
-    match fast_trim(&line[range.clone()]).parse::<T>() {
-        Ok(v) => v,
-        Err(_) => {
-            errors.push(PDBError::new(
-                ErrorLevel::InvalidatingError,
-                "Invalid data in field",
-                format!(
-                    "The text presented is not of the right kind ({}).",
-                    std::any::type_name::<T>()
-                ),
-                Context::line(linenumber, line, range.start, range.len()),
-            ));
-            default
-        }
+    if let Ok(v) = fast_trim(&line[range.clone()]).parse::<T>() {
+        v
+    } else {
+        errors.push(PDBError::new(
+            ErrorLevel::InvalidatingError,
+            "Invalid data in field",
+            format!(
+                "The text presented is not of the right kind ({}).",
+                std::any::type_name::<T>()
+            ),
+            Context::line(linenumber, line, range.start, range.len()),
+        ));
+        default
     }
 }
 
@@ -783,7 +781,7 @@ fn parse_char(linenumber: usize, line: &[u8], position: usize, errors: &mut Vec<
     if position > line.len() {
         let context = Context::line(
             linenumber,
-            String::from_utf8(line.to_vec()).unwrap(), //TODO
+            String::from_utf8(line.to_vec()).expect("Failed to convert bytes to string"),
             position,
             1,
         );

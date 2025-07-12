@@ -1,3 +1,4 @@
+/// Extracts u64 from a string.
 pub(crate) fn fast_parse_u64_from_string(s: &str) -> Result<u64, String> {
     let bytes = s.as_bytes();
     let mut result: u64 = 0;
@@ -23,6 +24,7 @@ pub(crate) fn fast_parse_u64_from_string(s: &str) -> Result<u64, String> {
     Ok(result)
 }
 
+/// Trims whitespace from a string, quickly.
 pub(crate) fn fast_trim(s: &str) -> &str {
     let bytes = s.as_bytes();
     let mut start = 0;

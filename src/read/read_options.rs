@@ -21,7 +21,7 @@ impl From<&str> for Format {
         match s {
             "pdb" => Self::Pdb,
             "mmcif" => Self::Mmcif,
-            _ => panic!("Unknown format: {}", s),
+            _ => panic!("Unknown format: {s}"),
         }
     }
 }

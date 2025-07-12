@@ -31,6 +31,7 @@ pub fn open_pdb(
     open_pdb_with_options(filename, ReadOptions::default().set_level(level))
 }
 
+/// Reads file.
 pub(crate) fn read_file(filename: &str) -> Result<BufReader<File>, Vec<PDBError>> {
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
     let file = if let Ok(f) = File::open(filename) {
@@ -178,10 +179,10 @@ where
                                 .to_string();
                         }
 
-                        let atom = match Atom::new(
+                        let atom = if let Some(a) = Atom::new(
                             hetero,
                             serial_number + atom_serial_addition,
-                            id_iter.next().unwrap(),
+                            id_iter.next().expect("Atom ID iterator is exhausted"),
                             name,
                             x,
                             y,
@@ -191,16 +192,15 @@ where
                             element,
                             charge,
                         ) {
-                            Some(a) => a,
-                            None => {
-                                errors.push(PDBError::new(
-                                    ErrorLevel::InvalidatingError,
-                                    "Invalid characters in atom creation",
-                                    "Failed to create atom due to invalid characters or values",
-                                    line_context.clone(),
-                                ));
-                                continue;
-                            }
+                            a
+                        } else {
+                            errors.push(PDBError::new(
+                                ErrorLevel::InvalidatingError,
+                                "Invalid characters in atom creation",
+                                "Failed to create atom due to invalid characters or values",
+                                line_context.clone(),
+                            ));
+                            continue;
                         };
                         let conformer_id = (residue_name.as_str(), alt_loc.as_deref());
 
@@ -222,38 +222,32 @@ where
                                     residue_serial_number + residue_serial_addition,
                                     insertion_code.clone(),
                                 ),
-                                match Residue::new(
+                                if let Some(r) = Residue::new(
                                     residue_serial_number + residue_serial_addition,
                                     insertion_code.as_deref(),
                                     Some(
-                                        match Conformer::new(
+                                        if let Some(c) = Conformer::new(
                                             residue_name.as_str(),
                                             alt_loc.as_deref(),
                                             Some(atom),
-                                        ) {
-                                            Some(c) => c,
-                                            None => {
-                                                errors.push(PDBError::new(
-                                                    ErrorLevel::InvalidatingError,
-                                                    "Invalid characters in Conformer creation",
-                                                    "Failed to create conformer due to invalid characters",
-                                                    line_context.clone(),
-                                                ));
-                                                continue;
-                                            }
+                                        ) { c } else {
+                                            errors.push(PDBError::new(
+                                                ErrorLevel::InvalidatingError,
+                                                "Invalid characters in Conformer creation",
+                                                "Failed to create conformer due to invalid characters",
+                                                line_context.clone(),
+                                            ));
+                                            continue;
                                         },
                                     ),
-                                ) {
-                                    Some(r) => r,
-                                    None => {
-                                        errors.push(PDBError::new(
-                                            ErrorLevel::InvalidatingError,
-                                            "Invalid characters in Residue creation",
-                                            "Failed to create residue due to invalid characters",
-                                            line_context.clone(),
-                                        ));
-                                        continue;
-                                    }
+                                ) { r } else {
+                                    errors.push(PDBError::new(
+                                        ErrorLevel::InvalidatingError,
+                                        "Invalid characters in Residue creation",
+                                        "Failed to create residue due to invalid characters",
+                                        line_context.clone(),
+                                    ));
+                                    continue;
                                 },
                             );
                         }
@@ -278,7 +272,7 @@ where
                             errors.push(PDBError::new(
                                 ErrorLevel::InvalidatingError,
                                 "Atom not found for ANISOU record",
-                                format!("Could not find atom with serial number {} (name: {}) for anisotropic temperature factors", s, n),
+                                format!("Could not find atom with serial number {s} (name: {n}) for anisotropic temperature factors"),
                                 line_context.clone(),
                             ));
                         }
@@ -336,17 +330,16 @@ where
                     }
                     LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, _z) => {
                         pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
-                        pdb.symmetry = match Symmetry::new(&spacegroup) {
-                            Some(sym) => Some(sym),
-                            None => {
-                                errors.push(PDBError::new(
-                                    ErrorLevel::InvalidatingError,
-                                    "Invalid space group",
-                                    format!("Invalid space group: \"{}\"", spacegroup),
-                                    line_context.clone(),
-                                ));
-                                None
-                            }
+                        pdb.symmetry = if let Some(sym) = Symmetry::new(&spacegroup) {
+                            Some(sym)
+                        } else {
+                            errors.push(PDBError::new(
+                                ErrorLevel::InvalidatingError,
+                                "Invalid space group",
+                                format!("Invalid space group: \"{spacegroup}\""),
+                                line_context.clone(),
+                            ));
+                            None
                         };
                     }
                     LexItem::Seqres(ser_num, chain_id, num_res, values) => {
