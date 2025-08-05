@@ -9,7 +9,6 @@ use std::iter;
 
 use std::io::Write;
 
-use crate::PDB;
 use crate::{validate, validate_pdb, Context, ErrorLevel, PDBError};
 
 #[cfg(feature = "compression")]
@@ -102,9 +101,9 @@ where
     Ok(())
 }
 
-/// Save the given PDB struct to the given BufWriter.
+/// Save the given PDB struct to the given `BufWriter`.
 /// It does not validate or renumber the PDB, so if that is needed, that needs to be done in preparation.
-/// It does change the output format based on the StrictnessLevel given.
+/// It does change the output format based on the `StrictnessLevel` given.
 ///
 /// ## Loose
 /// * Does not pad all lines to 70 chars length
@@ -388,11 +387,10 @@ pub fn save_pdb_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>, level: Strictne
     }
     // Cryst
     if let Some(unit_cell) = &pdb.unit_cell {
-        let sym = if let Some(symmetry) = &pdb.symmetry {
-            format!("{:10}{:3}", symmetry.herman_mauguin_symbol(), symmetry.z(),)
-        } else {
-            "P 1         1".to_string()
-        };
+        let sym = pdb.symmetry.as_ref().map_or_else(
+            || "P 1         1".to_string(),
+            |symmetry| format!("{:10}{:3}", symmetry.herman_mauguin_symbol(), symmetry.z(),),
+        );
         print_line(vec![
             (6, "CRYST1"),
             (9, &format!("{:9.3}", unit_cell.a())),

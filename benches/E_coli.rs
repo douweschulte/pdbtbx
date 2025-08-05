@@ -1,3 +1,5 @@
+//! Benchmark to test the speed of many files
+
 use pdbtbx::*;
 use std::fs;
 use std::fs::File;
@@ -11,19 +13,18 @@ fn main() {
     // Find all .pdb files in the directory
     let pdb_files = match fs::read_dir("UP000000625_83333_ECOLI_v4/") {
         Ok(entries) => entries
-            .filter_map(|entry| entry.ok())
+            .filter_map(Result::ok)
             .filter(|entry| {
                 entry
                     .path()
                     .extension()
                     .and_then(|ext| ext.to_str())
-                    .map(|ext| ext.to_lowercase() == "pdb")
-                    .unwrap_or(false)
+                    .map_or(false, |ext| ext.to_lowercase() == "pdb")
             })
             .map(|entry| entry.path())
             .collect::<Vec<_>>(),
         Err(e) => {
-            eprintln!("Error reading directory: {}", e);
+            eprintln!("Error reading directory: {e}");
             return;
         }
     };
@@ -63,10 +64,10 @@ fn main() {
             }
             Err(e) => {
                 failed_loads += 1;
-                failed_files.push((pdb_file.clone(), format!("{:?}", e)));
+                failed_files.push((pdb_file.clone(), format!("{e:?}")));
                 if failed_loads <= 10 {
                     // Only show first 10 errors to avoid spam
-                    eprintln!("Failed to load {:?}: {:?}", pdb_file, e);
+                    eprintln!("Failed to load {}: {e:?}", pdb_file.display());
                 }
             }
         }
@@ -74,10 +75,10 @@ fn main() {
 
     // Calculate statistics
     let total_time: Duration = load_times.iter().sum();
-    let average_time = if !load_times.is_empty() {
-        total_time / load_times.len() as u32
-    } else {
+    let average_time = if load_times.is_empty() {
         Duration::new(0, 0)
+    } else {
+        total_time / load_times.len() as u32
     };
 
     let mut min_time = Duration::new(u64::MAX, 0);
@@ -107,18 +108,18 @@ fn main() {
 
     println!("\n=== E. coli PDB Loading Benchmark Results ===");
     println!("Total files found: {}", pdb_files.len());
-    println!("Successfully loaded: {}", successful_loads);
-    println!("Failed to load: {}", failed_loads);
-    println!("Total time: {:?}", total_time);
+    println!("Successfully loaded: {successful_loads}");
+    println!("Failed to load: {failed_loads}");
+    println!("Total time: {total_time:?}");
 
     if successful_loads > 0 {
-        println!("Average time per file: {:?}", average_time);
+        println!("Average time per file: {average_time:?}");
         println!(
             "Average time per file (ms): {:.2}",
             average_time.as_secs_f64() * 1000.0
         );
-        println!("Min time per file: {:?}", min_time);
-        println!("Max time per file: {:?}", max_time);
+        println!("Min time per file: {min_time:?}");
+        println!("Max time per file: {max_time:?}");
         println!("Standard deviation (ms): {:.2}", std_dev / 1_000_000.0);
         println!("Files per second: {:.2}", 1.0 / average_time.as_secs_f64());
     }
@@ -133,11 +134,11 @@ fn main() {
     // Save detailed results to file
     if let Ok(file) = File::create("dump/e_coli_benchmark_results.csv") {
         let mut writer = BufWriter::new(file);
-        let _ = writer.write_all(b"File,LoadTime(ms),Status\n");
+        writer.write_all(b"File,LoadTime(ms),Status\n").unwrap();
 
         let mut success_index = 0;
 
-        for pdb_file in pdb_files.iter() {
+        for pdb_file in &pdb_files {
             let filename = pdb_file
                 .file_name()
                 .and_then(|n| n.to_str())
@@ -147,14 +148,18 @@ fn main() {
             let is_failed = failed_files.iter().any(|(path, _)| path == pdb_file);
 
             if is_failed {
-                let _ = writer.write_fmt(format_args!("{},N/A,Failed\n", filename));
+                writer
+                    .write_fmt(format_args!("{filename},N/A,Failed\n"))
+                    .unwrap();
             } else if success_index < load_times.len() {
                 let time_ms = load_times[success_index].as_secs_f64() * 1000.0;
-                let _ = writer.write_fmt(format_args!("{},{:.2},Success\n", filename, time_ms));
+                writer
+                    .write_fmt(format_args!("{filename},{time_ms:.2},Success\n"))
+                    .unwrap();
                 success_index += 1;
             }
         }
-        let _ = writer.flush();
+        writer.flush().unwrap();
         println!("Detailed results saved to dump/e_coli_benchmark_results.csv");
     }
 

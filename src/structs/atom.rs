@@ -3,7 +3,6 @@ use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::TransformationMatrix;
 use std::cmp::Ordering;
-use std::convert::TryInto;
 use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 
@@ -19,7 +18,7 @@ pub struct Atom {
     hetero: bool,
     /// The serial number of the Atom, should be unique within its model
     serial_number: usize,
-    /// The global ID of the Atom (mmCIF item _atom_site.id), should be globally unique
+    /// The global ID of the Atom (mmCIF item `_atom_site.id`), should be globally unique
     id: String,
     /// The name of the Atom, can only use the standard allowed characters
     name: String,
@@ -58,7 +57,7 @@ impl Atom {
         b_factor: f64,
         element: impl Into<String>,
         charge: isize,
-    ) -> Option<Atom> {
+    ) -> Option<Self> {
         let id = id.into().trim().to_string();
         let atom_name = atom_name.into().trim().to_string();
         let element = element.into().trim().to_string();
@@ -85,7 +84,7 @@ impl Atom {
             } else {
                 None
             };
-            Some(Atom {
+            Some(Self {
                 counter: ATOM_COUNTER.fetch_add(1, AtomicOrdering::SeqCst),
                 hetero,
                 serial_number,
@@ -117,7 +116,7 @@ impl Atom {
 
     /// Set whether this atom is an hetero atom (`true`), a non standard atom, or a normal atom (`false`).
     pub fn set_hetero(&mut self, new_hetero: bool) {
-        self.hetero = new_hetero
+        self.hetero = new_hetero;
     }
 
     /// Get the position of the atom as a tuple of `f64`, in the following order: (x, y, z).
@@ -331,7 +330,7 @@ impl Atom {
 
     /// Get the element of this atom.
     /// In PDB files the element can at most contain 2 characters.
-    pub fn element(&self) -> Option<&Element> {
+    pub const fn element(&self) -> Option<&Element> {
         self.element.as_ref()
     }
 
@@ -393,7 +392,7 @@ impl Atom {
     /// See if the `other` Atom corresponds with this Atom.
     /// This means that the Atoms are equal except for the position, occupancy, and b_factor.
     /// Used to validate that multiple models contain the same atoms, but with different positional data.
-    pub fn corresponds(&self, other: &Atom) -> bool {
+    pub fn corresponds(&self, other: &Self) -> bool {
         self.serial_number == other.serial_number
             && self.name() == other.name()
             && self.element() == other.element()
@@ -403,7 +402,7 @@ impl Atom {
     }
 
     /// Gives the distance between the centers of two atoms in Aͦ.
-    pub fn distance(&self, other: &Atom) -> f64 {
+    pub fn distance(&self, other: &Self) -> f64 {
         (other.z - self.z)
             .mul_add(
                 other.z - self.z,
@@ -414,7 +413,7 @@ impl Atom {
 
     /// Gives the distance between the centers of two atoms in Aͦ, wrapping around the unit cell if needed.
     /// This will give the shortest distance between the two atoms or any of their copies given a crystal of the size of the given unit cell stretching out to all sides.
-    pub fn distance_wrapping(&self, other: &Atom, cell: &UnitCell) -> f64 {
+    pub fn distance_wrapping(&self, other: &Self, cell: &UnitCell) -> f64 {
         let mut x = other.x;
         if (self.x - other.x).abs() > cell.a() / 2.0 {
             if self.x > other.x {
@@ -454,7 +453,7 @@ impl Atom {
     /// Gives the angle between the centers of three atoms in degrees.
     /// The angle is calculated as the angle between the two lines that include
     /// atoms [1, 2] and [2, 3]
-    pub fn angle(&self, atom2: &Atom, atom3: &Atom) -> f64 {
+    pub fn angle(&self, atom2: &Self, atom3: &Self) -> f64 {
         let (a, b, c) = (self.pos(), atom2.pos(), atom3.pos());
 
         // Form the two vectors
@@ -479,7 +478,7 @@ impl Atom {
     /// Gives the dihedral between the centers of four atoms in degrees.
     /// The angle is calculated as the angle between the two planes spanned by
     /// atoms [1, 2, 3] and [2, 3, 4].
-    pub fn dihedral(&self, atom2: &Atom, atom3: &Atom, atom4: &Atom) -> f64 {
+    pub fn dihedral(&self, atom2: &Self, atom3: &Self, atom4: &Self) -> f64 {
         let (a, b, c, d) = (self.pos(), atom2.pos(), atom3.pos(), atom4.pos());
 
         // Form vectors
@@ -490,14 +489,14 @@ impl Atom {
 
         // Form two normal vectors via cross products
         let n1 = [
-            ba[1] * bc[2] - ba[2] * bc[1],
-            ba[2] * bc[0] - ba[0] * bc[2],
-            ba[0] * bc[1] - ba[1] * bc[0],
+            ba[1].mul_add(bc[2], -(ba[2] * bc[1])),
+            ba[2].mul_add(bc[0], -(ba[0] * bc[2])),
+            ba[0].mul_add(bc[1], -(ba[1] * bc[0])),
         ];
         let n2 = [
-            cb[1] * cd[2] - cb[2] * cd[1],
-            cb[2] * cd[0] - cb[0] * cd[2],
-            cb[0] * cd[1] - cb[1] * cd[0],
+            cb[1].mul_add(cd[2], -(cb[2] * cd[1])),
+            cb[2].mul_add(cd[0], -(cb[0] * cd[2])),
+            cb[0].mul_add(cd[1], -(cb[1] * cd[0])),
         ];
 
         // calculate abs of vecs
@@ -512,13 +511,13 @@ impl Atom {
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].unbound.
+    /// less than the sum of the radius from this atom and the other atom. The used radius is [`AtomicRadius`].unbound.
     ///
     /// Note: the atomic radius used is the unbound radius, this is in most cases bigger than the bound radius
     /// and as such can result in false positives.
     ///
     /// It fails if for any one of the two atoms the element or unbound radius is not known.
-    pub fn overlaps(&self, other: &Atom) -> Option<bool> {
+    pub fn overlaps(&self, other: &Self) -> Option<bool> {
         self.element()
             .map(Element::atomic_radius)
             .and_then(|self_rad| {
@@ -533,7 +532,7 @@ impl Atom {
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].unbound.
+    /// less than the sum of the radius from this atom and the other atom. The used radius is [`AtomicRadius`].unbound.
     /// Wrapping around the unit cell if needed. Meaning it will give the shortest distance between the two
     /// atoms or any of their copies given a crystal of the size of the given unit cell stretching out to
     /// all sides.
@@ -542,7 +541,7 @@ impl Atom {
     /// and as such can result in false positives.
     ///
     /// It fails if for any one of the two atoms the element or unbound radius is not known.
-    pub fn overlaps_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
+    pub fn overlaps_wrapping(&self, other: &Self, cell: &UnitCell) -> Option<bool> {
         self.element()
             .map(Element::atomic_radius)
             .and_then(|self_rad| {
@@ -560,13 +559,13 @@ impl Atom {
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].covalent_single.
+    /// less than the sum of the radius from this atom and the other atom. The used radius is [`AtomicRadius::covalent_single`].
     ///
     /// Note: the atomic radius used in the bound radius to a single atom, this is similar to the bound radius for double or
     /// triple bonds but could result in incorrect results.
     ///
     /// It fails if for any one of the two atoms the element is not known.
-    pub fn overlaps_bound(&self, other: &Atom) -> Option<bool> {
+    pub fn overlaps_bound(&self, other: &Self) -> Option<bool> {
         self.element()
             .map(Element::atomic_radius)
             .and_then(|self_rad| {
@@ -580,7 +579,7 @@ impl Atom {
     }
 
     /// Checks if this Atom overlaps with the given atom. It overlaps if the distance between the atoms is
-    /// less then the sum of the radius from this atom and the other atom. The used radius is [AtomicRadius].covalent_single.
+    /// less than the sum of the radius from this atom and the other atom. The used radius is [`AtomicRadius::covalent_single`].
     /// Wrapping around the unit cell if needed. Meaning it will give the shortest distance between the two
     /// atoms or any of their copies given a crystal of the size of the given unit cell stretching out to
     /// all sides.
@@ -589,7 +588,7 @@ impl Atom {
     /// triple bonds but could result in incorrect results.
     ///
     /// It fails if for any one of the two atoms the element is not known.
-    pub fn overlaps_bound_wrapping(&self, other: &Atom, cell: &UnitCell) -> Option<bool> {
+    pub fn overlaps_bound_wrapping(&self, other: &Self, cell: &UnitCell) -> Option<bool> {
         self.element()
             .map(Element::atomic_radius)
             .and_then(|self_rad| {
@@ -613,7 +612,7 @@ impl fmt::Display for Atom {
             self.name(),
             self.serial_number(),
             self.element()
-                .map_or_else(|| "".to_string(), ToString::to_string),
+                .map_or_else(String::new, ToString::to_string),
             self.x(),
             self.y(),
             self.z(),
@@ -627,7 +626,7 @@ impl fmt::Display for Atom {
 impl Clone for Atom {
     /// The clone implementation needs to use the constructor to guarantee the uniqueness of the counter
     fn clone(&self) -> Self {
-        let mut atom = Atom::new(
+        let mut atom = Self::new(
             self.hetero,
             self.serial_number,
             &self.id,

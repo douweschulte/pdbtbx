@@ -1,15 +1,16 @@
+//! Open a test file containing 87449 waters so with more than 29000 residues which leads to residue serial numbers that are wrapped
+
 use pdbtbx::*;
 
-/// Open a test file containing 87449 waters so with more than 29000 residues which leads to residue serial numbers that are wrapped
 #[test]
 fn wrapping_residue_number() {
     let (pdb, errors) = ReadOptions::default()
-        .set_level(crate::StrictnessLevel::Strict)
+        .set_level(StrictnessLevel::Strict)
         .read("example-pdbs/eq.pdb")
         .unwrap();
     let pdb_errors = save(&pdb, "dump/eq.pdb", StrictnessLevel::Loose);
     let (pdb2, _) = ReadOptions::default()
-        .set_level(crate::StrictnessLevel::Strict)
+        .set_level(StrictnessLevel::Strict)
         .read("dump/eq.pdb")
         .unwrap();
     print!("{errors:?}");

@@ -6,11 +6,13 @@ use rayon::prelude::*;
 /// Hall symbol.
 pub(crate) fn get_index_for_symbol(symbol: impl AsRef<str>) -> Option<usize> {
     let symbol = symbol.as_ref();
-    if let Some(index) = HERMANN_MAUGUIN_SYMBOL.iter().position(|i| *i == symbol) {
-        Some(index + 1)
-    } else {
-        HALL_SYMBOL.iter().position(|i| *i == symbol).map(|n| n + 1)
-    }
+    HERMANN_MAUGUIN_SYMBOL
+        .iter()
+        .position(|i| *i == symbol)
+        .map_or_else(
+            || HALL_SYMBOL.iter().position(|i| *i == symbol).map(|n| n + 1),
+            |index| Some(index + 1),
+        )
 }
 
 /// Gets the index (into Int. Crys. Handbook Vol A 2016) for the given symbol in parallel. First it is
@@ -20,17 +22,18 @@ pub(crate) fn get_index_for_symbol(symbol: impl AsRef<str>) -> Option<usize> {
 #[allow(dead_code)]
 pub(crate) fn par_get_index_for_symbol(symbol: impl AsRef<str>) -> Option<usize> {
     let symbol = symbol.as_ref();
-    if let Some(index) = HERMANN_MAUGUIN_SYMBOL
+    HERMANN_MAUGUIN_SYMBOL
         .par_iter()
         .position_any(|i| *i == symbol)
-    {
-        Some(index + 1)
-    } else {
-        HALL_SYMBOL
-            .par_iter()
-            .position_any(|i| *i == symbol)
-            .map(|n| n + 1)
-    }
+        .map_or_else(
+            || {
+                HALL_SYMBOL
+                    .par_iter()
+                    .position_any(|i| *i == symbol)
+                    .map(|n| n + 1)
+            },
+            |index| Some(index + 1),
+        )
 }
 
 /// Gets the Herman Mauguin symbol for the given index (into Int. Crys. Handbook Vol A 2016)

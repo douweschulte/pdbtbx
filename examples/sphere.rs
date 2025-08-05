@@ -1,3 +1,5 @@
+//! Example on using rtree to do spatial lookups
+
 use rayon::iter::ParallelIterator;
 
 use pdbtbx::*;
@@ -31,7 +33,7 @@ fn atom_sphere(pdb: &PDB) {
 
     // Since the rtree is not ordered, the resulting Vec won't be either.
     sphere_atoms.sort_unstable();
-    assert_eq!(sphere_atoms.len(), 16)
+    assert_eq!(sphere_atoms.len(), 16);
 }
 
 /// Find all Atoms belonging to a Residue that has at least one Atom within a sphere of
@@ -68,7 +70,7 @@ fn residue_sphere(pdb: &PDB) {
     // ```
     sphere_atoms.sort_unstable();
     sphere_atoms.dedup();
-    assert_eq!(sphere_atoms.len(), 37)
+    assert_eq!(sphere_atoms.len(), 37);
 }
 
 /// Determine whether any Atoms have other Atoms within they atomic radius and collect

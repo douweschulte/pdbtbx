@@ -1,4 +1,4 @@
-// Test reading PDB file and discarding all hydrogen atoms.
+//! Test reading PDB file and discarding all hydrogen atoms.
 
 use pdbtbx::*;
 

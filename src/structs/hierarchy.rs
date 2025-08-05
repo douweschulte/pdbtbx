@@ -210,7 +210,7 @@ use rstar::{PointDistance, RTreeObject, AABB};
 macro_rules! impl_hierarchy {
     ($($type:ty,)*) => {
         $(#[cfg(feature = "rstar")]
-        impl<'a> RTreeObject for $type {
+        impl RTreeObject for $type {
             type Envelope = AABB<(f64, f64, f64)>;
 
             fn envelope(&self) -> Self::Envelope {
@@ -219,14 +219,14 @@ macro_rules! impl_hierarchy {
         }
 
         #[cfg(feature = "rstar")]
-        impl<'a> PointDistance for $type {
+        impl PointDistance for $type {
             fn distance_2(&self, other: &(f64, f64, f64)) -> f64 {
                 self.atom().distance_2(other)
             }
         }
 
-        impl<'a> Eq for $type {}
-        impl<'a> PartialEq for $type {
+        impl Eq for $type {}
+        impl PartialEq for $type {
             fn eq(&self, other: &Self) -> bool {
                 // By definition the combination of serial number and alternative location should be
                 // unique across the whole PDB, this does not account for the fact that there could
@@ -239,24 +239,24 @@ macro_rules! impl_hierarchy {
 }
 
 impl_hierarchy!(
-    AtomConformer<'a>,
-    AtomConformerMut<'a>,
-    AtomConformerResidue<'a>,
-    AtomConformerResidueMut<'a>,
-    AtomConformerResidueChain<'a>,
-    AtomConformerResidueChainMut<'a>,
-    AtomConformerResidueChainModel<'a>,
-    AtomConformerResidueChainModelMut<'a>,
+    AtomConformer<'_>,
+    AtomConformerMut<'_>,
+    AtomConformerResidue<'_>,
+    AtomConformerResidueMut<'_>,
+    AtomConformerResidueChain<'_>,
+    AtomConformerResidueChainMut<'_>,
+    AtomConformerResidueChainModel<'_>,
+    AtomConformerResidueChainModelMut<'_>,
 );
 
 // ______ AtomConformer
 
 impl<'a> AtomConformer<'a> {
-    pub(crate) const fn new(atom: &'a Atom, conformer: &'a Conformer) -> AtomConformer<'a> {
-        AtomConformer { atom, conformer }
+    pub(crate) const fn new(atom: &'a Atom, conformer: &'a Conformer) -> Self {
+        Self { atom, conformer }
     }
-    pub(crate) const fn from_tuple(tuple: (&'a Atom, &'a Conformer)) -> AtomConformer<'a> {
-        AtomConformer {
+    pub(crate) const fn from_tuple(tuple: (&'a Atom, &'a Conformer)) -> Self {
+        Self {
             atom: tuple.0,
             conformer: tuple.1,
         }
@@ -286,17 +286,15 @@ impl<'a> AtomConformerResidue<'a> {
         atom: &'a Atom,
         conformer: &'a Conformer,
         residue: &'a Residue,
-    ) -> AtomConformerResidue<'a> {
-        AtomConformerResidue {
+    ) -> Self {
+        Self {
             atom,
             conformer,
             residue,
         }
     }
-    pub(crate) const fn from_tuple(
-        tuple: (&'a Atom, &'a Conformer, &'a Residue),
-    ) -> AtomConformerResidue<'a> {
-        AtomConformerResidue {
+    pub(crate) const fn from_tuple(tuple: (&'a Atom, &'a Conformer, &'a Residue)) -> Self {
+        Self {
             atom: tuple.0,
             conformer: tuple.1,
             residue: tuple.2,
@@ -335,8 +333,8 @@ impl<'a> AtomConformerResidueChain<'a> {
         conformer: &'a Conformer,
         residue: &'a Residue,
         chain: &'a Chain,
-    ) -> AtomConformerResidueChain<'a> {
-        AtomConformerResidueChain {
+    ) -> Self {
+        Self {
             atom,
             conformer,
             residue,
@@ -345,8 +343,8 @@ impl<'a> AtomConformerResidueChain<'a> {
     }
     pub(crate) const fn from_tuple(
         tuple: (&'a Atom, &'a Conformer, &'a Residue, &'a Chain),
-    ) -> AtomConformerResidueChain<'a> {
-        AtomConformerResidueChain {
+    ) -> Self {
+        Self {
             atom: tuple.0,
             conformer: tuple.1,
             residue: tuple.2,
@@ -394,8 +392,8 @@ impl<'a> AtomConformerResidueChainModel<'a> {
         residue: &'a Residue,
         chain: &'a Chain,
         model: &'a Model,
-    ) -> AtomConformerResidueChainModel<'a> {
-        AtomConformerResidueChainModel {
+    ) -> Self {
+        Self {
             atom,
             conformer,
             residue,
@@ -405,8 +403,8 @@ impl<'a> AtomConformerResidueChainModel<'a> {
     }
     pub(crate) const fn from_tuple(
         tuple: (&'a Atom, &'a Conformer, &'a Residue, &'a Chain, &'a Model),
-    ) -> AtomConformerResidueChainModel<'a> {
-        AtomConformerResidueChainModel {
+    ) -> Self {
+        Self {
             atom: tuple.0,
             conformer: tuple.1,
             residue: tuple.2,
@@ -446,15 +444,15 @@ impl ContainsAtomConformerResidueChainModel for AtomConformerResidueChainModel<'
 // ______ AtomConformerMut
 
 impl<'a> AtomConformerMut<'a> {
-    pub(crate) const fn new(atom: *mut Atom, conformer: *mut Conformer) -> AtomConformerMut<'a> {
-        AtomConformerMut {
+    pub(crate) const fn new(atom: *mut Atom, conformer: *mut Conformer) -> Self {
+        Self {
             atom,
             conformer,
             phantom: PhantomData,
         }
     }
-    pub(crate) const fn from_tuple(tuple: (*mut Atom, *mut Conformer)) -> AtomConformerMut<'a> {
-        AtomConformerMut {
+    pub(crate) const fn from_tuple(tuple: (*mut Atom, *mut Conformer)) -> Self {
+        Self {
             atom: tuple.0,
             conformer: tuple.1,
             phantom: PhantomData,
@@ -504,18 +502,16 @@ impl<'a> AtomConformerResidueMut<'a> {
         atom: *mut Atom,
         conformer: *mut Conformer,
         residue: *mut Residue,
-    ) -> AtomConformerResidueMut<'a> {
-        AtomConformerResidueMut {
+    ) -> Self {
+        Self {
             atom,
             conformer,
             residue,
             phantom: PhantomData,
         }
     }
-    pub(crate) const fn from_tuple(
-        tuple: (*mut Atom, *mut Conformer, *mut Residue),
-    ) -> AtomConformerResidueMut<'a> {
-        AtomConformerResidueMut {
+    pub(crate) const fn from_tuple(tuple: (*mut Atom, *mut Conformer, *mut Residue)) -> Self {
+        Self {
             atom: tuple.0,
             conformer: tuple.1,
             residue: tuple.2,
@@ -581,8 +577,8 @@ impl<'a> AtomConformerResidueChainMut<'a> {
         conformer: *mut Conformer,
         residue: *mut Residue,
         chain: *mut Chain,
-    ) -> AtomConformerResidueChainMut<'a> {
-        AtomConformerResidueChainMut {
+    ) -> Self {
+        Self {
             atom,
             conformer,
             residue,
@@ -592,8 +588,8 @@ impl<'a> AtomConformerResidueChainMut<'a> {
     }
     pub(crate) const fn from_tuple(
         tuple: (*mut Atom, *mut Conformer, *mut Residue, *mut Chain),
-    ) -> AtomConformerResidueChainMut<'a> {
-        AtomConformerResidueChainMut {
+    ) -> Self {
+        Self {
             atom: tuple.0,
             conformer: tuple.1,
             residue: tuple.2,
@@ -675,8 +671,8 @@ impl<'a> AtomConformerResidueChainModelMut<'a> {
         residue: *mut Residue,
         chain: *mut Chain,
         model: *mut Model,
-    ) -> AtomConformerResidueChainModelMut<'a> {
-        AtomConformerResidueChainModelMut {
+    ) -> Self {
+        Self {
             atom,
             conformer,
             residue,
@@ -693,8 +689,8 @@ impl<'a> AtomConformerResidueChainModelMut<'a> {
             *mut Chain,
             *mut Model,
         ),
-    ) -> AtomConformerResidueChainModelMut<'a> {
-        AtomConformerResidueChainModelMut {
+    ) -> Self {
+        Self {
             atom: tuple.0,
             conformer: tuple.1,
             residue: tuple.2,

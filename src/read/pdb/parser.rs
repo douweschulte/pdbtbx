@@ -15,7 +15,7 @@ use super::temporary_structs::*;
 use super::validate::*;
 
 /// Parse the given file into a PDB struct.
-/// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
 /// If you want to open a file from memory see [`ReadOptions::read_raw`]. There is also a function to open a mmCIF file directly
@@ -54,7 +54,7 @@ pub(crate) fn open_pdb_with_options(
 }
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
-/// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// ## Arguments
 /// * `input` - the input stream
@@ -70,7 +70,7 @@ pub(crate) fn open_pdb_with_options(
     note = "Please use `ReadOptions::default().read_raw(input)` instead"
 )]
 pub fn open_pdb_raw<T>(
-    input: std::io::BufReader<T>,
+    input: BufReader<T>,
     context: Context,
     level: StrictnessLevel,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
@@ -86,7 +86,7 @@ where
 /// See [`ReadOptions::read_raw`] for a version of this function with sane defaults.
 /// Note that the file type should be set explicitly with [`ReadOptions::set_format`].
 pub(crate) fn open_pdb_raw_with_options<T>(
-    input: std::io::BufReader<T>,
+    input: BufReader<T>,
     context: Context,
     options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
@@ -142,7 +142,7 @@ where
                 match result {
                     LexItem::Header(_, _, identifier) => pdb.identifier = Some(identifier),
                     LexItem::Remark(num, text) => {
-                        let _ = pdb.add_remark(num, text.to_string()); // Better error messages are created downstream
+                        let _unused = pdb.add_remark(num, text.to_string()); // Better error messages are created downstream
                     }
                     LexItem::Atom(
                         hetero,
@@ -166,7 +166,7 @@ where
                             continue;
                         }
                         if serial_number == 0 && last_atom_serial_number == 99_999 {
-                            atom_serial_addition += 100_000
+                            atom_serial_addition += 100_000;
                         }
 
                         if residue_serial_number == 0 && last_residue_serial_number == 9999 {
@@ -280,7 +280,7 @@ where
                     LexItem::Model(number) => {
                         if !current_model.is_empty() {
                             let mut chains = Vec::new();
-                            for (id, residues) in current_model.into_iter() {
+                            for (id, residues) in current_model {
                                 match Chain::from_iter(id, residues.into_values()) {
                                     Some(chain) => chains.push(chain),
                                     None => {
@@ -325,22 +325,23 @@ where
                         if !found {
                             let mut matrix = BuildUpMatrix::empty();
                             matrix.set_row(n, row);
-                            temp_mtrix.push((ser, matrix, given))
+                            temp_mtrix.push((ser, matrix, given));
                         }
                     }
                     LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, _z) => {
                         pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
-                        pdb.symmetry = if let Some(sym) = Symmetry::new(&spacegroup) {
-                            Some(sym)
-                        } else {
-                            errors.push(PDBError::new(
-                                ErrorLevel::InvalidatingError,
-                                "Invalid space group",
-                                format!("Invalid space group: \"{spacegroup}\""),
-                                line_context.clone(),
-                            ));
-                            None
-                        };
+                        pdb.symmetry = Symmetry::new(&spacegroup).map_or_else(
+                            || {
+                                errors.push(PDBError::new(
+                                    ErrorLevel::InvalidatingError,
+                                    "Invalid space group",
+                                    format!("Invalid space group: \"{spacegroup}\""),
+                                    line_context.clone(),
+                                ));
+                                None
+                            },
+                            Some,
+                        );
                     }
                     LexItem::Seqres(ser_num, chain_id, num_res, values) => {
                         seqres_start_linenumber = seqres_start_linenumber.min(linenumber);
@@ -366,7 +367,7 @@ where
                         database_references.push((
                             chain_id,
                             DatabaseReference::new(
-                                (db, "".to_string(), db_id),
+                                (db, String::new(), db_id),
                                 SequencePosition::from_tuple(local_pos),
                                 SequencePosition::new(0, ' ', 0, ' '),
                             ),
@@ -375,7 +376,7 @@ where
                     }
                     LexItem::Dbref2(_pdb_id, chain_id, db_acc, db_start, db_end) => {
                         let mut found = false;
-                        for dbref in database_references.iter_mut() {
+                        for dbref in &mut database_references {
                             if dbref.0 == chain_id {
                                 dbref.1.database.acc = db_acc;
                                 dbref.1.database_position =
@@ -386,7 +387,7 @@ where
                             }
                         }
                         if !found {
-                            errors.push(PDBError::new(ErrorLevel::BreakingError, "Solitary DBREF2", format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{chain_id}'"), line_context.clone()))
+                            errors.push(PDBError::new(ErrorLevel::BreakingError, "Solitary DBREF2", format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{chain_id}'"), line_context.clone()));
                         }
                     }
                     LexItem::Seqadv(
@@ -407,14 +408,14 @@ where
                                 (res_name, seq_num, insert),
                                 db_pos,
                                 comment,
-                            ))
+                            ));
                         } else {
                             errors.push(PDBError::new(
                             ErrorLevel::StrictWarning,
                             "Sequence Difference Database not found",
                             format!("For this sequence difference (chain: {chain_id}) the corresponding database definition (DBREF) was not found, make sure the DBREF is located before the SEQADV"),
                             line_context.clone()
-                        ))
+                        ));
                         }
                     }
                     item @ LexItem::Modres(..) => modifications.push((line_context.clone(), item)),
@@ -436,7 +437,7 @@ where
                         // The last atoms need to be added to make the MASTER checksum work out
                         if !current_model.is_empty() {
                             let mut chains = Vec::new();
-                            for (id, residues) in current_model.into_iter() {
+                            for (id, residues) in current_model {
                                 match Chain::from_iter(id, residues.into_values()) {
                                     Some(chain) => chains.push(chain),
                                     None => {
@@ -518,7 +519,7 @@ where
     }
     if !current_model.is_empty() {
         let mut chains = Vec::new();
-        for (id, residues) in current_model.into_iter() {
+        for (id, residues) in current_model {
             match Chain::from_iter(id, residues.into_values()) {
                 Some(chain) => chains.push(chain),
                 None => {
@@ -541,7 +542,7 @@ where
                 "Solitary DBREF1 definition",
                 format!("The complementary DBREF2 was not found for this DBREF1 definition. For chain id '{}'. For database '{}' with ID code '{}'.", chain_id, reference.database.name, reference.database.id),
                 Context::None,
-            ))
+            ));
         } else if let Some(chain) = pdb.chains_mut().find(|a| a.id() == chain_id) {
             chain.set_database_reference(reference);
         }
@@ -555,7 +556,7 @@ where
             "Invalid SCALE definition",
             "Not all rows are set in the scale definition",
             context.clone(),
-        ))
+        ));
     }
 
     if let Some(origx) = temp_origx.get_matrix() {
@@ -566,19 +567,19 @@ where
             "Invalid ORIGX definition",
             "Not all rows are set in the ORIGX definition",
             context.clone(),
-        ))
+        ));
     }
 
     for (index, matrix, given) in temp_mtrix {
         if let Some(m) = matrix.get_matrix() {
-            pdb.add_mtrix(MtriX::new(index, m, given))
+            pdb.add_mtrix(MtriX::new(index, m, given));
         } else {
             errors.push(PDBError::new(
                 ErrorLevel::StrictWarning,
                 "Invalid MATRIX definition",
                 format!("Not all rows are set in the MtriX definition, number: {index}",),
                 context.clone(),
-            ))
+            ));
         }
     }
 
@@ -588,7 +589,7 @@ where
     errors.extend(validate_seqres(
         &mut pdb,
         sequence,
-        seqres_lines,
+        &seqres_lines,
         seqres_start_linenumber - 1, // Convert from 1 based to 0 based numbering
         &context,
     ));

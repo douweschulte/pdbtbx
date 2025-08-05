@@ -19,7 +19,7 @@ pub struct PDBError {
 }
 
 impl PDBError {
-    /// Create a new PDBError
+    /// Create a new `PDBError`
     ///
     /// ## Arguments
     /// * `level` - The level of the error, defining how it should be handled
@@ -28,11 +28,11 @@ impl PDBError {
     /// * `context` - The context, in the most general sense this produces output which leads the user to the right place in the code or file
     pub fn new(
         level: ErrorLevel,
-        short_desc: impl std::string::ToString,
-        long_descr: impl std::string::ToString,
+        short_desc: impl ToString,
+        long_descr: impl ToString,
         context: Context,
-    ) -> PDBError {
-        PDBError {
+    ) -> Self {
+        Self {
             level,
             short_description: short_desc.to_string(),
             long_description: long_descr.to_string(),
@@ -46,7 +46,7 @@ impl PDBError {
     }
 
     /// Tests if this errors is breaking with the given strictness level
-    pub fn fails(&self, level: StrictnessLevel) -> bool {
+    pub const fn fails(&self, level: StrictnessLevel) -> bool {
         self.level.fails(level)
     }
 

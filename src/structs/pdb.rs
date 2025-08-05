@@ -42,7 +42,7 @@ pub struct PDB {
     pub scale: Option<TransformationMatrix>,
     /// The OrigX needed to transform orthogonal coordinates to submitted coordinates. In normal cases this is equal to the identity transformation.
     pub origx: Option<TransformationMatrix>,
-    /// The MtriXs needed to transform the Models to the full asymmetric subunit, if needed to contain the non-crystallographic symmetry.
+    /// The MtriX es needed to transform the Models to the full asymmetric subunit, if needed to contain the non-crystallographic symmetry.
     mtrix: Vec<MtriX>,
     /// The unit cell of the crystal, containing its size and shape. This is the size and shape of the repeating element in the crystal.
     pub unit_cell: Option<UnitCell>,
@@ -58,8 +58,8 @@ pub struct PDB {
 /// Creator functions for a PDB file
 impl PDB {
     /// Create an empty PDB struct.
-    pub const fn new() -> PDB {
-        PDB {
+    pub const fn new() -> Self {
+        Self {
             identifier: None,
             remarks: Vec::new(),
             scale: None,
@@ -648,7 +648,7 @@ impl<'a> PDB {
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this PDB.
     pub fn atoms_with_hierarchy(
         &'a self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModel<'a>> + 'a {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModel<'a>> + 'a {
         self.models()
             .flat_map(|m| m.atoms_with_hierarchy().map(move |h| h.extend(m)))
     }
@@ -656,8 +656,7 @@ impl<'a> PDB {
     /// Get an iterator of mutable references to a struct containing all atoms with their hierarchy making up this PDB.
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainModelMut<'a>> + 'a
-    {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainModelMut<'a>> + 'a {
         self.models_mut().flat_map(|m| {
             let model: *mut Model = m;
             m.atoms_with_hierarchy_mut().map(move |h| h.extend(model))
@@ -791,12 +790,10 @@ impl<'a> PDB {
             .iter()
             .position(|a| a.serial_number() == serial_number);
 
-        if let Some(i) = index {
+        index.map_or(false, |i| {
             self.remove_model(i);
             true
-        } else {
-            false
-        }
+        })
     }
 
     /// <div class="warning">Available on crate feature `rayon` only</div>
@@ -813,12 +810,10 @@ impl<'a> PDB {
             .par_iter()
             .position_first(|a| a.serial_number() == serial_number);
 
-        if let Some(i) = index {
+        index.map_or(false, |i| {
             self.remove_model(i);
             true
-        } else {
-            false
-        }
+        })
     }
 
     /// Remove all empty Models from this PDB, and all empty Chains from the Model, and all empty Residues from the Chains.
@@ -892,7 +887,7 @@ impl<'a> PDB {
     /// Joins two PDBs. If one has multiple models it extends the models of this PDB with the models of the other PDB. If this PDB does
     /// not have any models it moves the models of the other PDB to this PDB. If both have one model it moves all chains/residues/atoms
     /// from the model of the other PDB to the model of this PDB. Effectively the same as calling join on those models.
-    pub fn join(&mut self, mut other: PDB) {
+    pub fn join(&mut self, mut other: Self) {
         #[allow(clippy::unwrap_used)]
         if self.model_count() > 1 || other.model_count() > 1 {
             self.models.extend(other.models);
@@ -970,9 +965,7 @@ impl<'a> PDB {
     /// structures is not seen in the other data structure (until
     /// you generate a new tree of course).
     #[cfg(feature = "rstar")]
-    pub fn create_hierarchy_rtree(
-        &'a self,
-    ) -> rstar::RTree<hierarchy::AtomConformerResidueChainModel<'a>> {
+    pub fn create_hierarchy_rtree(&'a self) -> rstar::RTree<AtomConformerResidueChainModel<'a>> {
         rstar::RTree::bulk_load(self.atoms_with_hierarchy().collect())
     }
 
@@ -1047,7 +1040,7 @@ impl<'a> PDB {
         self.bonds.push((atom1, atom2, bond));
     }
 
-    /// Returns a HashMap with the chains in contact within a given distance.
+    /// Returns a `HashMap` with the chains in contact within a given distance.
     ///
     /// # Arguments
     ///
@@ -1055,7 +1048,7 @@ impl<'a> PDB {
     ///
     /// # Returns
     ///
-    /// A HashMap with the chains in contact. The keys are the chain IDs and the values are vectors with the IDs of the chains in contact with the key chain.
+    /// A `HashMap` with the chains in contact. The keys are the chain IDs and the values are vectors with the IDs of the chains in contact with the key chain.
     pub fn chains_in_contact(&self, distance: f64) -> HashMap<String, Vec<String>> {
         let mut chains = HashMap::new();
         for chain1 in self.chains() {
@@ -1070,7 +1063,7 @@ impl<'a> PDB {
                             let chain2_id = chain2.id().to_owned();
                             let entry = chains.entry(chain1_id).or_insert_with(Vec::new);
                             if !entry.contains(&chain2_id) {
-                                entry.push(chain2_id)
+                                entry.push(chain2_id);
                             }
                             break;
                         }
@@ -1105,8 +1098,8 @@ impl<'a> PDB {
     /// explicit bond information. This functions infers bond lengths by comparing each interactomic
     /// bond distance, and matching against known amino acid bond lengths.
     ///
-    /// Some info here: https://www.ruppweb.org/Xray/tutorial/protein_structure.htm
-    /// https://itp.uni-frankfurt.de/~engel/amino.html
+    /// Some info here: <https://www.ruppweb.org/Xray/tutorial/protein_structure.htm>
+    /// <https://itp.uni-frankfurt.de/~engel/amino.html>
     pub fn connect_atoms(&mut self) {
         // Written by David-OConnor in issue #137
 

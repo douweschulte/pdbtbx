@@ -13,10 +13,10 @@ pub struct SequencePosition {
 }
 
 impl SequencePosition {
-    /// Create a new SequencePosition
+    /// Create a new `SequencePosition`
     #[must_use]
     pub fn new(start: isize, start_insert: char, end: isize, end_insert: char) -> Self {
-        SequencePosition {
+        Self {
             start,
             start_insert: if start_insert == ' ' {
                 None
@@ -32,15 +32,15 @@ impl SequencePosition {
         }
     }
 
-    /// Create a new SequencePosition, from a tuple
+    /// Create a new `SequencePosition`, from a tuple
     pub fn from_tuple((start, start_insert, end, end_insert): (isize, char, isize, char)) -> Self {
-        SequencePosition::new(start, start_insert, end, end_insert)
+        Self::new(start, start_insert, end, end_insert)
     }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-/// A DatabaseReference containing the cross-reference to a corresponding database sequence for a Chain.
+/// A `DatabaseReference` containing the cross-reference to a corresponding database sequence for a Chain.
 pub struct DatabaseReference {
     /// The information about the database, (name, accession code, identification code), see DBREF documentation wwPDB v3.30
     pub database: Database,
@@ -53,14 +53,14 @@ pub struct DatabaseReference {
 }
 
 impl DatabaseReference {
-    /// Create a new DatabaseReference
+    /// Create a new `DatabaseReference`
     #[must_use]
     pub fn new(
         database: impl Into<Database>,
         pdb_position: SequencePosition,
         database_position: SequencePosition,
     ) -> Self {
-        DatabaseReference {
+        Self {
             database: database.into(),
             pdb_position,
             database_position,
@@ -77,13 +77,13 @@ pub struct Database {
     pub name: String,
     /// Sequence database accession code, eg Q9KPK8
     pub acc: String,
-    /// Sequence database identification code, eg UNG_VIBCH
+    /// Sequence database identification code, eg `UNG_VIBCH`
     pub id: String,
 }
 
 impl From<(String, String, String)> for Database {
     fn from(database: (String, String, String)) -> Self {
-        Database {
+        Self {
             name: database.0,
             acc: database.1,
             id: database.2,
@@ -104,14 +104,14 @@ pub struct SequenceDifference {
 }
 
 impl SequenceDifference {
-    /// Create a new DatabaseReference
+    /// Create a new `DatabaseReference`
     #[must_use]
     pub const fn new(
         residue: (String, isize, Option<String>),
         database_residue: Option<(String, isize)>,
         comment: String,
     ) -> Self {
-        SequenceDifference {
+        Self {
             residue,
             database_residue,
             comment,

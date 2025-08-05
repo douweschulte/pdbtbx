@@ -26,8 +26,8 @@ impl<'a> Chain {
     /// ## Fails
     /// It returns `None` if the identifier is an invalid character.
     #[must_use]
-    pub fn new(id: impl AsRef<str>) -> Option<Chain> {
-        prepare_identifier(id).map(|id| Chain {
+    pub fn new(id: impl AsRef<str>) -> Option<Self> {
+        prepare_identifier(id).map(|id| Self {
             id,
             residues: Vec::new(),
             database_reference: None,
@@ -38,11 +38,8 @@ impl<'a> Chain {
     ///
     /// ## Fails
     /// It returns `None` if the identifier is an invalid character.
-    pub fn from_iter(
-        id: impl AsRef<str>,
-        residues: impl Iterator<Item = Residue>,
-    ) -> Option<Chain> {
-        prepare_identifier(id).map(|id| Chain {
+    pub fn from_iter(id: impl AsRef<str>, residues: impl Iterator<Item = Residue>) -> Option<Self> {
+        prepare_identifier(id).map(|id| Self {
             id,
             residues: residues.collect(),
             database_reference: None,
@@ -180,7 +177,7 @@ impl<'a> Chain {
         &'a self,
         serial_number: usize,
         alternative_location: Option<&str>,
-    ) -> Option<hierarchy::AtomConformerResidue<'a>> {
+    ) -> Option<AtomConformerResidue<'a>> {
         if self.residue_count() == 0 {
             None
         } else {
@@ -222,7 +219,7 @@ impl<'a> Chain {
         &'a mut self,
         serial_number: usize,
         alternative_location: Option<&str>,
-    ) -> Option<hierarchy::AtomConformerResidueMut<'a>> {
+    ) -> Option<AtomConformerResidueMut<'a>> {
         if self.residue_count() == 0 {
             None
         } else {
@@ -365,7 +362,7 @@ impl<'a> Chain {
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this Chain.
     pub fn atoms_with_hierarchy(
         &'a self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidue<'a>> + 'a {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidue<'a>> + 'a {
         self.residues()
             .flat_map(|r| r.atoms_with_hierarchy().map(move |h| h.extend(r)))
     }
@@ -373,7 +370,7 @@ impl<'a> Chain {
     /// Get an iterator of mutable references to a struct containing all atoms with their hierarchy making up this Chain.
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueMut<'a>> + 'a {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueMut<'a>> + 'a {
         self.residues_mut().flat_map(|r| {
             let residue: *mut Residue = r;
             r.atoms_with_hierarchy_mut().map(move |h| h.extend(residue))
@@ -471,16 +468,14 @@ impl<'a> Chain {
     /// Removes the first matching Residue from the list.
     ///
     /// ## Arguments
-    /// * `id` - the id construct of the Residue to remove (see Residue.id())
+    /// * `id` - the id construct of the Residue to remove (see [`Residue::id`])
     pub fn remove_residue_by_id(&mut self, id: (isize, Option<&str>)) -> bool {
         let index = self.residues.iter().position(|a| a.id() == id);
 
-        if let Some(i) = index {
+        index.map_or(false, |i| {
             self.remove_residue(i);
             true
-        } else {
-            false
-        }
+        })
     }
 
     /// <div class="warning">Available on crate feature `rayon` only</div>
@@ -488,17 +483,15 @@ impl<'a> Chain {
     /// Removes the first matching Residue from the list.
     ///
     /// ## Arguments
-    /// * `id` - the id construct of the Residue to remove (see Residue.id())
+    /// * `id` - the id construct of the Residue to remove (see [`Residue::id`])
     #[cfg(feature = "rayon")]
     pub fn par_remove_residue_by_id(&mut self, id: (isize, Option<&str>)) -> bool {
         let index = self.residues.par_iter().position_first(|a| a.id() == id);
 
-        if let Some(i) = index {
+        index.map_or(false, |i| {
             self.remove_residue(i);
             true
-        } else {
-            false
-        }
+        })
     }
 
     /// Remove all empty Residues from this Chain, and all empty Conformers from the Residues.
@@ -525,7 +518,7 @@ impl<'a> Chain {
 
     /// Join this Chain with another Chain, this moves all atoms from the other Chain
     /// to this Chain. All other (meta) data of this Chain will stay the same.
-    pub fn join(&mut self, other: Chain) {
+    pub fn join(&mut self, other: Self) {
         self.residues.extend(other.residues);
     }
 

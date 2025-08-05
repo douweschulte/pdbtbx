@@ -63,33 +63,28 @@ pub enum Context {
 
 impl Context {
     /// Creates a new context when no context can be given
-    pub const fn none() -> Context {
-        Context::None
+    pub const fn none() -> Self {
+        Self::None
     }
 
     /// Creates a new context when only a line (eg filename) can be shown
-    pub fn show(line: impl std::string::ToString) -> Context {
-        Context::Show {
+    pub fn show(line: impl ToString) -> Self {
+        Self::Show {
             line: line.to_string(),
         }
     }
 
     /// Creates a new context when a full line is faulty and no special position can be annotated
-    pub fn full_line(linenumber: usize, line: impl std::string::ToString) -> Context {
-        Context::FullLine {
+    pub fn full_line(linenumber: usize, line: impl ToString) -> Self {
+        Self::FullLine {
             linenumber,
             line: line.to_string(),
         }
     }
 
     /// Creates a new context when a special position can be annotated on a line
-    pub fn line(
-        linenumber: usize,
-        line: impl std::string::ToString,
-        offset: usize,
-        length: usize,
-    ) -> Context {
-        Context::Line {
+    pub fn line(linenumber: usize, line: impl ToString, offset: usize, length: usize) -> Self {
+        Self::Line {
             linenumber,
             line: line.to_string(),
             offset,
@@ -99,16 +94,16 @@ impl Context {
 
     /// Creates a new context to highlight a certain position
     #[allow(clippy::unwrap_used)]
-    pub fn position(pos: &Position<'_>) -> Context {
+    pub fn position(pos: &Position<'_>) -> Self {
         if pos.text.is_empty() {
-            Context::Line {
+            Self::Line {
                 linenumber: pos.line,
-                line: "".to_string(),
+                line: String::new(),
                 offset: 0,
                 length: 3,
             }
         } else {
-            Context::Line {
+            Self::Line {
                 linenumber: pos.line,
                 line: pos.text.lines().next().unwrap().to_string(),
                 offset: 0,
@@ -118,16 +113,16 @@ impl Context {
     }
 
     /// Creates a new context from a start and end point within a single file
-    pub fn range(start: &Position<'_>, end: &Position<'_>) -> Context {
+    pub fn range(start: &Position<'_>, end: &Position<'_>) -> Self {
         if start.line == end.line {
-            Context::Line {
+            Self::Line {
                 linenumber: start.line,
                 line: start.text[..(end.column - start.column)].to_string(),
                 offset: start.column,
                 length: end.column - start.column,
             }
         } else {
-            Context::Range {
+            Self::Range {
                 start_linenumber: start.line,
                 lines: start
                     .text
@@ -150,30 +145,30 @@ impl Context {
         )]
         let get_margin = |n| ((n + 1) as f64).log10().max(1.0).ceil() as usize;
         let margin = match self {
-            Context::None => 0,
-            Context::Show { .. } => 2,
-            Context::FullLine { linenumber: n, .. } => get_margin(*n),
-            Context::Line { linenumber: n, .. } => get_margin(*n),
-            Context::Range {
+            Self::None => 0,
+            Self::Show { .. } => 2,
+            Self::FullLine { linenumber: n, .. } => get_margin(*n),
+            Self::Line { linenumber: n, .. } => get_margin(*n),
+            Self::Range {
                 start_linenumber: n,
                 lines: l,
                 ..
             } => get_margin(n + l.len()),
-            Context::RangeHighlights {
+            Self::RangeHighlights {
                 start_linenumber: n,
                 lines: l,
                 ..
             } => get_margin(n + l.len()),
-            Context::Multiple { .. } => 0,
+            Self::Multiple { .. } => 0,
         };
         match self {
-            Context::None => {
+            Self::None => {
                 return Ok(());
             }
-            Context::Show { line } => {
+            Self::Show { line } => {
                 write!(f, "\n{:pad$} ╷\n{:pad$} │ {}", "", "", line, pad = margin)?
             }
-            Context::FullLine { linenumber, line } => write!(
+            Self::FullLine { linenumber, line } => write!(
                 f,
                 "\n{:pad$} ╷\n{:<pad$} │ {}",
                 "",
@@ -181,7 +176,7 @@ impl Context {
                 line,
                 pad = margin
             )?,
-            Context::Line {
+            Self::Line {
                 linenumber,
                 line,
                 offset,
@@ -197,7 +192,7 @@ impl Context {
                 "─".repeat(*length),
                 pad = margin
             )?,
-            Context::Range {
+            Self::Range {
                 start_linenumber,
                 lines,
                 offset,
@@ -217,7 +212,7 @@ impl Context {
                     write!(f, "\n{number:<margin$} │ {line}")?;
                 }
             }
-            Context::RangeHighlights {
+            Self::RangeHighlights {
                 start_linenumber,
                 lines,
                 highlights,
@@ -258,7 +253,7 @@ impl Context {
                     }
                 }
             }
-            Context::Multiple { contexts } => {
+            Self::Multiple { contexts } => {
                 for (note, context) in contexts {
                     context.display(f, note.as_deref())?;
                 }

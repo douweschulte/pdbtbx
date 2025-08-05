@@ -10,7 +10,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 /// Parse the given mmCIF file into a PDB struct.
-/// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
 /// If you want to open a file from memory, see [`ReadOptions::read_raw`].
@@ -40,9 +40,9 @@ pub(crate) fn open_mmcif_with_options(
     open_mmcif_raw_with_options(reader, options)
 }
 
-/// Open's mmCIF file from a BufRead. This allows opening mmCIF files directly from memory.
+/// Open's mmCIF file from a `BufRead`. This allows opening mmCIF files directly from memory.
 ///
-/// This is particularly useful if you want to open a compressed file, as you can use the BufReader
+/// This is particularly useful if you want to open a compressed file, as you can use the `BufReader`
 #[deprecated(
     since = "0.12.0",
     note = "Please use `ReadOptions::default().set_format(Format::Mmcif).read_raw(input)` instead"
@@ -51,7 +51,7 @@ pub fn open_mmcif_bufread<T>(
     bufreader: std::io::BufReader<T>,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
 where
-    T: std::io::Read,
+    T: Read,
 {
     ReadOptions::default()
         .set_format(crate::Format::Mmcif)
@@ -59,7 +59,7 @@ where
 }
 
 /// Parse the given mmCIF `&str` into a PDB struct. This allows opening mmCIF files directly from memory.
-/// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
 /// If you want to open a file see [`open_mmcif`]. There is also a function to open a PDB file directly
@@ -85,7 +85,7 @@ pub(crate) fn open_mmcif_raw_with_options<T>(
     options: &ReadOptions,
 ) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
 where
-    T: std::io::Read,
+    T: Read,
 {
     let mut contents = String::new();
     if input.read_to_string(&mut contents).is_ok() {
@@ -95,7 +95,7 @@ where
         }
     } else {
         Err(vec![PDBError::new(
-            crate::ErrorLevel::BreakingError,
+            ErrorLevel::BreakingError,
             "Buffer could not be read",
             "The buffer provided to `open_raw` could not be read to end.",
             Context::None,
@@ -163,11 +163,10 @@ fn parse_mmcif_with_options(
                                     .map(|n| pdb.symmetry = Symmetry::from_index(n.expect("Symmetry international tables number should be provided")))
                                     .err()
                             } else if let Ok(Some(value)) = get_usize(&single.content, &context, None) {
-                                if pdb.symmetry != Symmetry::from_index(value) {
-                                    Some(PDBError::new(ErrorLevel::GeneralWarning, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
-                                }
-                                else {
+                                if pdb.symmetry == Symmetry::from_index(value) {
                                     None
+                                } else {
+                                    Some(PDBError::new(ErrorLevel::GeneralWarning, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
                                 }
                             } else {
                                 None
@@ -179,11 +178,10 @@ fn parse_mmcif_with_options(
                                     .map(|t| pdb.symmetry = Symmetry::new(t.expect("Symmetry space group name should be provided")))
                                     .err()
                             } else if let Ok(Some(value)) = get_text(&single.content, &context, None) {
-                                if pdb.symmetry != Symmetry::new(value) {
-                                    Some(PDBError::new(ErrorLevel::GeneralWarning, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
-                                }
-                                else {
+                                if pdb.symmetry == Symmetry::new(value) {
                                     None
+                                } else {
+                                    Some(PDBError::new(ErrorLevel::GeneralWarning, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
                                 }
                             } else {
                                 None
@@ -220,8 +218,14 @@ fn parse_mmcif_with_options(
                                     ))
                                 }
                             } else {
-                                match mtrix_id {
-                                    Some(id) => {
+                                mtrix_id.map_or_else(
+                                    || Some(PDBError::new(
+                                        ErrorLevel::InvalidatingError,
+                                        "MtriX matrix given without ID",
+                                        "The MtriX ID (`_struct_ncs_oper.id`) should be given before any matrix information is given.",
+                                        context.clone(),
+                                        )),
+                                    |id| {
                                         let mtrix = pdb.mtrix_mut().find(|m| m.serial_number == id).expect("Could not find the MtriX record with the previously found `_struct_ncs_oper.id`");
                                         if s.ends_with("code") {
                                             match get_text(&single.content, &context, None) {
@@ -232,27 +236,21 @@ fn parse_mmcif_with_options(
                                                     "MtriX code invalid",
                                                     "Only the values 'generate' and 'given' are valid for `_struct_ncs_oper.code`.",
                                                     context.clone(),
-                                                )),
+                                                    )),
                                                 _ => Some(PDBError::new(
                                                     ErrorLevel::InvalidatingError,
                                                     "MtriX code invalid",
                                                     "The value for `_struct_ncs_oper.code` should be a textual value.",
                                                     context.clone(),
-                                                )),
+                                                    )),
                                             }
                                         } else if s.ends_with("details") {
                                             None // Ignore the details, it will not be saved somewhere
                                         } else {
                                             parse_matrix(s, get_f64(&single.content, &context, None),&mut mtrix.transformation, &context)
                                         }
-                                    },
-                                    None => Some(PDBError::new(
-                                        ErrorLevel::InvalidatingError,
-                                        "MtriX matrix given without ID",
-                                        "The MtriX ID (`_struct_ncs_oper.id`) should be given before any matrix information is given.",
-                                        context.clone(),
-                                    ))
-                                }
+                                    }
+                                )
                             }
                         }
                         _ => None,
@@ -260,7 +258,7 @@ fn parse_mmcif_with_options(
                     .map(|e| vec![e])
                 }
             },
-            _ => None,
+            Item::SaveFrame(_) => None,
         };
         if let Some(e) = result {
             errors.extend(e);
@@ -288,25 +286,17 @@ fn parse_matrix(
     context: &Context,
 ) -> Option<PDBError> {
     let get_index = |n| {
-        if let Some(c) = name.chars().nth_back(n) {
-            if let Some(n) = c.to_digit(10) {
-                Ok((n - 1) as usize)
-            } else {
-                Err(PDBError::new(
-                    ErrorLevel::InvalidatingError,
-                    "Matrix item definition incorrect",
-                    "There are no indices into the matrix. For example this is a valid name: `_database_PDB_matrix.origx[1][1]`",
-                    context.clone(),
-                ))
-            }
-        } else {
-            Err(PDBError::new(
+        name.chars().nth_back(n).map_or_else(|| Err(PDBError::new(
                 ErrorLevel::InvalidatingError,
                 "Matrix definition too short",
                 "This matrix definition item name is too short to contain the matrix indices.",
                 context.clone(),
-            ))
-        }
+            )), |c| c.to_digit(10).map_or_else(|| Err(PDBError::new(
+                    ErrorLevel::InvalidatingError,
+                    "Matrix item definition incorrect",
+                    "There are no indices into the matrix. For example this is a valid name: `_database_PDB_matrix.origx[1][1]`",
+                    context.clone(),
+                )), |n| Ok((n - 1) as usize)))
     };
     match value {
         Ok(o) => {
@@ -330,10 +320,8 @@ fn parse_matrix(
                     };
                     matrix.matrix_mut()[r][3] = value;
                 }
-                None // Everything went well
-            } else {
-                None // Ignore places where there is no value, assume it to be the default identity
             }
+            None // Ignore places where there is no value, assume it to be the default identity
         }
         Err(e) => Some(e),
     }
@@ -343,8 +331,7 @@ fn parse_matrix(
 fn flatten_result<T, E>(value: Result<Result<T, E>, E>) -> Result<T, E> {
     match value {
         Ok(Ok(t)) => Ok(t),
-        Ok(Err(e)) => Err(e),
-        Err(e) => Err(e),
+        Ok(Err(e)) | Err(e) => Err(e),
     }
 }
 
@@ -557,16 +544,17 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
             // could be find the borrow should be ended and as such safe for mutating
             // in the second branch.
             let pdb_pointer: *mut PDB = pdb;
-            if let Some(m) = (*pdb_pointer)
+            (*pdb_pointer)
                 .models_mut()
                 .find(|m| m.serial_number() == model_number)
-            {
-                m
-            } else {
-                (*pdb_pointer).add_model(Model::new(model_number));
-                #[allow(clippy::unwrap_used)]
-                (*pdb_pointer).models_mut().next_back().unwrap()
-            }
+                .map_or_else(
+                    || {
+                        (*pdb_pointer).add_model(Model::new(model_number));
+                        #[allow(clippy::unwrap_used)]
+                        (*pdb_pointer).models_mut().next_back().unwrap()
+                    },
+                    |m| m,
+                )
         };
         let current_model_atom_count = if let Some(c) = model_atom_counts.get(&model_number) {
             *c
@@ -588,7 +576,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
                 "Atom type not correct",
                 "The atom type should be ATOM or HETATM",
                 context.clone(),
-            ))
+            ));
         }
         if let Some(mut atom) = Atom::new(
             hetero,
@@ -626,7 +614,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
                 "Atom definition incorrect",
                 "The atom name and element should only contain valid characters.",
                 context.clone(),
-            ))
+            ));
         }
     }
     if !atom_ids_duplicated.is_empty() {
@@ -640,14 +628,15 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
             Context::None,
         ));
     }
-    if !errors.is_empty() {
-        Some(errors)
-    } else {
+    if errors.is_empty() {
         None
+    } else {
+        Some(errors)
     }
 }
 
 /// Get the Textual content of the value, if available
+#[allow(clippy::unnecessary_wraps)] // To make all the functions return the same type
 fn get_text(
     value: &Value,
     _context: &Context,
@@ -655,14 +644,13 @@ fn get_text(
 ) -> Result<Option<String>, PDBError> {
     match value {
         Value::Text(t) => Ok(Some(t.to_string())),
-        Value::Inapplicable => Ok(None),
-        Value::Unknown => Ok(None),
+        Value::Inapplicable | Value::Unknown => Ok(None),
         Value::Numeric(n) => Ok(Some(format!("{n}"))),
         Value::NumericWithUncertainty(n, u) => Ok(Some(format!("{n}({u})"))),
     }
 }
 
-/// Get the Numeric content of the value, if available, it also fails on NumericWithUncertainty
+/// Get the Numeric content of the value, if available, it also fails on `NumericWithUncertainty`
 fn get_f64(
     value: &Value,
     context: &Context,
@@ -670,8 +658,7 @@ fn get_f64(
 ) -> Result<Option<f64>, PDBError> {
     match value {
         Value::Numeric(num) => Ok(Some(*num)),
-        Value::Inapplicable => Ok(None),
-        Value::Unknown => Ok(None),
+        Value::Inapplicable | Value::Unknown => Ok(None),
         _ => Err(PDBError::new(
             ErrorLevel::InvalidatingError,
             "Not a number",
@@ -690,13 +677,7 @@ fn get_usize(
     column: Option<&str>,
 ) -> Result<Option<usize>, PDBError> {
     flatten_result(get_f64(value, context, column).map(|result| {
-        if let Some(num) = result {
-            #[allow(
-                clippy::cast_precision_loss,
-                clippy::cast_possible_truncation,
-                clippy::cast_sign_loss,
-                clippy::float_cmp
-            )]
+        result.map_or(Ok(None), |num| {
             if (0.0..usize::MAX as f64).contains(&num) && num.trunc() == num {
                 Ok(Some(num as usize))
             } else {
@@ -709,9 +690,7 @@ fn get_usize(
                     context.clone(),
                 ))
             }
-        } else {
-            Ok(None)
-        }
+        })
     }))
 }
 
@@ -722,12 +701,7 @@ fn get_isize(
     column: Option<&str>,
 ) -> Result<Option<isize>, PDBError> {
     flatten_result(get_f64(value, context, column).map(|result| {
-        if let Some(num) = result {
-            #[allow(
-                clippy::cast_precision_loss,
-                clippy::cast_possible_truncation,
-                clippy::float_cmp
-            )]
+        result.map_or(Ok(None), |num| {
             if (isize::MIN as f64..isize::MAX as f64).contains(&num) && num.trunc() == num {
                 Ok(Some(num as isize))
             } else {
@@ -740,8 +714,6 @@ fn get_isize(
                     context.clone(),
                 ))
             }
-        } else {
-            Ok(None)
-        }
+        })
     }))
 }

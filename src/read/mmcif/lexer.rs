@@ -45,7 +45,7 @@ fn parse_data_block(input: &mut Position<'_>) -> Result<DataBlock, PDBError> {
 /// Parse a main loop item, a data item or a save frame
 fn parse_data_item_or_save_frame(input: &mut Position<'_>) -> Result<Item, PDBError> {
     let start = *input;
-    if let Some(()) = start_with(input, "save_") {
+    if start_with(input, "save_") == Some(()) {
         let mut frame = SaveFrame {
             name: parse_identifier(input).to_string(),
             items: Vec::new(),
@@ -53,7 +53,7 @@ fn parse_data_item_or_save_frame(input: &mut Position<'_>) -> Result<Item, PDBEr
         while let Ok(item) = parse_data_item(input) {
             frame.items.push(item);
         }
-        if let Some(()) = start_with(input, "save_") {
+        if start_with(input, "save_") == Some(()) {
             Ok(Item::SaveFrame(frame))
         } else {
             Err(PDBError::new(
@@ -73,7 +73,7 @@ fn parse_data_item_or_save_frame(input: &mut Position<'_>) -> Result<Item, PDBEr
 fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
     let start = *input;
     trim_comments_and_whitespace(input);
-    if let Some(()) = start_with(input, "loop_") {
+    if start_with(input, "loop_") == Some(()) {
         let mut loop_value = Loop {
             header: Vec::new(),
             data: Vec::new(),
@@ -81,7 +81,7 @@ fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
         let mut values = Vec::new();
         trim_comments_and_whitespace(input);
 
-        while let Some(()) = start_with(input, "_") {
+        while start_with(input, "_") == Some(()) {
             let inner_name = parse_identifier(input);
             loop_value.header.push(inner_name.to_string());
             trim_comments_and_whitespace(input);
@@ -108,21 +108,24 @@ fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
         }
 
         Ok(DataItem::Loop(loop_value))
-    } else if let Some(()) = start_with(input, "_") {
+    } else if start_with(input, "_") == Some(()) {
         let name = parse_identifier(input);
-        if let Ok(value) = parse_value(input) {
-            Ok(DataItem::Single(Single {
-                name: name.to_string(),
-                content: value,
-            }))
-        } else {
-            Err(PDBError::new(
-                ErrorLevel::BreakingError,
-                "No valid Value",
-                "A Data Item should contain a value or a loop.",
-                Context::range(&start, input),
-            ))
-        }
+        parse_value(input).map_or_else(
+            |_| {
+                Err(PDBError::new(
+                    ErrorLevel::BreakingError,
+                    "No valid Value",
+                    "A Data Item should contain a value or a loop.",
+                    Context::range(&start, input),
+                ))
+            },
+            |value| {
+                Ok(DataItem::Single(Single {
+                    name: name.to_string(),
+                    content: value,
+                }))
+            },
+        )
     } else {
         Err(PDBError::new(
             ErrorLevel::BreakingError,
@@ -181,11 +184,7 @@ fn parse_value(input: &mut Position<'_>) -> Result<Value, PDBError> {
         parse_multiline_string(input).map(|text| Value::Text(text.to_string()))
     } else if is_ordinary(input.text.chars().next().unwrap()) {
         let text = parse_identifier(input);
-        if let Some(value) = parse_numeric(text) {
-            Ok(value)
-        } else {
-            Ok(Value::Text(text.to_string()))
-        }
+        parse_numeric(text).map_or_else(|| Ok(Value::Text(text.to_string())), Ok)
     } else {
         Err(PDBError::new(
             ErrorLevel::BreakingError,
@@ -233,7 +232,7 @@ fn parse_numeric(text: &str) -> Option<Value> {
             if c.is_ascii_digit() {
                 decimal_set = true;
                 power *= 10.0;
-                decimal += c.to_digit(10).unwrap() as f64 / power;
+                decimal += f64::from(c.to_digit(10).unwrap()) / power;
                 chars_to_remove += 1;
             } else {
                 break;
@@ -306,7 +305,7 @@ fn parse_numeric(text: &str) -> Option<Value> {
     if (!integer_set && !decimal_set) || text.len() != chars_to_remove {
         None
     } else {
-        let mut number = value as f64 + decimal;
+        let mut number = f64::from(value) + decimal;
         if minus {
             number *= -1.0;
         }
@@ -423,7 +422,7 @@ fn parse_multiline_string<'a>(input: &mut Position<'a>) -> Result<&'a str, PDBEr
             input.column += 1;
             return Ok(trimmed);
         } else if c == '\n' {
-            if let Some('\r') = iter.peek() {
+            if matches!(iter.peek(), Some('\r')) {
                 chars_to_remove += 1;
                 let _ = iter.next();
             }
@@ -432,7 +431,7 @@ fn parse_multiline_string<'a>(input: &mut Position<'a>) -> Result<&'a str, PDBEr
             chars_to_remove += 1;
             eol = true;
         } else if c == '\r' {
-            if let Some('\n') = iter.peek() {
+            if matches!(iter.peek(), Some('\n')) {
                 chars_to_remove += 1;
                 let _ = iter.next();
             }
@@ -465,8 +464,8 @@ fn skip_to_eol(input: &mut Position<'_>) {
 
     while let Some(c) = iter.next() {
         if c == '\n' {
-            if let Some('\r') = iter.peek() {
-                chars_to_remove += 1
+            if matches!(iter.peek(), Some('\r')) {
+                chars_to_remove += 1;
             }
             input.line += 1;
             input.column = 1;
@@ -474,8 +473,8 @@ fn skip_to_eol(input: &mut Position<'_>) {
             input.text = &input.text[chars_to_remove..];
             return;
         } else if c == '\r' {
-            if let Some('\n') = iter.peek() {
-                chars_to_remove += 1
+            if matches!(iter.peek(), Some('\n')) {
+                chars_to_remove += 1;
             }
             input.line += 1;
             input.column = 1;
@@ -500,7 +499,7 @@ fn trim_whitespace(input: &mut Position<'_>) {
             input.column += 1;
             chars_to_remove += 1;
         } else if c == '\n' {
-            if let Some('\r') = iter.peek() {
+            if matches!(iter.peek(), Some('\r')) {
                 chars_to_remove += 1;
                 let _ = iter.next();
             }
@@ -508,7 +507,7 @@ fn trim_whitespace(input: &mut Position<'_>) {
             input.column = 1;
             chars_to_remove += 1;
         } else if c == '\r' {
-            if let Some('\n') = iter.peek() {
+            if matches!(iter.peek(), Some('\n')) {
                 chars_to_remove += 1;
                 let _ = iter.next();
             }
@@ -759,26 +758,26 @@ mod tests {
     #[test]
     fn parse_numeric_float_no_decimal_exp() {
         let res = parse_numeric("42.e10");
-        assert_numeric!(res, 42.0 * 10000000000.0);
+        assert_numeric!(res, 42.0 * 10_000_000_000.0);
     }
 
     #[test]
     fn parse_numeric_float_no_integer_exp() {
         let res = parse_numeric(".42e10");
-        assert_numeric!(res, 0.420 * 10000000000.0);
+        assert_numeric!(res, 0.420 * 10_000_000_000.0);
     }
 
     #[test]
     fn parse_numeric_float_no_integer_positive_exp() {
         let res = parse_numeric(".42e+10");
-        assert_numeric!(res, 0.420 * 10000000000.0);
+        assert_numeric!(res, 0.420 * 10_000_000_000.0);
     }
 
     #[test]
     #[cfg_attr(miri, ignore)]
     fn parse_numeric_float_no_integer_negative_exp() {
         let res = parse_numeric(".42e-10");
-        assert_numeric!(res, 0.420 / 10000000000.0);
+        assert_numeric!(res, 0.420 / 10_000_000_000.0);
     }
 
     #[test]
@@ -896,7 +895,7 @@ mod tests {
         };
         let res = parse_value(&mut pos);
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().short_description(), "Invalid enclosing")
+        assert_eq!(res.unwrap_err().short_description(), "Invalid enclosing");
     }
 
     #[test]
@@ -922,7 +921,7 @@ mod tests {
         };
         let res = parse_value(&mut pos);
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().short_description(), "Invalid enclosing")
+        assert_eq!(res.unwrap_err().short_description(), "Invalid enclosing");
     }
 
     #[test]
@@ -1021,7 +1020,7 @@ mod tests {
         assert_eq!(
             res.unwrap_err().short_description(),
             "Multiline string not finished"
-        )
+        );
     }
 
     #[test]
@@ -1112,7 +1111,7 @@ mod tests {
         };
         let res = parse_data_item(&mut pos);
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().short_description(), "No valid Value")
+        assert_eq!(res.unwrap_err().short_description(), "No valid Value");
     }
 
     #[test]
@@ -1185,7 +1184,7 @@ mod tests {
         assert_eq!(
             res.unwrap_err().short_description(),
             "Loop has incorrect number of data items"
-        )
+        );
     }
 
     #[test]
@@ -1243,7 +1242,7 @@ mod tests {
         assert_eq!(
             res.unwrap_err().short_description(),
             "No matching \'save_\' found"
-        )
+        );
     }
 
     #[test]
@@ -1281,11 +1280,11 @@ mod tests {
         assert_eq!(
             res.unwrap_err().short_description(),
             "Data Block not opened"
-        )
+        );
     }
 
     fn close(a: f64, b: f64) -> bool {
         let dif = a / b;
-        (1.0 - dif) > -0.000000000000001 && (dif - 1.0) < 0.000000000000001
+        (1.0 - dif).abs() < 0.000_000_000_000_001
     }
 }

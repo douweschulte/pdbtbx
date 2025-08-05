@@ -1,3 +1,5 @@
+//! Test low b factor errors
+
 use pdbtbx::*;
 use std::env;
 use std::path::Path;
@@ -14,7 +16,7 @@ fn low_b_factor_messages() {
         .unwrap();
 
     let (pdb, errors) = ReadOptions::default()
-        .set_level(crate::StrictnessLevel::Strict)
+        .set_level(StrictnessLevel::Strict)
         .read(filename)
         .unwrap();
     let pdb_errors = validate_pdb(&pdb);

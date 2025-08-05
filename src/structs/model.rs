@@ -22,8 +22,8 @@ impl<'a> Model {
     /// ## Arguments
     /// * `serial_number` - the serial number
     #[must_use]
-    pub const fn new(serial_number: usize) -> Model {
-        Model {
+    pub const fn new(serial_number: usize) -> Self {
+        Self {
             serial_number,
             chains: Vec::new(),
         }
@@ -33,8 +33,8 @@ impl<'a> Model {
     ///
     /// ## Arguments
     /// * `serial_number` - the serial number
-    pub fn from_iter(serial_number: usize, chains: impl Iterator<Item = Chain>) -> Model {
-        Model {
+    pub fn from_iter(serial_number: usize, chains: impl Iterator<Item = Chain>) -> Self {
+        Self {
             serial_number,
             chains: chains.collect(),
         }
@@ -403,7 +403,7 @@ impl<'a> Model {
     /// Get an iterator of references to a struct containing all atoms with their hierarchy making up this Model.
     pub fn atoms_with_hierarchy(
         &'a self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChain<'a>> + 'a {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChain<'a>> + 'a {
         self.chains()
             .flat_map(|c| c.atoms_with_hierarchy().map(move |h| h.extend(c)))
     }
@@ -411,7 +411,7 @@ impl<'a> Model {
     /// Get an iterator of mutable references to a struct containing all atoms with their hierarchy making up this Model.
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerResidueChainMut<'a>> + 'a {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerResidueChainMut<'a>> + 'a {
         self.chains_mut().flat_map(|c| {
             let chain: *mut Chain = c;
             c.atoms_with_hierarchy_mut().map(move |h| h.extend(chain))
@@ -523,12 +523,10 @@ impl<'a> Model {
         let id = id.as_ref();
         let index = self.chains().position(|a| a.id() == id);
 
-        if let Some(i) = index {
+        index.map_or(false, |i| {
             self.remove_chain(i);
             true
-        } else {
-            false
-        }
+        })
     }
 
     /// <div class="warning">Available on crate feature `rayon` only</div>
@@ -543,12 +541,10 @@ impl<'a> Model {
         let id = id.as_ref();
         let index = self.chains.par_iter().position_first(|a| a.id() == id);
 
-        if let Some(i) = index {
+        index.map_or(false, |i| {
             self.remove_chain(i);
             true
-        } else {
-            false
-        }
+        })
     }
 
     /// Remove all empty Chain from this Model, and all empty Residues from the Chains.
@@ -584,7 +580,7 @@ impl<'a> Model {
     /// Join this Model with another Model, this moves all atoms from the other Model
     /// to this Model. All other (meta) data of this Model will stay the same. It will add
     /// new Chains and Residues as defined in the other model.
-    pub fn join(&mut self, other: Model) {
+    pub fn join(&mut self, other: Self) {
         self.chains.extend(other.chains);
     }
 

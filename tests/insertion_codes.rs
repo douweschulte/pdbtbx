@@ -1,3 +1,5 @@
+//! Test insertion codes
+
 use pdbtbx::*;
 
 #[test]
@@ -9,12 +11,12 @@ fn insertion_codes() {
     std::fs::create_dir_all(dump_dir).unwrap();
 
     let (pdb, errors) = ReadOptions::default()
-        .set_level(crate::StrictnessLevel::Strict)
+        .set_level(StrictnessLevel::Strict)
         .read(path)
         .unwrap();
     let pdb_errors = save(&pdb, "dump/insertion_codes.pdb", StrictnessLevel::Loose);
     let (pdb2, _) = ReadOptions::default()
-        .set_level(crate::StrictnessLevel::Strict)
+        .set_level(StrictnessLevel::Strict)
         .read("dump/insertion_codes.pdb")
         .unwrap();
     print!("{errors:?}");

@@ -21,9 +21,9 @@ impl Display for StrictnessLevel {
             f,
             "{}",
             match self {
-                StrictnessLevel::Strict => "Strict",
-                StrictnessLevel::Medium => "Medium",
-                StrictnessLevel::Loose => "Loose",
+                Self::Strict => "Strict",
+                Self::Medium => "Medium",
+                Self::Loose => "Loose",
             }
         )
     }

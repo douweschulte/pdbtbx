@@ -10,49 +10,49 @@ use std::ops;
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum Term {
-    /// The model serial number, only used in (NMR) PDB files with multiple states of a protein, see [Model::serial_number].
+    /// The model serial number, only used in (NMR) PDB files with multiple states of a protein, see [`Model::serial_number`].
     ModelSerialNumber(usize),
     /// Search for a range of model serial numbers, starting at the first number and ending with the last number inclusive.
     ModelSerialNumberRange(usize, usize),
-    /// The chain id eg `A`, see [Chain::id].
+    /// The chain id eg `A`, see [`Chain::id`].
     ChainId(String),
-    /// Search for a range of chain ids, using the Ord implementation of std::str <https://doc.rust-lang.org/std/primitive.str.html#impl-Ord>, starting at the first number and ending with the last number inclusive.
+    /// Search for a range of chain ids, using the `Ord` implementation of `std::str` <https://doc.rust-lang.org/std/primitive.str.html#impl-Ord>, starting at the first number and ending with the last number inclusive.
     ChainIdRange(String, String),
-    /// The residue serial number, see [Residue::serial_number].
+    /// The residue serial number, see [`Residue::serial_number`].
     ResidueSerialNumber(isize),
     /// Search for a range of residue serial numbers, starting at the first number and ending with the last number inclusive.
     ResidueSerialNumberRange(isize, isize),
-    /// The residue insertion code eg `Some("A")`, see [Residue::insertion_code].
+    /// The residue insertion code eg `Some("A")`, see [`Residue::insertion_code`].
     ResidueInsertionCode(Option<String>),
-    /// The residue serial number and insertion code combined, see [Residue::id].
+    /// The residue serial number and insertion code combined, see [`Residue::id`].
     ResidueId(isize, Option<String>),
-    /// The conformer name eg `ALA`, see [Conformer::name].
+    /// The conformer name eg `ALA`, see [`Conformer::name`].
     ConformerName(String),
-    /// The conformer alternative location eg `Some("A")`, see [Conformer::alternative_location].
+    /// The conformer alternative location eg `Some("A")`, see [`Conformer::alternative_location`].
     ConformerAlternativeLocation(Option<String>),
-    /// The conformer name and alternative location combined, see [Conformer::id].
+    /// The conformer name and alternative location combined, see [`Conformer::id`].
     ConformerId(String, Option<String>),
-    /// The atom serial number, see [Atom::serial_number].
+    /// The atom serial number, see [`Atom::serial_number`].
     AtomSerialNumber(usize),
     /// A range of atoms based on serial number starting at the first number and ending with the last number inclusive.
     AtomSerialNumberRange(usize, usize),
-    /// The atom name eg `CA`, see [Atom::name].
+    /// The atom name eg `CA`, see [`Atom::name`].
     AtomName(String),
-    /// The element eq `C`, see [Atom::element], see [Element].
+    /// The element eq `C`, see [`Atom::element`], see [Element].
     Element(Element),
-    /// Atom b factor, see [Atom::b_factor].
+    /// Atom b factor, see [`Atom::b_factor`].
     BFactor(f64),
     /// Atom B factor range starting at the first number and ending with the last number inclusive.
     BFactorRange(f64, f64),
-    /// Atom occupancy, see [Atom::occupancy].
+    /// Atom occupancy, see [`Atom::occupancy`].
     Occupancy(f64),
     /// Atom occupancy range starting at the first number and ending with the last number inclusive.
     OccupancyRange(f64, f64),
-    /// Search for backbone atoms, this means that [Conformer::is_amino_acid] is `true` and [Atom::is_backbone] is `true`.
+    /// Search for backbone atoms, this means that [`Conformer::is_amino_acid`] is `true` and [`Atom::is_backbone`] is `true`.
     Backbone,
-    /// Search for side chain atoms, this means that [Conformer::is_amino_acid] is `true` and [Atom::is_backbone] is `false`.
+    /// Search for side chain atoms, this means that [`Conformer::is_amino_acid`] is `true` and [`Atom::is_backbone`] is `false`.
     SideChain,
-    /// Search for hetero atoms, this means that [Atom::hetero] is `true`.
+    /// Search for hetero atoms, this means that [`Atom::hetero`] is `true`.
     Hetero,
 }
 
@@ -93,8 +93,7 @@ impl Term {
                 Some(al.as_deref() == conformer.alternative_location())
             }
             Self::ConformerId(n, al) => Some((n.as_str(), al.as_deref()) == conformer.id()),
-            Self::Backbone if !conformer.is_amino_acid() => Some(false),
-            Self::SideChain if !conformer.is_amino_acid() => Some(false),
+            Self::Backbone | Self::SideChain if !conformer.is_amino_acid() => Some(false),
             _ => None,
         }
     }

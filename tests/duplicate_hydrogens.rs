@@ -1,11 +1,11 @@
-// Test to detect issue raised in #92 by Brian.
-// Description:
-// When trying to parse a nucleic structure in PDB format, it seems than the number of atoms found is
-// bigger than the number of the actual atoms in the PDB file. It seems from a few tests that hydrogen
-// atoms are added multiple times to the internal PDB object.
-// Problem:
-// In the parser the name of the conformer was not trimmed correctly creating a ton of different
-// conformers creating this issue.
+//! Test to detect issue raised in #92 by Brian.
+//! Description:
+//! When trying to parse a nucleic structure in PDB format, it seems than the number of atoms found is
+//! bigger than the number of the actual atoms in the PDB file. It seems from a few tests that hydrogen
+//! atoms are added multiple times to the internal PDB object.
+//! Problem:
+//! In the parser the name of the conformer was not trimmed correctly creating a ton of different
+//! conformers creating this issue.
 
 use pdbtbx::*;
 
@@ -15,7 +15,7 @@ fn main() {
 }
 
 fn number_of_h(file: &str) -> usize {
-    let (structure, _errors) = pdbtbx::open(file).unwrap();
+    let (structure, _errors) = open(file).unwrap();
 
     println!("{}", structure.atom_count());
 

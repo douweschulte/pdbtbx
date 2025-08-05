@@ -13,7 +13,7 @@ pub(crate) struct BuildUpMatrix {
 impl BuildUpMatrix {
     /// Create an empty struct
     pub(crate) const fn empty() -> Self {
-        BuildUpMatrix {
+        Self {
             row0: None,
             row1: None,
             row2: None,
@@ -22,7 +22,7 @@ impl BuildUpMatrix {
     /// Consume this struct and get the transformation matrix, if any row is not defined it returns None
     pub(crate) const fn get_matrix(&self) -> Option<TransformationMatrix> {
         match self {
-            BuildUpMatrix {
+            Self {
                 row0: Some(r1),
                 row1: Some(r2),
                 row2: Some(r3),
@@ -34,7 +34,7 @@ impl BuildUpMatrix {
     pub(crate) const fn is_set(&self) -> bool {
         matches!(
             self,
-            BuildUpMatrix {
+            Self {
                 row0: Some(_),
                 row1: Some(_),
                 row2: Some(_),

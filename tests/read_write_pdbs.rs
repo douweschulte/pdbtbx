@@ -1,3 +1,5 @@
+//! Test the logic of parsing and saving by trying it on all provided sample files
+
 use std::path::Path;
 use std::time::Instant;
 use std::{env, fs};
@@ -15,7 +17,7 @@ fn run_pdbs() {
         .into_string()
         .unwrap()
         + &String::from(std::path::MAIN_SEPARATOR);
-    let _ = fs::create_dir(dump_dir.clone());
+    fs::create_dir(dump_dir.clone()).unwrap();
     println!("{pdb_dir:?}");
 
     save_invalid_name();
@@ -41,7 +43,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
     let now = Instant::now();
 
     let read_result = ReadOptions::default()
-        .set_level(crate::StrictnessLevel::Loose)
+        .set_level(StrictnessLevel::Loose)
         .read(file);
     assert!(read_result.is_ok());
     let (pdb, errors) = read_result.unwrap();
@@ -86,9 +88,9 @@ fn do_something(file: &str, folder: &str, name: &str) {
 
     println!("Counted for averages");
 
-    avg /= (total_back + total_side) as f64;
-    avg_back /= total_back as f64;
-    avg_side /= total_side as f64;
+    avg /= f64::from(total_back + total_side);
+    avg_back /= f64::from(total_back);
+    avg_side /= f64::from(total_side);
 
     println!("Found averages");
 
@@ -107,7 +109,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
         )
         .expect("PDB resave not successful");
         let (_saved_pdb, _) = ReadOptions::default()
-            .set_level(crate::StrictnessLevel::Loose)
+            .set_level(StrictnessLevel::Loose)
             .read(folder.to_string() + name + ".pdb")
             .expect("PDB reparse not successful");
         //assert_eq!(pdb, saved_pdb);
@@ -119,7 +121,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
     )
     .expect("mmCIF resave not successful");
     let (_saved_mmcif, _) = ReadOptions::default()
-        .set_level(crate::StrictnessLevel::Loose)
+        .set_level(StrictnessLevel::Loose)
         .read(folder.to_string() + name + ".cif")
         .expect("mmCIF reparse not successful");
 
@@ -140,7 +142,7 @@ fn save_invalid_name() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.len(), 1);
-    assert_eq!(err[0].short_description(), "Incorrect extension")
+    assert_eq!(err[0].short_description(), "Incorrect extension");
 }
 
 fn save_pdb_strict() {
@@ -162,7 +164,7 @@ fn save_pdb_strict() {
     let res = save(&pdb, &name, StrictnessLevel::Strict);
     assert!(res.is_ok());
     let (_pdb, errors) = ReadOptions::default()
-        .set_level(crate::StrictnessLevel::Strict)
+        .set_level(StrictnessLevel::Strict)
         .read(&name)
         .unwrap();
     assert_eq!(errors.len(), 0);
@@ -210,7 +212,7 @@ fn save_mmcif_strict() {
     println!("{res:?}");
     assert!(res.is_ok());
     let (_pdb, errors) = ReadOptions::default()
-        .set_level(crate::StrictnessLevel::Strict)
+        .set_level(StrictnessLevel::Strict)
         .read(&name)
         .unwrap();
     assert_eq!(errors.len(), 0);

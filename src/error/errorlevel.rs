@@ -20,15 +20,15 @@ pub enum ErrorLevel {
 }
 
 impl ErrorLevel {
-    /// Get the descriptor for this ErrorLevel (Error/Warning). This can be used to display to users to indicate
+    /// Get the descriptor for this `ErrorLevel` (Error/Warning). This can be used to display to users to indicate
     /// the severity of the error.
     pub const fn descriptor(&self) -> &str {
         match self {
-            ErrorLevel::BreakingError => "BreakingError",
-            ErrorLevel::InvalidatingError => "InvalidatingError",
-            ErrorLevel::StrictWarning => "StrictWarning",
-            ErrorLevel::LooseWarning => "LooseWarning",
-            ErrorLevel::GeneralWarning => "GeneralWarning",
+            Self::BreakingError => "BreakingError",
+            Self::InvalidatingError => "InvalidatingError",
+            Self::StrictWarning => "StrictWarning",
+            Self::LooseWarning => "LooseWarning",
+            Self::GeneralWarning => "GeneralWarning",
         }
     }
 
@@ -36,10 +36,8 @@ impl ErrorLevel {
     pub const fn fails(&self, level: StrictnessLevel) -> bool {
         match level {
             StrictnessLevel::Strict => true,
-            StrictnessLevel::Medium => !matches!(self, ErrorLevel::GeneralWarning),
-            StrictnessLevel::Loose => {
-                !matches!(self, ErrorLevel::GeneralWarning | ErrorLevel::LooseWarning)
-            }
+            StrictnessLevel::Medium => !matches!(self, Self::GeneralWarning),
+            StrictnessLevel::Loose => !matches!(self, Self::GeneralWarning | Self::LooseWarning),
         }
     }
 }

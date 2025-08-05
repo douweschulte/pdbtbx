@@ -1,3 +1,5 @@
+//! Example of how these errors look, for visual debugging
+
 use pdbtbx::*;
 
 fn main() {

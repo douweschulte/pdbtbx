@@ -32,13 +32,9 @@ impl Conformer {
     /// ## Fails
     /// It fails and returns `None` if any of the characters making up the name are invalid.
     #[must_use]
-    pub fn new(
-        name: impl AsRef<str>,
-        alt_loc: Option<&str>,
-        atom: Option<Atom>,
-    ) -> Option<Conformer> {
+    pub fn new(name: impl AsRef<str>, alt_loc: Option<&str>, atom: Option<Atom>) -> Option<Self> {
         prepare_identifier_uppercase(name).map(|n| {
-            let mut res = Conformer {
+            let mut res = Self {
                 name: n,
                 alternative_location: None,
                 atoms: Vec::new(),
@@ -155,14 +151,9 @@ impl Conformer {
     /// underlying vector is assumed to be sorted. This assumption can be enforced
     /// by using `conformer.sort()`.
     pub fn binary_find_atom(&self, serial_number: usize) -> Option<&Atom> {
-        if let Ok(i) = self
-            .atoms
+        self.atoms
             .binary_search_by(|a| a.serial_number().cmp(&serial_number))
-        {
-            unsafe { Some(self.atoms.get_unchecked(i)) }
-        } else {
-            None
-        }
+            .map_or(None, |i| unsafe { Some(self.atoms.get_unchecked(i)) })
     }
 
     /// Get a mutable reference to the specified atom which is unique within a single conformer.
@@ -262,12 +253,10 @@ impl Conformer {
             .atoms()
             .position(|a| a.serial_number() == serial_number);
 
-        if let Some(i) = index {
+        index.map_or(false, |i| {
             self.remove_atom(i);
             true
-        } else {
-            false
-        }
+        })
     }
 
     /// <div class="warning">Available on crate feature `rayon` only</div>
@@ -286,12 +275,10 @@ impl Conformer {
             .par_iter()
             .position_first(|a| a.serial_number() == serial_number);
 
-        if let Some(i) = index {
+        index.map_or(false, |i| {
             self.remove_atom(i);
             true
-        } else {
-            false
-        }
+        })
     }
 
     /// Remove the specified Atom. Returns `true` if a matching Atom was found and removed.
@@ -306,12 +293,10 @@ impl Conformer {
         let name = name.as_ref();
         let index = self.atoms().position(|a| a.name() == name);
 
-        if let Some(i) = index {
+        index.map_or(false, |i| {
             self.remove_atom(i);
             true
-        } else {
-            false
-        }
+        })
     }
 
     /// <div class="warning">Available on crate feature `rayon` only</div>
@@ -328,12 +313,10 @@ impl Conformer {
         let name = name.as_ref();
         let index = self.atoms.par_iter().position_first(|a| a.name() == name);
 
-        if let Some(i) = index {
+        index.map_or(false, |i| {
             self.remove_atom(i);
             true
-        } else {
-            false
-        }
+        })
     }
 
     /// Apply a transformation to the position of all atoms making up this Conformer, the new position is immediately set.
@@ -354,7 +337,7 @@ impl Conformer {
 
     /// Join this Conformer with another Conformer, this moves all atoms from the other Conformer
     /// to this Conformer. All other (meta) data of this Conformer will stay the same.
-    pub fn join(&mut self, other: Conformer) {
+    pub fn join(&mut self, other: Self) {
         self.atoms.extend(other.atoms);
     }
 

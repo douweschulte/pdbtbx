@@ -10,7 +10,7 @@ readme = "README.md"
 keywords = ["pdb", "crystal", "protein", "mmcif", "bio"]
 categories = ["parser-implementations", "science"]
 include = ["src/**/*", "LICENSE", "README.md"]
-rust-version = "1.64"
+rust-version = "1.67"
 
 [dependencies]
 rstar = { version = "0.12", optional = true }

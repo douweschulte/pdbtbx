@@ -16,12 +16,14 @@ pub enum Format {
     Auto,
 }
 
-impl From<&str> for Format {
-    fn from(s: &str) -> Self {
+impl TryFrom<&str> for Format {
+    type Error = ();
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
         match s {
-            "pdb" => Self::Pdb,
-            "mmcif" => Self::Mmcif,
-            _ => panic!("Unknown format: {s}"),
+            "pdb" => Ok(Self::Pdb),
+            "mmcif" => Ok(Self::Mmcif),
+            _ => Err(()),
         }
     }
 }
@@ -190,7 +192,7 @@ impl ReadOptions {
                 match file_format {
                     Format::Pdb => super::pdb::open_pdb_with_options(path, self),
                     Format::Mmcif => super::mmcif::open_mmcif_with_options(path, self),
-                    _ => Err(vec![PDBError::new(
+                    Format::Auto => Err(vec![PDBError::new(
                         crate::ErrorLevel::BreakingError,
                         "Incorrect extension",
                         "Could not determine the type of the given file extension, make it .pdb or .cif",
@@ -210,7 +212,7 @@ impl ReadOptions {
 
     /// Parse the input stream into a [`PDB`] struct. To allow for direct streaming from sources, like from RCSB.org.
     /// The file format **must** be set explicitly with [`ReadOptions::set_format`].
-    /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+    /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
     ///
     /// # Related
     /// If you want to open a file, see [`ReadOptions::read`].
@@ -236,13 +238,13 @@ fn guess_format(filename: &str) -> Option<(Format, bool)> {
     let path = Path::new(filename);
 
     match path.extension().and_then(OsStr::to_str) {
-        Some("pdb") | Some("pdb1") => Some((Format::Pdb, false)),
-        Some("cif") | Some("mmcif") => Some((Format::Mmcif, false)),
+        Some("pdb" | "pdb1") => Some((Format::Pdb, false)),
+        Some("cif" | "mmcif") => Some((Format::Mmcif, false)),
         Some("gz") => {
             let path_ext = Path::new(path.file_stem().and_then(OsStr::to_str).unwrap_or(""));
             match path_ext.extension().and_then(OsStr::to_str) {
-                Some("pdb") | Some("pdb1") => Some((Format::Pdb, true)),
-                Some("cif") | Some("mmcif") => Some((Format::Mmcif, true)),
+                Some("pdb" | "pdb1") => Some((Format::Pdb, true)),
+                Some("cif" | "mmcif") => Some((Format::Mmcif, true)),
                 _ => None,
             }
         }

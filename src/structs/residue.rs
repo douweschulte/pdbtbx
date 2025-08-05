@@ -185,7 +185,7 @@ impl<'a> Residue {
         &'a self,
         serial_number: usize,
         alternative_location: Option<&str>,
-    ) -> Option<hierarchy::AtomConformer<'a>> {
+    ) -> Option<AtomConformer<'a>> {
         for conformer in self.conformers() {
             if conformer.alternative_location() == alternative_location {
                 if let Some(f) = conformer.atoms().next() {
@@ -193,7 +193,7 @@ impl<'a> Residue {
                         if f.serial_number() <= serial_number && serial_number <= b.serial_number()
                         {
                             if let Some(atom) = conformer.binary_find_atom(serial_number) {
-                                return Some(hierarchy::AtomConformer::new(atom, conformer));
+                                return Some(AtomConformer::new(atom, conformer));
                             }
                         }
                     }
@@ -214,7 +214,7 @@ impl<'a> Residue {
         &'a mut self,
         serial_number: usize,
         alternative_location: Option<&str>,
-    ) -> Option<hierarchy::AtomConformerMut<'a>> {
+    ) -> Option<AtomConformerMut<'a>> {
         unsafe {
             for c in self.conformers_mut() {
                 let c_ptr: *mut Conformer = c;
@@ -228,7 +228,7 @@ impl<'a> Residue {
                                 if let Some(atom) =
                                     c_ptr.as_mut().unwrap().binary_find_atom_mut(serial_number)
                                 {
-                                    return Some(hierarchy::AtomConformerMut::new(atom, c_ptr));
+                                    return Some(AtomConformerMut::new(atom, c_ptr));
                                 }
                             }
                         }
@@ -248,10 +248,7 @@ impl<'a> Residue {
         self.conformers()
             .map(move |c| (c, search.clone().add_conformer_info(c)))
             .filter(|(_c, search)| !matches!(search, Search::Known(false)))
-            .flat_map(move |(c, search)| {
-                c.find(search)
-                    .map(move |a| hierarchy::AtomConformer::new(a, c))
-            })
+            .flat_map(move |(c, search)| c.find(search).map(move |a| AtomConformer::new(a, c)))
     }
 
     /// Find all hierarchies matching the given search. For more details see [Search].
@@ -269,7 +266,7 @@ impl<'a> Residue {
             .flat_map(move |(c, search)| {
                 let c_ptr: *mut Conformer = c;
                 c.find_mut(search)
-                    .map(move |a| hierarchy::AtomConformerMut::new(a, c_ptr))
+                    .map(move |a| AtomConformerMut::new(a, c_ptr))
             })
     }
 
@@ -337,10 +334,10 @@ impl<'a> Residue {
     #[must_use]
     pub fn atoms_with_hierarchy(
         &'a self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformer<'a>> + 'a {
+    ) -> impl DoubleEndedIterator<Item = AtomConformer<'a>> + 'a {
         self.conformers()
             .flat_map(|c| c.atoms().map(move |a| (a, c)))
-            .map(hierarchy::AtomConformer::from_tuple)
+            .map(AtomConformer::from_tuple)
     }
 
     /// Get an iterator of mutable references to a struct containing all atoms with their hierarchy making up this Model.
@@ -348,13 +345,13 @@ impl<'a> Residue {
     #[must_use]
     pub fn atoms_with_hierarchy_mut(
         &'a mut self,
-    ) -> impl DoubleEndedIterator<Item = hierarchy::AtomConformerMut<'a>> + 'a {
+    ) -> impl DoubleEndedIterator<Item = AtomConformerMut<'a>> + 'a {
         self.conformers_mut()
             .flat_map(|c| {
                 let conformer: *mut Conformer = c;
                 c.atoms_mut().map(move |a| (a as *mut Atom, conformer))
             })
-            .map(hierarchy::AtomConformerMut::from_tuple)
+            .map(AtomConformerMut::from_tuple)
     }
 
     /// Add a new conformer to the list of conformers making up this Residue.

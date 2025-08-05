@@ -1,5 +1,3 @@
-use std::convert::TryInto;
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// All elements from the periodic system.
@@ -250,146 +248,146 @@ impl Element {
     }
 
     /// Get an element based on the atomic number
-    pub const fn new(atomic_number: usize) -> Option<Element> {
+    pub const fn new(atomic_number: usize) -> Option<Self> {
         match atomic_number {
-            1 => Some(Element::H),
-            2 => Some(Element::He),
-            3 => Some(Element::Li),
-            4 => Some(Element::Be),
-            5 => Some(Element::B),
-            6 => Some(Element::C),
-            7 => Some(Element::N),
-            8 => Some(Element::O),
-            9 => Some(Element::F),
-            10 => Some(Element::Ne),
-            11 => Some(Element::Na),
-            12 => Some(Element::Mg),
-            13 => Some(Element::Al),
-            14 => Some(Element::Si),
-            15 => Some(Element::P),
-            16 => Some(Element::S),
-            17 => Some(Element::Cl),
-            18 => Some(Element::Ar),
-            19 => Some(Element::K),
-            20 => Some(Element::Ca),
-            21 => Some(Element::Sc),
-            22 => Some(Element::Ti),
-            23 => Some(Element::V),
-            24 => Some(Element::Cr),
-            25 => Some(Element::Mn),
-            26 => Some(Element::Fe),
-            27 => Some(Element::Co),
-            28 => Some(Element::Ni),
-            29 => Some(Element::Cu),
-            30 => Some(Element::Zn),
-            31 => Some(Element::Ga),
-            32 => Some(Element::Ge),
-            33 => Some(Element::As),
-            34 => Some(Element::Se),
-            35 => Some(Element::Br),
-            36 => Some(Element::Kr),
-            37 => Some(Element::Rb),
-            38 => Some(Element::Sr),
-            39 => Some(Element::Y),
-            40 => Some(Element::Zr),
-            41 => Some(Element::Nb),
-            42 => Some(Element::Mo),
-            43 => Some(Element::Tc),
-            44 => Some(Element::Ru),
-            45 => Some(Element::Rh),
-            46 => Some(Element::Pd),
-            47 => Some(Element::Ag),
-            48 => Some(Element::Cd),
-            49 => Some(Element::In),
-            50 => Some(Element::Sn),
-            51 => Some(Element::Sb),
-            52 => Some(Element::Te),
-            53 => Some(Element::I),
-            54 => Some(Element::Xe),
-            55 => Some(Element::Cs),
-            56 => Some(Element::Ba),
-            57 => Some(Element::La),
-            58 => Some(Element::Ce),
-            59 => Some(Element::Pr),
-            60 => Some(Element::Nd),
-            61 => Some(Element::Pm),
-            62 => Some(Element::Sm),
-            63 => Some(Element::Eu),
-            64 => Some(Element::Gd),
-            65 => Some(Element::Tb),
-            66 => Some(Element::Dy),
-            67 => Some(Element::Ho),
-            68 => Some(Element::Er),
-            69 => Some(Element::Tm),
-            70 => Some(Element::Yb),
-            71 => Some(Element::Lu),
-            72 => Some(Element::Hf),
-            73 => Some(Element::Ta),
-            74 => Some(Element::W),
-            75 => Some(Element::Re),
-            76 => Some(Element::Os),
-            77 => Some(Element::Ir),
-            78 => Some(Element::Pt),
-            79 => Some(Element::Au),
-            80 => Some(Element::Hg),
-            81 => Some(Element::Tl),
-            82 => Some(Element::Pb),
-            83 => Some(Element::Bi),
-            84 => Some(Element::Po),
-            85 => Some(Element::At),
-            86 => Some(Element::Rn),
-            87 => Some(Element::Fr),
-            88 => Some(Element::Ra),
-            89 => Some(Element::Ac),
-            90 => Some(Element::Th),
-            91 => Some(Element::Pa),
-            92 => Some(Element::U),
-            93 => Some(Element::Np),
-            94 => Some(Element::Pu),
-            95 => Some(Element::Am),
-            96 => Some(Element::Cm),
-            97 => Some(Element::Bk),
-            98 => Some(Element::Cf),
-            99 => Some(Element::Es),
-            100 => Some(Element::Fm),
-            101 => Some(Element::Md),
-            102 => Some(Element::No),
-            103 => Some(Element::Lr),
-            104 => Some(Element::Rf),
-            105 => Some(Element::Db),
-            106 => Some(Element::Sg),
-            107 => Some(Element::Bh),
-            108 => Some(Element::Hs),
-            109 => Some(Element::Mt),
-            110 => Some(Element::Ds),
-            111 => Some(Element::Rg),
-            112 => Some(Element::Cn),
-            113 => Some(Element::Nh),
-            114 => Some(Element::Fl),
-            115 => Some(Element::Mc),
-            116 => Some(Element::Lv),
-            117 => Some(Element::Ts),
-            118 => Some(Element::Og),
+            1 => Some(Self::H),
+            2 => Some(Self::He),
+            3 => Some(Self::Li),
+            4 => Some(Self::Be),
+            5 => Some(Self::B),
+            6 => Some(Self::C),
+            7 => Some(Self::N),
+            8 => Some(Self::O),
+            9 => Some(Self::F),
+            10 => Some(Self::Ne),
+            11 => Some(Self::Na),
+            12 => Some(Self::Mg),
+            13 => Some(Self::Al),
+            14 => Some(Self::Si),
+            15 => Some(Self::P),
+            16 => Some(Self::S),
+            17 => Some(Self::Cl),
+            18 => Some(Self::Ar),
+            19 => Some(Self::K),
+            20 => Some(Self::Ca),
+            21 => Some(Self::Sc),
+            22 => Some(Self::Ti),
+            23 => Some(Self::V),
+            24 => Some(Self::Cr),
+            25 => Some(Self::Mn),
+            26 => Some(Self::Fe),
+            27 => Some(Self::Co),
+            28 => Some(Self::Ni),
+            29 => Some(Self::Cu),
+            30 => Some(Self::Zn),
+            31 => Some(Self::Ga),
+            32 => Some(Self::Ge),
+            33 => Some(Self::As),
+            34 => Some(Self::Se),
+            35 => Some(Self::Br),
+            36 => Some(Self::Kr),
+            37 => Some(Self::Rb),
+            38 => Some(Self::Sr),
+            39 => Some(Self::Y),
+            40 => Some(Self::Zr),
+            41 => Some(Self::Nb),
+            42 => Some(Self::Mo),
+            43 => Some(Self::Tc),
+            44 => Some(Self::Ru),
+            45 => Some(Self::Rh),
+            46 => Some(Self::Pd),
+            47 => Some(Self::Ag),
+            48 => Some(Self::Cd),
+            49 => Some(Self::In),
+            50 => Some(Self::Sn),
+            51 => Some(Self::Sb),
+            52 => Some(Self::Te),
+            53 => Some(Self::I),
+            54 => Some(Self::Xe),
+            55 => Some(Self::Cs),
+            56 => Some(Self::Ba),
+            57 => Some(Self::La),
+            58 => Some(Self::Ce),
+            59 => Some(Self::Pr),
+            60 => Some(Self::Nd),
+            61 => Some(Self::Pm),
+            62 => Some(Self::Sm),
+            63 => Some(Self::Eu),
+            64 => Some(Self::Gd),
+            65 => Some(Self::Tb),
+            66 => Some(Self::Dy),
+            67 => Some(Self::Ho),
+            68 => Some(Self::Er),
+            69 => Some(Self::Tm),
+            70 => Some(Self::Yb),
+            71 => Some(Self::Lu),
+            72 => Some(Self::Hf),
+            73 => Some(Self::Ta),
+            74 => Some(Self::W),
+            75 => Some(Self::Re),
+            76 => Some(Self::Os),
+            77 => Some(Self::Ir),
+            78 => Some(Self::Pt),
+            79 => Some(Self::Au),
+            80 => Some(Self::Hg),
+            81 => Some(Self::Tl),
+            82 => Some(Self::Pb),
+            83 => Some(Self::Bi),
+            84 => Some(Self::Po),
+            85 => Some(Self::At),
+            86 => Some(Self::Rn),
+            87 => Some(Self::Fr),
+            88 => Some(Self::Ra),
+            89 => Some(Self::Ac),
+            90 => Some(Self::Th),
+            91 => Some(Self::Pa),
+            92 => Some(Self::U),
+            93 => Some(Self::Np),
+            94 => Some(Self::Pu),
+            95 => Some(Self::Am),
+            96 => Some(Self::Cm),
+            97 => Some(Self::Bk),
+            98 => Some(Self::Cf),
+            99 => Some(Self::Es),
+            100 => Some(Self::Fm),
+            101 => Some(Self::Md),
+            102 => Some(Self::No),
+            103 => Some(Self::Lr),
+            104 => Some(Self::Rf),
+            105 => Some(Self::Db),
+            106 => Some(Self::Sg),
+            107 => Some(Self::Bh),
+            108 => Some(Self::Hs),
+            109 => Some(Self::Mt),
+            110 => Some(Self::Ds),
+            111 => Some(Self::Rg),
+            112 => Some(Self::Cn),
+            113 => Some(Self::Nh),
+            114 => Some(Self::Fl),
+            115 => Some(Self::Mc),
+            116 => Some(Self::Lv),
+            117 => Some(Self::Ts),
+            118 => Some(Self::Og),
             _ => None,
         }
     }
 
     /// Get an element based on the symbol, eg "He" for Helium
-    pub fn from_symbol(symbol: impl AsRef<str>) -> Option<Element> {
+    pub fn from_symbol(symbol: impl AsRef<str>) -> Option<Self> {
         symbol.as_ref().try_into().ok()
     }
 
     /// Get the symbol for this element eg "He" for Helium
-    pub fn symbol(&self) -> &'static str {
+    pub const fn symbol(&self) -> &'static str {
         ELEMENT_SYMBOLS[self.atomic_number() - 1]
     }
 
-    /// Get the full name for an element, eg "Helium" for Element::He
+    /// Get the full name for an element, eg "Helium" for [`Element::He`]
     pub const fn full_name(&self) -> &'static str {
         ELEMENT_NAMES[self.atomic_number() - 1]
     }
 
-    /// Get the [AtomicRadius] for this element, see the documentation for the struct to get more information.
+    /// Get the [`AtomicRadius`] for this element, see the documentation for the struct to get more information.
     pub const fn atomic_radius(&self) -> &'static AtomicRadius {
         &ELEMENT_ATOMIC_RADII[self.atomic_number() - 1]
     }
@@ -415,28 +413,22 @@ impl std::fmt::Display for Element {
     }
 }
 
-impl std::convert::TryFrom<&str> for Element {
+impl TryFrom<&str> for Element {
     type Error = &'static str;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let value = value.to_ascii_uppercase();
-        if let Some(element) = ELEMENT_SYMBOLS
+        ELEMENT_SYMBOLS
             .iter()
             .position(|name| *name == value.as_str())
-            .and_then(|n| Element::new(n + 1))
-        {
-            Ok(element)
-        } else {
-            Err("Invalid element code")
-        }
+            .and_then(|n| Self::new(n + 1))
+            .ok_or("Invalid element code")
     }
 }
 
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
-    use std::convert::TryInto;
-
     use crate::Element;
 
     #[test]
@@ -589,7 +581,7 @@ const ELEMENT_NAMES: [&str; 118] = [
 ];
 
 /// Hold all atomic radii for a single element. So that in the code it is obvious which radius you use. All values are in Å (10e-10 m or 0.1 nm).
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AtomicRadius {
     /// Gets the atomic radius (defined up until 'Cm' 96) in Å.
     /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96. Chemistry - A European Journal, 22(41):14625–14632, oct 2016. <http://doi.org/10.1002/chem.201602949>.
@@ -750,39 +742,39 @@ const ELEMENT_ATOMIC_RADII: [AtomicRadius; 118] = [
 ];
 
 const ELEMENT_WEIGHT: [Option<f64>; 118] = [
-    Some(1.007975),
-    Some(4.002602),
+    Some(1.007_975),
+    Some(4.002_602),
     Some(6.9675),
-    Some(9.0121831),
+    Some(9.012_183_1),
     Some(10.8135),
     Some(12.0106),
-    Some(14.006855),
+    Some(14.006_855),
     Some(15.9994),
-    Some(18.998403163),
+    Some(18.998_403_163),
     Some(20.1797),
-    Some(22.98976928),
+    Some(22.989_769_28),
     Some(24.3055),
-    Some(26.9815384),
+    Some(26.981_538_4),
     Some(28.085),
-    Some(30.973761998),
+    Some(30.973_761_998),
     Some(32.0675),
     Some(35.4515),
     Some(39.8775),
     Some(39.0983),
     Some(40.078),
-    Some(44.955908),
+    Some(44.955_908),
     Some(47.867),
     Some(50.9415),
     Some(51.9961),
-    Some(54.938043),
+    Some(54.938_043),
     Some(55.845),
-    Some(58.933194),
+    Some(58.933_194),
     Some(58.6934),
     Some(63.546),
     Some(65.38),
     Some(69.723),
     Some(72.630),
-    Some(74.921595),
+    Some(74.921_595),
     Some(78.971),
     Some(79.904),
     Some(83.798),
@@ -804,7 +796,7 @@ const ELEMENT_WEIGHT: [Option<f64>; 118] = [
     Some(127.60),
     Some(126.90447),
     Some(131.293),
-    Some(132.90545196),
+    Some(132.905_451_96),
     Some(137.327),
     Some(138.90547),
     Some(140.116),
@@ -814,11 +806,11 @@ const ELEMENT_WEIGHT: [Option<f64>; 118] = [
     Some(150.36),
     Some(151.964),
     Some(157.25),
-    Some(158.925354),
+    Some(158.925_354),
     Some(162.500),
-    Some(164.930328),
+    Some(164.930_328),
     Some(167.259),
-    Some(168.934218),
+    Some(168.934_218),
     Some(173.045),
     Some(174.9668),
     Some(178.486),
@@ -828,7 +820,7 @@ const ELEMENT_WEIGHT: [Option<f64>; 118] = [
     Some(190.23),
     Some(192.217),
     Some(195.084),
-    Some(196.966570),
+    Some(196.966_570),
     Some(200.592),
     Some(204.3835),
     Some(207.04),

@@ -1,4 +1,4 @@
-// Test only reading the first model from PDB files.
+//! Test only reading the first model from PDB files.
 
 use pdbtbx::*;
 

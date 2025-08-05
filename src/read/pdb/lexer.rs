@@ -19,8 +19,8 @@ pub(crate) fn lex_line(
 ) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     match line.len() {
         len if len > 6 => match (options.only_atomic_coords, &line[..6]) {
-            (_, "HETATM") => lex_atom(linenumber, line, true),
-            (_, "ATOM  ") => lex_atom(linenumber, line, false),
+            (_, "HETATM") => Ok(lex_atom(linenumber, line, true)),
+            (_, "ATOM  ") => Ok(lex_atom(linenumber, line, false)),
             (false, "HEADER") => lex_header(linenumber, line),
             (false, "REMARK") => lex_remark(linenumber, line, options.level),
             (false, "ANISOU") => Ok(lex_anisou(linenumber, line)),
@@ -90,7 +90,7 @@ fn lex_remark(
                 }
                 line[11..].trim_end().to_string()
             } else {
-                "".to_string()
+                String::new()
             },
         ),
         errors,
@@ -138,11 +138,7 @@ fn lex_model(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 /// Lex an ATOM
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_atom(
-    linenumber: usize,
-    line: &str,
-    hetero: bool,
-) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
 
     let x = parse(linenumber, line, 30..38, &mut errors);
@@ -168,7 +164,7 @@ fn lex_atom(
     ) = lex_atom_basics(linenumber, line);
     errors.extend(basic_errors);
 
-    Ok((
+    (
         LexItem::Atom(
             hetero,
             serial_number,
@@ -188,7 +184,7 @@ fn lex_atom(
             charge,
         ),
         errors,
-    ))
+    )
 }
 
 /// Lex an ANISOU
@@ -361,12 +357,7 @@ fn lex_cryst(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let alpha = parse(linenumber, line, 33..40, &mut errors);
     let beta = parse(linenumber, line, 40..47, &mut errors);
     let gamma = parse(linenumber, line, 47..54, &mut errors);
-    let spacegroup = parse(
-        linenumber,
-        line,
-        55..std::cmp::min(66, chars.len()),
-        &mut errors,
-    );
+    let spacegroup = parse(linenumber, line, 55..cmp::min(66, chars.len()), &mut errors);
     let z = if chars.len() > 66 {
         parse(linenumber, line, 66..chars.len(), &mut errors)
     } else {
@@ -379,7 +370,7 @@ fn lex_cryst(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     )
 }
 
-/// Lex an SCALEn (where `n` is given)
+/// Lex a SCALEn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
 fn lex_scale(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBError>) {
@@ -408,10 +399,7 @@ fn lex_mtrix(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBErro
     let (data, transformation_errors) = lex_transformation(linenumber, line);
     errors.extend(transformation_errors);
 
-    let mut given = false;
-    if chars.len() >= 60 {
-        given = chars[59] == '1';
-    }
+    let given = chars.len() >= 60 && chars[59] == '1';
 
     (LexItem::MtriX(row, ser, data, given), errors)
 }
@@ -590,12 +578,13 @@ fn lex_seqadv(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let database = parse(linenumber, line, 24..28, &mut errors);
     let database_accession = parse(linenumber, line, 29..38, &mut errors);
 
-    let mut db_pos = None;
-    if !chars[39..48].iter().all(|c| *c == b' ') {
+    let db_pos = if chars[39..48].iter().all(|c| *c == b' ') {
+        None
+    } else {
         let db_res_name = parse(linenumber, line, 39..42, &mut errors);
         let db_seq_num = parse(linenumber, line, 43..48, &mut errors);
-        db_pos = Some((db_res_name, db_seq_num));
-    }
+        Some((db_res_name, db_seq_num))
+    };
     let comment = parse(linenumber, line, 49..chars.len(), &mut errors);
 
     (
@@ -649,7 +638,7 @@ fn lex_modres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     )
 }
 
-/// Parse a SSBond line into the corresponding LexItem
+/// Parse a `SSBond` line into the corresponding `LexItem`
 fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
     let chars: &[u8] = line.as_bytes();
@@ -671,14 +660,14 @@ fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
         Some(String::from(parse_char(linenumber, chars, 35, &mut errors)))
     };
 
-    let mut extra = None;
-
-    if chars.len() >= 78 {
+    let extra = if chars.len() >= 78 {
         let sym1 = parse(linenumber, line, 59..65, &mut errors);
         let sym2 = parse(linenumber, line, 66..72, &mut errors);
         let distance: f64 = parse(linenumber, line, 73..78, &mut errors);
-        extra = Some((sym1, sym2, distance));
-    }
+        Some((sym1, sym2, distance))
+    } else {
+        None
+    };
 
     (
         LexItem::SSBond(
@@ -690,7 +679,7 @@ fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     )
 }
 
-/// Parse a field from a line, with T::default() as fall back, leave errors in the given mutable vec.
+/// Parse a field from a line, with `T::default()` as fall back, leave errors in the given mutable vec.
 fn parse<T: FromStr + Default>(
     linenumber: usize,
     line: &str,
@@ -759,20 +748,20 @@ fn parse_default<T: FromStr>(
         return default;
     }
 
-    if let Ok(v) = fast_trim(&line[range.clone()]).parse::<T>() {
-        v
-    } else {
-        errors.push(PDBError::new(
-            ErrorLevel::InvalidatingError,
-            "Invalid data in field",
-            format!(
-                "The text presented is not of the right kind ({}).",
-                std::any::type_name::<T>()
-            ),
-            Context::line(linenumber, line, range.start, range.len()),
-        ));
-        default
-    }
+    fast_trim(&line[range.clone()])
+        .parse::<T>()
+        .unwrap_or_else(|_| {
+            errors.push(PDBError::new(
+                ErrorLevel::InvalidatingError,
+                "Invalid data in field",
+                format!(
+                    "The text presented is not of the right kind ({}).",
+                    std::any::type_name::<T>()
+                ),
+                Context::line(linenumber, line, range.start, range.len()),
+            ));
+            default
+        })
 }
 
 /// Parse a character, needed because the trim in the generic `parse` could leave us with an empty character leading to errors
@@ -791,6 +780,6 @@ fn parse_char(linenumber: usize, line: &[u8], position: usize, errors: &mut Vec<
             context,
         ));
         return ' ';
-    };
+    }
     line[position] as char
 }

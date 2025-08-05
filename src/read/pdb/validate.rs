@@ -12,7 +12,7 @@ use std::collections::HashMap;
 pub(crate) fn validate_seqres(
     pdb: &mut PDB,
     sequence: HashMap<String, Vec<(usize, usize, Vec<String>)>>,
-    lines: Vec<String>,
+    lines: &[String],
     start_linenumber: usize,
     context: &Context,
 ) -> Vec<PDBError> {
@@ -187,7 +187,7 @@ pub(crate) fn validate_seqres(
                             line.1
                                 .iter()
                                 .enumerate()
-                                .fold(("".to_string(), 0), |acc, v| {
+                                .fold((String::new(), 0), |acc, v| {
                                     (
                                         acc.0
                                             + if v.1 .0.saturating_sub(1) == acc.1 || v.0 == 0 {

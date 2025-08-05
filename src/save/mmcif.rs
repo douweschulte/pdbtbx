@@ -39,7 +39,7 @@ pub fn save_mmcif_gz(
 }
 
 /// Generic function to save the given PDB struct to the given file as mmCIF or PDBx,
-/// to some writer function, e.g. a GzEncoder or BufWriter.
+/// to some writer function, e.g. a `GzEncoder` or `BufWriter`.
 fn save_mmcif_<T, W>(
     pdb: &PDB,
     filename: impl AsRef<str>,
@@ -82,9 +82,9 @@ where
     Ok(())
 }
 
-/// Save the given PDB struct to the given BufWriter.
+/// Save the given PDB struct to the given `BufWriter`.
 /// It does not validate or renumber the PDB, so if that is needed that needs to be done in preparation.
-/// It does change the output format based on the StrictnessLevel given.
+/// It does change the output format based on the `StrictnessLevel` given.
 #[allow(clippy::unwrap_used)]
 pub fn save_mmcif_raw<T: Write>(pdb: &PDB, mut sink: BufWriter<T>) {
     /// Write a piece of text to the file, has the same structure as format!
@@ -130,11 +130,9 @@ _cell.Z_PDB              {}",
             unit_cell.alpha(),
             unit_cell.beta(),
             unit_cell.gamma(),
-            if let Some(symmetry) = &pdb.symmetry {
-                symmetry.z().to_string()
-            } else {
-                "?".to_owned()
-            }
+            pdb.symmetry
+                .as_ref()
+                .map_or_else(|| "?".to_owned(), |symmetry| symmetry.z().to_string())
         );
     }
 
@@ -210,7 +208,7 @@ _database_PDB_matrix.origx_vector[3]     {}",
     for mtrix in pdb.mtrix() {
         let ma = mtrix.transformation.matrix();
         write!(
-            r#"# OrigX definition
+            r"# OrigX definition
 _struct_ncs_oper.id            '{}'
 _struct_ncs_oper.code          {}
 _struct_ncs_oper.matrix[1][1]  {}
@@ -224,7 +222,7 @@ _struct_ncs_oper.matrix[3][2]  {}
 _struct_ncs_oper.matrix[3][3]  {}
 _struct_ncs_oper.vector[1]     {}
 _struct_ncs_oper.vector[2]     {}
-_struct_ncs_oper.vector[3]     {}"#,
+_struct_ncs_oper.vector[3]     {}",
             mtrix.serial_number,
             if mtrix.contained {
                 "given"
@@ -382,12 +380,12 @@ _atom_site.aniso_U[3][3]"
             output.push_str(&" ".repeat(sizes[0] - line[0].len()));
             for index in 1..line.len() {
                 output.push(' ');
-                if line[index].trim() != "" {
-                    output.push_str(&line[index]);
-                    output.push_str(&" ".repeat(sizes[index] - line[index].len()));
-                } else {
+                if line[index].trim() == "" {
                     output.push('?');
                     output.push_str(&" ".repeat(sizes[index] - 1));
+                } else {
+                    output.push_str(&line[index]);
+                    output.push_str(&" ".repeat(sizes[index] - line[index].len()));
                 }
             }
             output.push('\n');
@@ -403,7 +401,7 @@ _atom_site.aniso_U[3][3]"
 /// Print a floating point with at least 1 decimal place and at max 5 decimals
 #[allow(clippy::cast_possible_truncation)]
 fn print_float(num: f64) -> String {
-    let rounded = (num * 100000.).round() / 100000.;
+    let rounded = (num * 100_000.).round() / 100_000.;
     if (rounded.round() - rounded).abs() < f64::EPSILON {
         format!("{}.0", rounded.trunc() as isize)
     } else {
@@ -420,19 +418,19 @@ mod tests {
     #[allow(clippy::excessive_precision, clippy::print_literal)]
     fn test_print_float() {
         assert_eq!(print_float(1.), "1.0".to_string());
-        assert_eq!(print_float(128734.), "128734.0".to_string());
+        assert_eq!(print_float(128_734.), "128734.0".to_string());
         assert_eq!(print_float(0.1), "0.1".to_string());
         assert_eq!(print_float(1.015), "1.015".to_string());
         assert_eq!(print_float(2.015), "2.015".to_string());
-        assert_eq!(print_float(1.4235263), "1.42353".to_string());
-        println!("{}", 235617341053.235611341053); // Already printed as 235617341053.23563
+        assert_eq!(print_float(1.423_526_3), "1.42353".to_string());
+        println!("{}", 235_617_341_053.235_611_341_053); // Already printed as 235617341053.23563
         assert_eq!(
-            print_float(235617341053.235611341053),
+            print_float(235_617_341_053.235_611_341_053),
             "235617341053.23563".to_string()
         );
-        println!("{}", 23561753.235617341053); // Printed as 23561753.23561734
+        println!("{}", 23_561_753.235_617_341_053); // Printed as 23561753.23561734
         assert_eq!(
-            print_float(23561753.235617341053),
+            print_float(23_561_753.235_617_341_053),
             "23561753.23562".to_string()
         );
     }

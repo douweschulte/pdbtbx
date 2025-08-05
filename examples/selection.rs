@@ -1,3 +1,5 @@
+//! Examples of how to select things from PDB files
+
 use pdbtbx::*;
 
 fn main() {
@@ -81,7 +83,7 @@ fn main() {
     let val = pdb
         .conformers()
         .filter(|c| c.name() == "VAL")
-        .flat_map(|c| c.atoms())
+        .flat_map(Conformer::atoms)
         .count();
     let c_not_val = pdb
         .conformers()

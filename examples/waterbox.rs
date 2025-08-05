@@ -1,3 +1,5 @@
+//! Example for how to create a box of water surrounding the protein
+
 use std::env;
 use std::path::Path;
 use std::time::Instant;

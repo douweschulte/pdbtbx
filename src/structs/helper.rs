@@ -76,6 +76,6 @@ mod tests {
         assert_eq!(number_to_base26(25), "Z");
         assert_eq!(number_to_base26(457), "RP");
         assert_eq!(number_to_base26(15250), "WOO");
-        assert_eq!(number_to_base26(396514), "WOOO");
+        assert_eq!(number_to_base26(396_514), "WOOO");
     }
 }

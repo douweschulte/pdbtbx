@@ -13,7 +13,7 @@ pub(crate) fn fast_parse_u64_from_string(s: &str) -> Result<u64, String> {
     // Parse digits
     let start = i;
     while i < len && bytes[i].is_ascii_digit() {
-        result = result * 10 + (bytes[i] - b'0') as u64;
+        result = result * 10 + u64::from(bytes[i] - b'0');
         i += 1;
     }
 
