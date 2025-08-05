@@ -164,7 +164,7 @@ fn parse_mmcif_with_options(
                                     .err()
                             } else if let Ok(Some(value)) = get_usize(&single.content, &context, None) {
                                 if pdb.symmetry != Symmetry::from_index(value) {
-                                    Some(PDBError::new(ErrorLevel::InvalidatingError, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
+                                    Some(PDBError::new(ErrorLevel::GeneralWarning, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
                                 }
                                 else {
                                     None
@@ -180,7 +180,7 @@ fn parse_mmcif_with_options(
                                     .err()
                             } else if let Ok(Some(value)) = get_text(&single.content, &context, None) {
                                 if pdb.symmetry != Symmetry::new(value) {
-                                    Some(PDBError::new(ErrorLevel::InvalidatingError, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
+                                    Some(PDBError::new(ErrorLevel::GeneralWarning, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
                                 }
                                 else {
                                     None
@@ -395,9 +395,9 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
         21, ATOM_SEQ_ID, "atom_site.label_seq_id", Required;
         22, ATOM_AUTH_SEQ_ID, "atom_site.auth_seq_id", Optional;
         23, ATOM_TYPE, "atom_site.type_symbol", Required;
-        24, ATOM_X, "atom_site.Cartn_x", Required;
-        25, ATOM_Y, "atom_site.Cartn_y", Required;
-        26, ATOM_Z, "atom_site.Cartn_z", Required;
+        24, ATOM_X, "atom_site.Cartn_x", Optional; // These are theoretically optional, so maybe check for `fract_x/y/z` as backup provider of the position.
+        25, ATOM_Y, "atom_site.Cartn_y", Optional;
+        26, ATOM_Z, "atom_site.Cartn_z", Optional;
     );
 
     let positions_: Vec<Result<Option<usize>, PDBError>> = COLUMNS
@@ -487,9 +487,9 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
         let chain_name = parse_column!(get_text, ATOM_AUTH_ASYM_ID).unwrap_or_else(|| {
             parse_column!(get_text, ATOM_ASYM_ID).expect("Chain name should be provided")
         });
-        let pos_x = parse_column!(get_f64, ATOM_X).expect("Atom X position should be provided");
-        let pos_y = parse_column!(get_f64, ATOM_Y).expect("Atom Y position should be provided");
-        let pos_z = parse_column!(get_f64, ATOM_Z).expect("Atom Z position should be provided");
+        let pos_x = parse_column!(get_f64, ATOM_X).unwrap_or(0.0);
+        let pos_y = parse_column!(get_f64, ATOM_Y).unwrap_or(0.0);
+        let pos_z = parse_column!(get_f64, ATOM_Z).unwrap_or(0.0);
         let occupancy = parse_column!(get_f64, ATOM_OCCUPANCY).unwrap_or(1.0);
         let b_factor = parse_column!(get_f64, ATOM_B).unwrap_or(1.0);
         let charge = parse_column!(get_isize, ATOM_CHARGE).unwrap_or(0);
