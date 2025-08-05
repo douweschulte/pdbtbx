@@ -2,6 +2,7 @@
 /// with all properties saved as primitive data types.
 ///
 /// See wwPDB v3.30 for detailed explanation of the meaning of all fields
+#[allow(dead_code)] // Some fields are not used, this is fine
 #[derive(Debug, Clone)]
 pub enum LexItem {
     /// A HEADER in a PDB file

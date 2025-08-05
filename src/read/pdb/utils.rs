@@ -49,10 +49,10 @@ mod tests {
 
     #[test]
     fn test_u64_parse() {
-        assert_eq!(fast_parse_u64_from_string("  100").unwrap(), 100);
-        assert_eq!(fast_parse_u64_from_string("    32").unwrap(), 32);
-        assert_eq!(fast_parse_u64_from_string("9999").unwrap(), 9999);
-        assert_eq!(fast_parse_u64_from_string("     1234").unwrap(), 1234);
+        assert_eq!(fast_parse_u64_from_string("  100"), Ok(100));
+        assert_eq!(fast_parse_u64_from_string("    32"), Ok(32));
+        assert_eq!(fast_parse_u64_from_string("9999"), Ok(9999));
+        assert_eq!(fast_parse_u64_from_string("     1234"), Ok(1234));
         assert!(fast_parse_u64_from_string(" abc ").is_err());
         assert!(fast_parse_u64_from_string(" ").is_err());
         assert!(fast_parse_u64_from_string("     ").is_err());
