@@ -40,9 +40,7 @@ pub(crate) fn fast_trim(s: &str) -> &str {
         }
     }
 
-    // SAFETY: We only slice within the original string boundaries
-    // SAFETY: We know the sliced bytes are valid UTF-8 because all rust strings are valid UTF-8 and it came from a string in the first place.
-    unsafe { std::str::from_utf8_unchecked(&bytes[start..end]) }
+    &s[start..end]
 }
 
 #[cfg(test)]
@@ -67,5 +65,6 @@ mod tests {
         assert_eq!(fast_trim("  world"), "world");
         assert_eq!(fast_trim("rust"), "rust");
         assert_eq!(fast_trim("   "), "");
+        assert_eq!(fast_trim(" \t r \r"), "r");
     }
 }

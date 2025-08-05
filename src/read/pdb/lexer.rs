@@ -286,7 +286,7 @@ fn lex_atom_basics(
     let residue_name = parse(linenumber, line, 17..20, &mut errors);
     let chain_id = String::from(parse_char(linenumber, chars, 21, &mut errors));
     //TODO: is isize?
-    let residue_serial_number = fast_parse_u64(linenumber, line, 22..26, &mut errors, 0);
+    let residue_serial_number = parse(linenumber, line, 22..26, &mut errors);
     let insertion = parse_char(linenumber, chars, 26, &mut errors);
     let segment_id = parse(linenumber, line, 72..76, &mut errors);
     let element = parse(linenumber, line, 76..78, &mut errors);
@@ -334,7 +334,7 @@ fn lex_atom_basics(
             },
             residue_name,
             chain_id,
-            residue_serial_number as isize,
+            residue_serial_number,
             if insertion == ' ' {
                 None
             } else {
@@ -478,8 +478,7 @@ fn lex_seqres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut index = 19;
     let max = cmp::min(chars.len(), 71);
     while index + 3 <= max {
-        let seq =
-            String::from_utf8(chars[index..index + 3].to_vec()).expect("Failed to parse sequence");
+        let seq = line[index..index + 3].to_string();
         if seq == "   " {
             break;
         }

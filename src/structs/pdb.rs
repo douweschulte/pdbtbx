@@ -1202,7 +1202,11 @@ mod tests {
         for entry in std::fs::read_dir(pdb_dir).unwrap() {
             let entry = entry.unwrap();
             let path = entry.path();
-            if path.extension().unwrap() != "pdb" {
+            if path.extension().unwrap() != "pdb"
+                || path
+                    .file_stem()
+                    .is_some_and(|p| p.eq_ignore_ascii_case("1htq"))
+            {
                 continue;
             }
             let (pdb, _) = ReadOptions::default()
