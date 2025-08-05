@@ -1,6 +1,6 @@
 /// A top level data block for a CIF file
 #[derive(Debug, PartialEq)]
-pub struct DataBlock {
+pub(crate) struct DataBlock {
     /// The name
     pub name: String,
     /// The Items
@@ -9,7 +9,7 @@ pub struct DataBlock {
 
 /// An Item in a CIF file
 #[derive(Debug, PartialEq)]
-pub enum Item {
+pub(crate) enum Item {
     /// A data item
     DataItem(DataItem),
     /// A saveframe
@@ -18,7 +18,7 @@ pub enum Item {
 
 /// A save frame in a CIF file
 #[derive(Debug, PartialEq)]
-pub struct SaveFrame {
+pub(crate) struct SaveFrame {
     /// The name
     pub name: String,
     /// The Data Items
@@ -27,7 +27,7 @@ pub struct SaveFrame {
 
 /// A data item, either a Single data item or a Loop
 #[derive(Debug, PartialEq)]
-pub enum DataItem {
+pub(crate) enum DataItem {
     /// A Single data item
     Single(Single),
     /// A Loop
@@ -36,7 +36,7 @@ pub enum DataItem {
 
 /// A single data item, consisting of a tag with a value
 #[derive(Debug, PartialEq)]
-pub struct Single {
+pub(crate) struct Single {
     /// The Tag or Name
     pub name: String,
     /// The value
@@ -45,7 +45,7 @@ pub struct Single {
 
 /// A loop consisting of a header with tags and a body with values
 #[derive(Debug, PartialEq)]
-pub struct Loop {
+pub(crate) struct Loop {
     /// The header with the names for the columns
     pub header: Vec<String>,
     /// The data itself, the length of each inner vec (can be seen as a row) should be equal to the length of the header
@@ -54,7 +54,7 @@ pub struct Loop {
 
 /// A value for a CIF record
 #[derive(Debug, PartialEq)]
-pub enum Value {
+pub(crate) enum Value {
     /// A value that is inapplicable
     Inapplicable,
     /// A value that is unknown

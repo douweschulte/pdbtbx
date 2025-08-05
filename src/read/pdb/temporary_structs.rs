@@ -1,7 +1,7 @@
 use crate::TransformationMatrix;
 
 /// To help build a a matrix from separate rows
-pub struct BuildUpMatrix {
+pub(crate) struct BuildUpMatrix {
     /// First row
     pub row0: Option<[f64; 4]>,
     /// Second row
@@ -12,7 +12,7 @@ pub struct BuildUpMatrix {
 
 impl BuildUpMatrix {
     /// Create an empty struct
-    pub const fn empty() -> Self {
+    pub(crate) const fn empty() -> Self {
         BuildUpMatrix {
             row0: None,
             row1: None,
@@ -20,7 +20,7 @@ impl BuildUpMatrix {
         }
     }
     /// Consume this struct and get the transformation matrix, if any row is not defined it returns None
-    pub const fn get_matrix(&self) -> Option<TransformationMatrix> {
+    pub(crate) const fn get_matrix(&self) -> Option<TransformationMatrix> {
         match self {
             BuildUpMatrix {
                 row0: Some(r1),
@@ -31,7 +31,7 @@ impl BuildUpMatrix {
         }
     }
     /// Determine if all rows are set
-    pub const fn is_set(&self) -> bool {
+    pub(crate) const fn is_set(&self) -> bool {
         matches!(
             self,
             BuildUpMatrix {
@@ -42,11 +42,11 @@ impl BuildUpMatrix {
         )
     }
     /// Determine if at least one row is set
-    pub const fn is_partly_set(&self) -> bool {
+    pub(crate) const fn is_partly_set(&self) -> bool {
         self.row0.is_some() || self.row1.is_some() || self.row2.is_some()
     }
     /// Set a specified row
-    pub fn set_row(&mut self, row: usize, data: [f64; 4]) {
+    pub(crate) fn set_row(&mut self, row: usize, data: [f64; 4]) {
         match row {
             0 => self.row0 = Some(data),
             1 => self.row1 = Some(data),

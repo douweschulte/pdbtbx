@@ -87,38 +87,7 @@ println!("There are {} backbone atoms within 3.5Aͦ of the atom at index 42", to
 #![doc = "## References"]
 #![doc = "1. [`Perkel, J. M.`] Perkel, J. M. (2020). Why scientists are turning to Rust. Nature, 588(7836), 185–186. [https://doi.org/10.1038/d41586-020-03382-2](https://doi.org/10.1038/d41586-020-03382-2)"]
 // Set linting behaviour
-#![warn(
-    missing_docs,
-    trivial_casts,
-    trivial_numeric_casts,
-    missing_debug_implementations,
-    unused,
-    rust_2018_idioms
-)]
-#![warn(
-    clippy::all,
-    clippy::cast_possible_truncation,
-    clippy::cast_possible_wrap,
-    clippy::cast_precision_loss,
-    clippy::cast_sign_loss,
-    clippy::enum_glob_use,
-    clippy::implicit_clone,
-    clippy::map_unwrap_or,
-    clippy::missing_docs_in_private_items,
-    clippy::nonminimal_bool,
-    clippy::print_stdout,
-    clippy::redundant_clone,
-    clippy::redundant_closure_for_method_calls,
-    clippy::redundant_closure,
-    clippy::similar_names,
-    clippy::single_match_else,
-    clippy::unwrap_used,
-    clippy::use_debug
-)]
-//#![warn(clippy::missing_const_for_fn)]
-//#![warn(clippy::pedantic)] // Activate if in for a nice evening of clippy love 💖
 #![allow(clippy::upper_case_acronyms)] // Allow PDB (and derived) names to be used
-#![cfg_attr(feature = "unstable-doc-cfg", feature(doc_cfg))]
 
 /// To save and display errors
 mod error;

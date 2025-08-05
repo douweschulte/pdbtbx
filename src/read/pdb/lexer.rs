@@ -12,7 +12,7 @@ use std::ops::Range;
 use std::str::FromStr;
 
 /// Lex a full line. It returns a lexed item with errors if it can lex something, otherwise it will only return an error.
-pub fn lex_line(
+pub(crate) fn lex_line(
     line: &str,
     linenumber: usize,
     options: &ReadOptions,

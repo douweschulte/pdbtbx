@@ -9,7 +9,7 @@ use std::collections::HashMap;
     clippy::cast_possible_wrap,
     clippy::cast_sign_loss
 )]
-pub fn validate_seqres(
+pub(crate) fn validate_seqres(
     pdb: &mut PDB,
     sequence: HashMap<String, Vec<(usize, usize, Vec<String>)>>,
     lines: Vec<String>,

@@ -3,7 +3,7 @@ use super::lexitem::*;
 use crate::error::*;
 
 /// Parse/lex a CIF file into CIF intermediate structure
-pub fn lex_cif(text: &str) -> Result<DataBlock, PDBError> {
+pub(crate) fn lex_cif(text: &str) -> Result<DataBlock, PDBError> {
     parse_main(&mut Position {
         text,
         line: 1,

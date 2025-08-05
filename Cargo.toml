@@ -17,11 +17,10 @@ rstar = { version = "0.12", optional = true }
 serde = { version = "~1.0", optional = true, features = ["derive"] }
 rayon = { version = "1", optional = true }
 flate2 = { version = "1.0", optional = true }
-doc-cfg = "0.1"
 indexmap = "2.6"
 
 [dev-dependencies]
-serde_json = "~1.0"
+serde_json = "1.0"
 itertools = "0.14.0"
 
 [features]
@@ -44,3 +43,71 @@ path = "benches/benchmark.rs"
 name = "load_e_coli"
 harness = false
 path = "benches/E_coli.rs"
+
+[lints.rust]
+ambiguous_negative_literals = "warn"
+ambiguous-glob-reexports = "deny"
+clashing-extern-declarations = "deny"
+const-item-mutation = "deny"
+dangling-pointers-from-temporaries = "deny"
+deref-nullptr = "deny"
+drop-bounds = "deny"
+future-incompatible = "deny"
+hidden-glob-reexports = "deny"
+improper-ctypes = "deny"
+improper-ctypes-definitions = "deny"
+invalid-from-utf8 = "deny"
+invalid-macro-export-arguments = "deny"
+invalid-nan-comparisons = "deny"
+invalid-reference-casting = "deny"
+invalid-value = "deny"
+keyword-idents = "warn"
+let-underscore = "warn"
+macro-use-extern-crate = "warn"
+meta-variable-misuse = "warn"
+missing_docs = "warn"
+missing-abi = "warn"
+missing-copy-implementations = "warn"
+missing-debug-implementations = "warn"
+noop-method-call = "warn"
+opaque-hidden-inferred-bound = "deny"
+overlapping-range-endpoints = "deny"
+redundant_imports = "warn"
+redundant_lifetimes = "warn"
+single-use-lifetimes = "warn"
+suspicious-double-ref-op = "deny"
+trivial-casts = "warn"
+trivial-numeric-casts = "warn"
+unconditional-recursion = "deny"
+unexpected_cfgs = { level = "allow", check-cfg = [
+    "cfg(f32)",
+    "cfg(github_action)",
+    "cfg(si)",
+] }
+unnameable-test-items = "deny"
+unreachable-pub = "deny"
+unsafe-op-in-unsafe-fn = "deny"
+unstable-syntax-pre-expansion = "deny"
+unused = { level = "warn", priority = -1 }
+unused_crate_dependencies = "warn"
+unused_extern_crates = "warn"
+unused-import-braces = "warn"
+unused-lifetimes = "warn"
+unused-qualifications = "warn"
+variant-size-differences = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cast_possible_truncation = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+redundant_pub_crate = "allow"
+too_long_first_doc_paragraph = "allow"
+too_many_lines = "allow"
+wildcard_imports = "allow"
+literal_string_with_formatting_args = "allow"
+unsafe_derive_deserialize = "allow"

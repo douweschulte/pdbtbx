@@ -5,7 +5,7 @@ use crate::StrictnessLevel;
 use super::*;
 
 /// Standard return type for reading a file.
-pub type ReadResult = Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
+pub(crate) type ReadResult = Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
 
 /// Open an atomic data file, either PDB or mmCIF/PDBx.
 ///

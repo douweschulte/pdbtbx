@@ -299,7 +299,7 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
 /// PDB file the generated structs will contain a blank, an A, and a B Conformer
 /// so the atoms in the blank constructs will have to be copied to the A and B
 /// Conformers.
-pub fn reshuffle_conformers(pdb: &mut PDB) {
+pub(crate) fn reshuffle_conformers(pdb: &mut PDB) {
     for residue in pdb.residues_mut() {
         let count = residue.conformer_count();
         if count > 1 {

@@ -3,7 +3,6 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
 
@@ -87,8 +86,9 @@ impl PDB {
         self.remarks.iter()
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of references to the remarks, containing the remark-type-number and a line of free text.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_remarks(&self) -> impl ParallelIterator<Item = &(usize, String)> + '_ {
         self.remarks.par_iter()
     }
@@ -98,8 +98,9 @@ impl PDB {
         self.remarks.iter_mut()
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of references to the remarks, containing the remark-type-number and a line of free text.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_remarks_mut(&mut self) -> impl ParallelIterator<Item = &mut (usize, String)> + '_ {
         self.remarks.par_iter_mut()
     }
@@ -164,8 +165,9 @@ impl PDB {
         self.mtrix.iter()
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of references to the MtriX records for this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_mtrix(&self) -> impl ParallelIterator<Item = &MtriX> + '_ {
         self.mtrix.par_iter()
     }
@@ -175,8 +177,9 @@ impl PDB {
         self.mtrix.iter_mut()
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of mutable references to the MtriX records for this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_mtrix_mut(&mut self) -> impl ParallelIterator<Item = &mut MtriX> + '_ {
         self.mtrix.par_iter_mut()
     }
@@ -224,8 +227,9 @@ impl<'a> PDB {
         }
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get the number of Residues making up this PDB in parallel.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_residue_count(&self) -> usize {
         if self.models.is_empty() {
             0
@@ -243,8 +247,9 @@ impl<'a> PDB {
         }
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get the number of Conformers making up this PDB in parallel.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_conformer_count(&self) -> usize {
         if self.models.is_empty() {
             0
@@ -262,8 +267,9 @@ impl<'a> PDB {
         }
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get the number of Atoms making up this PDB in parallel.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_atom_count(&self) -> usize {
         if self.models.is_empty() {
             0
@@ -279,8 +285,9 @@ impl<'a> PDB {
             .fold(0, |acc, item| acc + item.chain_count())
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get the number of Chains making up this PDB in parallel. Includes all models.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_total_chain_count(&self) -> usize {
         self.models.par_iter().map(Model::chain_count).sum()
     }
@@ -292,8 +299,9 @@ impl<'a> PDB {
             .fold(0, |acc, item| acc + item.residue_count())
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get the number of Residues making up this PDB in parallel. Includes all models.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_total_residue_count(&self) -> usize {
         self.models.par_iter().map(Model::par_residue_count).sum()
     }
@@ -305,8 +313,9 @@ impl<'a> PDB {
             .fold(0, |acc, item| acc + item.conformer_count())
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get the number of Conformer making up this PDB in parallel. Includes all models.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_total_conformer_count(&self) -> usize {
         self.models.par_iter().map(Model::par_conformer_count).sum()
     }
@@ -318,8 +327,9 @@ impl<'a> PDB {
             .fold(0, |acc, item| acc + item.atom_count())
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get the number of Atoms making up this PDB in parallel. Includes all models.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_total_atom_count(&self) -> usize {
         self.models.par_iter().map(Model::par_atom_count).sum()
     }
@@ -511,8 +521,9 @@ impl<'a> PDB {
         self.models.iter()
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of references to Models making up this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_models(&self) -> impl ParallelIterator<Item = &Model> + '_ {
         self.models.par_iter()
     }
@@ -523,8 +534,9 @@ impl<'a> PDB {
         self.models.iter_mut()
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of mutable references to Models making up this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_models_mut(&mut self) -> impl ParallelIterator<Item = &mut Model> + '_ {
         self.models.par_iter_mut()
     }
@@ -535,8 +547,9 @@ impl<'a> PDB {
         self.models().flat_map(Model::chains)
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of references to Chains making up this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_chains(&self) -> impl ParallelIterator<Item = &Chain> + '_ {
         self.par_models().flat_map(Model::par_chains)
     }
@@ -547,8 +560,9 @@ impl<'a> PDB {
         self.models_mut().flat_map(Model::chains_mut)
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of mutable references to Chains making up this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_chains_mut(&mut self) -> impl ParallelIterator<Item = &mut Chain> + '_ {
         self.par_models_mut().flat_map(Model::par_chains_mut)
     }
@@ -559,8 +573,9 @@ impl<'a> PDB {
         self.models().flat_map(Model::residues)
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of references to Residues making up this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_residues(&self) -> impl ParallelIterator<Item = &Residue> + '_ {
         self.par_models().flat_map(Model::par_residues)
     }
@@ -571,8 +586,9 @@ impl<'a> PDB {
         self.models_mut().flat_map(Model::residues_mut)
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of mutable references to Residues making up this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_residues_mut(&mut self) -> impl ParallelIterator<Item = &mut Residue> + '_ {
         self.par_models_mut().flat_map(Model::par_residues_mut)
     }
@@ -583,8 +599,9 @@ impl<'a> PDB {
         self.models().flat_map(Model::conformers)
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of references to Conformers making up this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
         self.par_models().flat_map(Model::par_conformers)
     }
@@ -595,8 +612,9 @@ impl<'a> PDB {
         self.models_mut().flat_map(Model::conformers_mut)
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of mutable references to Conformers making up this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
         self.par_models_mut().flat_map(Model::par_conformers_mut)
     }
@@ -607,8 +625,9 @@ impl<'a> PDB {
         self.models().flat_map(Model::atoms)
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of references to Atom making up this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
         self.par_models().flat_map(Model::par_atoms)
     }
@@ -619,8 +638,9 @@ impl<'a> PDB {
         self.models_mut().flat_map(Model::atoms_mut)
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of mutable references to Atom making up this PDB.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.par_models_mut().flat_map(Model::par_atoms_mut)
     }
@@ -779,13 +799,14 @@ impl<'a> PDB {
         }
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Remove the Model specified. It returns `true` if it found a matching Model and removed it.
     /// It removes the first matching Model from the list.
     /// Done in parallel.
     ///
     /// ## Arguments
     /// * `serial_number` - the serial number of the Model to remove
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_remove_model_serial_number(&mut self, serial_number: usize) -> bool {
         let index = self
             .models
@@ -806,9 +827,10 @@ impl<'a> PDB {
         self.models.retain(|m| m.chain_count() > 0);
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Remove all empty Models from this PDB, and all empty Chains from the Model, and all empty Residues from the Chains.
     /// Done in parallel.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_remove_empty(&mut self) {
         self.models.par_iter_mut().for_each(Model::remove_empty);
         self.models.retain(|m| m.chain_count() > 0);
@@ -858,9 +880,10 @@ impl<'a> PDB {
         }
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Apply a transformation to the position of all atoms making up this PDB, the new position is immediately set.
     /// Done in parallel.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.par_atoms_mut()
             .for_each(|atom| atom.apply_transformation(transformation));
@@ -887,8 +910,9 @@ impl<'a> PDB {
         self.models.sort();
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Sort the Models of this PDB in parallel.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_sort(&mut self) {
         self.models.par_sort();
     }
@@ -910,8 +934,9 @@ impl<'a> PDB {
         }
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Sort all structs in this PDB in parallel.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_full_sort(&mut self) {
         self.par_sort();
         self.par_models_mut().for_each(Model::par_sort);
@@ -920,6 +945,7 @@ impl<'a> PDB {
         self.par_conformers_mut().for_each(Conformer::par_sort);
     }
 
+    /// <div class="warning">Available on crate feature `rstar` only</div>
     /// Create an R star tree of Atoms which can be used for fast lookup of
     /// spatially close atoms. See the crate rstar for documentation
     /// on how to use the tree. (<https://crates.io/crates/rstar>)
@@ -928,11 +954,12 @@ impl<'a> PDB {
     /// the original PDB, so any changes to one of the data
     /// structures is not seen in the other data structure (until
     /// you generate a new tree of course).
-    #[doc_cfg(feature = "rstar")]
+    #[cfg(feature = "rstar")]
     pub fn create_atom_rtree(&self) -> rstar::RTree<&Atom> {
         rstar::RTree::bulk_load(self.atoms().collect())
     }
 
+    /// <div class="warning">Available on crate feature `rstar` only</div>
     /// Create an R star tree of structs containing Atoms and their hierarchies
     /// which can be used for fast lookup of
     /// spatial close atoms. See the crate rstar for documentation
@@ -942,7 +969,7 @@ impl<'a> PDB {
     /// the original PDB, so any changes to one of the data
     /// structures is not seen in the other data structure (until
     /// you generate a new tree of course).
-    #[doc_cfg(feature = "rstar")]
+    #[cfg(feature = "rstar")]
     pub fn create_hierarchy_rtree(
         &'a self,
     ) -> rstar::RTree<hierarchy::AtomConformerResidueChainModel<'a>> {

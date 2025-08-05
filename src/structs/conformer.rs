@@ -2,7 +2,6 @@
 use crate::reference_tables;
 use crate::structs::*;
 use crate::transformation::TransformationMatrix;
-use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
 use std::cmp::Ordering;
@@ -199,8 +198,9 @@ impl Conformer {
         self.atoms.iter()
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of references to Atoms making up this Conformer.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
         self.atoms.par_iter()
     }
@@ -211,8 +211,9 @@ impl Conformer {
         self.atoms.iter_mut()
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of mutable references to Atoms making up this Conformer.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.atoms.par_iter_mut()
     }
@@ -269,6 +270,7 @@ impl Conformer {
         }
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Remove the specified Atom. Returns `true` if a matching Atom was found and removed.
     /// Removes the first matching Atom from the list. Matching is done in parallel.
     ///
@@ -277,7 +279,7 @@ impl Conformer {
     ///
     /// ## Panics
     /// Panics if the index is out of bounds.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_remove_atom_by_serial_number(&mut self, serial_number: usize) -> bool {
         let index = self
             .atoms
@@ -312,6 +314,7 @@ impl Conformer {
         }
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Remove the specified Atom. Returns `true` if a matching Atom was found and removed.
     /// Removes the first matching Atom from the list. Matching is done in parallel.
     ///
@@ -320,7 +323,7 @@ impl Conformer {
     ///
     /// ## Panics
     /// Panics if the index is out of bounds.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_remove_atom_by_name(&mut self, name: impl AsRef<str>) -> bool {
         let name = name.as_ref();
         let index = self.atoms.par_iter().position_first(|a| a.name() == name);
@@ -340,9 +343,10 @@ impl Conformer {
         }
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Apply a transformation to the position of all atoms making up this Conformer, the new position is immediately set.
     /// This is done in parallel.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.par_atoms_mut()
             .for_each(|a| a.apply_transformation(transformation));
@@ -359,8 +363,9 @@ impl Conformer {
         self.atoms.sort();
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Sort the Atoms of this Conformer in parallel.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_sort(&mut self) {
         self.atoms.par_sort();
     }

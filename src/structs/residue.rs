@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 use crate::structs::*;
 use crate::transformation::TransformationMatrix;
-use doc_cfg::doc_cfg;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
 use std::cmp::Ordering;
@@ -120,8 +119,9 @@ impl<'a> Residue {
         self.conformers().fold(0, |sum, res| res.atom_count() + sum)
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get the number of Atoms making up this Residue in parallel.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     #[must_use]
     pub fn par_atom_count(&self) -> usize {
         self.par_conformers().map(Conformer::atom_count).sum()
@@ -280,8 +280,9 @@ impl<'a> Residue {
         self.conformers.iter()
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of references to Conformers making up this Model.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     #[must_use]
     pub fn par_conformers(&self) -> impl ParallelIterator<Item = &Conformer> + '_ {
         self.conformers.par_iter()
@@ -294,8 +295,9 @@ impl<'a> Residue {
         self.conformers.iter_mut()
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of mutable references to Conformers making up this Model.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     #[must_use]
     pub fn par_conformers_mut(&mut self) -> impl ParallelIterator<Item = &mut Conformer> + '_ {
         self.conformers.par_iter_mut()
@@ -308,8 +310,9 @@ impl<'a> Residue {
         self.conformers().flat_map(Conformer::atoms)
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of references to Atoms making up this Model.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     #[must_use]
     pub fn par_atoms(&self) -> impl ParallelIterator<Item = &Atom> + '_ {
         self.par_conformers().flat_map(Conformer::par_atoms)
@@ -322,8 +325,9 @@ impl<'a> Residue {
         self.conformers_mut().flat_map(Conformer::atoms_mut)
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Get a parallel iterator of mutable references to Atoms making up this Model.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     #[must_use]
     pub fn par_atoms_mut(&mut self) -> impl ParallelIterator<Item = &mut Atom> + '_ {
         self.par_conformers_mut().flat_map(Conformer::par_atoms_mut)
@@ -448,6 +452,7 @@ impl<'a> Residue {
         })
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Remove the specified Conformer. Returns `true` if a matching Conformer was found and
     /// removed.
     /// It removes the first matching Conformer from the list. Searching is done in parallel.
@@ -457,7 +462,7 @@ impl<'a> Residue {
     ///
     /// ## Panics
     /// Panics when the index is outside bounds.
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_remove_conformer_by_id(&mut self, id: (&str, Option<&str>)) -> bool {
         let index = self.conformers.par_iter().position_first(|a| a.id() == id);
 
@@ -474,9 +479,10 @@ impl<'a> Residue {
         }
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Apply a transformation to the position of all Conformers making up this Residue, the new position is immediately set.
     /// Done in parallel
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_apply_transformation(&mut self, transformation: &TransformationMatrix) {
         self.par_conformers_mut()
             .for_each(|conformer| conformer.apply_transformation(transformation));
@@ -493,8 +499,9 @@ impl<'a> Residue {
         self.conformers.sort();
     }
 
+    /// <div class="warning">Available on crate feature `rayon` only</div>
     /// Sort the Conformers of this Residue in parallel
-    #[doc_cfg(feature = "rayon")]
+    #[cfg(feature = "rayon")]
     pub fn par_sort(&mut self) {
         self.conformers.par_sort();
     }

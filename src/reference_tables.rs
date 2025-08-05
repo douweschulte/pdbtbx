@@ -4,7 +4,7 @@ use rayon::prelude::*;
 /// Gets the index (into Int. Crys. Handbook Vol A 2016) for the given symbol. First it is
 /// interpreted as a Herman Mauguin symbol, if that is unsuccessful it is interpreted as a
 /// Hall symbol.
-pub fn get_index_for_symbol(symbol: impl AsRef<str>) -> Option<usize> {
+pub(crate) fn get_index_for_symbol(symbol: impl AsRef<str>) -> Option<usize> {
     let symbol = symbol.as_ref();
     if let Some(index) = HERMANN_MAUGUIN_SYMBOL.iter().position(|i| *i == symbol) {
         Some(index + 1)
@@ -18,7 +18,7 @@ pub fn get_index_for_symbol(symbol: impl AsRef<str>) -> Option<usize> {
 /// Hall symbol.
 #[cfg(feature = "rayon")]
 #[allow(dead_code)]
-pub fn par_get_index_for_symbol(symbol: impl AsRef<str>) -> Option<usize> {
+pub(crate) fn par_get_index_for_symbol(symbol: impl AsRef<str>) -> Option<usize> {
     let symbol = symbol.as_ref();
     if let Some(index) = HERMANN_MAUGUIN_SYMBOL
         .par_iter()
@@ -34,32 +34,32 @@ pub fn par_get_index_for_symbol(symbol: impl AsRef<str>) -> Option<usize> {
 }
 
 /// Gets the Herman Mauguin symbol for the given index (into Int. Crys. Handbook Vol A 2016)
-pub fn get_herman_mauguin_symbol_for_index(index: usize) -> Option<&'static str> {
+pub(crate) fn get_herman_mauguin_symbol_for_index(index: usize) -> Option<&'static str> {
     HERMANN_MAUGUIN_SYMBOL.get(index - 1).copied()
 }
 
 /// Gets the Hall symbol for the given index (into Int. Crys. Handbook Vol A 2016)
-pub fn get_hall_symbol_for_index(index: usize) -> Option<&'static str> {
+pub(crate) fn get_hall_symbol_for_index(index: usize) -> Option<&'static str> {
     HALL_SYMBOL.get(index - 1).copied()
 }
 
 /// Gets the transformations given an index (into Int. Crys. Handbook Vol A 2016) for the given space group
-pub fn get_transformation(index: usize) -> Option<&'static [[[f64; 4]; 3]]> {
+pub(crate) fn get_transformation(index: usize) -> Option<&'static [[[f64; 4]; 3]]> {
     SYMBOL_TRANSFORMATION.get(index - 1).copied()
 }
 
 /// Returns if the given atom name is a common amino acid
-pub fn is_amino_acid(aa: impl AsRef<str>) -> bool {
+pub(crate) fn is_amino_acid(aa: impl AsRef<str>) -> bool {
     AMINO_ACIDS.contains(&aa.as_ref())
 }
 
 /// Returns if the given atom name is a name for an atom in the backbone of a protein
-pub fn is_backbone(name: impl AsRef<str>) -> bool {
+pub(crate) fn is_backbone(name: impl AsRef<str>) -> bool {
     BACKBONE_NAMES.contains(&name.as_ref())
 }
 
 /// Returns if the given number is a valid remark-type-number (according to wwPDB v 3.30)
-pub fn valid_remark_type_number(number: usize) -> bool {
+pub(crate) fn valid_remark_type_number(number: usize) -> bool {
     REMARK_TYPES.contains(&number)
 }
 
