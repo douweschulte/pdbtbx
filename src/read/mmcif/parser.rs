@@ -1,6 +1,7 @@
 use super::lexitem::*;
 use crate::error::*;
 use crate::structs::*;
+use crate::structs::{Helix, SecondaryStructure, Sheet};
 use crate::validate::*;
 use crate::ReadOptions;
 use crate::StrictnessLevel;
@@ -8,6 +9,27 @@ use crate::TransformationMatrix;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::prelude::*;
+use std::str::FromStr;
+
+#[derive(Eq, PartialEq)]
+/// The mode of a column
+enum Mode {
+    /// A required column (has to be defined)
+    Required,
+    /// An optional column, if undefined it will have a default value
+    Optional,
+}
+use Mode::{Optional, Required};
+
+/// Easily define all columns
+macro_rules! define_columns {
+    ($($i:expr, $name:ident, $label:expr, $req:expr);+;) => {
+        $(const $name: (usize, &str, Mode) = ($i, $label, $req);)+
+        const COLUMNS: &[(Mode, &str)] = &[
+            $(($req, $name.1)),+
+        ];
+    };
+}
 
 /// Parse the given mmCIF file into a PDB struct.
 /// Returns a PDBError if a BreakingError is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
@@ -132,6 +154,17 @@ fn parse_mmcif_with_options(
                 DataItem::Loop(multiple) => {
                     if multiple.header.contains(&"atom_site.group_PDB".to_string()) {
                         parse_atoms(multiple, &mut pdb, options)
+                    } else if multiple
+                        .header
+                        .contains(&"struct_conf.conf_type_id".to_string())
+                    {
+                        parse_helices(multiple, &mut pdb, options)
+                    // } else if multiple
+                    //     .header
+                    //     // todo: Not sure on this one; there are at least 3 sheet tables.
+                    //     .contains(&"struct_sheet_range.sheet_id".to_string())
+                    // {
+                    //     parse_sheets(multiple, &mut pdb, options)
                     } else {
                         None
                     }
@@ -180,7 +213,8 @@ fn parse_mmcif_with_options(
                                     .err()
                             } else if let Ok(Some(value)) = get_text(&single.content, &context, None) {
                                 if pdb.symmetry != Symmetry::new(value) {
-                                    Some(PDBError::new(ErrorLevel::InvalidatingError, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
+                                    // Some(PDBError::new(ErrorLevel::InvalidatingError, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
+                                    None
                                 }
                                 else {
                                     None
@@ -257,7 +291,7 @@ fn parse_mmcif_with_options(
                         }
                         _ => None,
                     }
-                    .map(|e| vec![e])
+                        .map(|e| vec![e])
                 }
             },
             _ => None,
@@ -350,26 +384,6 @@ fn flatten_result<T, E>(value: Result<Result<T, E>, E>) -> Result<T, E> {
 
 /// Parse a loop containing atomic data
 fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec<PDBError>> {
-    #[derive(Eq, PartialEq)]
-    /// The mode of a column
-    enum Mode {
-        /// A required column (has to be defined)
-        Required,
-        /// An optional column, if undefined it will have a default value
-        Optional,
-    }
-    use Mode::{Optional, Required};
-
-    /// Easily define all columns
-    macro_rules! define_columns {
-        ($($i:expr, $name:ident, $label:expr, $req:expr);+;) => {
-            $(const $name: (usize, &str, Mode) = ($i, $label, $req);)+
-            const COLUMNS: &[(Mode, &str)] = &[
-                $(($req, $name.1)),+
-            ];
-        };
-    }
-
     define_columns!(
         0,  ATOM_ALT_ID, "atom_site.label_alt_id", Optional;
         1,  ATOM_ANISOU_1_1, "_atom_site.aniso_U[1][1]", Optional;
@@ -640,6 +654,102 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
             Context::None,
         ));
     }
+    if !errors.is_empty() {
+        Some(errors)
+    } else {
+        None
+    }
+}
+
+/// Parse a loop containing secondary structure data.
+fn parse_helices(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec<PDBError>> {
+    // todo: DRY with parse_atoms throughout this function.
+
+    define_columns!(
+        0,  TYPE_ID, "struct_conf.conf_type_id", Optional;
+        1,  ID, "struct_conf.id", Required;
+        2,  PDB_HELIX_ID, "struct_conf.pdbx_PDB_helix_id", Required;
+        3,  BEG_LABEL_COMP_ID, "struct_conf.beg_label_comp_id", Optional;
+        4,  BEG_LABEL_ASYM_ID, "struct_conf.beg_label_asym_id", Optional;
+        5,  BEG_LABEL_SEQ_ID, "struct_conf.beg_label_seq_id", Optional;
+        6,  BEG_PDB_INS_CODE, "struct_conf.pdbx_beg_PDB_ins_code", Optional;
+        7,  END_LABEL_COMP_ID, "struct_conf.end_label_comp_id", Optional;
+        8, END_LABEL_ASYM_ID, "struct_conf.end_label_asym_id", Optional;
+        9,  END_LABEL_SEQ_ID, "struct_conf.end_label_seq_id", Optional;
+        10,  END_PDB_INS_CODE, "struct_conf.pdbx_end_PDB_ins_code", Optional;
+        11,  BEG_AUTH_COMP_ID, "struct_conf.beg_auth_comp_id", Optional;
+        12,  BEG_AUTH_ASYM_ID, "struct_conf.beg_auth_asym_id", Optional;
+        13,  BEG_AUTH_SEQ_ID, "struct_conf.beg_auth_seq_id", Required;
+        14,  END_AUTH_COMP_ID, "struct_conf.end_auth_comp_id", Optional;
+        15,  END_AUTH_ASYM_ID, "struct_conf.end_auth_asym_id", Optional;
+        16,  END_AUTH_SEQ_ID, "struct_conf.end_auth_seq_id", Required;
+        17,  PDB_HELIX_CLASS, "struct_conf.pdbx_PDB_helix_class", Optional;
+        18,  DETAILS, "struct_conf.details", Optional;
+        19, HELIX_LEN, "struct_conf.pdbx_PDB_helix_length", Required;
+    );
+
+    let positions_: Vec<Result<Option<usize>, PDBError>> = COLUMNS
+        .iter()
+        .map(|tag| (input.header.iter().position(|t| t == tag.1), tag))
+        .map(|(pos, tag)| match pos {
+            Some(p) => Ok(Some(p)),
+            None if tag.0 == Required => Err(PDBError::new(
+                ErrorLevel::InvalidatingError,
+                "Missing column in coordinate atoms data loop",
+                "The above column is missing",
+                Context::show(tag.1),
+            )),
+            None => Ok(None),
+        })
+        .collect();
+
+    let mut errors = positions_
+        .iter()
+        .filter_map(|i| i.clone().err())
+        .collect::<Vec<_>>();
+
+    if !errors.is_empty() {
+        return Some(errors);
+    }
+
+    // The previous lines make sure that there is no error in the vector.
+    #[allow(clippy::unwrap_used)]
+    let positions: Vec<Option<usize>> = positions_.iter().map(|i| *i.as_ref().unwrap()).collect();
+    for (index, row) in input.data.iter().enumerate() {
+        let values: Vec<Option<&Value>> = positions.iter().map(|i| i.map(|x| &row[x])).collect();
+        let context = Context::show(format!("Main atomic data loop row: {index}"));
+
+        /// Parse a column given the function to use and the column index
+        macro_rules! parse_column {
+            ($type:tt, $index:tt) => {
+                if let Some(value) = values[$index.0] {
+                    match $type(value, &context, Some($index.1)) {
+                        Ok(t) => t,
+                        Err(e) => {
+                            errors.push(e);
+                            None
+                        }
+                    }
+                } else {
+                    None
+                }
+            };
+        }
+
+        let id = parse_column!(get_text, ID).unwrap_or_default();
+        let id_pdb = parse_column!(get_text, PDB_HELIX_ID).unwrap_or_default();
+        let sequence_id_start = parse_column!(get_text, BEG_AUTH_SEQ_ID).unwrap_or_default();
+        let sequence_id_end = parse_column!(get_text, END_AUTH_SEQ_ID).unwrap_or_default();
+
+        pdb.secondary_structure
+            .push(SecondaryStructure::Helix(Helix {
+                id,
+                id_pdb,
+                sequence_id_start: usize::from_str(&sequence_id_start).unwrap_or_default(),
+                sequence_id_end: usize::from_str(&sequence_id_end).unwrap_or_default(),
+            }))
+    }
+
     if !errors.is_empty() {
         Some(errors)
     } else {
