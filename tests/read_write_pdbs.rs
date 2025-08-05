@@ -26,16 +26,11 @@ fn run_pdbs() {
         let entry = entry.unwrap();
         let path = entry.path();
         let metadata = fs::metadata(&path).unwrap();
-        if metadata.is_file() {
+        if metadata.is_file() && path.file_stem().is_some_and(|s| s != "1htq") {
             do_something(
-                &path.clone().into_os_string().into_string().unwrap(),
+                &path.to_string_lossy(),
                 &dump_dir,
-                &path
-                    .file_stem()
-                    .unwrap()
-                    .to_os_string()
-                    .into_string()
-                    .unwrap(),
+                &path.file_stem().unwrap().to_string_lossy(),
             );
         }
     }

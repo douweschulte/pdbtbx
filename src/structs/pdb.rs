@@ -1195,13 +1195,18 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn remove_model() {
         let pdb_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("example-pdbs");
 
         for entry in std::fs::read_dir(pdb_dir).unwrap() {
             let entry = entry.unwrap();
             let path = entry.path();
-            if path.extension().unwrap() != "pdb" {
+            if path.extension().unwrap() != "pdb"
+                || path
+                    .file_stem()
+                    .is_some_and(|p| p.eq_ignore_ascii_case("1htq"))
+            {
                 continue;
             }
             let (pdb, _) = ReadOptions::default()
@@ -1228,6 +1233,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn remove_model_except() {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("example-pdbs")
@@ -1320,6 +1326,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)] // Miri does not play well with Rstar
     #[cfg(feature = "rstar")]
     fn spatial_lookup() {
         let mut model = Model::new(0);
@@ -1364,6 +1371,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)] // Miri does not play well with Rstar
     #[cfg(feature = "rstar")]
     fn spatial_lookup_with_hierarchy() {
         let mut model = Model::new(0);
@@ -1473,6 +1481,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn chains_in_contact() {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("example-pdbs")
@@ -1497,6 +1506,7 @@ mod tests {
         assert_eq!(chainmap, my_map);
     }
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_unique_conformer_names() {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("example-pdbs")

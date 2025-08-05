@@ -2,6 +2,7 @@
 /dump
 .vscode
 .idea
+.DS_Store
 default.profraw
 *.txt
 __pycache__

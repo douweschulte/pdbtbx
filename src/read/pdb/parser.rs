@@ -1,8 +1,7 @@
+use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-
-use indexmap::IndexMap;
 
 use crate::error::*;
 use crate::structs::*;
@@ -32,12 +31,8 @@ pub fn open_pdb(
     open_pdb_with_options(filename, ReadOptions::default().set_level(level))
 }
 
-/// Parse the given file into a PDB struct with [`ReadOptions`].
-pub(crate) fn open_pdb_with_options(
-    filename: impl AsRef<str>,
-    options: &ReadOptions,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
-    let filename = filename.as_ref();
+/// Reads file.
+pub(crate) fn read_file(filename: &str) -> Result<BufReader<File>, Vec<PDBError>> {
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
     let file = if let Ok(f) = File::open(filename) {
         f
@@ -45,6 +40,16 @@ pub(crate) fn open_pdb_with_options(
         return Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
     };
     let reader = BufReader::new(file);
+    Ok(reader)
+}
+
+/// Parse the given file into a PDB struct with [`ReadOptions`].
+pub(crate) fn open_pdb_with_options(
+    filename: impl AsRef<str>,
+    options: &ReadOptions,
+) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+    let filename = filename.as_ref();
+    let reader = read_file(filename)?;
     open_pdb_raw_with_options(reader, Context::show(filename), options)
 }
 
@@ -174,10 +179,10 @@ where
                                 .to_string();
                         }
 
-                        let atom = Atom::new(
+                        let atom = if let Some(a) = Atom::new(
                             hetero,
                             serial_number + atom_serial_addition,
-                            id_iter.next().unwrap(),
+                            id_iter.next().expect("Atom ID iterator is exhausted"),
                             name,
                             x,
                             y,
@@ -186,8 +191,17 @@ where
                             b,
                             element,
                             charge,
-                        )
-                        .expect("Invalid characters in atom creation");
+                        ) {
+                            a
+                        } else {
+                            errors.push(PDBError::new(
+                                ErrorLevel::InvalidatingError,
+                                "Invalid characters in atom creation",
+                                "Failed to create atom due to invalid characters or values",
+                                line_context.clone(),
+                            ));
+                            continue;
+                        };
                         let conformer_id = (residue_name.as_str(), alt_loc.as_deref());
 
                         let current_chain = if let Some(chain) = current_model.get_mut(&chain_id) {
@@ -208,19 +222,33 @@ where
                                     residue_serial_number + residue_serial_addition,
                                     insertion_code.clone(),
                                 ),
-                                Residue::new(
+                                if let Some(r) = Residue::new(
                                     residue_serial_number + residue_serial_addition,
                                     insertion_code.as_deref(),
                                     Some(
-                                        Conformer::new(
+                                        if let Some(c) = Conformer::new(
                                             residue_name.as_str(),
                                             alt_loc.as_deref(),
                                             Some(atom),
-                                        )
-                                        .expect("Invalid characters in Conformer creation"),
+                                        ) { c } else {
+                                            errors.push(PDBError::new(
+                                                ErrorLevel::InvalidatingError,
+                                                "Invalid characters in Conformer creation",
+                                                "Failed to create conformer due to invalid characters",
+                                                line_context.clone(),
+                                            ));
+                                            continue;
+                                        },
                                     ),
-                                )
-                                .expect("Invalid characters in Residue creation"),
+                                ) { r } else {
+                                    errors.push(PDBError::new(
+                                        ErrorLevel::InvalidatingError,
+                                        "Invalid characters in Residue creation",
+                                        "Failed to create residue due to invalid characters",
+                                        line_context.clone(),
+                                    ));
+                                    continue;
+                                },
                             );
                         }
 
@@ -241,17 +269,33 @@ where
                             }
                         }
                         if !found {
-                            eprintln!("Could not find atom for temperature factors, coupled to atom {s} {n}")
+                            errors.push(PDBError::new(
+                                ErrorLevel::InvalidatingError,
+                                "Atom not found for ANISOU record",
+                                format!("Could not find atom with serial number {s} (name: {n}) for anisotropic temperature factors"),
+                                line_context.clone(),
+                            ));
                         }
                     }
                     LexItem::Model(number) => {
                         if !current_model.is_empty() {
+                            let mut chains = Vec::new();
+                            for (id, residues) in current_model.into_iter() {
+                                match Chain::from_iter(id, residues.into_values()) {
+                                    Some(chain) => chains.push(chain),
+                                    None => {
+                                        errors.push(PDBError::new(
+                                            ErrorLevel::InvalidatingError,
+                                            "Invalid characters in Chain definition",
+                                            "Failed to create chain due to invalid characters",
+                                            line_context.clone(),
+                                        ));
+                                    }
+                                }
+                            }
                             pdb.add_model(Model::from_iter(
                                 current_model_number,
-                                current_model.into_iter().map(|(id, residues)| {
-                                    Chain::from_iter(id, residues.into_values())
-                                        .expect("Invalid characters in Chain definition")
-                                }),
+                                chains.into_iter(),
                             ));
 
                             if options.only_first_model {
@@ -286,10 +330,17 @@ where
                     }
                     LexItem::Crystal(a, b, c, alpha, beta, gamma, spacegroup, _z) => {
                         pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
-                        pdb.symmetry =
-                            Some(Symmetry::new(&spacegroup).unwrap_or_else(|| {
-                                panic!("Invalid space group: \"{spacegroup}\"")
-                            }));
+                        pdb.symmetry = if let Some(sym) = Symmetry::new(&spacegroup) {
+                            Some(sym)
+                        } else {
+                            errors.push(PDBError::new(
+                                ErrorLevel::InvalidatingError,
+                                "Invalid space group",
+                                format!("Invalid space group: \"{spacegroup}\""),
+                                line_context.clone(),
+                            ));
+                            None
+                        };
                     }
                     LexItem::Seqres(ser_num, chain_id, num_res, values) => {
                         seqres_start_linenumber = seqres_start_linenumber.min(linenumber);
@@ -384,12 +435,23 @@ where
                     ) => {
                         // The last atoms need to be added to make the MASTER checksum work out
                         if !current_model.is_empty() {
+                            let mut chains = Vec::new();
+                            for (id, residues) in current_model.into_iter() {
+                                match Chain::from_iter(id, residues.into_values()) {
+                                    Some(chain) => chains.push(chain),
+                                    None => {
+                                        errors.push(PDBError::new(
+                                            ErrorLevel::InvalidatingError,
+                                            "Invalid characters in Chain definition",
+                                            "Failed to create chain due to invalid characters",
+                                            line_context.clone(),
+                                        ));
+                                    }
+                                }
+                            }
                             pdb.add_model(Model::from_iter(
                                 current_model_number,
-                                current_model.into_iter().map(|(id, residues)| {
-                                    Chain::from_iter(id, residues.into_values())
-                                        .expect("Invalid characters in Chain definition")
-                                }),
+                                chains.into_iter(),
                             ));
                             current_model = IndexMap::new();
                         }
@@ -455,13 +517,21 @@ where
         }
     }
     if !current_model.is_empty() {
-        pdb.add_model(Model::from_iter(
-            current_model_number,
-            current_model.into_iter().map(|(id, residues)| {
-                Chain::from_iter(id, residues.into_values())
-                    .expect("Invalid characters in Chain definition")
-            }),
-        ));
+        let mut chains = Vec::new();
+        for (id, residues) in current_model.into_iter() {
+            match Chain::from_iter(id, residues.into_values()) {
+                Some(chain) => chains.push(chain),
+                None => {
+                    errors.push(PDBError::new(
+                        ErrorLevel::InvalidatingError,
+                        "Invalid characters in Chain definition",
+                        "Failed to create chain due to invalid characters",
+                        Context::None,
+                    ));
+                }
+            }
+        }
+        pdb.add_model(Model::from_iter(current_model_number, chains.into_iter()));
     }
 
     for (chain_id, reference, complete) in database_references {

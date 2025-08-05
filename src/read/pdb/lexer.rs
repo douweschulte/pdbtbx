@@ -1,11 +1,13 @@
 use super::lexitem::*;
+use super::utils::fast_parse_u64_from_string;
+use super::utils::fast_trim;
 use crate::error::*;
 use crate::reference_tables;
 use crate::ReadOptions;
 use crate::StrictnessLevel;
 
 use std::cmp;
-use std::convert::TryFrom;
+
 use std::ops::Range;
 use std::str::FromStr;
 
@@ -17,11 +19,11 @@ pub fn lex_line(
 ) -> Result<(LexItem, Vec<PDBError>), PDBError> {
     match line.len() {
         len if len > 6 => match (options.only_atomic_coords, &line[..6]) {
+            (_, "HETATM") => lex_atom(linenumber, line, true),
+            (_, "ATOM  ") => lex_atom(linenumber, line, false),
             (false, "HEADER") => lex_header(linenumber, line),
             (false, "REMARK") => lex_remark(linenumber, line, options.level),
-            (_, "ATOM  ") => lex_atom(linenumber, line, false),
             (false, "ANISOU") => Ok(lex_anisou(linenumber, line)),
-            (_, "HETATM") => lex_atom(linenumber, line, true),
             (false, "CRYST1") => Ok(lex_cryst(linenumber, line)),
             (false, "SCALE1") => Ok(lex_scale(linenumber, line, 0)),
             (false, "SCALE2") => Ok(lex_scale(linenumber, line, 1)),
@@ -276,21 +278,22 @@ fn lex_atom_basics(
     Vec<PDBError>,
 ) {
     let mut errors = Vec::new();
-    let chars: Vec<char> = line.chars().collect();
+    let chars: &[u8] = line.as_bytes();
 
-    let serial_number = parse(linenumber, line, 6..11, &mut errors);
+    let serial_number = fast_parse_u64(linenumber, line, 6..11, &mut errors, 0);
     let atom_name = parse(linenumber, line, 12..16, &mut errors);
-    let alternate_location = parse_char(linenumber, line, 16, &mut errors);
+    let alternate_location = parse_char(linenumber, chars, 16, &mut errors);
     let residue_name = parse(linenumber, line, 17..20, &mut errors);
-    let chain_id = String::from(parse_char(linenumber, line, 21, &mut errors));
+    let chain_id = String::from(parse_char(linenumber, chars, 21, &mut errors));
+    //TODO: is isize?
     let residue_serial_number = parse(linenumber, line, 22..26, &mut errors);
-    let insertion = parse_char(linenumber, line, 26, &mut errors);
+    let insertion = parse_char(linenumber, chars, 26, &mut errors);
     let segment_id = parse(linenumber, line, 72..76, &mut errors);
     let element = parse(linenumber, line, 76..78, &mut errors);
-
+    // 14% lex atom -> 12%
     let mut charge = 0;
     #[allow(clippy::unwrap_used)]
-    if chars.len() >= 80 && !(chars[78] == ' ' && chars[79] == ' ') {
+    if chars.len() >= 80 && !(chars[78] == b' ' && chars[79] == b' ') {
         if !chars[78].is_ascii_digit() {
             errors.push(PDBError::new(
                 ErrorLevel::InvalidatingError,
@@ -298,24 +301,31 @@ fn lex_atom_basics(
                 "The charge is not numeric, it is defined to be [0-9][+-], so two characters in total.",
                 Context::line(linenumber, line, 78, 1),
             ));
-        } else if chars[79] != '-' && chars[79] != '+' {
+        } else if chars[79] != b'-' && chars[79] != b'+' {
             errors.push(PDBError::new(
                 ErrorLevel::InvalidatingError,
                 "Atom charge is not correct",
                 "The charge is not properly signed, it is defined to be [0-9][+-], so two characters in total.",
                 Context::line(linenumber, line, 79, 1),
             ));
-        } else {
-            charge = isize::try_from(chars[78].to_digit(10).unwrap()).unwrap();
-            if chars[79] == '-' {
+        } else if let Some(digit) = chars[78].checked_sub(b'0').filter(|&n| n <= 9) {
+            charge = digit as isize;
+            if chars[79] == b'-' {
                 charge *= -1;
             }
+        } else {
+            errors.push(PDBError::new(
+                ErrorLevel::InvalidatingError,
+                "Invalid charge digit",
+                format!("Expected a digit but found '{}'", chars[78] as char),
+                Context::line(linenumber, line, 78, 1),
+            ));
         }
     }
 
     (
         (
-            serial_number,
+            serial_number as usize,
             atom_name,
             if alternate_location == ' ' {
                 None
@@ -459,16 +469,16 @@ fn lex_master(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 /// Lexes a SEQRES record
 fn lex_seqres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
-    let chars: Vec<char> = line.chars().collect();
+    let chars: &[u8] = line.as_bytes();
 
     let ser_num = parse(linenumber, line, 7..10, &mut errors);
-    let chain_id = parse_char(linenumber, line, 11, &mut errors);
+    let chain_id = parse_char(linenumber, chars, 11, &mut errors);
     let num_res = parse(linenumber, line, 13..17, &mut errors);
     let mut values = Vec::new();
     let mut index = 19;
     let max = cmp::min(chars.len(), 71);
     while index + 3 <= max {
-        let seq = chars[index..index + 3].iter().collect::<String>();
+        let seq = line[index..index + 3].to_string();
         if seq == "   " {
             break;
         }
@@ -484,20 +494,21 @@ fn lex_seqres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 /// Lexes a DBREF record
 fn lex_dbref(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
+    let chars: &[u8] = line.as_bytes();
 
     let id_code = parse(linenumber, line, 7..11, &mut errors);
     let chain_id = parse(linenumber, line, 12..13, &mut errors);
     let seq_begin = parse(linenumber, line, 14..18, &mut errors);
-    let insert_begin = parse_char(linenumber, line, 18, &mut errors);
+    let insert_begin = parse_char(linenumber, chars, 18, &mut errors);
     let seq_end = parse(linenumber, line, 20..24, &mut errors);
-    let insert_end = parse_char(linenumber, line, 24, &mut errors);
+    let insert_end = parse_char(linenumber, chars, 24, &mut errors);
     let database = parse(linenumber, line, 26..32, &mut errors);
     let database_accession = parse(linenumber, line, 33..41, &mut errors);
     let database_id_code = parse(linenumber, line, 42..54, &mut errors);
     let database_seq_begin = parse(linenumber, line, 55..60, &mut errors);
-    let database_insert_begin = parse_char(linenumber, line, 60, &mut errors);
+    let database_insert_begin = parse_char(linenumber, chars, 60, &mut errors);
     let database_seq_end = parse(linenumber, line, 62..67, &mut errors);
-    let database_insert_end = parse_char(linenumber, line, 67, &mut errors);
+    let database_insert_end = parse_char(linenumber, chars, 67, &mut errors);
 
     (
         LexItem::Dbref(
@@ -521,13 +532,14 @@ fn lex_dbref(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 /// Lexes a DBREF1 record
 fn lex_dbref1(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
+    let chars: &[u8] = line.as_bytes();
 
     let id_code = parse(linenumber, line, 7..11, &mut errors);
     let chain_id = parse(linenumber, line, 12..13, &mut errors);
     let seq_begin = parse(linenumber, line, 14..18, &mut errors);
-    let insert_begin = parse_char(linenumber, line, 18, &mut errors);
+    let insert_begin = parse_char(linenumber, chars, 18, &mut errors);
     let seq_end = parse(linenumber, line, 21..24, &mut errors);
-    let insert_end = parse_char(linenumber, line, 24, &mut errors);
+    let insert_end = parse_char(linenumber, chars, 24, &mut errors);
     let database = parse(linenumber, line, 26..32, &mut errors);
     let database_id_code = parse(linenumber, line, 47..67, &mut errors);
 
@@ -568,18 +580,18 @@ fn lex_dbref2(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 /// Lexes a SEQADV record
 fn lex_seqadv(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
-    let chars: Vec<char> = line.chars().collect();
+    let chars: &[u8] = line.as_bytes();
 
     let id_code = parse(linenumber, line, 7..11, &mut errors);
     let res_name = parse(linenumber, line, 12..15, &mut errors);
     let chain_id = parse(linenumber, line, 16..17, &mut errors);
     let seq_num = parse(linenumber, line, 18..22, &mut errors);
-    let insert = parse_char(linenumber, line, 22, &mut errors);
+    let insert = parse_char(linenumber, chars, 22, &mut errors);
     let database = parse(linenumber, line, 24..28, &mut errors);
     let database_accession = parse(linenumber, line, 29..38, &mut errors);
 
     let mut db_pos = None;
-    if !chars[39..48].iter().all(|c| *c == ' ') {
+    if !chars[39..48].iter().all(|c| *c == b' ') {
         let db_res_name = parse(linenumber, line, 39..42, &mut errors);
         let db_seq_num = parse(linenumber, line, 43..48, &mut errors);
         db_pos = Some((db_res_name, db_seq_num));
@@ -609,13 +621,13 @@ fn lex_seqadv(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 /// Lexes a MODRES record
 fn lex_modres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
-    let chars: Vec<char> = line.chars().collect();
+    let chars: &[u8] = line.as_bytes();
 
     let id = parse(linenumber, line, 7..11, &mut errors);
     let res_name = parse(linenumber, line, 12..15, &mut errors);
-    let chain_id = parse_char(linenumber, line, 16, &mut errors);
+    let chain_id = parse_char(linenumber, chars, 16, &mut errors);
     let seq_num = parse(linenumber, line, 18..22, &mut errors);
-    let insert = parse_char(linenumber, line, 22, &mut errors);
+    let insert = parse_char(linenumber, chars, 22, &mut errors);
     let std_res = parse(linenumber, line, 24..27, &mut errors);
     let comment = parse(linenumber, line, 29..chars.len(), &mut errors);
 
@@ -640,23 +652,23 @@ fn lex_modres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 /// Parse a SSBond line into the corresponding LexItem
 fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
     let mut errors = Vec::new();
-    let chars: Vec<char> = line.chars().collect();
+    let chars: &[u8] = line.as_bytes();
     // The Serial number field is ignored
     let res_1 = parse(linenumber, line, 11..14, &mut errors);
-    let chain_1 = parse_char(linenumber, line, 15, &mut errors);
+    let chain_1 = parse_char(linenumber, chars, 15, &mut errors);
     let res_seq_1: isize = parse(linenumber, line, 17..21, &mut errors);
-    let icode_1 = if chars[21] == ' ' {
+    let icode_1 = if chars[21] == b' ' {
         None
     } else {
-        Some(String::from(parse_char(linenumber, line, 21, &mut errors)))
+        Some(String::from(parse_char(linenumber, chars, 21, &mut errors)))
     };
     let res_2 = parse(linenumber, line, 25..28, &mut errors);
-    let chain_2 = parse_char(linenumber, line, 29, &mut errors);
+    let chain_2 = parse_char(linenumber, chars, 29, &mut errors);
     let res_seq_2 = parse(linenumber, line, 31..35, &mut errors);
-    let icode_2 = if chars[35] == ' ' {
+    let icode_2 = if chars[35] == b' ' {
         None
     } else {
-        Some(String::from(parse_char(linenumber, line, 35, &mut errors)))
+        Some(String::from(parse_char(linenumber, chars, 35, &mut errors)))
     };
 
     let mut extra = None;
@@ -688,16 +700,16 @@ fn parse<T: FromStr + Default>(
     parse_default(linenumber, line, range, errors, T::default())
 }
 
-/// Parse a field from a line, with the given default as fall back, leave errors in the given mutable vec.
-fn parse_default<T: FromStr>(
+/// Parse a field from a line, with the given default as fall back, leave errors in the given mutable vec
+fn fast_parse_u64(
     linenumber: usize,
     line: &str,
     range: Range<usize>,
     errors: &mut Vec<PDBError>,
-    default: T,
-) -> T {
-    let context = Context::line(linenumber, line, range.start, range.len());
+    default: u64,
+) -> u64 {
     if line.len() < range.end {
+        let context = Context::line(linenumber, line, range.start, range.len());
         errors.push(PDBError::new(
             ErrorLevel::InvalidatingError,
             "Line too short",
@@ -709,7 +721,45 @@ fn parse_default<T: FromStr>(
         ));
         return default;
     }
-    if let Ok(v) = line[range].trim().parse::<T>() {
+
+    let range_start = range.start;
+    let range_len = range.len();
+    match fast_parse_u64_from_string(&line[range]) {
+        Ok(value) => value,
+        Err(e) => {
+            errors.push(PDBError::new(
+                ErrorLevel::InvalidatingError,
+                "Invalid number format",
+                format!("Could not parse number: {e}"),
+                Context::line(linenumber, line, range_start, range_len),
+            ));
+            default
+        }
+    }
+}
+/// Parse a field from a line, with the given default as fall back, leave errors in the given mutable vec
+fn parse_default<T: FromStr>(
+    linenumber: usize,
+    line: &str,
+    range: Range<usize>,
+    errors: &mut Vec<PDBError>,
+    default: T,
+) -> T {
+    if line.len() < range.end {
+        let context = Context::line(linenumber, line, range.start, range.len());
+        errors.push(PDBError::new(
+            ErrorLevel::InvalidatingError,
+            "Line too short",
+            format!(
+                "This line was too short to parse the expected data field (at {} to {})",
+                range.start, range.end
+            ),
+            context,
+        ));
+        return default;
+    }
+
+    if let Ok(v) = fast_trim(&line[range.clone()]).parse::<T>() {
         v
     } else {
         errors.push(PDBError::new(
@@ -719,24 +769,28 @@ fn parse_default<T: FromStr>(
                 "The text presented is not of the right kind ({}).",
                 std::any::type_name::<T>()
             ),
-            context,
+            Context::line(linenumber, line, range.start, range.len()),
         ));
         default
     }
 }
 
 /// Parse a character, needed because the trim in the generic `parse` could leave us with an empty character leading to errors
-fn parse_char(linenumber: usize, line: &str, position: usize, errors: &mut Vec<PDBError>) -> char {
-    let context = Context::line(linenumber, line, position, 1);
-    if let Some(s) = line.chars().nth(position) {
-        s
-    } else {
+fn parse_char(linenumber: usize, line: &[u8], position: usize, errors: &mut Vec<PDBError>) -> char {
+    if position > line.len() {
+        let context = Context::line(
+            linenumber,
+            String::from_utf8(line.to_vec()).expect("Failed to convert bytes to string"),
+            position,
+            1,
+        );
         errors.push(PDBError::new(
             ErrorLevel::InvalidatingError,
             "Line too short",
             format!("This line was too short to parse the expected data field (at {position})"),
             context,
         ));
-        ' '
-    }
+        return ' ';
+    };
+    line[position] as char
 }
