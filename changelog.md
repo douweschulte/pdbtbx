@@ -1,6 +1,14 @@
 # Changelog
 All versions are properly annotated on [github](https://github.com/douweschulte/pdbtbx/releases) so there the source code for each version can be retrieved.
 
+### v0.13.0 (upcoming)
+* Updated MSRV to 1.67 (Jan 2023) (from 1.64 (Sep 2022)) which should be old enough for most things keep working
+* Sped up PDB file opening, expect ~40% gain (Thanks to maxall41)
+* Added `Atom::id` (Thanks to hfswetton)
+* Added bond inference (Thanks to David-OConnor)
+* Updated mismatched symmetry group error to warning (Thanks to David-OConnor)
+* Removed dependency doc_cfg to prevent double dependencies in the tree
+
 ### v0.12.0
 * Added unified file read logic, see `ReadOptions` (Thanks to y1zhou and OWisset)
   - This deprecates the original read functions `open_gz` (still around for ease of updating) and `open_raw` (fully removed in this update)

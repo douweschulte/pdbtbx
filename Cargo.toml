@@ -8,7 +8,7 @@ description = "A library to open/edit/save (crystallographic) Protein Data Bank 
 repository = "https://github.com/douweschulte/pdbtbx"
 readme = "README.md"
 keywords = ["pdb", "crystal", "protein", "mmcif", "bio"]
-categories = ["parser-implementations", "science"]
+categories = ["parser-implementations", "science", "science::bioinformatics"]
 include = ["src/**/*", "LICENSE", "README.md"]
 rust-version = "1.67"
 
@@ -67,7 +67,7 @@ macro-use-extern-crate = "warn"
 meta-variable-misuse = "warn"
 missing_docs = "warn"
 missing-abi = "warn"
-missing-copy-implementations = "warn"
+missing-copy-implementations = "allow"
 missing-debug-implementations = "warn"
 noop-method-call = "warn"
 opaque-hidden-inferred-bound = "deny"
