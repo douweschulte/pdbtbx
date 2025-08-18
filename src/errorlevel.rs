@@ -1,10 +1,13 @@
+use custom_error::ErrorKind;
+
 use crate::StrictnessLevel;
 use std::fmt;
 
 /// This indicates the level of the error, to handle it differently based on the level of the raised error.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum ErrorLevel {
     /// An error that breaks the execution of the program.
+    #[default]
     BreakingError,
     /// An error that invalidates the output of the function generating the error. This concerns things like invalid
     /// characters, numeric literals etc.
@@ -19,10 +22,10 @@ pub enum ErrorLevel {
     GeneralWarning,
 }
 
-impl ErrorLevel {
-    /// Get the descriptor for this `ErrorLevel` (Error/Warning). This can be used to display to users to indicate
-    /// the severity of the error.
-    pub const fn descriptor(&self) -> &str {
+impl ErrorKind for ErrorLevel {
+    type Settings = StrictnessLevel;
+
+    fn descriptor(&self) -> &'static str {
         match self {
             Self::BreakingError => "BreakingError",
             Self::InvalidatingError => "InvalidatingError",
@@ -32,13 +35,16 @@ impl ErrorLevel {
         }
     }
 
-    /// Tests if this errors is breaking with the given strictness level
-    pub const fn fails(&self, level: StrictnessLevel) -> bool {
+    fn is_error(&self, settings: Self::Settings) -> bool {
         match level {
             StrictnessLevel::Strict => true,
             StrictnessLevel::Medium => !matches!(self, Self::GeneralWarning),
             StrictnessLevel::Loose => !matches!(self, Self::GeneralWarning | Self::LooseWarning),
         }
+    }
+
+    fn ignored(&self, _settings: Self::Settings) -> bool {
+        false
     }
 }
 

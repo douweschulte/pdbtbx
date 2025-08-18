@@ -89,8 +89,8 @@ println!("There are {} backbone atoms within 3.5Aͦ of the atom at index 42", to
 // Set linting behaviour
 #![allow(clippy::upper_case_acronyms)] // Allow PDB (and derived) names to be used
 
-/// To save and display errors
-mod error;
+/// Handle different levels of errors
+mod errorlevel;
 /// To open PDB files
 mod read;
 /// Reference tables for constants
@@ -108,7 +108,7 @@ mod validate;
 #[cfg(doc)]
 pub mod general_docs;
 
-pub use error::*;
+pub use errorlevel::*;
 pub use read::*;
 pub use save::*;
 pub use strictness_level::StrictnessLevel;

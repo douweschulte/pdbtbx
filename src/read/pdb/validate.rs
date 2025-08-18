@@ -1,7 +1,9 @@
-use crate::error::*;
-use crate::structs::*;
-
 use std::collections::HashMap;
+use std::fmt::Write;
+
+use custom_error::{BoxedError, Context, CreateError};
+
+use crate::{structs::*, ErrorLevel};
 
 /// Validate the SEQRES data found, if there is any
 #[allow(
@@ -14,8 +16,8 @@ pub(crate) fn validate_seqres(
     sequence: HashMap<String, Vec<(usize, usize, Vec<String>)>>,
     lines: &[String],
     start_linenumber: usize,
-    context: &Context,
-) -> Vec<PDBError> {
+    context: &Context<'static>,
+) -> Vec<BoxedError<'static, ErrorLevel>> {
     let mut errors = Vec::new();
     for (chain_id, data) in sequence {
         if let Some(chain) = pdb.chains_mut().find(|c| c.id() == chain_id) {
@@ -24,7 +26,7 @@ pub(crate) fn validate_seqres(
             let mut residues = 0;
             for (line, (ser_num, res_num, seq)) in data.into_iter().enumerate() {
                 if serial != ser_num {
-                    errors.push(PDBError::new(
+                    errors.push(BoxedError::new(
                         ErrorLevel::StrictWarning,
                         "SEQRES serial number invalid",
                         format!("The serial number for SEQRES chain \"{chain_id}\" with number \"{ser_num}\" does not follow sequentially from the previous row."),
@@ -35,7 +37,7 @@ pub(crate) fn validate_seqres(
                 if residues == 0 {
                     residues = res_num;
                 } else if residues != res_num {
-                    errors.push(PDBError::new(
+                    errors.push(BoxedError::new(
                         ErrorLevel::StrictWarning,
                         "SEQRES residue total invalid",
                         format!("The residue total for SEQRES chain \"{chain_id}\" with number \"{ser_num}\" does not match the total on the first row for this chain."),
@@ -49,7 +51,7 @@ pub(crate) fn validate_seqres(
                 );
             }
             if chain_sequence.len() != residues {
-                errors.push(PDBError::new(
+                errors.push(BoxedError::new(
                     ErrorLevel::LooseWarning,
                     "SEQRES residue total invalid",
                     format!("The residue total for SEQRES chain \"{chain_id}\" does not match the total residues found in the seqres records."),
@@ -66,7 +68,7 @@ pub(crate) fn validate_seqres(
                     }
                 }
                 if db_ref.pdb_position.end - offset + 1 != residues as isize {
-                    errors.push(PDBError::new(
+                    errors.push(BoxedError::new(
                         ErrorLevel::LooseWarning,
                         "SEQRES residue total invalid",
                         format!("The residue total ({}) for SEQRES chain \"{}\" does not match the total residues found in the dbref record ({}).", residues, chain_id, db_ref.pdb_position.end - offset + 1),
@@ -100,7 +102,7 @@ pub(crate) fn validate_seqres(
                                 }
                             }
                         } else {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                                 ErrorLevel::StrictWarning,
                                 "Multiple residues in SEQRES validation",
                                 format!("The residue index {index} in chain {chain_id} has no conformers or multiple with different names. The program cannot validate the SEQRES record in this way."),
@@ -122,7 +124,7 @@ pub(crate) fn validate_seqres(
                         );
                         chain.sort();
                     } else {
-                        errors.push(PDBError::new(
+                        errors.push(BoxedError::new(
                             ErrorLevel::LooseWarning,
                             "Chain residue invalid",
                             format!("The residue index {} value \"{:?}\" for Chain \"{}\" is not sequentially increasing, value expected: {}.", n.serial_number(), n.name(), chain_id, index),
@@ -167,7 +169,8 @@ pub(crate) fn validate_seqres(
                     // Create all highlights in the original SEQRES definition.
                     for inconsistency in inconsistencies {
                         let line_offset = inconsistency.1 .0 - used_lines.0;
-                        highlights.push((line_offset, 19 + 4 * inconsistency.1 .1, 3)); // Calculate the correct character position for the highlight (is index right now)
+                        let offset = 19 + 4 * inconsistency.1 .1;
+                        highlights.push((line_offset, offset, 3)); // Calculate the correct character position for the highlight (is index right now)
 
                         // Add the found residue to the list of found residues, in the correct line
                         if let Some(line) = found_residues
@@ -201,7 +204,14 @@ pub(crate) fn validate_seqres(
                                 })
                                 .0
                         })
-                        .collect();
+                        .fold(String::new(), |mut acc, item| {
+                            if acc.is_empty() {
+                                item
+                            } else {
+                                write!(&mut acc, "\n{item}").unwrap();
+                                acc
+                            }
+                        });
 
                     // Create the final error message. See example:
                     // LooseWarning: SEQRES inconsistent residues
@@ -215,14 +225,13 @@ pub(crate) fn validate_seqres(
                     // 1    |                     HOH HOH HOH HOH (found residues)
                     //      |
                     // The residues as defined in the SEQRES records do not match with the found residues, see above for details.
-                    errors.push(PDBError::new(
+                    errors.push(BoxedError::new(
                         ErrorLevel::LooseWarning,
                         "SEQRES inconsistent residues",
                         "The residues as defined in the SEQRES records do not match with the found residues, see above for details.",
-                        Context::Multiple { contexts: vec![
-                            (Some("SEQRES definition".to_string()), Context::RangeHighlights{start_linenumber, lines: context_lines.to_vec(), highlights}),
-                            (Some("Residues found in ATOM definitions".to_string()), Context::RangeHighlights { start_linenumber: 0, lines: found_residues, highlights: Vec::new() })]}
-                    ));
+                            Context::default().line_index(start_linenumber as u32).lines(0, context_lines.join("\n")).add_highlights(highlights)
+                        ).add_context( Context::default().lines(0,found_residues))
+                    );
                 }
             }
 
@@ -231,7 +240,7 @@ pub(crate) fn validate_seqres(
                 .filter(|r| !r.atoms().any(Atom::hetero)) // TODO: It filters out all residues with at least one HETATM, this should be changed to include in the total residues defined in HETNAM.
                 .count();
             if chain_sequence.len() != total_found {
-                errors.push(PDBError::new(
+                errors.push(BoxedError::new(
                     ErrorLevel::LooseWarning,
                     "SEQRES residue total invalid",
                     format!("The residue total ({}) for SEQRES chain \"{}\" does not match the total residues found in the chain ({}).", chain_sequence.len(), chain_id, total_found),

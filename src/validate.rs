@@ -1,8 +1,8 @@
-use crate::error::*;
-use crate::structs::*;
+use crate::{structs::*, ErrorLevel};
+use custom_error::{BoxedError, CreateError};
 
 /// Validate a given PDB file in terms of invariants that should be held up.
-/// It returns `PDBError`s with the warning messages.
+/// It returns `BoxedError`s with the warning messages.
 ///
 /// ## Invariants Tested
 /// * With multiple models the models should all contain atoms that correspond.
@@ -10,14 +10,14 @@ use crate::structs::*;
 /// ## Invariants Not Tested
 /// * Numbering of all structs, serial numbers should be unique. To enforce this the `renumber()` function should be called on the PDB struct.
 #[must_use]
-pub fn validate(pdb: &PDB) -> Vec<PDBError> {
+pub fn validate(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
     let mut errors = Vec::new();
     if pdb.model_count() > 1 {
         errors.append(&mut validate_models(pdb));
     }
 
     if pdb.atoms().next().is_none() {
-        errors.push(PDBError::new(
+        errors.push(BoxedError::new(
             ErrorLevel::BreakingError,
             "No Atoms",
             "No Atoms in the given PDB struct while validating.",
@@ -28,7 +28,7 @@ pub fn validate(pdb: &PDB) -> Vec<PDBError> {
 }
 
 /// Validates this models specifically for the PDB format.
-/// It returns `PDBError`s with the warning messages.
+/// It returns `BoxedError`s with the warning messages.
 /// It extends the validation specified in the [`validate`] function with PDB specific validations.
 ///
 /// ## Invariants Tested
@@ -37,11 +37,11 @@ pub fn validate(pdb: &PDB) -> Vec<PDBError> {
 /// ## Invariants Not Tested
 /// * Numbering of all structs, serial numbers should be unique. To enforce this the `renumber()` function should be called on the PDB struct.
 #[must_use]
-pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
+pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
     let mut errors = validate(pdb);
     for model in pdb.models() {
         if model.serial_number() > 9999 {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::LooseWarning,
                 "Model serial number too high",
                 format!(
@@ -53,7 +53,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
         }
         for chain in model.chains() {
             if chain.id().len() > 1 {
-                errors.push(PDBError::new(
+                errors.push(BoxedError::new(
                     ErrorLevel::LooseWarning,
                     "Chain id too long",
                     format!(
@@ -65,7 +65,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
             }
             for residue in chain.residues() {
                 if residue.serial_number() > 9999 {
-                    errors.push(PDBError::new(
+                    errors.push(BoxedError::new(
                         ErrorLevel::LooseWarning,
                         "Residue serial number too high",
                         format!(
@@ -77,7 +77,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                 }
                 if let Some(ic) = residue.insertion_code() {
                     if ic.len() > 1 {
-                        errors.push(PDBError::new(
+                        errors.push(BoxedError::new(
                             ErrorLevel::LooseWarning,
                             "Residue insertion code too long",
                             format!(
@@ -90,7 +90,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                 }
                 for conformer in residue.conformers() {
                     if conformer.name().len() > 3 {
-                        errors.push(PDBError::new(
+                        errors.push(BoxedError::new(
                             ErrorLevel::LooseWarning,
                             "Conformer name too long",
                             format!(
@@ -102,7 +102,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                     }
                     if let Some(alt_loc) = conformer.alternative_location() {
                         if alt_loc.len() > 1 {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "Conformer alternative location too long",
                                 format!(
@@ -115,7 +115,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                     }
                     if let Some((n, comment)) = conformer.modification() {
                         if n.len() > 3 {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                             ErrorLevel::LooseWarning,
                             "Residue modification name too long",
                             format!(
@@ -126,7 +126,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                         ));
                         }
                         if comment.len() > 41 {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                             ErrorLevel::LooseWarning,
                             "Residue modification comment too long",
                             format!(
@@ -139,7 +139,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                     }
                     for atom in conformer.atoms() {
                         if atom.name().len() > 4 {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "Atom name too long",
                                 format!(
@@ -150,7 +150,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ));
                         }
                         if atom.serial_number() > 99999 {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "Atom serial number too high",
                                 format!(
@@ -161,7 +161,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ));
                         }
                         if atom.charge() > 9 || atom.charge() < -9 {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "Atom charge out of bounds",
                                 format!(
@@ -172,7 +172,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ));
                         }
                         if atom.occupancy() > 999.99 {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "Atom occupancy out of bounds",
                                 format!(
@@ -183,7 +183,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ));
                         }
                         if atom.b_factor() > 999.99 {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "Atom b factor out of bounds",
                                 format!(
@@ -194,7 +194,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                             ));
                         }
                         if atom.x() > 9999.999 || atom.x() < -999.999 {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                             ErrorLevel::LooseWarning,
                             "Atom x position out of bounds",
                             format!(
@@ -205,7 +205,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                         ));
                         }
                         if atom.y() > 9999.999 || atom.y() < -999.999 {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                             ErrorLevel::LooseWarning,
                             "Atom y position out of bounds",
                             format!(
@@ -216,7 +216,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
                         ));
                         }
                         if atom.z() > 9999.999 || atom.z() < -999.999 {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                             ErrorLevel::LooseWarning,
                             "Atom z position out of bounds",
                             format!(
@@ -237,7 +237,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<PDBError> {
 /// Validate the models by enforcing that all models should contain the same atoms (with possibly different data).
 /// It checks this by matching all atoms (not hetatoms) for each model to see if they correspond (`Atom::correspond`).
 #[allow(clippy::unwrap_used)]
-fn validate_models(pdb: &PDB) -> Vec<PDBError> {
+fn validate_models(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
     let mut errors = Vec::new();
     let total_atoms = pdb.model(0).unwrap().atom_count();
     let normal_atoms = pdb
@@ -248,7 +248,7 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
         .count();
     for model in pdb.models().skip(1) {
         if model.atom_count() != total_atoms {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::LooseWarning,
                 "Invalid Model",
                 format!(
@@ -261,7 +261,7 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
             ));
             continue;
         } else if model.atoms().filter(|a| !a.hetero()).count() != normal_atoms {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::StrictWarning,
                 "Invalid Model",
                 format!(
@@ -278,7 +278,7 @@ fn validate_models(pdb: &PDB) -> Vec<PDBError> {
             let current_atom = model.atom(index).unwrap();
             let standard_atom = pdb.model(0).unwrap().atom(index).unwrap();
             if !standard_atom.corresponds(current_atom) {
-                errors.push(PDBError::new(
+                errors.push(BoxedError::new(
                     ErrorLevel::StrictWarning,
                     "Atoms in Models not corresponding",
                     format!(

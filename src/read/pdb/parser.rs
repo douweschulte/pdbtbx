@@ -1,21 +1,18 @@
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{BufRead, BufReader},
+};
+
+use custom_error::{BoxedError, Context, CreateError, ErrorKind, FullErrorContent, StaticErrorContent};
 use indexmap::IndexMap;
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 
-use crate::error::*;
-use crate::structs::*;
-use crate::validate::*;
-use crate::ReadOptions;
-use crate::StrictnessLevel;
+use crate::{structs::*, validate::*, ErrorLevel, ReadOptions, StrictnessLevel};
 
-use super::lexer::*;
-use super::lexitem::*;
-use super::temporary_structs::*;
-use super::validate::*;
+use super::{lexer::*, lexitem::*, temporary_structs::*, validate::*};
 
 /// Parse the given file into a PDB struct.
-/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `BoxedError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
 /// If you want to open a file from memory see [`ReadOptions::read_raw`]. There is also a function to open a mmCIF file directly
@@ -27,17 +24,23 @@ use super::validate::*;
 pub fn open_pdb(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>> {
     open_pdb_with_options(filename, ReadOptions::default().set_level(level))
 }
 
 /// Reads file.
-pub(crate) fn read_file(filename: &str) -> Result<BufReader<File>, Vec<PDBError>> {
+pub(crate) fn read_file(
+    filename: &str,
+) -> Result<BufReader<File>, Vec<BoxedError<'static, ErrorLevel>>> {
     // Open a file a use a buffered reader to minimise memory use while immediately lexing the line followed by adding it to the current PDB
     let file = if let Ok(f) = File::open(filename) {
         f
     } else {
-        return Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
+        return Err(vec![BoxedError::new(
+            ErrorLevel::BreakingError, 
+            "Could not open file", 
+            "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", 
+            Context::default().source(filename).to_owned())]);
     };
     let reader = BufReader::new(file);
     Ok(reader)
@@ -47,14 +50,14 @@ pub(crate) fn read_file(filename: &str) -> Result<BufReader<File>, Vec<PDBError>
 pub(crate) fn open_pdb_with_options(
     filename: impl AsRef<str>,
     options: &ReadOptions,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>> {
     let filename = filename.as_ref();
     let reader = read_file(filename)?;
-    open_pdb_raw_with_options(reader, Context::show(filename), options)
+    open_pdb_raw_with_options(reader, Context::default().source(filename).to_owned(), options)
 }
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
-/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `BoxedError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// ## Arguments
 /// * `input` - the input stream
@@ -71,9 +74,9 @@ pub(crate) fn open_pdb_with_options(
 )]
 pub fn open_pdb_raw<T>(
     input: BufReader<T>,
-    context: Context,
+    context: Context<'static>,
     level: StrictnessLevel,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>>
 where
     T: std::io::Read,
 {
@@ -87,9 +90,9 @@ where
 /// Note that the file type should be set explicitly with [`ReadOptions::set_format`].
 pub(crate) fn open_pdb_raw_with_options<T>(
     input: BufReader<T>,
-    context: Context,
+    context: Context<'static>,
     options: &ReadOptions,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>>
 where
     T: std::io::Read,
 {
@@ -116,24 +119,19 @@ where
     let mut chain_id_new = chain_iter.next();
     let mut id_iter = (0u128..).map(|i| i.to_string());
 
-    'all_lines: for (mut linenumber, read_line) in input.lines().enumerate() {
-        linenumber += 1; // 1 based indexing in files
-
+    'all_lines: for (linenumber, read_line) in input.lines().enumerate() {
         let line = if let Ok(l) = read_line {
             l
         } else {
-            return Err(vec![PDBError::new(
+            return Err(vec![BoxedError::new(
                 ErrorLevel::BreakingError,
                 "Could read line",
-                format!("Could not read line {linenumber} while parsing the input file."),
+                format!("Could not read line {} while parsing the input file.", linenumber + 1),
                 context,
             )]);
         };
-        let line_result = lex_line(&line, linenumber, options);
-        let line_context = Context::FullLine {
-            linenumber,
-            line: line.clone(),
-        };
+        let line_result = lex_line(&line, linenumber as u32, options).map_err(BoxedError::to_owned);
+        let line_context = Context::full_line(linenumber as u32, line.clone());
 
         // Then immediately add this lines information to the final PDB struct
         match line_result {
@@ -194,7 +192,7 @@ where
                         ) {
                             a
                         } else {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                                 ErrorLevel::InvalidatingError,
                                 "Invalid characters in atom creation",
                                 "Failed to create atom due to invalid characters or values",
@@ -231,7 +229,7 @@ where
                                             alt_loc.as_deref(),
                                             Some(atom),
                                         ) { c } else {
-                                            errors.push(PDBError::new(
+                                            errors.push(BoxedError::new(
                                                 ErrorLevel::InvalidatingError,
                                                 "Invalid characters in Conformer creation",
                                                 "Failed to create conformer due to invalid characters",
@@ -241,7 +239,7 @@ where
                                         },
                                     ),
                                 ) { r } else {
-                                    errors.push(PDBError::new(
+                                    errors.push(BoxedError::new(
                                         ErrorLevel::InvalidatingError,
                                         "Invalid characters in Residue creation",
                                         "Failed to create residue due to invalid characters",
@@ -269,7 +267,7 @@ where
                             }
                         }
                         if !found {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                                 ErrorLevel::InvalidatingError,
                                 "Atom not found for ANISOU record",
                                 format!("Could not find atom with serial number {s} (name: {n}) for anisotropic temperature factors"),
@@ -284,7 +282,7 @@ where
                                 match Chain::from_iter(id, residues.into_values()) {
                                     Some(chain) => chains.push(chain),
                                     None => {
-                                        errors.push(PDBError::new(
+                                        errors.push(BoxedError::new(
                                             ErrorLevel::InvalidatingError,
                                             "Invalid characters in Chain definition",
                                             "Failed to create chain due to invalid characters",
@@ -332,7 +330,7 @@ where
                         pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
                         pdb.symmetry = Symmetry::new(&spacegroup).map_or_else(
                             || {
-                                errors.push(PDBError::new(
+                                errors.push(BoxedError::new(
                                     ErrorLevel::InvalidatingError,
                                     "Invalid space group",
                                     format!("Invalid space group: \"{spacegroup}\""),
@@ -387,7 +385,7 @@ where
                             }
                         }
                         if !found {
-                            errors.push(PDBError::new(ErrorLevel::BreakingError, "Solitary DBREF2", format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{chain_id}'"), line_context.clone()));
+                            errors.push(BoxedError::new(ErrorLevel::BreakingError, "Solitary DBREF2", format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{chain_id}'"), line_context.clone()));
                         }
                     }
                     LexItem::Seqadv(
@@ -410,7 +408,7 @@ where
                                 comment,
                             ));
                         } else {
-                            errors.push(PDBError::new(
+                            errors.push(BoxedError::new(
                             ErrorLevel::StrictWarning,
                             "Sequence Difference Database not found",
                             format!("For this sequence difference (chain: {chain_id}) the corresponding database definition (DBREF) was not found, make sure the DBREF is located before the SEQADV"),
@@ -441,7 +439,7 @@ where
                                 match Chain::from_iter(id, residues.into_values()) {
                                     Some(chain) => chains.push(chain),
                                     None => {
-                                        errors.push(PDBError::new(
+                                        errors.push(BoxedError::new(
                                             ErrorLevel::InvalidatingError,
                                             "Invalid characters in Chain definition",
                                             "Failed to create chain due to invalid characters",
@@ -459,7 +457,7 @@ where
                         // The for now forgotten numbers will have to be added when the appropriate records are added to the parser
                         if num_remark != pdb.remark_count() {
                             errors.push(
-                            PDBError::new(
+                            BoxedError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
                                 format!("The number of REMARKS ({}) is different then posed in the MASTER Record ({})", pdb.remark_count(), num_remark),
@@ -469,7 +467,7 @@ where
                         }
                         if num_empty != 0 {
                             errors.push(
-                            PDBError::new(
+                            BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "MASTER checksum failed",
                                 format!("The empty checksum number is not empty (value: {num_empty}) while it is defined to be empty."),
@@ -491,7 +489,7 @@ where
                         }
                         if num_xform != xform {
                             errors.push(
-                            PDBError::new(
+                            BoxedError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
                                 format!("The number of coordinate transformation records ({xform}) is different then posed in the MASTER Record ({num_xform})"),
@@ -501,7 +499,7 @@ where
                         }
                         if num_coord != pdb.total_atom_count() {
                             errors.push(
-                            PDBError::new(
+                            BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "MASTER checksum failed",
                                 format!("The number of Atoms ({}) is different then posed in the MASTER Record ({})", pdb.total_atom_count(), num_coord),
@@ -523,11 +521,11 @@ where
             match Chain::from_iter(id, residues.into_values()) {
                 Some(chain) => chains.push(chain),
                 None => {
-                    errors.push(PDBError::new(
+                    errors.push(BoxedError::new(
                         ErrorLevel::InvalidatingError,
                         "Invalid characters in Chain definition",
                         "Failed to create chain due to invalid characters",
-                        Context::None,
+                        Context::none(),
                     ));
                 }
             }
@@ -537,11 +535,11 @@ where
 
     for (chain_id, reference, complete) in database_references {
         if !complete {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::StrictWarning,
                 "Solitary DBREF1 definition",
                 format!("The complementary DBREF2 was not found for this DBREF1 definition. For chain id '{}'. For database '{}' with ID code '{}'.", chain_id, reference.database.name, reference.database.id),
-                Context::None,
+                Context::none(),
             ));
         } else if let Some(chain) = pdb.chains_mut().find(|a| a.id() == chain_id) {
             chain.set_database_reference(reference);
@@ -551,7 +549,7 @@ where
     if let Some(scale) = temp_scale.get_matrix() {
         pdb.scale = Some(scale);
     } else if temp_scale.is_partly_set() {
-        errors.push(PDBError::new(
+        errors.push(BoxedError::new(
             ErrorLevel::StrictWarning,
             "Invalid SCALE definition",
             "Not all rows are set in the scale definition",
@@ -562,7 +560,7 @@ where
     if let Some(origx) = temp_origx.get_matrix() {
         pdb.origx = Some(origx);
     } else if temp_origx.is_partly_set() {
-        errors.push(PDBError::new(
+        errors.push(BoxedError::new(
             ErrorLevel::StrictWarning,
             "Invalid ORIGX definition",
             "Not all rows are set in the ORIGX definition",
@@ -574,7 +572,7 @@ where
         if let Some(m) = matrix.get_matrix() {
             pdb.add_mtrix(MtriX::new(index, m, given));
         } else {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::StrictWarning,
                 "Invalid MATRIX definition",
                 format!("Not all rows are set in the MtriX definition, number: {index}",),
@@ -592,12 +590,12 @@ where
         &seqres_lines,
         seqres_start_linenumber - 1, // Convert from 1 based to 0 based numbering
         &context,
-    ));
+    ).into_iter().map(BoxedError::to_owned));
     errors.extend(add_modifications(&mut pdb, modifications));
     errors.extend(add_bonds(&mut pdb, bonds));
     errors.extend(validate(&pdb));
 
-    if errors.iter().any(|e| e.fails(options.level)) {
+    if errors.iter().any(|e| e.get_kind().is_error(options.level)) {
         Err(errors)
     } else {
         Ok((pdb, errors))
@@ -605,12 +603,12 @@ where
 }
 
 /// Merge all warnings about long REMARK definitions into a single warning
-fn merge_long_remark_warnings(errors: &mut Vec<PDBError>) {
+fn merge_long_remark_warnings(errors: &mut Vec<BoxedError<'_, ErrorLevel>>) {
     // Weed out all remark too long warnings
     let mut remark_too_long = Vec::new();
     errors.retain(|error| {
-        if error.short_description() == "Remark too long" {
-            remark_too_long.push(error.context().clone());
+        if error.get_short_description() == "Remark too long" {
+            remark_too_long.push(error.get_contexts().clone());
             false
         } else {
             true
@@ -665,7 +663,7 @@ fn merge_long_remark_warnings(errors: &mut Vec<PDBError>) {
     }
     if !contexts.is_empty() {
         // Generate the final error message
-        errors.push(PDBError::new(
+        errors.push(BoxedError::new(
             ErrorLevel::GeneralWarning,
             "Remark too long",
             "The above REMARK definitions are too long, the max is 80 characters.",
@@ -675,7 +673,10 @@ fn merge_long_remark_warnings(errors: &mut Vec<PDBError>) {
 }
 
 /// Adds all MODRES records to the Atoms
-fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> Vec<PDBError> {
+fn add_modifications(
+    pdb: &mut PDB,
+    modifications: Vec<(Context, LexItem)>,
+) -> Vec<BoxedError<'static, ErrorLevel>> {
     let mut errors = Vec::new();
     for (context, item) in modifications {
         match item {
@@ -689,7 +690,7 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
                             residue.conformers_mut().find(|c| c.name() == res_name)
                         {
                             if let Err(e) = conformer.set_modification((std_name, comment)) {
-                                errors.push(PDBError::new(
+                                errors.push(BoxedError::new(
                                     ErrorLevel::InvalidatingError,
                                     "Invalid characters",
                                     e,
@@ -697,13 +698,13 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
                                 ));
                             }
                         } else {
-                            errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified residue in the PDB file.", context));
+                            errors.push(BoxedError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified residue in the PDB file.", context));
                         }
                     } else {
-                        errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified chain in the PDB file.", context));
+                        errors.push(BoxedError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified chain in the PDB file.", context));
                     }
                 } else {
-                    errors.push(PDBError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The chain presented in this MODRES record could not be found in the PDB file.", context));
+                    errors.push(BoxedError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The chain presented in this MODRES record could not be found in the PDB file.", context));
                 }
             }
             _ => {
@@ -716,7 +717,10 @@ fn add_modifications(pdb: &mut PDB, modifications: Vec<(Context, LexItem)>) -> V
 
 /// Adds all bonds to the PDB, has to be done after all Atoms are already in place
 #[allow(clippy::unwrap_used)]
-fn add_bonds(pdb: &mut PDB, bonds: Vec<(Context, LexItem)>) -> Vec<PDBError> {
+fn add_bonds(
+    pdb: &mut PDB,
+    bonds: Vec<(Context, LexItem)>,
+) -> Vec<BoxedError<'static, ErrorLevel>> {
     let mut errors = Vec::new();
     for (context, bond) in bonds {
         match bond {
@@ -745,7 +749,7 @@ fn add_bonds(pdb: &mut PDB, bonds: Vec<(Context, LexItem)>) -> Vec<PDBError> {
                 if let (Some(counter1), Some(counter2)) = (ref1, ref2) {
                     pdb.add_bond_counters(counter1, counter2, Bond::Disulfide);
                 } else {
-                    errors.push(PDBError::new(
+                    errors.push(BoxedError::new(
                         ErrorLevel::InvalidatingError,
                         "Could not find a bond partner",
                         "One of the atoms could not be found while parsing a disulfide bond.",

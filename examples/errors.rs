@@ -4,13 +4,13 @@ use pdbtbx::*;
 
 fn main() {
     let errors = vec![
-        PDBError::new(
+        BoxedError::new(
             ErrorLevel::BreakingError,
             "Error01:None",
             "General text with how the error came to be.",
             Context::None,
         ),
-        PDBError::new(
+        BoxedError::new(
             ErrorLevel::BreakingError,
             "Error02:Show",
             "General text with how the error came to be.",
@@ -18,7 +18,7 @@ fn main() {
                 line: "line with erroer".to_string(),
             },
         ),
-        PDBError::new(
+        BoxedError::new(
             ErrorLevel::BreakingError,
             "Error03:FullLine",
             "General text with how the error came to be.",
@@ -27,7 +27,7 @@ fn main() {
                 line: "line with erroer".to_string(),
             },
         ),
-        PDBError::new(
+        BoxedError::new(
             ErrorLevel::BreakingError,
             "Error04:Line",
             "General text with how the error came to be.",
@@ -38,7 +38,7 @@ fn main() {
                 length: 1,
             },
         ),
-        PDBError::new(
+        BoxedError::new(
             ErrorLevel::BreakingError,
             "Error05:Range",
             "General text with how the error came to be.",
@@ -51,7 +51,7 @@ fn main() {
                 offset: 0,
             },
         ),
-        PDBError::new(
+        BoxedError::new(
             ErrorLevel::BreakingError,
             "Error06:RangeHighlights",
             "General text with how the error came to be.",
@@ -64,7 +64,7 @@ fn main() {
                 highlights: vec![(0, 14, 1), (1, 16, 1)],
             },
         ),
-        PDBError::new(
+        BoxedError::new(
             ErrorLevel::BreakingError,
             "Error06:Multiple",
             "General text with how the error came to be.",

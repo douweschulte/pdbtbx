@@ -1,9 +1,10 @@
+use custom_error::{BoxedError, Context, CreateError};
 use flate2::Compression;
 
 use super::*;
 use crate::structs::PDB;
 use crate::StrictnessLevel;
-use crate::{check_extension, error::*};
+use crate::{check_extension, ErrorLevel};
 
 /// Save the given PDB struct to the given file, validating it beforehand.
 /// If validation gives rise to problems, use the `save_raw` function. The correct file
@@ -14,17 +15,17 @@ pub fn save(
     pdb: &PDB,
     filename: impl AsRef<str>,
     level: StrictnessLevel,
-) -> Result<(), Vec<PDBError>> {
+) -> Result<(), Vec<BoxedError<'static, ErrorLevel>>> {
     if check_extension(&filename, "pdb") {
         save_pdb(pdb, filename, level)
     } else if check_extension(&filename, "cif") {
         save_mmcif(pdb, filename, level)
     } else {
-        Err(vec![PDBError::new(
+        Err(vec![BoxedError::new(
             ErrorLevel::BreakingError,
             "Incorrect extension",
             "Could not determine the type of the given file, make it .pdb or .cif",
-            Context::show(filename.as_ref()),
+            Context::default().source(filename.as_ref().to_string()),
         )])
     }
 }
@@ -39,16 +40,16 @@ pub fn save_gz(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
     compression_level: Option<Compression>,
-) -> Result<(), Vec<PDBError>> {
+) -> Result<(), Vec<BoxedError<'static, ErrorLevel>>> {
     let filename = filename.as_ref();
     if check_extension(filename, "gz") {
         // safety check to prevent out of bounds indexing
         if filename.len() < 3 {
-            return Err(vec![PDBError::new(
+            return Err(vec![BoxedError::new(
                 ErrorLevel::BreakingError,
                 "Filename too short",
                 "Could not determine the type of the given file, make it .pdb.gz or .cif.gz",
-                Context::show(filename),
+                Context::default().source(filename.to_string()),
             )]);
         }
 
@@ -57,19 +58,19 @@ pub fn save_gz(
         } else if check_extension(&filename[..filename.len() - 3], "cif") {
             save_mmcif_gz(pdb, filename, level, compression_level)
         } else {
-            Err(vec![PDBError::new(
+            Err(vec![BoxedError::new(
                 ErrorLevel::BreakingError,
                 "Incorrect extension",
                 "Could not determine the type of the given file, make it .pdb.gz or .cif.gz",
-                Context::show(filename),
+                Context::default().source(filename.to_string()),
             )])
         }
     } else {
-        Err(vec![PDBError::new(
+        Err(vec![BoxedError::new(
             ErrorLevel::BreakingError,
             "Incorrect extension",
             "Could not determine the type of the given file, make it .pdb.gz or .cif.gz",
-            Context::show(filename),
+            Context::default().source(filename.to_string()),
         )])
     }
 }

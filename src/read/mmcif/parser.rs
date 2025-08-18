@@ -1,16 +1,14 @@
-use super::lexitem::*;
-use crate::error::*;
-use crate::structs::*;
-use crate::validate::*;
-use crate::ReadOptions;
-use crate::StrictnessLevel;
-use crate::TransformationMatrix;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::prelude::*;
 
+use custom_error::{BoxedError, CreateError};
+
+use super::lexitem::*;
+use crate::{structs::*, validate::*, ReadOptions, StrictnessLevel, TransformationMatrix};
+
 /// Parse the given mmCIF file into a PDB struct.
-/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `BoxedError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
 /// If you want to open a file from memory, see [`ReadOptions::read_raw`].
@@ -21,7 +19,7 @@ use std::io::prelude::*;
 pub fn open_mmcif(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>> {
     open_mmcif_with_options(filename, ReadOptions::default().set_level(level))
 }
 
@@ -29,12 +27,12 @@ pub fn open_mmcif(
 pub(crate) fn open_mmcif_with_options(
     filename: impl AsRef<str>,
     options: &ReadOptions,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>> {
     let filename = filename.as_ref();
     let file = if let Ok(f) = File::open(filename) {
         f
     } else {
-        return Err(vec![PDBError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
+        return Err(vec![BoxedError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
     };
     let reader = std::io::BufReader::new(file);
     open_mmcif_raw_with_options(reader, options)
@@ -49,7 +47,7 @@ pub(crate) fn open_mmcif_with_options(
 )]
 pub fn open_mmcif_bufread<T>(
     bufreader: std::io::BufReader<T>,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>>
 where
     T: Read,
 {
@@ -59,7 +57,7 @@ where
 }
 
 /// Parse the given mmCIF `&str` into a PDB struct. This allows opening mmCIF files directly from memory.
-/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `BoxedError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
 /// If you want to open a file see [`open_mmcif`]. There is also a function to open a PDB file directly
@@ -72,7 +70,7 @@ where
 pub fn open_mmcif_raw(
     input: &str,
     level: StrictnessLevel,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+) -> Result<(PDB, Vec<BoxedError<'_, ErrorLevel>>), Vec<BoxedError<'_, ErrorLevel>>> {
     match super::lexer::lex_cif(input) {
         Ok(data_block) => parse_mmcif(&data_block, level),
         Err(e) => Err(vec![e]),
@@ -83,7 +81,7 @@ pub fn open_mmcif_raw(
 pub(crate) fn open_mmcif_raw_with_options<T>(
     mut input: std::io::BufReader<T>,
     options: &ReadOptions,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>>
+) -> Result<(PDB, Vec<BoxedError<'_, ErrorLevel>>), Vec<BoxedError<'_, ErrorLevel>>>
 where
     T: Read,
 {
@@ -94,7 +92,7 @@ where
             Err(e) => Err(vec![e]),
         }
     } else {
-        Err(vec![PDBError::new(
+        Err(vec![BoxedError::new(
             ErrorLevel::BreakingError,
             "Buffer could not be read",
             "The buffer provided to `open_raw` could not be read to end.",
@@ -107,7 +105,7 @@ where
 fn parse_mmcif(
     input: &DataBlock,
     level: StrictnessLevel,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+) -> Result<(PDB, Vec<BoxedError<'_, ErrorLevel>>), Vec<BoxedError<'_, ErrorLevel>>> {
     parse_mmcif_with_options(input, ReadOptions::default().set_level(level))
 }
 
@@ -115,12 +113,12 @@ fn parse_mmcif(
 ///
 /// # Related
 /// See [`parse_mmcif`] for a version of this function with sane defaults.
-fn parse_mmcif_with_options(
-    input: &DataBlock,
+fn parse_mmcif_with_options<'a>(
+    input: &'a DataBlock,
     options: &ReadOptions,
-) -> Result<(PDB, Vec<PDBError>), Vec<PDBError>> {
+) -> Result<(PDB, Vec<BoxedError<'a, ErrorLevel>>), Vec<BoxedError<'a, ErrorLevel>>> {
     let mut pdb = PDB::default();
-    let mut errors: Vec<PDBError> = Vec::new();
+    let mut errors: Vec<BoxedError<'_, ErrorLevel>> = Vec::new();
     let mut unit_cell = UnitCell::default();
     let mut mtrix_id = None;
 
@@ -166,7 +164,7 @@ fn parse_mmcif_with_options(
                                 if pdb.symmetry == Symmetry::from_index(value) {
                                     None
                                 } else {
-                                    Some(PDBError::new(ErrorLevel::GeneralWarning, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
+                                    Some(BoxedError::new(ErrorLevel::GeneralWarning, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
                                 }
                             } else {
                                 None
@@ -181,7 +179,7 @@ fn parse_mmcif_with_options(
                                 if pdb.symmetry == Symmetry::new(value) {
                                     None
                                 } else {
-                                    Some(PDBError::new(ErrorLevel::GeneralWarning, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
+                                    Some(BoxedError::new(ErrorLevel::GeneralWarning, "Space group does not match", "The given space group does not match the space group earlier defined in this file.", context.clone()))
                                 }
                             } else {
                                 None
@@ -210,7 +208,7 @@ fn parse_mmcif_with_options(
                                         pdb.add_mtrix(MtriX::new(id, TransformationMatrix::identity(), true));
                                         None
                                     }
-                                    Ok(None) => Some(PDBError::new(
+                                    Ok(None) => Some(BoxedError::new(
                                         ErrorLevel::InvalidatingError,
                                         "MtriX with missing ID",
                                         "If a MtriX id is given it should be a number not a missing value.",
@@ -219,7 +217,7 @@ fn parse_mmcif_with_options(
                                 }
                             } else {
                                 mtrix_id.map_or_else(
-                                    || Some(PDBError::new(
+                                    || Some(BoxedError::new(
                                         ErrorLevel::InvalidatingError,
                                         "MtriX matrix given without ID",
                                         "The MtriX ID (`_struct_ncs_oper.id`) should be given before any matrix information is given.",
@@ -231,13 +229,13 @@ fn parse_mmcif_with_options(
                                             match get_text(&single.content, &context, None) {
                                                 Ok(Some(t)) if t == "given" => {mtrix.contained = true; None},
                                                 Ok(Some(t)) if t == "generate" => {mtrix.contained = false; None},
-                                                Ok(Some(_)) => Some(PDBError::new(
+                                                Ok(Some(_)) => Some(BoxedError::new(
                                                     ErrorLevel::InvalidatingError,
                                                     "MtriX code invalid",
                                                     "Only the values 'generate' and 'given' are valid for `_struct_ncs_oper.code`.",
                                                     context.clone(),
                                                     )),
-                                                _ => Some(PDBError::new(
+                                                _ => Some(BoxedError::new(
                                                     ErrorLevel::InvalidatingError,
                                                     "MtriX code invalid",
                                                     "The value for `_struct_ncs_oper.code` should be a textual value.",
@@ -279,19 +277,19 @@ fn parse_mmcif_with_options(
 }
 
 /// Parse the name of this matrix defining line to find out the index it is pointing at and change that value in the given matrix.
-fn parse_matrix(
+fn parse_matrix<'a>(
     name: &str,
-    value: Result<Option<f64>, PDBError>,
+    value: Result<Option<f64>, BoxedError<'_, ErrorLevel>>,
     matrix: &mut TransformationMatrix,
-    context: &Context,
-) -> Option<PDBError> {
+    context: &'a Context,
+) -> Option<BoxedError<'a, ErrorLevel>> {
     let get_index = |n| {
-        name.chars().nth_back(n).map_or_else(|| Err(PDBError::new(
+        name.chars().nth_back(n).map_or_else(|| Err(BoxedError::new(
                 ErrorLevel::InvalidatingError,
                 "Matrix definition too short",
                 "This matrix definition item name is too short to contain the matrix indices.",
                 context.clone(),
-            )), |c| c.to_digit(10).map_or_else(|| Err(PDBError::new(
+            )), |c| c.to_digit(10).map_or_else(|| Err(BoxedError::new(
                     ErrorLevel::InvalidatingError,
                     "Matrix item definition incorrect",
                     "There are no indices into the matrix. For example this is a valid name: `_database_PDB_matrix.origx[1][1]`",
@@ -336,7 +334,11 @@ fn flatten_result<T, E>(value: Result<Result<T, E>, E>) -> Result<T, E> {
 }
 
 /// Parse a loop containing atomic data
-fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec<PDBError>> {
+fn parse_atoms<'a>(
+    input: &'a Loop,
+    pdb: &mut PDB,
+    options: &ReadOptions,
+) -> Option<Vec<BoxedError<'a, ErrorLevel>>> {
     #[derive(Eq, PartialEq)]
     /// The mode of a column
     enum Mode {
@@ -387,12 +389,12 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
         26, ATOM_Z, "atom_site.Cartn_z", Optional;
     );
 
-    let positions_: Vec<Result<Option<usize>, PDBError>> = COLUMNS
+    let positions_: Vec<Result<Option<usize>, BoxedError<'_, ErrorLevel>>> = COLUMNS
         .iter()
         .map(|tag| (input.header.iter().position(|t| t == tag.1), tag))
         .map(|(pos, tag)| match pos {
             Some(p) => Ok(Some(p)),
-            None if tag.0 == Required => Err(PDBError::new(
+            None if tag.0 == Required => Err(BoxedError::new(
                 ErrorLevel::InvalidatingError,
                 "Missing column in coordinate atoms data loop",
                 "The above column is missing",
@@ -528,7 +530,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
             .flat_map(|l| l.iter())
             .any(Option::is_some)
         {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::StrictWarning,
                 "Atom aniso U definition incomplete",
                 "For a valid anisotropic temperature factor definition all columns (1,1 up to and including 3,3) have to be defined.",
@@ -571,7 +573,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
         } else if atom_type == "HETATM" {
             hetero = true;
         } else {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::InvalidatingError,
                 "Atom type not correct",
                 "The atom type should be ATOM or HETATM",
@@ -609,7 +611,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
                 (residue_name, alt_loc.as_deref()),
             );
         } else {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::InvalidatingError,
                 "Atom definition incorrect",
                 "The atom name and element should only contain valid characters.",
@@ -618,7 +620,7 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
         }
     }
     if !atom_ids_duplicated.is_empty() {
-        errors.push(PDBError::new(
+        errors.push(BoxedError::new(
             ErrorLevel::LooseWarning,
             "Duplicated atom IDs",
             format!(
@@ -637,11 +639,11 @@ fn parse_atoms(input: &Loop, pdb: &mut PDB, options: &ReadOptions) -> Option<Vec
 
 /// Get the Textual content of the value, if available
 #[allow(clippy::unnecessary_wraps)] // To make all the functions return the same type
-fn get_text(
+fn get_text<'a>(
     value: &Value,
-    _context: &Context,
+    _context: &'a Context,
     _column: Option<&str>,
-) -> Result<Option<String>, PDBError> {
+) -> Result<Option<String>, BoxedError<'a, ErrorLevel>> {
     match value {
         Value::Text(t) => Ok(Some(t.to_string())),
         Value::Inapplicable | Value::Unknown => Ok(None),
@@ -651,15 +653,15 @@ fn get_text(
 }
 
 /// Get the Numeric content of the value, if available, it also fails on `NumericWithUncertainty`
-fn get_f64(
+fn get_f64<'a>(
     value: &Value,
-    context: &Context,
+    context: &'a Context,
     column: Option<&str>,
-) -> Result<Option<f64>, PDBError> {
+) -> Result<Option<f64>, BoxedError<'a, ErrorLevel>> {
     match value {
         Value::Numeric(num) => Ok(Some(*num)),
         Value::Inapplicable | Value::Unknown => Ok(None),
-        _ => Err(PDBError::new(
+        _ => Err(BoxedError::new(
             ErrorLevel::InvalidatingError,
             "Not a number",
             column.map_or(String::new(), |v| {
@@ -671,17 +673,17 @@ fn get_f64(
 }
 
 /// Get the Numeric content of the value, if available, as a usize
-fn get_usize(
+fn get_usize<'a>(
     value: &Value,
-    context: &Context,
+    context: &'a Context,
     column: Option<&str>,
-) -> Result<Option<usize>, PDBError> {
+) -> Result<Option<usize>, BoxedError<'a, ErrorLevel>> {
     flatten_result(get_f64(value, context, column).map(|result| {
         result.map_or(Ok(None), |num| {
             if (0.0..usize::MAX as f64).contains(&num) && num.trunc() == num {
                 Ok(Some(num as usize))
             } else {
-                Err(PDBError::new(
+                Err(BoxedError::new(
                     ErrorLevel::InvalidatingError,
                     "Not an unsigned integer",
                     column.map_or(String::new(), |v| {
@@ -695,17 +697,17 @@ fn get_usize(
 }
 
 /// Get the Numeric content of the value, if available, as an isize
-fn get_isize(
+fn get_isize<'a>(
     value: &Value,
-    context: &Context,
+    context: &'a Context,
     column: Option<&str>,
-) -> Result<Option<isize>, PDBError> {
+) -> Result<Option<isize>, BoxedError<'a, ErrorLevel>> {
     flatten_result(get_f64(value, context, column).map(|result| {
         result.map_or(Ok(None), |num| {
             if (isize::MIN as f64..isize::MAX as f64).contains(&num) && num.trunc() == num {
                 Ok(Some(num as isize))
             } else {
-                Err(PDBError::new(
+                Err(BoxedError::new(
                     ErrorLevel::InvalidatingError,
                     "Not an integer",
                     column.map_or(String::new(), |v| {

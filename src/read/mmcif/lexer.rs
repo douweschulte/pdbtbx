@@ -1,9 +1,9 @@
 #![allow(clippy::unwrap_used)]
 use super::lexitem::*;
-use crate::error::*;
+use custom_error::{BoxedError, CreateError};
 
 /// Parse/lex a CIF file into CIF intermediate structure
-pub(crate) fn lex_cif(text: &str) -> Result<DataBlock, PDBError> {
+pub(crate) fn lex_cif(text: &str) -> Result<DataBlock, BoxedError<'_, ErrorLevel>> {
     parse_main(&mut Position {
         text,
         line: 1,
@@ -12,15 +12,17 @@ pub(crate) fn lex_cif(text: &str) -> Result<DataBlock, PDBError> {
 }
 
 /// Parse a CIF file
-fn parse_main(input: &mut Position<'_>) -> Result<DataBlock, PDBError> {
+fn parse_main<'a>(input: &'a mut Position<'a>) -> Result<DataBlock, BoxedError<'a, ErrorLevel>> {
     trim_comments_and_whitespace(input);
     parse_data_block(input)
 }
 
 /// Parse a data block, the main item of a CIF file
-fn parse_data_block(input: &mut Position<'_>) -> Result<DataBlock, PDBError> {
+fn parse_data_block<'a>(
+    input: &'a mut Position<'a>,
+) -> Result<DataBlock, BoxedError<'a, ErrorLevel>> {
     if start_with(input, "data_").is_none() {
-        return Err(PDBError::new(
+        return Err(BoxedError::new(
             ErrorLevel::BreakingError,
             "Data Block not opened",
             "The data block should be opened with \"data_\".",
@@ -43,7 +45,9 @@ fn parse_data_block(input: &mut Position<'_>) -> Result<DataBlock, PDBError> {
 }
 
 /// Parse a main loop item, a data item or a save frame
-fn parse_data_item_or_save_frame(input: &mut Position<'_>) -> Result<Item, PDBError> {
+fn parse_data_item_or_save_frame<'a>(
+    input: &'a mut Position<'a>,
+) -> Result<Item, BoxedError<'a, ErrorLevel>> {
     let start = *input;
     if start_with(input, "save_") == Some(()) {
         let mut frame = SaveFrame {
@@ -56,7 +60,7 @@ fn parse_data_item_or_save_frame(input: &mut Position<'_>) -> Result<Item, PDBEr
         if start_with(input, "save_") == Some(()) {
             Ok(Item::SaveFrame(frame))
         } else {
-            Err(PDBError::new(
+            Err(BoxedError::new(
                 ErrorLevel::BreakingError,
                 "No matching \'save_\' found",
                 "A save frame was instantiated but not closed (correctly)",
@@ -70,7 +74,9 @@ fn parse_data_item_or_save_frame(input: &mut Position<'_>) -> Result<Item, PDBEr
 }
 
 /// Parse a data item, a loop or a single item
-fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
+fn parse_data_item<'a>(
+    input: &'a mut Position<'a>,
+) -> Result<DataItem, BoxedError<'a, ErrorLevel>> {
     let start = *input;
     trim_comments_and_whitespace(input);
     if start_with(input, "loop_") == Some(()) {
@@ -99,7 +105,7 @@ fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
                 loop_value.data.push((&mut iter).take(columns).collect());
             }
         } else {
-            return Err(PDBError::new(
+            return Err(BoxedError::new(
                 ErrorLevel::BreakingError,
                 "Loop has incorrect number of data items",
                 format!("A loop has to have a number of data items which is divisible by the amount of headers but here there are {} items left.", values.len() % columns),
@@ -112,7 +118,7 @@ fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
         let name = parse_identifier(input);
         parse_value(input).map_or_else(
             |_| {
-                Err(PDBError::new(
+                Err(BoxedError::new(
                     ErrorLevel::BreakingError,
                     "No valid Value",
                     "A Data Item should contain a value or a loop.",
@@ -127,7 +133,7 @@ fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
             },
         )
     } else {
-        Err(PDBError::new(
+        Err(BoxedError::new(
             ErrorLevel::BreakingError,
             "No valid DataItem",
             "A Data Item should be a tag with a value or a loop.",
@@ -137,11 +143,11 @@ fn parse_data_item(input: &mut Position<'_>) -> Result<DataItem, PDBError> {
 }
 
 /// Parse a value for a data item or inside a loop
-fn parse_value(input: &mut Position<'_>) -> Result<Value, PDBError> {
+fn parse_value<'a>(input: &'a mut Position<'a>) -> Result<Value, BoxedError<'a, ErrorLevel>> {
     let start = *input;
     trim_comments_and_whitespace(input);
     if input.text.is_empty() {
-        Err(PDBError::new(
+        Err(BoxedError::new(
             ErrorLevel::BreakingError,
             "Empty value",
             "No text left",
@@ -154,7 +160,7 @@ fn parse_value(input: &mut Position<'_>) -> Result<Value, PDBError> {
         || start_with(&mut input.clone(), "save_").is_some()
         || start_with(&mut input.clone(), "stop_").is_some()
     {
-        Err(PDBError::new(
+        Err(BoxedError::new(
             ErrorLevel::BreakingError,
             "Use of reserved word",
             "\"data_\", \"global_\", \"loop_\", \"save_\" and \"stop_\" are reserved words.",
@@ -186,7 +192,7 @@ fn parse_value(input: &mut Position<'_>) -> Result<Value, PDBError> {
         let text = parse_identifier(input);
         parse_numeric(text).map_or_else(|| Ok(Value::Text(text.to_string())), Ok)
     } else {
-        Err(PDBError::new(
+        Err(BoxedError::new(
             ErrorLevel::BreakingError,
             "Invalid value",
             "A value should be \'.\', \'?\', a string (possibly enclosed), numeric or a multiline string (starting with \';\'), but here is an invalid character.",
@@ -375,7 +381,10 @@ fn trim_comments_and_whitespace(input: &mut Position<'_>) {
 
 /// Parse a piece of text enclosed by a char, it assumes the first position also matches the char.
 /// It will fail if it finds a newline in the text. SO it can be used for single or double quoted strings.
-fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PDBError> {
+fn parse_enclosed<'a>(
+    input: &mut Position<'a>,
+    pat: char,
+) -> Result<&'a str, BoxedError<'a, ErrorLevel>> {
     let mut chars_to_remove = 1; //Assume the first position is 'pat'
 
     for c in input.text.chars().skip(1) {
@@ -388,7 +397,7 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
             let mut end = *input;
             end.text = &input.text[(chars_to_remove + 1)..];
             end.column += chars_to_remove + 1;
-            return Err(PDBError::new(
+            return Err(BoxedError::new(
                 ErrorLevel::BreakingError,
                 "Invalid enclosing",
                 format!("This element was enclosed by \'{pat}\' but the closing delimiter was not found."),
@@ -401,7 +410,7 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
     let mut end = *input;
     end.text = &input.text[chars_to_remove..];
     end.column += chars_to_remove;
-    Err(PDBError::new(
+    Err(BoxedError::new(
         ErrorLevel::BreakingError,
         "Invalid enclosing",
         format!("This element was enclosed by \'{pat}\' but the closing delimiter was not found."),
@@ -410,7 +419,9 @@ fn parse_enclosed<'a>(input: &mut Position<'a>, pat: char) -> Result<&'a str, PD
 }
 
 /// Parse a multiline string <eol>; ...(text)... <eol>;, it assumes the first position is ';'
-fn parse_multiline_string<'a>(input: &mut Position<'a>) -> Result<&'a str, PDBError> {
+fn parse_multiline_string<'a>(
+    input: &mut Position<'a>,
+) -> Result<&'a str, BoxedError<'a, ErrorLevel>> {
     let mut chars_to_remove = 1; //Assume the first position is ';'
     let mut eol = false;
     let mut iter = input.text.chars().skip(1).peekable();
@@ -449,7 +460,7 @@ fn parse_multiline_string<'a>(input: &mut Position<'a>) -> Result<&'a str, PDBEr
     let mut end = *input;
     end.text = &input.text[chars_to_remove..];
     end.column += chars_to_remove;
-    Err(PDBError::new(
+    Err(BoxedError::new(
         ErrorLevel::BreakingError,
         "Multiline string not finished",
         "A multiline string has to be finished by \'<eol>;\'",

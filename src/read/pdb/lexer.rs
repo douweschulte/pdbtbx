@@ -1,22 +1,17 @@
+use std::{cmp, ops::Range, str::FromStr};
+
+use custom_error::{BoxedError, Context, CreateError};
+
 use super::lexitem::*;
-use super::utils::fast_parse_u64_from_string;
-use super::utils::fast_trim;
-use crate::error::*;
-use crate::reference_tables;
-use crate::ReadOptions;
-use crate::StrictnessLevel;
-
-use std::cmp;
-
-use std::ops::Range;
-use std::str::FromStr;
+use super::utils::{fast_parse_u64_from_string, fast_trim};
+use crate::{reference_tables, ErrorLevel, ReadOptions, StrictnessLevel};
 
 /// Lex a full line. It returns a lexed item with errors if it can lex something, otherwise it will only return an error.
 pub(crate) fn lex_line(
     line: &str,
-    linenumber: usize,
+    linenumber: u32,
     options: &ReadOptions,
-) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+) -> Result<(LexItem, Vec<BoxedError<'static, ErrorLevel>>), BoxedError<'static, ErrorLevel>> {
     match line.len() {
         len if len > 6 => match (options.only_atomic_coords, &line[..6]) {
             (_, "HETATM") => Ok(lex_atom(linenumber, line, true)),
@@ -61,19 +56,19 @@ pub(crate) fn lex_line(
 /// ## Fails
 /// It fails on incorrect numbers for the remark-type-number
 fn lex_remark(
-    linenumber: usize,
+    linenumber: u32,
     line: &str,
     level: StrictnessLevel,
-) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+) -> Result<(LexItem, Vec<BoxedError<'static, ErrorLevel>>), BoxedError<'static, ErrorLevel>> {
     let mut errors = Vec::new();
     let number = parse(linenumber, line, 7..10, &mut errors);
 
     if !reference_tables::valid_remark_type_number(number) {
-        errors.push(PDBError::new(
+        errors.push(BoxedError::new(
             ErrorLevel::LooseWarning,
             "Remark type number invalid",
             "The remark-type-number is not valid, see wwPDB v3.30 for all valid numbers.",
-            Context::line(linenumber, line, 7, 3),
+            Context::line(Some(linenumber), line, 7, 3).to_owned(),
         ));
     }
     Ok((
@@ -81,11 +76,11 @@ fn lex_remark(
             number,
             if line.len() > 11 {
                 if line.trim_end().len() >= 80 && level != StrictnessLevel::Loose {
-                    return Err(PDBError::new(
+                    return Err(BoxedError::new(
                         ErrorLevel::GeneralWarning,
                         "Remark too long",
                         "The REMARK is too long, the max is 80 characters.",
-                        Context::line(linenumber, line, 80, line.len() - 80),
+                        Context::line(Some(linenumber), line, 80, line.len() - 80).to_owned(),
                     ));
                 }
                 line[11..].trim_end().to_string()
@@ -100,13 +95,16 @@ fn lex_remark(
 /// Lex a HEADER
 /// ## Fails
 /// Fails if the header is too short (below 66 lines)
-fn lex_header(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>), PDBError> {
+fn lex_header<'a>(
+    linenumber: u32,
+    line: &str,
+) -> Result<(LexItem, Vec<BoxedError<'a, ErrorLevel>>), BoxedError<'a, ErrorLevel>> {
     if line.len() < 66 {
-        Err(PDBError::new(
+        Err(BoxedError::new(
             ErrorLevel::LooseWarning,
             "Header too short",
             "The HEADER is too short, the min is 66 characters.",
-            Context::line(linenumber, line, 11, line.len() - 11),
+            Context::line(Some(linenumber), line, 11, line.len() - 11).to_owned(),
         ))
     } else {
         Ok((
@@ -129,7 +127,7 @@ fn lex_header(linenumber: usize, line: &str) -> Result<(LexItem, Vec<PDBError>),
 /// Lex a MODEL
 /// ## Fails
 /// It fails on incorrect numbers for the serial number
-fn lex_model(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+fn lex_model(linenumber: u32, line: &str) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
     let number = parse(linenumber, line, 6..line.len(), &mut errors);
     (LexItem::Model(number), errors)
@@ -138,7 +136,11 @@ fn lex_model(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 /// Lex an ATOM
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> (LexItem, Vec<PDBError>) {
+fn lex_atom(
+    linenumber: u32,
+    line: &str,
+    hetero: bool,
+) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
 
     let x = parse(linenumber, line, 30..38, &mut errors);
@@ -190,7 +192,7 @@ fn lex_atom(linenumber: usize, line: &str, hetero: bool) -> (LexItem, Vec<PDBErr
 /// Lex an ANISOU
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_anisou(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+fn lex_anisou(linenumber: u32, line: &str) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
 
     let ai: isize = parse(linenumber, line, 28..35, &mut errors);
@@ -256,7 +258,7 @@ fn lex_anisou(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 /// Lex the basic structure of the ATOM/HETATM/ANISOU Records, to minimise code duplication
 #[allow(clippy::type_complexity)]
 fn lex_atom_basics(
-    linenumber: usize,
+    linenumber: u32,
     line: &str,
 ) -> (
     (
@@ -271,7 +273,7 @@ fn lex_atom_basics(
         String,
         isize,
     ),
-    Vec<PDBError>,
+    Vec<BoxedError<'static, ErrorLevel>>,
 ) {
     let mut errors = Vec::new();
     let chars: &[u8] = line.as_bytes();
@@ -291,18 +293,18 @@ fn lex_atom_basics(
     #[allow(clippy::unwrap_used)]
     if chars.len() >= 80 && !(chars[78] == b' ' && chars[79] == b' ') {
         if !chars[78].is_ascii_digit() {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::InvalidatingError,
                 "Atom charge is not correct",
                 "The charge is not numeric, it is defined to be [0-9][+-], so two characters in total.",
-                Context::line(linenumber, line, 78, 1),
+                Context::line(Some(linenumber), line, 78, 1).to_owned(),
             ));
         } else if chars[79] != b'-' && chars[79] != b'+' {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::InvalidatingError,
                 "Atom charge is not correct",
                 "The charge is not properly signed, it is defined to be [0-9][+-], so two characters in total.",
-                Context::line(linenumber, line, 79, 1),
+                Context::line(Some(linenumber), line, 79, 1).to_owned(),
             ));
         } else if let Some(digit) = chars[78].checked_sub(b'0').filter(|&n| n <= 9) {
             charge = digit as isize;
@@ -310,11 +312,11 @@ fn lex_atom_basics(
                 charge *= -1;
             }
         } else {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::InvalidatingError,
                 "Invalid charge digit",
                 format!("Expected a digit but found '{}'", chars[78] as char),
-                Context::line(linenumber, line, 78, 1),
+                Context::line(Some(linenumber), line, 78, 1).to_owned(),
             ));
         }
     }
@@ -347,7 +349,7 @@ fn lex_atom_basics(
 /// Lex a CRYST1
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_cryst(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+fn lex_cryst(linenumber: u32, line: &str) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
 
@@ -373,7 +375,11 @@ fn lex_cryst(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 /// Lex a SCALEn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_scale(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBError>) {
+fn lex_scale(
+    linenumber: u32,
+    line: &str,
+    row: usize,
+) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let (data, errors) = lex_transformation(linenumber, line);
 
     (LexItem::Scale(row, data), errors)
@@ -382,7 +388,11 @@ fn lex_scale(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBErro
 /// Lex an ORIGXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_origx(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBError>) {
+fn lex_origx(
+    linenumber: u32,
+    line: &str,
+    row: usize,
+) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let (data, errors) = lex_transformation(linenumber, line);
 
     (LexItem::OrigX(row, data), errors)
@@ -391,7 +401,11 @@ fn lex_origx(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBErro
 /// Lex an MTRIXn (where `n` is given)
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_mtrix(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBError>) {
+fn lex_mtrix(
+    linenumber: u32,
+    line: &str,
+    row: usize,
+) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
     let chars: Vec<char> = line.chars().collect();
 
@@ -405,7 +419,10 @@ fn lex_mtrix(linenumber: usize, line: &str, row: usize) -> (LexItem, Vec<PDBErro
 }
 
 /// Lexes the general structure of a transformation record (ORIGXn, SCALEn, MTRIXn)
-fn lex_transformation(linenumber: usize, line: &str) -> ([f64; 4], Vec<PDBError>) {
+fn lex_transformation(
+    linenumber: u32,
+    line: &str,
+) -> ([f64; 4], Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
 
     let a = parse(linenumber, line, 10..20, &mut errors);
@@ -419,7 +436,7 @@ fn lex_transformation(linenumber: usize, line: &str) -> ([f64; 4], Vec<PDBError>
 /// Lex a MASTER
 /// ## Fails
 /// It fails on incorrect numbers in the line
-fn lex_master(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+fn lex_master(linenumber: u32, line: &str) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
 
     let num_remark = parse(linenumber, line, 10..15, &mut errors);
@@ -455,7 +472,7 @@ fn lex_master(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 }
 
 /// Lexes a SEQRES record
-fn lex_seqres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+fn lex_seqres(linenumber: u32, line: &str) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
     let chars: &[u8] = line.as_bytes();
 
@@ -480,7 +497,7 @@ fn lex_seqres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 }
 
 /// Lexes a DBREF record
-fn lex_dbref(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+fn lex_dbref(linenumber: u32, line: &str) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
     let chars: &[u8] = line.as_bytes();
 
@@ -518,7 +535,7 @@ fn lex_dbref(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 }
 
 /// Lexes a DBREF1 record
-fn lex_dbref1(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+fn lex_dbref1(linenumber: u32, line: &str) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
     let chars: &[u8] = line.as_bytes();
 
@@ -544,7 +561,7 @@ fn lex_dbref1(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 }
 
 /// Lexes a DBREF2 record
-fn lex_dbref2(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+fn lex_dbref2(linenumber: u32, line: &str) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
 
     let id_code = parse(linenumber, line, 7..11, &mut errors);
@@ -566,7 +583,7 @@ fn lex_dbref2(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 }
 
 /// Lexes a SEQADV record
-fn lex_seqadv(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+fn lex_seqadv(linenumber: u32, line: &str) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
     let chars: &[u8] = line.as_bytes();
 
@@ -608,7 +625,7 @@ fn lex_seqadv(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 }
 
 /// Lexes a MODRES record
-fn lex_modres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+fn lex_modres(linenumber: u32, line: &str) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
     let chars: &[u8] = line.as_bytes();
 
@@ -639,7 +656,7 @@ fn lex_modres(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 }
 
 /// Parse a `SSBond` line into the corresponding `LexItem`
-fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
+fn lex_ssbond(linenumber: u32, line: &str) -> (LexItem, Vec<BoxedError<'static, ErrorLevel>>) {
     let mut errors = Vec::new();
     let chars: &[u8] = line.as_bytes();
     // The Serial number field is ignored
@@ -681,25 +698,25 @@ fn lex_ssbond(linenumber: usize, line: &str) -> (LexItem, Vec<PDBError>) {
 
 /// Parse a field from a line, with `T::default()` as fall back, leave errors in the given mutable vec.
 fn parse<T: FromStr + Default>(
-    linenumber: usize,
+    linenumber: u32,
     line: &str,
     range: Range<usize>,
-    errors: &mut Vec<PDBError>,
+    errors: &mut Vec<BoxedError<'static, ErrorLevel>>,
 ) -> T {
     parse_default(linenumber, line, range, errors, T::default())
 }
 
 /// Parse a field from a line, with the given default as fall back, leave errors in the given mutable vec
 fn fast_parse_u64(
-    linenumber: usize,
+    linenumber: u32,
     line: &str,
     range: Range<usize>,
-    errors: &mut Vec<PDBError>,
+    errors: &mut Vec<BoxedError<'static, ErrorLevel>>,
     default: u64,
 ) -> u64 {
     if line.len() < range.end {
-        let context = Context::line(linenumber, line, range.start, range.len());
-        errors.push(PDBError::new(
+        let context = Context::line(Some(linenumber), line, range.start, range.len()).to_owned();
+        errors.push(BoxedError::new(
             ErrorLevel::InvalidatingError,
             "Line too short",
             format!(
@@ -716,11 +733,11 @@ fn fast_parse_u64(
     match fast_parse_u64_from_string(&line[range]) {
         Ok(value) => value,
         Err(e) => {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::InvalidatingError,
                 "Invalid number format",
                 format!("Could not parse number: {e}"),
-                Context::line(linenumber, line, range_start, range_len),
+                Context::line(Some(linenumber), line, range_start, range_len).to_owned(),
             ));
             default
         }
@@ -728,15 +745,15 @@ fn fast_parse_u64(
 }
 /// Parse a field from a line, with the given default as fall back, leave errors in the given mutable vec
 fn parse_default<T: FromStr>(
-    linenumber: usize,
+    linenumber: u32,
     line: &str,
     range: Range<usize>,
-    errors: &mut Vec<PDBError>,
+    errors: &mut Vec<BoxedError<'static, ErrorLevel>>,
     default: T,
 ) -> T {
     if line.len() < range.end {
-        let context = Context::line(linenumber, line, range.start, range.len());
-        errors.push(PDBError::new(
+        let context = Context::line(Some(linenumber), line, range.start, range.len()).to_owned();
+        errors.push(BoxedError::new(
             ErrorLevel::InvalidatingError,
             "Line too short",
             format!(
@@ -751,29 +768,34 @@ fn parse_default<T: FromStr>(
     fast_trim(&line[range.clone()])
         .parse::<T>()
         .unwrap_or_else(|_| {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::InvalidatingError,
                 "Invalid data in field",
                 format!(
                     "The text presented is not of the right kind ({}).",
                     std::any::type_name::<T>()
                 ),
-                Context::line(linenumber, line, range.start, range.len()),
+                Context::line(Some(linenumber), line, range.start, range.len()).to_owned(),
             ));
             default
         })
 }
 
 /// Parse a character, needed because the trim in the generic `parse` could leave us with an empty character leading to errors
-fn parse_char(linenumber: usize, line: &[u8], position: usize, errors: &mut Vec<PDBError>) -> char {
+fn parse_char(
+    linenumber: u32,
+    line: &[u8],
+    position: usize,
+    errors: &mut Vec<BoxedError<'static, ErrorLevel>>,
+) -> char {
     if position > line.len() {
         let context = Context::line(
-            linenumber,
+            Some(linenumber),
             String::from_utf8(line.to_vec()).expect("Failed to convert bytes to string"),
             position,
             1,
         );
-        errors.push(PDBError::new(
+        errors.push(BoxedError::new(
             ErrorLevel::InvalidatingError,
             "Line too short",
             format!("This line was too short to parse the expected data field (at {position})"),

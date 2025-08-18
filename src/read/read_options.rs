@@ -1,6 +1,8 @@
 use std::{ffi::OsStr, path::Path};
 
-use crate::{Context, PDBError, StrictnessLevel};
+use custom_error::{BoxedError, Context, CreateError};
+
+use crate::StrictnessLevel;
 
 use super::general::ReadResult;
 
@@ -140,7 +142,7 @@ impl ReadOptions {
     /// The correct type will be determined based on the file extension.
     ///
     /// # Errors
-    /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+    /// Returns a `BoxedError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
     ///
     /// # Related
     /// If you want to open a file from memory, see [`ReadOptions::read_raw`].
@@ -167,7 +169,7 @@ impl ReadOptions {
         if let Some((file_format, is_compressed)) = guess_format(filename) {
             if is_compressed {
                 let file = std::fs::File::open(filename).map_err(|_| {
-                    vec![PDBError::new(
+                    vec![BoxedError::new(
                         crate::ErrorLevel::BreakingError,
                         "Could not open file",
                         "Could not open the given file, make sure it exists and you have the correct permissions",
@@ -178,10 +180,10 @@ impl ReadOptions {
                 let reader = std::io::BufReader::new(decompressor);
                 match file_format {
                     Format::Pdb => {
-                        super::pdb::open_pdb_raw_with_options(reader, Context::None, self)
+                        super::pdb::open_pdb_raw_with_options(reader, Context::none(), self)
                     }
                     Format::Mmcif => super::mmcif::open_mmcif_raw_with_options(reader, self),
-                    Format::Auto => Err(vec![PDBError::new(
+                    Format::Auto => Err(vec![BoxedError::new(
                         crate::ErrorLevel::BreakingError,
                         "Could not determine file type",
                         "Could not determine the type of the gzipped file, use .pdb.gz or .cif.gz",
@@ -192,7 +194,7 @@ impl ReadOptions {
                 match file_format {
                     Format::Pdb => super::pdb::open_pdb_with_options(path, self),
                     Format::Mmcif => super::mmcif::open_mmcif_with_options(path, self),
-                    Format::Auto => Err(vec![PDBError::new(
+                    Format::Auto => Err(vec![BoxedError::new(
                         crate::ErrorLevel::BreakingError,
                         "Incorrect extension",
                         "Could not determine the type of the given file extension, make it .pdb or .cif",
@@ -201,7 +203,7 @@ impl ReadOptions {
                 }
             }
         } else {
-            Err(vec![PDBError::new(
+            Err(vec![BoxedError::new(
                 crate::ErrorLevel::BreakingError,
                 "Missing extension",
                 "The given file does not have an extension, make it .pdb or .cif",
@@ -212,7 +214,7 @@ impl ReadOptions {
 
     /// Parse the input stream into a [`PDB`] struct. To allow for direct streaming from sources, like from RCSB.org.
     /// The file format **must** be set explicitly with [`ReadOptions::set_format`].
-    /// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+    /// Returns a `BoxedError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
     ///
     /// # Related
     /// If you want to open a file, see [`ReadOptions::read`].
@@ -221,13 +223,13 @@ impl ReadOptions {
         T: std::io::Read,
     {
         match self.format {
-            Format::Pdb => super::pdb::open_pdb_raw_with_options(input, Context::None, self),
+            Format::Pdb => super::pdb::open_pdb_raw_with_options(input, Context::none(), self),
             Format::Mmcif => super::mmcif::open_mmcif_raw_with_options(input, self),
-            Format::Auto => Err(vec![PDBError::new(
+            Format::Auto => Err(vec![BoxedError::new(
                 crate::ErrorLevel::BreakingError,
                 "Could not determine file type",
                 "Could not determine the type of the input stream, set self.format",
-                Context::None,
+                Context::none(),
             )]),
         }
     }

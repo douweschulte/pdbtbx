@@ -1,11 +1,13 @@
-use crate::error::*;
+use custom_error::BoxedError;
+
 use crate::structs::PDB;
-use crate::StrictnessLevel;
+use crate::{ErrorLevel, StrictnessLevel};
 
 use super::*;
 
 /// Standard return type for reading a file.
-pub(crate) type ReadResult = Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
+pub(crate) type ReadResult =
+    Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>>;
 
 /// Open an atomic data file, either PDB or mmCIF/PDBx.
 ///
@@ -15,7 +17,7 @@ pub(crate) type ReadResult = Result<(PDB, Vec<PDBError>), Vec<PDBError>>;
 /// `.pdb.gz`, `.pdb1.gz`, `.mmcif.gz`, or `.cif.gz`.
 ///
 /// # Errors
-/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `BoxedError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
 /// If you want to open a file from memory see [`ReadOptions::read_raw`].
@@ -30,7 +32,7 @@ pub fn open(filename: impl AsRef<str>) -> ReadResult {
 /// determined based on the file extension (.pdb.gz or .cif.gz).
 ///
 /// # Errors
-/// Returns a `PDBError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `BoxedError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
 /// If you want to open a file from memory see [`ReadOptions::read_raw`].
@@ -52,6 +54,7 @@ pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use custom_error::StaticErrorContent;
 
     #[test]
     #[cfg_attr(miri, ignore)]
@@ -66,8 +69,8 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn open_not_existing() {
         let pdb = open("file.pdb").expect_err("This file should not exist.");
-        assert_eq!(pdb[0].short_description(), "Could not open file");
+        assert_eq!(pdb[0].get_short_description(), "Could not open file");
         let cif = open("file.cif").expect_err("This file should not exist.");
-        assert_eq!(cif[0].short_description(), "Could not open file");
+        assert_eq!(cif[0].get_short_description(), "Could not open file");
     }
 }

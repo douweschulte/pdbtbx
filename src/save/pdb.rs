@@ -1,18 +1,18 @@
+use std::{
+    cmp,
+    fs::File,
+    io::{BufWriter, Write},
+    iter,
+};
+
+use custom_error::{BoxedError, Context, CreateError, ErrorKind, FullErrorContent};
+#[cfg(feature = "compression")]
+use flate2::{write::GzEncoder, Compression};
+
 use crate::structs::*;
 use crate::StrictnessLevel;
 use crate::TransformationMatrix;
-
-use std::cmp;
-use std::fs::File;
-use std::io::BufWriter;
-use std::iter;
-
-use std::io::Write;
-
-use crate::{validate, validate_pdb, Context, ErrorLevel, PDBError};
-
-#[cfg(feature = "compression")]
-use flate2::{write::GzEncoder, Compression};
+use crate::{validate, validate_pdb, ErrorLevel};
 
 /// Save the given PDB struct to the given file, validating it beforehand.
 ///
@@ -27,7 +27,7 @@ pub fn save_pdb(
     pdb: &PDB,
     filename: impl AsRef<str>,
     level: StrictnessLevel,
-) -> Result<(), Vec<PDBError>> {
+) -> Result<(), Vec<BoxedError<'static, ErrorLevel>>> {
     save_pdb_(pdb, filename, level, BufWriter::new)
 }
 
@@ -47,7 +47,7 @@ pub fn save_pdb_gz(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
     compression_level: Option<Compression>,
-) -> Result<(), Vec<PDBError>> {
+) -> Result<(), Vec<BoxedError<'static, ErrorLevel>>> {
     save_pdb_(pdb, filename, level, |file| {
         let encoder = match compression_level {
             Some(level) => GzEncoder::new(file, level),
@@ -63,7 +63,7 @@ fn save_pdb_<T, W>(
     filename: impl AsRef<str>,
     level: StrictnessLevel,
     writer: W,
-) -> Result<(), Vec<PDBError>>
+) -> Result<(), Vec<BoxedError<'static, ErrorLevel>>>
 where
     T: Write,
     W: FnOnce(File) -> BufWriter<T>,
@@ -74,7 +74,7 @@ where
     let mut errors = validate(pdb);
     errors.extend(validate_pdb(pdb));
     for error in &errors {
-        if error.fails(level) {
+        if error.get_kind().is_error(level) {
             return Err(errors);
         }
     }
@@ -83,11 +83,11 @@ where
     let file = match File::create(filename) {
         Ok(f) => f,
         Err(_e) => {
-            errors.push(PDBError::new(
+            errors.push(BoxedError::new(
                 ErrorLevel::BreakingError,
                 "Could not open file",
                 "Could not open the file for writing, make sure you have permission for this file and no other program is currently using it.",
-                Context::show(filename)
+                Context::default().source(filename.to_string())
             ));
             return Err(errors);
         }

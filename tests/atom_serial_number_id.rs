@@ -3,7 +3,7 @@
 use itertools::Itertools;
 use pdbtbx::*;
 
-fn get_structure_with_errors(filename: &str) -> (PDB, Vec<PDBError>) {
+fn get_structure_with_errors(filename: &str) -> (PDB, Vec<BoxedError>) {
     let read_result = ReadOptions::default()
         .set_level(StrictnessLevel::Loose)
         .read(filename);

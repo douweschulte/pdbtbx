@@ -1,15 +1,17 @@
 #![allow(dead_code)]
 
-use std::collections::HashMap;
-use std::fmt;
+use std::{collections::HashMap, fmt};
 
+use custom_error::{BoxedError, Context, CreateError};
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
 
-use crate::structs::hierarchy::*;
-use crate::transformation::TransformationMatrix;
-use crate::{reference_tables, PDBError};
-use crate::{structs::*, Context};
+use crate::{
+    reference_tables,
+    structs::{hierarchy::*, *},
+    transformation::TransformationMatrix,
+    ErrorLevel,
+};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
@@ -113,18 +115,22 @@ impl PDB {
     ///
     /// ## Fails
     /// It fails if the text if too long, the text contains invalid characters or the remark-type-number is not valid (wwPDB v3.30).
-    pub fn add_remark(&mut self, remark_type: usize, remark_text: String) -> Result<(), PDBError> {
+    pub fn add_remark(
+        &mut self,
+        remark_type: usize,
+        remark_text: String,
+    ) -> Result<(), BoxedError<'static, ErrorLevel>> {
         let context = Context::show(format!("REMARK {remark_type:3} {remark_text}"));
         if !reference_tables::valid_remark_type_number(remark_type) {
-            return Err(PDBError::new(
-                crate::ErrorLevel::InvalidatingError,
+            return Err(BoxedError::new(
+                ErrorLevel::InvalidatingError,
                 "Remark-type-number invalid",
                 "The given remark-type-number is not valid, see wwPDB v3.30 for valid remark-type-numbers",
                 context));
         }
         if !valid_text(&remark_text) {
-            return Err(PDBError::new(
-                crate::ErrorLevel::InvalidatingError,
+            return Err(BoxedError::new(
+                ErrorLevel::InvalidatingError,
                 "Remark text invalid",
                 "The given remark text contains invalid characters.",
                 context,
@@ -133,8 +139,8 @@ impl PDB {
 
         // As the text can only contain ASCII len() on strings is fine (it returns the length in bytes)
         let res = if remark_text.len() > 70 {
-            Err(PDBError::new(
-                crate::ErrorLevel::LooseWarning,
+            Err(BoxedError::new(
+                ErrorLevel::LooseWarning,
                 "Remark text too long",
                 format!("The given remark text is too long, the maximal length is 68 characters, the given string is {} characters.", remark_text.len()),
                 context))
