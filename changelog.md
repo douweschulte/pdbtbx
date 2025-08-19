@@ -8,6 +8,8 @@ All versions are properly annotated on [github](https://github.com/douweschulte/
 * Added bond inference (Thanks to David-OConnor)
 * Updated mismatched symmetry group error to warning (Thanks to David-OConnor)
 * Removed dependency doc_cfg to prevent double dependencies in the tree
+* Moved the `PDBError` into a separate crate (shared with another project: rusteomics/mzcore).
+  This changes quite a lot of the exposed API but should be relatively easy to adapt to.
 
 ### v0.12.0
 * Added unified file read logic, see `ReadOptions` (Thanks to y1zhou and OWisset)
