@@ -18,7 +18,9 @@ fn run_pdbs() {
         .into_string()
         .unwrap()
         + &String::from(std::path::MAIN_SEPARATOR);
-    fs::create_dir(dump_dir.clone()).unwrap();
+    if !Path::new(&dump_dir).exists() {
+        fs::create_dir(dump_dir.clone()).unwrap();
+    }
     println!("{pdb_dir:?}");
 
     save_invalid_name();

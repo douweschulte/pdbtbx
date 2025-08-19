@@ -587,7 +587,7 @@ where
         &mut pdb,
         sequence,
         &seqres_lines,
-        seqres_start_linenumber - 1, // Convert from 1 based to 0 based numbering
+        seqres_start_linenumber, // Convert from 1 based to 0 based numbering
         &context,
     ).into_iter().map(BoxedError::to_owned), options.level);
     combine_errors(&mut errors, add_modifications(&mut pdb, modifications, options.level), options.level);
