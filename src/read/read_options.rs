@@ -173,7 +173,7 @@ impl ReadOptions {
                         crate::ErrorLevel::BreakingError,
                         "Could not open file",
                         "Could not open the given file, make sure it exists and you have the correct permissions",
-                        Context::show(filename),
+                        Context::default().source(filename).to_owned(),
                     )]
                 })?;
                 let decompressor = flate2::read::GzDecoder::new(file);
@@ -187,7 +187,7 @@ impl ReadOptions {
                         crate::ErrorLevel::BreakingError,
                         "Could not determine file type",
                         "Could not determine the type of the gzipped file, use .pdb.gz or .cif.gz",
-                        Context::show(filename),
+                        Context::default().source(filename).to_owned(),
                     )]),
                 }
             } else {
@@ -198,7 +198,7 @@ impl ReadOptions {
                         crate::ErrorLevel::BreakingError,
                         "Incorrect extension",
                         "Could not determine the type of the given file extension, make it .pdb or .cif",
-                        Context::show(path.as_ref()),
+                        Context::default().source(filename).to_owned(),
                     )])
                 }
             }
@@ -207,7 +207,7 @@ impl ReadOptions {
                 crate::ErrorLevel::BreakingError,
                 "Missing extension",
                 "The given file does not have an extension, make it .pdb or .cif",
-                Context::show(path.as_ref()),
+                Context::default().source(filename).to_owned(),
             )])
         }
     }

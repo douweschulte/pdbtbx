@@ -1,26 +1,30 @@
 #![allow(clippy::unwrap_used)]
+use crate::ErrorLevel;
+
 use super::lexitem::*;
-use custom_error::{BoxedError, CreateError};
+use custom_error::{BoxedError, Context, CreateError, FilePosition};
 
 /// Parse/lex a CIF file into CIF intermediate structure
-pub(crate) fn lex_cif(text: &str) -> Result<DataBlock, BoxedError<'_, ErrorLevel>> {
-    parse_main(&mut Position {
+pub(crate) fn lex_cif(text: &str) -> Result<DataBlock, BoxedError<'static, ErrorLevel>> {
+    parse_main(&mut FilePosition {
         text,
-        line: 1,
+        line_index: 1,
         column: 1,
     })
 }
 
 /// Parse a CIF file
-fn parse_main<'a>(input: &'a mut Position<'a>) -> Result<DataBlock, BoxedError<'a, ErrorLevel>> {
+fn parse_main<'a>(
+    input: &'a mut FilePosition<'a>,
+) -> Result<DataBlock, BoxedError<'static, ErrorLevel>> {
     trim_comments_and_whitespace(input);
     parse_data_block(input)
 }
 
 /// Parse a data block, the main item of a CIF file
-fn parse_data_block<'a>(
-    input: &'a mut Position<'a>,
-) -> Result<DataBlock, BoxedError<'a, ErrorLevel>> {
+fn parse_data_block(
+    input: &mut FilePosition<'_>,
+) -> Result<DataBlock, BoxedError<'static, ErrorLevel>> {
     if start_with(input, "data_").is_none() {
         return Err(BoxedError::new(
             ErrorLevel::BreakingError,
@@ -45,9 +49,9 @@ fn parse_data_block<'a>(
 }
 
 /// Parse a main loop item, a data item or a save frame
-fn parse_data_item_or_save_frame<'a>(
-    input: &'a mut Position<'a>,
-) -> Result<Item, BoxedError<'a, ErrorLevel>> {
+fn parse_data_item_or_save_frame(
+    input: &mut FilePosition<'_>,
+) -> Result<Item, BoxedError<'static, ErrorLevel>> {
     let start = *input;
     if start_with(input, "save_") == Some(()) {
         let mut frame = SaveFrame {
@@ -64,7 +68,7 @@ fn parse_data_item_or_save_frame<'a>(
                 ErrorLevel::BreakingError,
                 "No matching \'save_\' found",
                 "A save frame was instantiated but not closed (correctly)",
-                Context::range(&start, input),
+                Context::range(&start, input).to_owned(),
             ))
         }
     } else {
@@ -74,9 +78,9 @@ fn parse_data_item_or_save_frame<'a>(
 }
 
 /// Parse a data item, a loop or a single item
-fn parse_data_item<'a>(
-    input: &'a mut Position<'a>,
-) -> Result<DataItem, BoxedError<'a, ErrorLevel>> {
+fn parse_data_item(
+    input: &mut FilePosition<'_>,
+) -> Result<DataItem, BoxedError<'static, ErrorLevel>> {
     let start = *input;
     trim_comments_and_whitespace(input);
     if start_with(input, "loop_") == Some(()) {
@@ -109,7 +113,7 @@ fn parse_data_item<'a>(
                 ErrorLevel::BreakingError,
                 "Loop has incorrect number of data items",
                 format!("A loop has to have a number of data items which is divisible by the amount of headers but here there are {} items left.", values.len() % columns),
-                Context::range(&start, input),
+                Context::range(&start, input).to_owned(),
             ));
         }
 
@@ -122,7 +126,7 @@ fn parse_data_item<'a>(
                     ErrorLevel::BreakingError,
                     "No valid Value",
                     "A Data Item should contain a value or a loop.",
-                    Context::range(&start, input),
+                    Context::range(&start, input).to_owned(),
                 ))
             },
             |value| {
@@ -143,7 +147,7 @@ fn parse_data_item<'a>(
 }
 
 /// Parse a value for a data item or inside a loop
-fn parse_value<'a>(input: &'a mut Position<'a>) -> Result<Value, BoxedError<'a, ErrorLevel>> {
+fn parse_value(input: &mut FilePosition<'_>) -> Result<Value, BoxedError<'static, ErrorLevel>> {
     let start = *input;
     trim_comments_and_whitespace(input);
     if input.text.is_empty() {
@@ -153,7 +157,7 @@ fn parse_value<'a>(input: &'a mut Position<'a>) -> Result<Value, BoxedError<'a, 
             "No text left",
             Context::position(input),
         ))
-        // The following are reserved words, and need to be checked with a branching position as otherwise it would consume the keyword if matched
+        // The following are reserved words, and need to be checked with a branching FilePosition as otherwise it would consume the keyword if matched
     } else if start_with(&mut input.clone(), "data_").is_some()
         || start_with(&mut input.clone(), "global_").is_some()
         || start_with(&mut input.clone(), "loop_").is_some()
@@ -168,7 +172,7 @@ fn parse_value<'a>(input: &'a mut Position<'a>) -> Result<Value, BoxedError<'a, 
         ))
     } else if input.text.starts_with('.') {
         // Technically there could be a number starting with a dot...
-        let mut branch: Position<'_> = *input;
+        let mut branch: FilePosition<'_> = *input;
         if let Some(value) = parse_numeric(parse_identifier(&mut branch)) {
             input.text = branch.text;
             input.column = branch.column;
@@ -327,14 +331,14 @@ fn parse_numeric(text: &str) -> Option<Value> {
 }
 
 /// Parse an identifier, basically all chars until the next whitespace
-fn parse_identifier<'a>(input: &mut Position<'a>) -> &'a str {
+fn parse_identifier<'a>(input: &mut FilePosition<'a>) -> &'a str {
     let mut chars_to_remove = 0;
 
     for c in input.text.chars() {
         if c.is_ascii_whitespace() {
             let identifier = &input.text[..chars_to_remove];
             input.text = &input.text[chars_to_remove..];
-            input.column += chars_to_remove;
+            input.column += chars_to_remove as u32;
             return identifier;
         }
         chars_to_remove += 1;
@@ -342,14 +346,14 @@ fn parse_identifier<'a>(input: &mut Position<'a>) -> &'a str {
 
     let identifier = input.text;
     input.text = "";
-    input.column += chars_to_remove;
+    input.column += chars_to_remove as u32;
     identifier
 }
 
 /// Check if the input starts with the given pattern, it is case insensitive by
 /// lowercasing the input string, so the pattern should be lowercase otherwise
 /// it can never match.
-fn start_with(input: &mut Position<'_>, pattern: &str) -> Option<()> {
+fn start_with(input: &mut FilePosition<'_>, pattern: &str) -> Option<()> {
     if input.text.len() < pattern.len() {
         None
     } else {
@@ -359,13 +363,13 @@ fn start_with(input: &mut Position<'_>, pattern: &str) -> Option<()> {
             }
         }
         input.text = &input.text[pattern.len()..];
-        input.column += pattern.len();
+        input.column += pattern.len() as u32;
         Some(())
     }
 }
 
 /// Trim all allowed whitespace (including comments)
-fn trim_comments_and_whitespace(input: &mut Position<'_>) {
+fn trim_comments_and_whitespace(input: &mut FilePosition<'_>) {
     loop {
         trim_whitespace(input);
         if input.text.is_empty() {
@@ -379,50 +383,50 @@ fn trim_comments_and_whitespace(input: &mut Position<'_>) {
     }
 }
 
-/// Parse a piece of text enclosed by a char, it assumes the first position also matches the char.
+/// Parse a piece of text enclosed by a char, it assumes the first FilePosition also matches the char.
 /// It will fail if it finds a newline in the text. SO it can be used for single or double quoted strings.
 fn parse_enclosed<'a>(
-    input: &mut Position<'a>,
+    input: &mut FilePosition<'a>,
     pat: char,
-) -> Result<&'a str, BoxedError<'a, ErrorLevel>> {
-    let mut chars_to_remove = 1; //Assume the first position is 'pat'
+) -> Result<&'a str, BoxedError<'static, ErrorLevel>> {
+    let mut chars_to_remove: u32 = 1; //Assume the first FilePosition is 'pat'
 
     for c in input.text.chars().skip(1) {
         if c == pat {
-            let trimmed = &input.text[1..chars_to_remove];
-            input.text = &input.text[(chars_to_remove + 1)..];
+            let trimmed = &input.text[1..chars_to_remove as usize];
+            input.text = &input.text[(chars_to_remove + 1) as usize..];
             input.column += chars_to_remove + 1;
             return Ok(trimmed);
         } else if c == '\n' || c == '\r' {
             let mut end = *input;
-            end.text = &input.text[(chars_to_remove + 1)..];
+            end.text = &input.text[(chars_to_remove + 1) as usize..];
             end.column += chars_to_remove + 1;
             return Err(BoxedError::new(
                 ErrorLevel::BreakingError,
                 "Invalid enclosing",
                 format!("This element was enclosed by \'{pat}\' but the closing delimiter was not found."),
-                Context::range(input, &end),
+                Context::range(input, &end).to_owned(),
             ));
         }
         chars_to_remove += 1;
     }
 
     let mut end = *input;
-    end.text = &input.text[chars_to_remove..];
+    end.text = &input.text[chars_to_remove as usize..];
     end.column += chars_to_remove;
     Err(BoxedError::new(
         ErrorLevel::BreakingError,
         "Invalid enclosing",
         format!("This element was enclosed by \'{pat}\' but the closing delimiter was not found."),
-        Context::range(input, &end),
+        Context::range(input, &end).to_owned(),
     ))
 }
 
-/// Parse a multiline string <eol>; ...(text)... <eol>;, it assumes the first position is ';'
+/// Parse a multiline string <eol>; ...(text)... <eol>;, it assumes the first FilePosition is ';'
 fn parse_multiline_string<'a>(
-    input: &mut Position<'a>,
-) -> Result<&'a str, BoxedError<'a, ErrorLevel>> {
-    let mut chars_to_remove = 1; //Assume the first position is ';'
+    input: &mut FilePosition<'a>,
+) -> Result<&'a str, BoxedError<'static, ErrorLevel>> {
+    let mut chars_to_remove = 1; //Assume the first FilePosition is ';'
     let mut eol = false;
     let mut iter = input.text.chars().skip(1).peekable();
 
@@ -437,7 +441,7 @@ fn parse_multiline_string<'a>(
                 chars_to_remove += 1;
                 let _ = iter.next();
             }
-            input.line += 1;
+            input.line_index += 1;
             input.column = 1;
             chars_to_remove += 1;
             eol = true;
@@ -446,7 +450,7 @@ fn parse_multiline_string<'a>(
                 chars_to_remove += 1;
                 let _ = iter.next();
             }
-            input.line += 1;
+            input.line_index += 1;
             input.column = 1;
             chars_to_remove += 1;
             eol = true;
@@ -459,17 +463,17 @@ fn parse_multiline_string<'a>(
 
     let mut end = *input;
     end.text = &input.text[chars_to_remove..];
-    end.column += chars_to_remove;
+    end.column += chars_to_remove as u32;
     Err(BoxedError::new(
         ErrorLevel::BreakingError,
         "Multiline string not finished",
         "A multiline string has to be finished by \'<eol>;\'",
-        Context::range(input, &end),
+        Context::range(input, &end).to_owned(),
     ))
 }
 
 /// Skip forward until the next eol, \r\n and \n\r are but consumed in full
-fn skip_to_eol(input: &mut Position<'_>) {
+fn skip_to_eol(input: &mut FilePosition<'_>) {
     let mut chars_to_remove = 1;
     let mut iter = input.text.chars().skip(1).peekable();
 
@@ -478,7 +482,7 @@ fn skip_to_eol(input: &mut Position<'_>) {
             if matches!(iter.peek(), Some('\r')) {
                 chars_to_remove += 1;
             }
-            input.line += 1;
+            input.line_index += 1;
             input.column = 1;
             chars_to_remove += 1;
             input.text = &input.text[chars_to_remove..];
@@ -487,7 +491,7 @@ fn skip_to_eol(input: &mut Position<'_>) {
             if matches!(iter.peek(), Some('\n')) {
                 chars_to_remove += 1;
             }
-            input.line += 1;
+            input.line_index += 1;
             input.column = 1;
             chars_to_remove += 1;
             input.text = &input.text[chars_to_remove..];
@@ -497,11 +501,11 @@ fn skip_to_eol(input: &mut Position<'_>) {
     }
 
     input.text = "";
-    input.column += chars_to_remove;
+    input.column += chars_to_remove as u32;
 }
 
 /// Trim all whitespace (<space, \t, <eol>) from the start of the string
-fn trim_whitespace(input: &mut Position<'_>) {
+fn trim_whitespace(input: &mut FilePosition<'_>) {
     let mut chars_to_remove = 0;
     let mut iter = input.text.chars().peekable();
 
@@ -514,7 +518,7 @@ fn trim_whitespace(input: &mut Position<'_>) {
                 chars_to_remove += 1;
                 let _ = iter.next();
             }
-            input.line += 1;
+            input.line_index += 1;
             input.column = 1;
             chars_to_remove += 1;
         } else if c == '\r' {
@@ -522,7 +526,7 @@ fn trim_whitespace(input: &mut Position<'_>) {
                 chars_to_remove += 1;
                 let _ = iter.next();
             }
-            input.line += 1;
+            input.line_index += 1;
             input.column = 1;
             chars_to_remove += 1;
         } else {
@@ -543,6 +547,8 @@ const fn is_ordinary(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use custom_error::StaticErrorContent;
+
     use super::*;
 
     macro_rules! assert_numeric {
@@ -571,174 +577,174 @@ mod tests {
 
     #[test]
     fn trim_whitespace_only_spaces() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "    a",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         trim_whitespace(&mut pos);
         assert_eq!(pos.text, "a");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 5);
     }
 
     #[test]
     fn trim_whitespace_tabs_and_spaces() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: " \t \t a",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         trim_whitespace(&mut pos);
         assert_eq!(pos.text, "a");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 6);
     }
 
     #[test]
     fn trim_whitespace_newlines() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: " \t \t \n \r \n\r \r\na",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         trim_whitespace(&mut pos);
         assert_eq!(pos.text, "a");
-        assert_eq!(pos.line, 5);
+        assert_eq!(pos.line_index, 5);
         assert_eq!(pos.column, 1);
     }
 
     #[test]
     fn skip_to_eol_test_n() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "bla bla bla\n\na",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         skip_to_eol(&mut pos);
         assert_eq!(pos.text, "\na");
-        assert_eq!(pos.line, 2);
+        assert_eq!(pos.line_index, 2);
         assert_eq!(pos.column, 1);
     }
 
     #[test]
     fn skip_to_eol_test_r() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "bla bla bla\r\ra",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         skip_to_eol(&mut pos);
         assert_eq!(pos.text, "\ra");
-        assert_eq!(pos.line, 2);
+        assert_eq!(pos.line_index, 2);
         assert_eq!(pos.column, 1);
     }
 
     #[test]
     fn skip_to_eol_test_nr() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "bla bla bla\n\r\n\ra",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         skip_to_eol(&mut pos);
         assert_eq!(pos.text, "\n\ra");
-        assert_eq!(pos.line, 2);
+        assert_eq!(pos.line_index, 2);
         assert_eq!(pos.column, 1);
     }
 
     #[test]
     fn skip_to_eol_test_rn() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "bla bla bla\r\n\r\na",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         skip_to_eol(&mut pos);
         assert_eq!(pos.text, "\r\na");
-        assert_eq!(pos.line, 2);
+        assert_eq!(pos.line_index, 2);
         assert_eq!(pos.column, 1);
     }
 
     #[test]
     fn skip_to_eol_test_end() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "bla bla bla",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         skip_to_eol(&mut pos);
         assert_eq!(pos.text, "");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 12);
     }
 
     #[test]
     fn trim_comments_and_whitespace_test() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "  \n#comment\n  #comment\na",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         trim_comments_and_whitespace(&mut pos);
         assert_eq!(pos.text, "a");
-        assert_eq!(pos.line, 4);
+        assert_eq!(pos.line_index, 4);
         assert_eq!(pos.column, 1);
     }
 
     #[test]
     fn start_with_true() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "BloCk_a",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = start_with(&mut pos, "block_");
         assert!(res.is_some());
         assert_eq!(pos.text, "a");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 7);
     }
 
     #[test]
     fn start_with_false() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "loop_a",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = start_with(&mut pos, "block_");
         assert!(res.is_none());
         assert_eq!(pos.text, "loop_a");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 1);
     }
 
     #[test]
     fn parse_identifier_test0() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "hello_world a",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_identifier(&mut pos);
         assert_eq!(res, "hello_world");
         assert_eq!(pos.text, " a");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 12);
     }
 
     #[test]
     fn parse_identifier_test1() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: " a",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_identifier(&mut pos);
         assert_eq!(res, "");
         assert_eq!(pos.text, " a");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 1);
     }
 
@@ -829,145 +835,151 @@ mod tests {
 
     #[test]
     fn parse_enclosed_test() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "\"hello world\"hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_enclosed(&mut pos, '\"');
         assert_eq!(res, Ok("hello world"));
         assert_eq!(pos.text, "hello");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 14);
     }
 
     #[test]
     fn parse_value_inapplicable() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: ".hello hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert_eq!(res, Ok(Value::Inapplicable));
         assert_eq!(pos.text, "hello hello");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 2);
     }
 
     #[test]
     fn parse_value_unknown() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "?hello hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert_eq!(res, Ok(Value::Unknown));
         assert_eq!(pos.text, "hello hello");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 2);
     }
 
     #[test]
     fn parse_char_string_simple() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "hello hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert_eq!(res, Ok(Value::Text("hello".to_string())));
         assert_eq!(pos.text, " hello");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 6);
     }
 
     #[test]
     fn parse_char_string_single_quoted() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "\'hello hello\' hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert_eq!(res, Ok(Value::Text("hello hello".to_string())));
         assert_eq!(pos.text, " hello");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 14);
     }
 
     #[test]
     fn parse_char_string_single_missing_quote() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "\'hello hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().short_description(), "Invalid enclosing");
+        assert_eq!(
+            res.unwrap_err().get_short_description(),
+            "Invalid enclosing"
+        );
     }
 
     #[test]
     fn parse_char_string_double_quoted() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "\"hello hello\" hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert_eq!(res, Ok(Value::Text("hello hello".to_string())));
         assert_eq!(pos.text, " hello");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 14);
     }
 
     #[test]
     fn parse_char_string_double_missing_quote() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "\"hello hello\n",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().short_description(), "Invalid enclosing");
+        assert_eq!(
+            res.unwrap_err().get_short_description(),
+            "Invalid enclosing"
+        );
     }
 
     #[test]
     fn parse_char_string_invalid_quoted() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "\"hello\nhello\"hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert!(res.is_err());
         assert_eq!(pos.text, "\"hello\nhello\"hello");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 1);
     }
 
     #[test]
     fn parse_value_numeric() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "56.8 hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert_eq!(res, Ok(Value::Numeric(56.8)));
         assert_eq!(pos.text, " hello");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 5);
     }
 
     #[test]
     fn parse_value_multiline_text() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: ";\n\tthis is a comment of considerable length\n; hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
@@ -978,15 +990,15 @@ mod tests {
             ))
         );
         assert_eq!(pos.text, " hello");
-        assert_eq!(pos.line, 3);
+        assert_eq!(pos.line_index, 3);
         assert_eq!(pos.column, 2);
     }
 
     #[test]
     fn parse_value_multiline_text_with_semicolon() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: ";\n\tthis is a tricky comment; of considerable length!\n; hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
@@ -997,14 +1009,14 @@ mod tests {
             ))
         );
         assert_eq!(pos.text, " hello");
-        assert_eq!(pos.line, 3);
+        assert_eq!(pos.line_index, 3);
         assert_eq!(pos.column, 2);
     }
     #[test]
     fn parse_value_multiline_text_with_newlines() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: ";\n\tthis is\na tricky\rcomment\n\rof considerable\r\nlength!\n; hello",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
@@ -1015,21 +1027,21 @@ mod tests {
             ))
         );
         assert_eq!(pos.text, " hello");
-        assert_eq!(pos.line, 7);
+        assert_eq!(pos.line_index, 7);
         assert_eq!(pos.column, 2);
     }
 
     #[test]
     fn parse_value_multiline_text_missing_end() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: ";\n\tthis is\na tricky\rcomment\n\rof considerable\r\nlength!\n",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_value(&mut pos);
         assert!(res.is_err());
         assert_eq!(
-            res.unwrap_err().short_description(),
+            res.unwrap_err().get_short_description(),
             "Multiline string not finished"
         );
     }
@@ -1055,9 +1067,9 @@ mod tests {
 
     #[test]
     fn parse_data_single_item_numeric() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "_tag\n42.3",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_item(&mut pos);
@@ -1069,15 +1081,15 @@ mod tests {
             }))
         );
         assert_eq!(pos.text, "");
-        assert_eq!(pos.line, 2);
+        assert_eq!(pos.line_index, 2);
         assert_eq!(pos.column, 5);
     }
 
     #[test]
     fn parse_data_single_item_numeric_no_leading_zero() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "_tag\n+.16",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_item(&mut pos);
@@ -1089,15 +1101,15 @@ mod tests {
             }))
         );
         assert_eq!(pos.text, "");
-        assert_eq!(pos.line, 2);
+        assert_eq!(pos.line_index, 2);
         assert_eq!(pos.column, 5);
     }
 
     #[test]
     fn parse_data_single_item_string() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "_tag\t\"of course I would\"",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_item(&mut pos);
@@ -1109,27 +1121,27 @@ mod tests {
             }))
         );
         assert_eq!(pos.text, "");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 25);
     }
 
     #[test]
     fn parse_data_single_missing_value() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "_tag\t",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_item(&mut pos);
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().short_description(), "No valid Value");
+        assert_eq!(res.unwrap_err().get_short_description(), "No valid Value");
     }
 
     #[test]
     fn parse_data_single_item_multiline_string() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "_long__tag\n;\tOf course I would\nAlso on multiple lines ;-)\n;",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_item(&mut pos);
@@ -1143,15 +1155,15 @@ mod tests {
             }))
         );
         assert_eq!(pos.text, "");
-        assert_eq!(pos.line, 4);
+        assert_eq!(pos.line_index, 4);
         assert_eq!(pos.column, 2);
     }
 
     #[test]
     fn parse_data_item_loop() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "loop_\n\t_first\n\t_second\n\t_last\n#Some comment because I need to put that in here as well!\n. 23.2 ?\nHello 25.9 ?\nHey 30.3 N",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_item(&mut pos);
@@ -1179,30 +1191,30 @@ mod tests {
             }))
         );
         assert_eq!(pos.text, "");
-        assert_eq!(pos.line, 8);
+        assert_eq!(pos.line_index, 8);
         assert_eq!(pos.column, 11);
     }
 
     #[test]
     fn parse_invalid_data_item_loop() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "loop_\n\t_first\n\t_second\n\t_last\n. 23.2 #?\nHello 25.9 ?\nHey 30.3 N",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_item(&mut pos);
         assert!(res.is_err());
         assert_eq!(
-            res.unwrap_err().short_description(),
+            res.unwrap_err().get_short_description(),
             "Loop has incorrect number of data items"
         );
     }
 
     #[test]
     fn parse_data_item_or_save_frame_data_item() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "_data ?",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_item_or_save_frame(&mut pos);
@@ -1214,15 +1226,15 @@ mod tests {
             })))
         );
         assert_eq!(pos.text, "");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 8);
     }
 
     #[test]
     fn parse_data_item_or_save_frame_save_frame() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "save_something_to_save _data . save_",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_item_or_save_frame(&mut pos);
@@ -1237,30 +1249,30 @@ mod tests {
             }))
         );
         assert_eq!(pos.text, "");
-        assert_eq!(pos.line, 1);
+        assert_eq!(pos.line_index, 1);
         assert_eq!(pos.column, 37);
     }
 
     #[test]
     fn parse_invalid_save_frame() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "save_something_to_save _data . safe_",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_item_or_save_frame(&mut pos);
         assert!(res.is_err());
         assert_eq!(
-            res.unwrap_err().short_description(),
+            res.unwrap_err().get_short_description(),
             "No matching \'save_\' found"
         );
     }
 
     #[test]
     fn parse_data_block_test() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "data_1UBQ\n#\n_entry.id   1UBQ",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_block(&mut pos);
@@ -1275,21 +1287,21 @@ mod tests {
             })
         );
         assert_eq!(pos.text, "");
-        assert_eq!(pos.line, 3);
+        assert_eq!(pos.line_index, 3);
         assert_eq!(pos.column, 17);
     }
 
     #[test]
     fn parse_invalid_data_block_test() {
-        let mut pos = Position {
+        let mut pos = FilePosition {
             text: "1UBQ\n#\n_entry.id   1UBQ",
-            line: 1,
+            line_index: 1,
             column: 1,
         };
         let res = parse_data_block(&mut pos);
         assert!(res.is_err());
         assert_eq!(
-            res.unwrap_err().short_description(),
+            res.unwrap_err().get_short_description(),
             "Data Block not opened"
         );
     }

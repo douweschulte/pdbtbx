@@ -1,9 +1,10 @@
 //! Test serial numbers
 
+use custom_error::{BoxedError, StaticErrorContent};
 use itertools::Itertools;
 use pdbtbx::*;
 
-fn get_structure_with_errors(filename: &str) -> (PDB, Vec<BoxedError>) {
+fn get_structure_with_errors(filename: &str) -> (PDB, Vec<BoxedError<'static, ErrorLevel>>) {
     let read_result = ReadOptions::default()
         .set_level(StrictnessLevel::Loose)
         .read(filename);
@@ -114,5 +115,5 @@ fn warning_if_atom_ids_not_unique_mmcif() {
     assert!(!structure.atoms().map(Atom::id).all_unique());
     assert!(errors
         .iter()
-        .any(|err| err.short_description().contains("Duplicated atom IDs")));
+        .any(|err| err.get_short_description().contains("Duplicated atom IDs")));
 }

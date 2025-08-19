@@ -4,6 +4,7 @@ use std::path::Path;
 use std::time::Instant;
 use std::{env, fs};
 
+use custom_error::{ErrorKind, FullErrorContent, StaticErrorContent};
 use pdbtbx::*;
 
 #[test]
@@ -100,7 +101,7 @@ fn do_something(file: &str, folder: &str, name: &str) {
 
     if validate_pdb(&pdb)
         .iter()
-        .all(|a| !a.fails(StrictnessLevel::Medium))
+        .all(|a| !a.get_kind().is_error(StrictnessLevel::Medium))
     {
         save(
             &pdb,
@@ -142,7 +143,7 @@ fn save_invalid_name() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.len(), 1);
-    assert_eq!(err[0].short_description(), "Incorrect extension");
+    assert_eq!(err[0].get_short_description(), "Incorrect extension");
 }
 
 fn save_pdb_strict() {

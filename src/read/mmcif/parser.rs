@@ -2,10 +2,12 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::prelude::*;
 
-use custom_error::{BoxedError, CreateError};
+use custom_error::{combine_errors, BoxedError, Context, CreateError, ErrorKind, FullErrorContent};
 
 use super::lexitem::*;
-use crate::{structs::*, validate::*, ReadOptions, StrictnessLevel, TransformationMatrix};
+use crate::{
+    structs::*, validate::*, ErrorLevel, ReadOptions, StrictnessLevel, TransformationMatrix,
+};
 
 /// Parse the given mmCIF file into a PDB struct.
 /// Returns a `BoxedError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
@@ -32,7 +34,7 @@ pub(crate) fn open_mmcif_with_options(
     let file = if let Ok(f) = File::open(filename) {
         f
     } else {
-        return Err(vec![BoxedError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::show(filename))]);
+        return Err(vec![BoxedError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::default().source(filename).to_owned())]);
     };
     let reader = std::io::BufReader::new(file);
     open_mmcif_raw_with_options(reader, options)
@@ -70,7 +72,7 @@ where
 pub fn open_mmcif_raw(
     input: &str,
     level: StrictnessLevel,
-) -> Result<(PDB, Vec<BoxedError<'_, ErrorLevel>>), Vec<BoxedError<'_, ErrorLevel>>> {
+) -> Result<(PDB, Vec<BoxedError<'_, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>> {
     match super::lexer::lex_cif(input) {
         Ok(data_block) => parse_mmcif(&data_block, level),
         Err(e) => Err(vec![e]),
@@ -81,7 +83,7 @@ pub fn open_mmcif_raw(
 pub(crate) fn open_mmcif_raw_with_options<T>(
     mut input: std::io::BufReader<T>,
     options: &ReadOptions,
-) -> Result<(PDB, Vec<BoxedError<'_, ErrorLevel>>), Vec<BoxedError<'_, ErrorLevel>>>
+) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>>
 where
     T: Read,
 {
@@ -96,7 +98,7 @@ where
             ErrorLevel::BreakingError,
             "Buffer could not be read",
             "The buffer provided to `open_raw` could not be read to end.",
-            Context::None,
+            Context::none(),
         )])
     }
 }
@@ -105,7 +107,7 @@ where
 fn parse_mmcif(
     input: &DataBlock,
     level: StrictnessLevel,
-) -> Result<(PDB, Vec<BoxedError<'_, ErrorLevel>>), Vec<BoxedError<'_, ErrorLevel>>> {
+) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>> {
     parse_mmcif_with_options(input, ReadOptions::default().set_level(level))
 }
 
@@ -113,19 +115,19 @@ fn parse_mmcif(
 ///
 /// # Related
 /// See [`parse_mmcif`] for a version of this function with sane defaults.
-fn parse_mmcif_with_options<'a>(
-    input: &'a DataBlock,
+fn parse_mmcif_with_options(
+    input: &DataBlock,
     options: &ReadOptions,
-) -> Result<(PDB, Vec<BoxedError<'a, ErrorLevel>>), Vec<BoxedError<'a, ErrorLevel>>> {
+) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>> {
     let mut pdb = PDB::default();
-    let mut errors: Vec<BoxedError<'_, ErrorLevel>> = Vec::new();
+    let mut errors: Vec<BoxedError<'static, ErrorLevel>> = Vec::new();
     let mut unit_cell = UnitCell::default();
     let mut mtrix_id = None;
 
     pdb.identifier = Some(input.name.clone());
 
     for item in &input.items {
-        let result = match item {
+        let result: Option<Vec<BoxedError<'static, ErrorLevel>>> = match item {
             Item::DataItem(di) => match di {
                 DataItem::Loop(multiple) => {
                     if multiple.header.contains(&"atom_site.group_PDB".to_string()) {
@@ -135,31 +137,31 @@ fn parse_mmcif_with_options<'a>(
                     }
                 }
                 DataItem::Single(single) => {
-                    let context = Context::show(&single.name);
+                    let context: Context<'static> = Context::show(&single.name).to_owned();
                     match &single.name[..] {
                         "cell.length_a" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_a(n.expect("UnitCell length a should be provided")))
-                            .err(),
+                            .err().map(BoxedError::to_owned),
                         "cell.length_b" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_b(n.expect("UnitCell length b should be provided")))
-                            .err(),
+                            .err().map(BoxedError::to_owned),
                         "cell.length_c" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_c(n.expect("UnitCell length c should be provided")))
-                            .err(),
+                            .err().map(BoxedError::to_owned),
                         "cell.angle_alpha" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_alpha(n.expect("UnitCell angle alpha should be provided")))
-                            .err(),
+                            .err().map(BoxedError::to_owned),
                         "cell.angle_beta" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_beta(n.expect("UnitCell angle beta should be provided")))
-                            .err(),
+                            .err().map(BoxedError::to_owned),
                         "cell.angle_gamma" => get_f64(&single.content, &context, None)
                             .map(|n| unit_cell.set_gamma(n.expect("UnitCell angle gamma should be provided")))
-                            .err(),
+                            .err().map(BoxedError::to_owned),
                         "symmetry.Int_Tables_number" | "space_group.IT_number" => {
                             if pdb.symmetry.is_none() {
                                 get_usize(&single.content, &context, None)
                                     .map(|n| pdb.symmetry = Symmetry::from_index(n.expect("Symmetry international tables number should be provided")))
-                                    .err()
+                                    .err().map(BoxedError::to_owned)
                             } else if let Ok(Some(value)) = get_usize(&single.content, &context, None) {
                                 if pdb.symmetry == Symmetry::from_index(value) {
                                     None
@@ -174,7 +176,7 @@ fn parse_mmcif_with_options<'a>(
                             if pdb.symmetry.is_none() {
                                 get_text(&single.content, &context, None)
                                     .map(|t| pdb.symmetry = Symmetry::new(t.expect("Symmetry space group name should be provided")))
-                                    .err()
+                                    .err().map(BoxedError::to_owned)
                             } else if let Ok(Some(value)) = get_text(&single.content, &context, None) {
                                 if pdb.symmetry == Symmetry::new(value) {
                                     None
@@ -190,19 +192,19 @@ fn parse_mmcif_with_options<'a>(
                                 pdb.scale = Some(TransformationMatrix::identity());
                             }
                             #[allow(clippy::unwrap_used)]
-                            parse_matrix(s, get_f64(&single.content, &context, None),pdb.scale.as_mut().unwrap(), &context)
+                            parse_matrix(s, get_f64(&single.content, &context, None),pdb.scale.as_mut().unwrap(), &context).map(BoxedError::to_owned)
                         }
                         s if s.starts_with("database_PDB_matrix.origx") => {
                             if pdb.origx.is_none() {
                                 pdb.origx = Some(TransformationMatrix::identity());
                             }
                             #[allow(clippy::unwrap_used)]
-                            parse_matrix(s, get_f64(&single.content, &context, None),pdb.origx.as_mut().unwrap(), &context)
+                            parse_matrix(s, get_f64(&single.content, &context, None),pdb.origx.as_mut().unwrap(), &context).map(BoxedError::to_owned)
                         }
                         s if s.starts_with("structs_ncs_oper.") => {
                             if s.ends_with("id") {
                                 match get_usize(&single.content, &context, None) {
-                                    Err(e) => Some(e),
+                                    Err(e) => Some(e.to_owned()),
                                     Ok(Some(id)) => {
                                         mtrix_id = Some(id);
                                         pdb.add_mtrix(MtriX::new(id, TransformationMatrix::identity(), true));
@@ -224,6 +226,7 @@ fn parse_mmcif_with_options<'a>(
                                         context.clone(),
                                         )),
                                     |id| {
+                                        let context = context.clone();
                                         let mtrix = pdb.mtrix_mut().find(|m| m.serial_number == id).expect("Could not find the MtriX record with the previously found `_struct_ncs_oper.id`");
                                         if s.ends_with("code") {
                                             match get_text(&single.content, &context, None) {
@@ -245,7 +248,7 @@ fn parse_mmcif_with_options<'a>(
                                         } else if s.ends_with("details") {
                                             None // Ignore the details, it will not be saved somewhere
                                         } else {
-                                            parse_matrix(s, get_f64(&single.content, &context, None),&mut mtrix.transformation, &context)
+                                            parse_matrix(s, get_f64(&single.content, &context, None),&mut mtrix.transformation, &context).map(BoxedError::to_owned)
                                         }
                                     }
                                 )
@@ -259,7 +262,7 @@ fn parse_mmcif_with_options<'a>(
             Item::SaveFrame(_) => None,
         };
         if let Some(e) = result {
-            errors.extend(e);
+            combine_errors(&mut errors, e, options.level);
         }
     }
 
@@ -268,8 +271,8 @@ fn parse_mmcif_with_options<'a>(
     }
 
     reshuffle_conformers(&mut pdb);
-    errors.extend(validate(&pdb));
-    if errors.iter().any(|e| e.fails(options.level)) {
+    combine_errors(&mut errors, validate(&pdb), options.level);
+    if errors.iter().any(|e| e.get_kind().is_error(options.level)) {
         Err(errors)
     } else {
         Ok((pdb, errors))
@@ -321,7 +324,7 @@ fn parse_matrix<'a>(
             }
             None // Ignore places where there is no value, assume it to be the default identity
         }
-        Err(e) => Some(e),
+        Err(e) => Some(e.to_owned()),
     }
 }
 
@@ -334,11 +337,11 @@ fn flatten_result<T, E>(value: Result<Result<T, E>, E>) -> Result<T, E> {
 }
 
 /// Parse a loop containing atomic data
-fn parse_atoms<'a>(
-    input: &'a Loop,
+fn parse_atoms(
+    input: &Loop,
     pdb: &mut PDB,
     options: &ReadOptions,
-) -> Option<Vec<BoxedError<'a, ErrorLevel>>> {
+) -> Option<Vec<BoxedError<'static, ErrorLevel>>> {
     #[derive(Eq, PartialEq)]
     /// The mode of a column
     enum Mode {
@@ -389,7 +392,7 @@ fn parse_atoms<'a>(
         26, ATOM_Z, "atom_site.Cartn_z", Optional;
     );
 
-    let positions_: Vec<Result<Option<usize>, BoxedError<'_, ErrorLevel>>> = COLUMNS
+    let positions_: Vec<Result<Option<usize>, BoxedError<'static, ErrorLevel>>> = COLUMNS
         .iter()
         .map(|tag| (input.header.iter().position(|t| t == tag.1), tag))
         .map(|(pos, tag)| match pos {
@@ -398,7 +401,7 @@ fn parse_atoms<'a>(
                 ErrorLevel::InvalidatingError,
                 "Missing column in coordinate atoms data loop",
                 "The above column is missing",
-                Context::show(tag.1),
+                Context::show(tag.1).to_owned(),
             )),
             None => Ok(None),
         })
@@ -438,7 +441,7 @@ fn parse_atoms<'a>(
                     match $type(value, &context, Some($index.1)) {
                         Ok(t) => t,
                         Err(e) => {
-                            errors.push(e);
+                            errors.push(e.to_owned());
                             None
                         }
                     }
@@ -627,7 +630,7 @@ fn parse_atoms<'a>(
                 "{} atom IDs occurred more than once",
                 atom_ids_duplicated.len()
             ),
-            Context::None,
+            Context::none(),
         ));
     }
     if errors.is_empty() {

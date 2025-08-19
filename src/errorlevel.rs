@@ -36,7 +36,7 @@ impl ErrorKind for ErrorLevel {
     }
 
     fn is_error(&self, settings: Self::Settings) -> bool {
-        match level {
+        match settings {
             StrictnessLevel::Strict => true,
             StrictnessLevel::Medium => !matches!(self, Self::GeneralWarning),
             StrictnessLevel::Loose => !matches!(self, Self::GeneralWarning | Self::LooseWarning),

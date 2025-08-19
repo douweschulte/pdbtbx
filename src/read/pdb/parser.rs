@@ -4,7 +4,7 @@ use std::{
     io::{BufRead, BufReader},
 };
 
-use custom_error::{BoxedError, Context, CreateError, ErrorKind, FullErrorContent, StaticErrorContent};
+use custom_error::{combine_error, combine_errors, BoxedError, Context, CreateError, ErrorKind, FullErrorContent};
 use indexmap::IndexMap;
 
 use crate::{structs::*, validate::*, ErrorLevel, ReadOptions, StrictnessLevel};
@@ -12,11 +12,11 @@ use crate::{structs::*, validate::*, ErrorLevel, ReadOptions, StrictnessLevel};
 use super::{lexer::*, lexitem::*, temporary_structs::*, validate::*};
 
 /// Parse the given file into a PDB struct.
-/// Returns a `BoxedError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `BoxedError` if a `BreakingError` is found. Otherwise, it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
 /// If you want to open a file from memory see [`ReadOptions::read_raw`]. There is also a function to open a mmCIF file directly
-/// see [`crate::open_mmcif`]. If you want to open a general file with no knowledge about the file type see [`crate::open`].
+/// see [`crate::open_mmcif`]. If you want to open a general file with no knowledge about the filetype see [`crate::open`].
 #[deprecated(
     since = "0.12.0",
     note = "Please use `ReadOptions::default().set_format(Format::Pdb).read(filename)` instead"
@@ -136,7 +136,7 @@ where
         // Then immediately add this lines information to the final PDB struct
         match line_result {
             Ok((result, line_errors)) => {
-                errors.extend(line_errors);
+                combine_errors(&mut errors, line_errors, options.level);
                 match result {
                     LexItem::Header(_, _, identifier) => pdb.identifier = Some(identifier),
                     LexItem::Remark(num, text) => {
@@ -192,12 +192,12 @@ where
                         ) {
                             a
                         } else {
-                            errors.push(BoxedError::new(
+                            combine_error(&mut errors, BoxedError::new(
                                 ErrorLevel::InvalidatingError,
                                 "Invalid characters in atom creation",
                                 "Failed to create atom due to invalid characters or values",
                                 line_context.clone(),
-                            ));
+                            ), options.level);
                             continue;
                         };
                         let conformer_id = (residue_name.as_str(), alt_loc.as_deref());
@@ -229,22 +229,22 @@ where
                                             alt_loc.as_deref(),
                                             Some(atom),
                                         ) { c } else {
-                                            errors.push(BoxedError::new(
+                                            combine_error(&mut errors, BoxedError::new(
                                                 ErrorLevel::InvalidatingError,
                                                 "Invalid characters in Conformer creation",
                                                 "Failed to create conformer due to invalid characters",
                                                 line_context.clone(),
-                                            ));
+                                            ), options.level);
                                             continue;
                                         },
                                     ),
                                 ) { r } else {
-                                    errors.push(BoxedError::new(
+                                    combine_error(&mut errors, BoxedError::new(
                                         ErrorLevel::InvalidatingError,
                                         "Invalid characters in Residue creation",
                                         "Failed to create residue due to invalid characters",
                                         line_context.clone(),
-                                    ));
+                                    ), options.level);
                                     continue;
                                 },
                             );
@@ -267,12 +267,12 @@ where
                             }
                         }
                         if !found {
-                            errors.push(BoxedError::new(
+                            combine_error(&mut errors, BoxedError::new(
                                 ErrorLevel::InvalidatingError,
                                 "Atom not found for ANISOU record",
                                 format!("Could not find atom with serial number {s} (name: {n}) for anisotropic temperature factors"),
                                 line_context.clone(),
-                            ));
+                            ), options.level);
                         }
                     }
                     LexItem::Model(number) => {
@@ -282,12 +282,12 @@ where
                                 match Chain::from_iter(id, residues.into_values()) {
                                     Some(chain) => chains.push(chain),
                                     None => {
-                                        errors.push(BoxedError::new(
+                                        combine_error(&mut errors, BoxedError::new(
                                             ErrorLevel::InvalidatingError,
                                             "Invalid characters in Chain definition",
                                             "Failed to create chain due to invalid characters",
                                             line_context.clone(),
-                                        ));
+                                        ), options.level);
                                     }
                                 }
                             }
@@ -330,12 +330,12 @@ where
                         pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
                         pdb.symmetry = Symmetry::new(&spacegroup).map_or_else(
                             || {
-                                errors.push(BoxedError::new(
+                                combine_error(&mut errors, BoxedError::new(
                                     ErrorLevel::InvalidatingError,
                                     "Invalid space group",
                                     format!("Invalid space group: \"{spacegroup}\""),
                                     line_context.clone(),
-                                ));
+                                ), options.level);
                                 None
                             },
                             Some,
@@ -385,7 +385,7 @@ where
                             }
                         }
                         if !found {
-                            errors.push(BoxedError::new(ErrorLevel::BreakingError, "Solitary DBREF2", format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{chain_id}'"), line_context.clone()));
+                            combine_error(&mut errors, BoxedError::new(ErrorLevel::BreakingError, "Solitary DBREF2", format!("Could not find the DBREF1 record fitting to this DBREF2 with chain id '{chain_id}'"), line_context.clone()), options.level);
                         }
                     }
                     LexItem::Seqadv(
@@ -408,12 +408,12 @@ where
                                 comment,
                             ));
                         } else {
-                            errors.push(BoxedError::new(
+                            combine_error(&mut errors, BoxedError::new(
                             ErrorLevel::StrictWarning,
                             "Sequence Difference Database not found",
                             format!("For this sequence difference (chain: {chain_id}) the corresponding database definition (DBREF) was not found, make sure the DBREF is located before the SEQADV"),
                             line_context.clone()
-                        ));
+                        ), options.level);
                         }
                     }
                     item @ LexItem::Modres(..) => modifications.push((line_context.clone(), item)),
@@ -439,12 +439,12 @@ where
                                 match Chain::from_iter(id, residues.into_values()) {
                                     Some(chain) => chains.push(chain),
                                     None => {
-                                        errors.push(BoxedError::new(
+                                        combine_error(&mut errors, BoxedError::new(
                                             ErrorLevel::InvalidatingError,
                                             "Invalid characters in Chain definition",
                                             "Failed to create chain due to invalid characters",
                                             line_context.clone(),
-                                        ));
+                                        ), options.level);
                                     }
                                 }
                             }
@@ -456,23 +456,23 @@ where
                         }
                         // The for now forgotten numbers will have to be added when the appropriate records are added to the parser
                         if num_remark != pdb.remark_count() {
-                            errors.push(
+                            combine_error(&mut errors, 
                             BoxedError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
                                 format!("The number of REMARKS ({}) is different then posed in the MASTER Record ({})", pdb.remark_count(), num_remark),
                                 line_context.clone()
                             )
-                        );
+                        , options.level);
                         }
                         if num_empty != 0 {
-                            errors.push(
+                            combine_error(&mut errors, 
                             BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "MASTER checksum failed",
                                 format!("The empty checksum number is not empty (value: {num_empty}) while it is defined to be empty."),
                                 line_context.clone()
-                            )
+                            ), options.level
                         );
                         }
                         let mut xform = 0;
@@ -488,31 +488,31 @@ where
                             }
                         }
                         if num_xform != xform {
-                            errors.push(
+                            combine_error(&mut errors, 
                             BoxedError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
                                 format!("The number of coordinate transformation records ({xform}) is different then posed in the MASTER Record ({num_xform})"),
                                 line_context.clone()
                             )
-                        );
+                        , options.level);
                         }
                         if num_coord != pdb.total_atom_count() {
-                            errors.push(
+                            combine_error(&mut errors, 
                             BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "MASTER checksum failed",
                                 format!("The number of Atoms ({}) is different then posed in the MASTER Record ({})", pdb.total_atom_count(), num_coord),
                                 line_context.clone()
                             )
-                        );
+                        , options.level);
                         }
                     }
                     LexItem::TER() => chain_id_new = chain_iter.next(),
                     _ => (),
                 }
             }
-            Err(e) => errors.push(e),
+            Err(e) => combine_error(&mut errors, e, options.level),
         }
     }
     if !current_model.is_empty() {
@@ -521,12 +521,12 @@ where
             match Chain::from_iter(id, residues.into_values()) {
                 Some(chain) => chains.push(chain),
                 None => {
-                    errors.push(BoxedError::new(
+                    combine_error(&mut errors, BoxedError::new(
                         ErrorLevel::InvalidatingError,
                         "Invalid characters in Chain definition",
                         "Failed to create chain due to invalid characters",
                         Context::none(),
-                    ));
+                    ), options.level);
                 }
             }
         }
@@ -535,12 +535,12 @@ where
 
     for (chain_id, reference, complete) in database_references {
         if !complete {
-            errors.push(BoxedError::new(
+            combine_error(&mut errors, BoxedError::new(
                 ErrorLevel::StrictWarning,
                 "Solitary DBREF1 definition",
                 format!("The complementary DBREF2 was not found for this DBREF1 definition. For chain id '{}'. For database '{}' with ID code '{}'.", chain_id, reference.database.name, reference.database.id),
                 Context::none(),
-            ));
+            ), options.level);
         } else if let Some(chain) = pdb.chains_mut().find(|a| a.id() == chain_id) {
             chain.set_database_reference(reference);
         }
@@ -549,51 +549,50 @@ where
     if let Some(scale) = temp_scale.get_matrix() {
         pdb.scale = Some(scale);
     } else if temp_scale.is_partly_set() {
-        errors.push(BoxedError::new(
+        combine_error(&mut errors, BoxedError::new(
             ErrorLevel::StrictWarning,
             "Invalid SCALE definition",
             "Not all rows are set in the scale definition",
             context.clone(),
-        ));
+        ), options.level);
     }
 
     if let Some(origx) = temp_origx.get_matrix() {
         pdb.origx = Some(origx);
     } else if temp_origx.is_partly_set() {
-        errors.push(BoxedError::new(
+        combine_error(&mut errors, BoxedError::new(
             ErrorLevel::StrictWarning,
             "Invalid ORIGX definition",
             "Not all rows are set in the ORIGX definition",
             context.clone(),
-        ));
+        ), options.level);
     }
 
     for (index, matrix, given) in temp_mtrix {
         if let Some(m) = matrix.get_matrix() {
             pdb.add_mtrix(MtriX::new(index, m, given));
         } else {
-            errors.push(BoxedError::new(
+            combine_error(&mut errors, BoxedError::new(
                 ErrorLevel::StrictWarning,
                 "Invalid MATRIX definition",
                 format!("Not all rows are set in the MtriX definition, number: {index}",),
                 context.clone(),
-            ));
+            ), options.level);
         }
     }
 
     reshuffle_conformers(&mut pdb);
 
-    merge_long_remark_warnings(&mut errors);
-    errors.extend(validate_seqres(
+    combine_errors(&mut errors, validate_seqres(
         &mut pdb,
         sequence,
         &seqres_lines,
         seqres_start_linenumber - 1, // Convert from 1 based to 0 based numbering
         &context,
-    ).into_iter().map(BoxedError::to_owned));
-    errors.extend(add_modifications(&mut pdb, modifications));
-    errors.extend(add_bonds(&mut pdb, bonds));
-    errors.extend(validate(&pdb));
+    ).into_iter().map(BoxedError::to_owned), options.level);
+    combine_errors(&mut errors, add_modifications(&mut pdb, modifications, options.level), options.level);
+    combine_errors(&mut errors, add_bonds(&mut pdb, bonds, options.level), options.level);
+    combine_errors(&mut errors, validate(&pdb), options.level);
 
     if errors.iter().any(|e| e.get_kind().is_error(options.level)) {
         Err(errors)
@@ -602,80 +601,11 @@ where
     }
 }
 
-/// Merge all warnings about long REMARK definitions into a single warning
-fn merge_long_remark_warnings(errors: &mut Vec<BoxedError<'_, ErrorLevel>>) {
-    // Weed out all remark too long warnings
-    let mut remark_too_long = Vec::new();
-    errors.retain(|error| {
-        if error.get_short_description() == "Remark too long" {
-            remark_too_long.push(error.get_contexts().clone());
-            false
-        } else {
-            true
-        }
-    });
-    // Merge consecutive warnings into a single context to take up less vertical space
-    let mut contexts = Vec::new();
-    let mut lines = Vec::new();
-    let mut highlights = Vec::new();
-    let mut last = usize::MAX;
-    let mut index = 0;
-    for context in remark_too_long {
-        if let Context::Line {
-            linenumber,
-            line,
-            offset,
-            length,
-        } = context
-        {
-            if last == usize::MAX || linenumber - 1 == last {
-                lines.push(line);
-                highlights.push((index, offset, length));
-                last = linenumber;
-                index += 1;
-            } else {
-                if !lines.is_empty() {
-                    contexts.push((
-                        None,
-                        Context::RangeHighlights {
-                            start_linenumber: last - index,
-                            lines,
-                            highlights,
-                        },
-                    ));
-                    index = 0;
-                }
-                lines = vec![line];
-                highlights = vec![(index, offset, length)];
-                last = linenumber;
-            }
-        }
-    }
-    if !lines.is_empty() {
-        contexts.push((
-            None,
-            Context::RangeHighlights {
-                start_linenumber: last - index,
-                lines,
-                highlights,
-            },
-        ));
-    }
-    if !contexts.is_empty() {
-        // Generate the final error message
-        errors.push(BoxedError::new(
-            ErrorLevel::GeneralWarning,
-            "Remark too long",
-            "The above REMARK definitions are too long, the max is 80 characters.",
-            Context::Multiple { contexts },
-        ));
-    }
-}
-
 /// Adds all MODRES records to the Atoms
 fn add_modifications(
     pdb: &mut PDB,
-    modifications: Vec<(Context, LexItem)>,
+    modifications: Vec<(Context<'static>, LexItem)>,
+    level: StrictnessLevel,
 ) -> Vec<BoxedError<'static, ErrorLevel>> {
     let mut errors = Vec::new();
     for (context, item) in modifications {
@@ -690,21 +620,21 @@ fn add_modifications(
                             residue.conformers_mut().find(|c| c.name() == res_name)
                         {
                             if let Err(e) = conformer.set_modification((std_name, comment)) {
-                                errors.push(BoxedError::new(
+                                combine_error(&mut errors, BoxedError::new(
                                     ErrorLevel::InvalidatingError,
                                     "Invalid characters",
                                     e,
                                     context,
-                                ));
+                                ), level);
                             }
                         } else {
-                            errors.push(BoxedError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified residue in the PDB file.", context));
+                            combine_error(&mut errors, BoxedError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified residue in the PDB file.", context), level);
                         }
                     } else {
-                        errors.push(BoxedError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified chain in the PDB file.", context));
+                        combine_error(&mut errors, BoxedError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified chain in the PDB file.", context), level);
                     }
                 } else {
-                    errors.push(BoxedError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The chain presented in this MODRES record could not be found in the PDB file.", context));
+                    combine_error(&mut errors, BoxedError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The chain presented in this MODRES record could not be found in the PDB file.", context), level);
                 }
             }
             _ => {
@@ -719,7 +649,8 @@ fn add_modifications(
 #[allow(clippy::unwrap_used)]
 fn add_bonds(
     pdb: &mut PDB,
-    bonds: Vec<(Context, LexItem)>,
+    bonds: Vec<(Context<'static>, LexItem)>,
+    level: StrictnessLevel,
 ) -> Vec<BoxedError<'static, ErrorLevel>> {
     let mut errors = Vec::new();
     for (context, bond) in bonds {
@@ -749,12 +680,12 @@ fn add_bonds(
                 if let (Some(counter1), Some(counter2)) = (ref1, ref2) {
                     pdb.add_bond_counters(counter1, counter2, Bond::Disulfide);
                 } else {
-                    errors.push(BoxedError::new(
+                    combine_error(&mut errors, BoxedError::new(
                         ErrorLevel::InvalidatingError,
                         "Could not find a bond partner",
                         "One of the atoms could not be found while parsing a disulfide bond.",
                         context,
-                    ));
+                    ), level);
                 }
             }
             _ => {
