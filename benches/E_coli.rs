@@ -40,7 +40,6 @@ fn main() {
     let parser = ReadOptions::default()
         .set_level(StrictnessLevel::Loose)
         .set_format(Format::Pdb)
-        .set_parsing_level(ParsingLevel::none().set_atom(true))
         .clone();
 
     let mut load_times = Vec::new();
