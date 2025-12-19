@@ -1,11 +1,10 @@
 use std::{ffi::OsStr, path::Path};
 
-use custom_error::{BoxedError, Context, CreateError};
+use context_error::{BoxedError, Context, CreateError};
 
-use crate::StrictnessLevel;
+use crate::{ParsingLevel, StrictnessLevel};
 
 use super::general::ReadResult;
-
 /// Used to set which format to read the file in.
 #[derive(Debug, Clone, Copy, Default)]
 pub enum Format {
@@ -63,6 +62,9 @@ pub struct ReadOptions {
     /// The strictness level to use when reading the file.
     pub(crate) level: StrictnessLevel,
 
+    /// Parsing level
+    pub(crate) parsing_level: ParsingLevel,
+
     /// Controls whether to capitalise the chains in the structure.
     pub(crate) capitalise_chains: bool,
 
@@ -104,6 +106,12 @@ impl ReadOptions {
     /// Sets the strictness level to use when reading the file.
     pub fn set_level(&mut self, level: StrictnessLevel) -> &mut Self {
         self.level = level;
+        self
+    }
+
+    /// Sets the parsing level to use when reading the file.
+    pub fn set_parsing_level(&mut self, parsing_level: ParsingLevel) -> &mut Self {
+        self.parsing_level = parsing_level;
         self
     }
 

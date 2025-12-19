@@ -2,7 +2,7 @@
 use crate::ErrorLevel;
 
 use super::lexitem::*;
-use custom_error::{BoxedError, Context, CreateError, FilePosition};
+use context_error::{BoxedError, Context, CreateError, FilePosition};
 
 /// Parse/lex a CIF file into CIF intermediate structure
 pub(crate) fn lex_cif(text: &str) -> Result<DataBlock, BoxedError<'static, ErrorLevel>> {
@@ -547,7 +547,7 @@ const fn is_ordinary(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use custom_error::StaticErrorContent;
+    use context_error::StaticErrorContent;
 
     use super::*;
 

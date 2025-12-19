@@ -11,7 +11,7 @@ fn main() {
     println!("Starting E. coli PDB loading benchmark...");
 
     // Find all .pdb files in the directory
-    let pdb_files = match fs::read_dir("UP000000625_83333_ECOLI_v4/") {
+    let pdb_files = match fs::read_dir("/Users/maxcampbell/pdbtbx/UP000000625_83333_ECOLI_v6/") {
         Ok(entries) => entries
             .filter_map(Result::ok)
             .filter(|entry| {
@@ -40,6 +40,7 @@ fn main() {
     let parser = ReadOptions::default()
         .set_level(StrictnessLevel::Loose)
         .set_format(Format::Pdb)
+        .set_parsing_level(ParsingLevel::none().set_atom(true))
         .clone();
 
     let mut load_times = Vec::new();

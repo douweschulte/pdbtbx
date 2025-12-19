@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufWriter;
 
-use custom_error::FullErrorContent;
-use custom_error::{BoxedError, Context, CreateError, ErrorKind};
+use context_error::FullErrorContent;
+use context_error::{BoxedError, Context, CreateError, ErrorKind};
 #[cfg(feature = "compression")]
 use flate2::{write::GzEncoder, Compression};
 

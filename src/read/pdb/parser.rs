@@ -4,7 +4,9 @@ use std::{
     io::{BufRead, BufReader},
 };
 
-use custom_error::{combine_error, combine_errors, BoxedError, Context, CreateError, ErrorKind, FullErrorContent};
+use context_error::{
+    combine_error, combine_errors, BoxedError, Context, CreateError, ErrorKind, FullErrorContent,
+};
 use indexmap::IndexMap;
 
 use crate::{structs::*, validate::*, ErrorLevel, ReadOptions, StrictnessLevel};
@@ -37,9 +39,9 @@ pub(crate) fn read_file(
         f
     } else {
         return Err(vec![BoxedError::new(
-            ErrorLevel::BreakingError, 
-            "Could not open file", 
-            "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", 
+            ErrorLevel::BreakingError,
+            "Could not open file",
+            "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.",
             Context::default().source(filename).to_owned())]);
     };
     let reader = BufReader::new(file);
@@ -53,7 +55,11 @@ pub(crate) fn open_pdb_with_options(
 ) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>> {
     let filename = filename.as_ref();
     let reader = read_file(filename)?;
-    open_pdb_raw_with_options(reader, Context::default().source(filename).to_owned(), options)
+    open_pdb_raw_with_options(
+        reader,
+        Context::default().source(filename).to_owned(),
+        options,
+    )
 }
 
 /// Parse the input stream into a PDB struct. To allow for direct streaming from sources, like from RCSB.org.
@@ -126,7 +132,10 @@ where
             return Err(vec![BoxedError::new(
                 ErrorLevel::BreakingError,
                 "Could read line",
-                format!("Could not read line {} while parsing the input file.", linenumber + 1),
+                format!(
+                    "Could not read line {} while parsing the input file.",
+                    linenumber + 1
+                ),
                 context,
             )]);
         };
@@ -192,12 +201,16 @@ where
                         ) {
                             a
                         } else {
-                            combine_error(&mut errors, BoxedError::new(
-                                ErrorLevel::InvalidatingError,
-                                "Invalid characters in atom creation",
-                                "Failed to create atom due to invalid characters or values",
-                                line_context.clone(),
-                            ), options.level);
+                            combine_error(
+                                &mut errors,
+                                BoxedError::new(
+                                    ErrorLevel::InvalidatingError,
+                                    "Invalid characters in atom creation",
+                                    "Failed to create atom due to invalid characters or values",
+                                    line_context.clone(),
+                                ),
+                                options.level,
+                            );
                             continue;
                         };
                         let conformer_id = (residue_name.as_str(), alt_loc.as_deref());
@@ -282,12 +295,16 @@ where
                                 match Chain::from_iter(id, residues.into_values()) {
                                     Some(chain) => chains.push(chain),
                                     None => {
-                                        combine_error(&mut errors, BoxedError::new(
-                                            ErrorLevel::InvalidatingError,
-                                            "Invalid characters in Chain definition",
-                                            "Failed to create chain due to invalid characters",
-                                            line_context.clone(),
-                                        ), options.level);
+                                        combine_error(
+                                            &mut errors,
+                                            BoxedError::new(
+                                                ErrorLevel::InvalidatingError,
+                                                "Invalid characters in Chain definition",
+                                                "Failed to create chain due to invalid characters",
+                                                line_context.clone(),
+                                            ),
+                                            options.level,
+                                        );
                                     }
                                 }
                             }
@@ -330,12 +347,16 @@ where
                         pdb.unit_cell = Some(UnitCell::new(a, b, c, alpha, beta, gamma));
                         pdb.symmetry = Symmetry::new(&spacegroup).map_or_else(
                             || {
-                                combine_error(&mut errors, BoxedError::new(
-                                    ErrorLevel::InvalidatingError,
-                                    "Invalid space group",
-                                    format!("Invalid space group: \"{spacegroup}\""),
-                                    line_context.clone(),
-                                ), options.level);
+                                combine_error(
+                                    &mut errors,
+                                    BoxedError::new(
+                                        ErrorLevel::InvalidatingError,
+                                        "Invalid space group",
+                                        format!("Invalid space group: \"{spacegroup}\""),
+                                        line_context.clone(),
+                                    ),
+                                    options.level,
+                                );
                                 None
                             },
                             Some,
@@ -439,12 +460,16 @@ where
                                 match Chain::from_iter(id, residues.into_values()) {
                                     Some(chain) => chains.push(chain),
                                     None => {
-                                        combine_error(&mut errors, BoxedError::new(
-                                            ErrorLevel::InvalidatingError,
-                                            "Invalid characters in Chain definition",
-                                            "Failed to create chain due to invalid characters",
-                                            line_context.clone(),
-                                        ), options.level);
+                                        combine_error(
+                                            &mut errors,
+                                            BoxedError::new(
+                                                ErrorLevel::InvalidatingError,
+                                                "Invalid characters in Chain definition",
+                                                "Failed to create chain due to invalid characters",
+                                                line_context.clone(),
+                                            ),
+                                            options.level,
+                                        );
                                     }
                                 }
                             }
@@ -456,7 +481,7 @@ where
                         }
                         // The for now forgotten numbers will have to be added when the appropriate records are added to the parser
                         if num_remark != pdb.remark_count() {
-                            combine_error(&mut errors, 
+                            combine_error(&mut errors,
                             BoxedError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
@@ -466,7 +491,7 @@ where
                         , options.level);
                         }
                         if num_empty != 0 {
-                            combine_error(&mut errors, 
+                            combine_error(&mut errors,
                             BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "MASTER checksum failed",
@@ -488,7 +513,7 @@ where
                             }
                         }
                         if num_xform != xform {
-                            combine_error(&mut errors, 
+                            combine_error(&mut errors,
                             BoxedError::new(
                                 ErrorLevel::StrictWarning,
                                 "MASTER checksum failed",
@@ -498,7 +523,7 @@ where
                         , options.level);
                         }
                         if num_coord != pdb.total_atom_count() {
-                            combine_error(&mut errors, 
+                            combine_error(&mut errors,
                             BoxedError::new(
                                 ErrorLevel::LooseWarning,
                                 "MASTER checksum failed",
@@ -521,12 +546,16 @@ where
             match Chain::from_iter(id, residues.into_values()) {
                 Some(chain) => chains.push(chain),
                 None => {
-                    combine_error(&mut errors, BoxedError::new(
-                        ErrorLevel::InvalidatingError,
-                        "Invalid characters in Chain definition",
-                        "Failed to create chain due to invalid characters",
-                        Context::none(),
-                    ), options.level);
+                    combine_error(
+                        &mut errors,
+                        BoxedError::new(
+                            ErrorLevel::InvalidatingError,
+                            "Invalid characters in Chain definition",
+                            "Failed to create chain due to invalid characters",
+                            Context::none(),
+                        ),
+                        options.level,
+                    );
                 }
             }
         }
@@ -549,49 +578,75 @@ where
     if let Some(scale) = temp_scale.get_matrix() {
         pdb.scale = Some(scale);
     } else if temp_scale.is_partly_set() {
-        combine_error(&mut errors, BoxedError::new(
-            ErrorLevel::StrictWarning,
-            "Invalid SCALE definition",
-            "Not all rows are set in the scale definition",
-            context.clone(),
-        ), options.level);
+        combine_error(
+            &mut errors,
+            BoxedError::new(
+                ErrorLevel::StrictWarning,
+                "Invalid SCALE definition",
+                "Not all rows are set in the scale definition",
+                context.clone(),
+            ),
+            options.level,
+        );
     }
 
     if let Some(origx) = temp_origx.get_matrix() {
         pdb.origx = Some(origx);
     } else if temp_origx.is_partly_set() {
-        combine_error(&mut errors, BoxedError::new(
-            ErrorLevel::StrictWarning,
-            "Invalid ORIGX definition",
-            "Not all rows are set in the ORIGX definition",
-            context.clone(),
-        ), options.level);
+        combine_error(
+            &mut errors,
+            BoxedError::new(
+                ErrorLevel::StrictWarning,
+                "Invalid ORIGX definition",
+                "Not all rows are set in the ORIGX definition",
+                context.clone(),
+            ),
+            options.level,
+        );
     }
 
     for (index, matrix, given) in temp_mtrix {
         if let Some(m) = matrix.get_matrix() {
             pdb.add_mtrix(MtriX::new(index, m, given));
         } else {
-            combine_error(&mut errors, BoxedError::new(
-                ErrorLevel::StrictWarning,
-                "Invalid MATRIX definition",
-                format!("Not all rows are set in the MtriX definition, number: {index}",),
-                context.clone(),
-            ), options.level);
+            combine_error(
+                &mut errors,
+                BoxedError::new(
+                    ErrorLevel::StrictWarning,
+                    "Invalid MATRIX definition",
+                    format!("Not all rows are set in the MtriX definition, number: {index}",),
+                    context.clone(),
+                ),
+                options.level,
+            );
         }
     }
 
     reshuffle_conformers(&mut pdb);
 
-    combine_errors(&mut errors, validate_seqres(
-        &mut pdb,
-        sequence,
-        &seqres_lines,
-        seqres_start_linenumber, // Convert from 1 based to 0 based numbering
-        &context,
-    ).into_iter().map(BoxedError::to_owned), options.level);
-    combine_errors(&mut errors, add_modifications(&mut pdb, modifications, options.level), options.level);
-    combine_errors(&mut errors, add_bonds(&mut pdb, bonds, options.level), options.level);
+    combine_errors(
+        &mut errors,
+        validate_seqres(
+            &mut pdb,
+            sequence,
+            &seqres_lines,
+            seqres_start_linenumber, // Convert from 1 based to 0 based numbering
+            &context,
+        )
+        .into_iter()
+        .map(BoxedError::to_owned),
+        options.level,
+    );
+    combine_errors(
+        &mut errors,
+        add_modifications(&mut pdb, modifications, options.level),
+        options.level,
+    );
+    combine_errors(
+        &mut errors,
+        add_bonds(&mut pdb, bonds, options.level),
+        options.level,
+    );
     combine_errors(&mut errors, validate(&pdb), options.level);
 
     if errors.iter().any(|e| e.get_kind().is_error(options.level)) {
@@ -620,12 +675,16 @@ fn add_modifications(
                             residue.conformers_mut().find(|c| c.name() == res_name)
                         {
                             if let Err(e) = conformer.set_modification((std_name, comment)) {
-                                combine_error(&mut errors, BoxedError::new(
-                                    ErrorLevel::InvalidatingError,
-                                    "Invalid characters",
-                                    e,
-                                    context,
-                                ), level);
+                                combine_error(
+                                    &mut errors,
+                                    BoxedError::new(
+                                        ErrorLevel::InvalidatingError,
+                                        "Invalid characters",
+                                        e,
+                                        context,
+                                    ),
+                                    level,
+                                );
                             }
                         } else {
                             combine_error(&mut errors, BoxedError::new(ErrorLevel::InvalidatingError, "Modified residue could not be found", "The residue presented in this MODRES record could not be found in the specified residue in the PDB file.", context), level);
@@ -680,12 +739,16 @@ fn add_bonds(
                 if let (Some(counter1), Some(counter2)) = (ref1, ref2) {
                     pdb.add_bond_counters(counter1, counter2, Bond::Disulfide);
                 } else {
-                    combine_error(&mut errors, BoxedError::new(
-                        ErrorLevel::InvalidatingError,
-                        "Could not find a bond partner",
-                        "One of the atoms could not be found while parsing a disulfide bond.",
-                        context,
-                    ), level);
+                    combine_error(
+                        &mut errors,
+                        BoxedError::new(
+                            ErrorLevel::InvalidatingError,
+                            "Could not find a bond partner",
+                            "One of the atoms could not be found while parsing a disulfide bond.",
+                            context,
+                        ),
+                        level,
+                    );
                 }
             }
             _ => {

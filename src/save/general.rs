@@ -1,4 +1,4 @@
-use custom_error::{BoxedError, Context, CreateError};
+use context_error::{BoxedError, Context, CreateError};
 use flate2::Compression;
 
 use super::*;

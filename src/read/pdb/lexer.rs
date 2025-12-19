@@ -1,6 +1,6 @@
 use std::{cmp, ops::Range, str::FromStr};
 
-use custom_error::{BoxedError, Context, CreateError};
+use context_error::{BoxedError, Context, CreateError};
 
 use super::lexitem::*;
 use super::utils::{fast_parse_u64_from_string, fast_trim};
@@ -14,30 +14,174 @@ pub(crate) fn lex_line(
 ) -> Result<(LexItem, Vec<BoxedError<'static, ErrorLevel>>), BoxedError<'static, ErrorLevel>> {
     match line.len() {
         len if len > 6 => match (options.only_atomic_coords, &line[..6]) {
-            (_, "HETATM") => Ok(lex_atom(linenumber, line, true)),
-            (_, "ATOM  ") => Ok(lex_atom(linenumber, line, false)),
-            (false, "HEADER") => lex_header(linenumber, line),
-            (false, "REMARK") => lex_remark(linenumber, line, options.level),
-            (false, "ANISOU") => Ok(lex_anisou(linenumber, line)),
-            (false, "CRYST1") => Ok(lex_cryst(linenumber, line)),
-            (false, "SCALE1") => Ok(lex_scale(linenumber, line, 0)),
-            (false, "SCALE2") => Ok(lex_scale(linenumber, line, 1)),
-            (false, "SCALE3") => Ok(lex_scale(linenumber, line, 2)),
-            (false, "ORIGX1") => Ok(lex_origx(linenumber, line, 0)),
-            (false, "ORIGX2") => Ok(lex_origx(linenumber, line, 1)),
-            (false, "ORIGX3") => Ok(lex_origx(linenumber, line, 2)),
-            (false, "MTRIX1") => Ok(lex_mtrix(linenumber, line, 0)),
-            (false, "MTRIX2") => Ok(lex_mtrix(linenumber, line, 1)),
-            (false, "MTRIX3") => Ok(lex_mtrix(linenumber, line, 2)),
-            (_, "MODEL ") => Ok(lex_model(linenumber, line)),
-            (false, "MASTER") => Ok(lex_master(linenumber, line)),
-            (false, "DBREF ") => Ok(lex_dbref(linenumber, line)),
-            (false, "DBREF1") => Ok(lex_dbref1(linenumber, line)),
-            (false, "DBREF2") => Ok(lex_dbref2(linenumber, line)),
-            (false, "SEQRES") => Ok(lex_seqres(linenumber, line)),
-            (false, "SEQADV") => Ok(lex_seqadv(linenumber, line)),
-            (false, "MODRES") => Ok(lex_modres(linenumber, line)),
-            (false, "SSBOND") => Ok(lex_ssbond(linenumber, line)),
+            (_, "HETATM") => {
+                if options.parsing_level.hetatm {
+                    Ok(lex_atom(linenumber, line, true))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (_, "ATOM  ") => {
+                if options.parsing_level.atom {
+                    Ok(lex_atom(linenumber, line, false))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "HEADER") => {
+                if options.parsing_level.header {
+                    lex_header(linenumber, line)
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "REMARK") => {
+                if options.parsing_level.remark {
+                    lex_remark(linenumber, line, options.level)
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "ANISOU") => {
+                if options.parsing_level.anisou {
+                    Ok(lex_anisou(linenumber, line))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "CRYST1") => {
+                if options.parsing_level.cryst1 {
+                    Ok(lex_cryst(linenumber, line))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "SCALE1") => {
+                if options.parsing_level.scale1 {
+                    Ok(lex_scale(linenumber, line, 0))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "SCALE2") => {
+                if options.parsing_level.scale2 {
+                    Ok(lex_scale(linenumber, line, 1))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "SCALE3") => {
+                if options.parsing_level.scale3 {
+                    Ok(lex_scale(linenumber, line, 2))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "ORIGX1") => {
+                if options.parsing_level.origx1 {
+                    Ok(lex_origx(linenumber, line, 0))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "ORIGX2") => {
+                if options.parsing_level.origx2 {
+                    Ok(lex_origx(linenumber, line, 1))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "ORIGX3") => {
+                if options.parsing_level.origx3 {
+                    Ok(lex_origx(linenumber, line, 2))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "MTRIX1") => {
+                if options.parsing_level.mtrix1 {
+                    Ok(lex_mtrix(linenumber, line, 0))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "MTRIX2") => {
+                if options.parsing_level.mtrix2 {
+                    Ok(lex_mtrix(linenumber, line, 1))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "MTRIX3") => {
+                if options.parsing_level.mtrix3 {
+                    Ok(lex_mtrix(linenumber, line, 2))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (_, "MODEL ") => {
+                if options.parsing_level.model {
+                    Ok(lex_model(linenumber, line))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "MASTER") => {
+                if options.parsing_level.master {
+                    Ok(lex_master(linenumber, line))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "DBREF ") => {
+                if options.parsing_level.dbref {
+                    Ok(lex_dbref(linenumber, line))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "DBREF1") => {
+                if options.parsing_level.dbref1 {
+                    Ok(lex_dbref1(linenumber, line))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "DBREF2") => {
+                if options.parsing_level.dbref2 {
+                    Ok(lex_dbref2(linenumber, line))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "SEQRES") => {
+                if options.parsing_level.seqres {
+                    Ok(lex_seqres(linenumber, line))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "SEQADV") => {
+                if options.parsing_level.seqadv {
+                    Ok(lex_seqadv(linenumber, line))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "MODRES") => {
+                if options.parsing_level.modres {
+                    Ok(lex_modres(linenumber, line))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
+            (false, "SSBOND") => {
+                if options.parsing_level.ssbond {
+                    Ok(lex_ssbond(linenumber, line))
+                } else {
+                    Ok((LexItem::Empty(), Vec::new()))
+                }
+            }
             (_, "ENDMDL") => Ok((LexItem::EndModel(), Vec::new())),
             (_, "TER   ") => Ok((LexItem::TER(), Vec::new())),
             (_, "END   ") => Ok((LexItem::End(), Vec::new())),

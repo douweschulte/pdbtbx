@@ -1,5 +1,5 @@
 use crate::{structs::*, ErrorLevel, StrictnessLevel};
-use custom_error::{combine_error, combine_errors, BoxedError, Context, CreateError};
+use context_error::{combine_error, combine_errors, BoxedError, Context, CreateError};
 
 /// Validate a given PDB file in terms of invariants that should be held up.
 /// It returns `BoxedError`s with the warning messages.

@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, fmt};
 
-use custom_error::{BoxedError, Context, CreateError};
+use context_error::{BoxedError, Context, CreateError};
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
 

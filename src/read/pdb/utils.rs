@@ -30,14 +30,14 @@ pub(crate) fn fast_trim(s: &str) -> &str {
     let mut start = 0;
     let mut end = bytes.len();
 
-    while start < end {
-        if bytes[start].is_ascii_whitespace() {
-            start += 1;
-        } else if bytes[end - 1].is_ascii_whitespace() {
-            end -= 1;
-        } else {
-            break;
-        }
+    // Trim start
+    while start < end && bytes[start].is_ascii_whitespace() {
+        start += 1;
+    }
+
+    // Trim end
+    while start < end && bytes[end - 1].is_ascii_whitespace() {
+        end -= 1;
     }
 
     &s[start..end]

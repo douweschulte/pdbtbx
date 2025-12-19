@@ -1,4 +1,4 @@
-use custom_error::ErrorKind;
+use context_error::ErrorKind;
 
 use crate::StrictnessLevel;
 use std::fmt;

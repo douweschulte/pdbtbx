@@ -2,7 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::prelude::*;
 
-use custom_error::{combine_errors, BoxedError, Context, CreateError, ErrorKind, FullErrorContent};
+use context_error::{
+    combine_errors, BoxedError, Context, CreateError, ErrorKind, FullErrorContent,
+};
 
 use super::lexitem::*;
 use crate::{

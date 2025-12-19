@@ -91,6 +91,8 @@ println!("There are {} backbone atoms within 3.5Aͦ of the atom at index 42", to
 
 /// Handle different levels of errors
 mod errorlevel;
+/// Parsing level control
+mod parsing_level;
 /// To open PDB files
 mod read;
 /// Reference tables for constants
@@ -109,6 +111,7 @@ mod validate;
 pub mod general_docs;
 
 pub use errorlevel::*;
+pub use parsing_level::ParsingLevel;
 pub use read::*;
 pub use save::*;
 pub use strictness_level::StrictnessLevel;
