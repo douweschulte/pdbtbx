@@ -4,7 +4,7 @@ use std::path::Path;
 use std::time::Instant;
 use std::{env, fs};
 
-use custom_error::{ErrorKind, FullErrorContent, StaticErrorContent};
+use context_error::{ErrorKind, FullErrorContent, StaticErrorContent};
 use pdbtbx::*;
 
 #[test]
