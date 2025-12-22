@@ -49,6 +49,7 @@ impl TryFrom<&str> for Format {
 ///     .set_format(Format::Auto)
 ///     .set_level(StrictnessLevel::Loose)
 ///     .set_discard_hydrogens(true)
+///     .set_parsing_level(ParsingLevel::default().set_hetatm(false))
 ///     .read("1CRN.pdb");
 /// ```
 ///
@@ -110,8 +111,8 @@ impl ReadOptions {
     }
 
     /// Sets the parsing level to use when reading the file.
-    pub fn set_parsing_level(&mut self, parsing_level: ParsingLevel) -> &mut Self {
-        self.parsing_level = parsing_level;
+    pub fn set_parsing_level(&mut self, parsing_level: &ParsingLevel) -> &mut Self {
+        self.parsing_level = parsing_level.clone();
         self
     }
 

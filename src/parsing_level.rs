@@ -1,4 +1,16 @@
-/// Represents the current parsing level. Enables control of what parts of the protein are lexed/parsed.
+/// Represents the current parsing level. Enables control of what records in the input PDB file are processed.
+/// # Examples
+///
+/// ```no_run
+/// use pdbtbx::*;
+///
+/// let pdb = ReadOptions::new()
+///     .set_format(Format::Auto)
+///     .set_level(StrictnessLevel::Loose)
+///     .set_discard_hydrogens(true)
+///     .set_parsing_level(ParsingLevel::default().set_hetatm(false).set_header(false))
+///     .read("1CRN.pdb");
+/// ```
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct ParsingLevel {
     pub(crate) hetatm: bool,
@@ -100,9 +112,9 @@ macro_rules! parsing_level_setters {
         impl ParsingLevel {
             $(
                 #[doc = concat!("Set whether to parse ", stringify!($field), " records.")]
-                pub fn $setter(&mut self, value: bool) -> Self {
+                pub fn $setter(&mut self, value: bool) -> &mut Self {
                     self.$field = value;
-                    self.clone()
+                    self
                 }
             )+
         }
