@@ -2,9 +2,9 @@ name: Cargo
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
@@ -17,7 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Build
-        run: cargo build --verbose
+        run: |
+          cargo build --verbose
+          cargo build --no-default-features
+          cargo build --no-default-features --features "rayon"
+          cargo build --no-default-features --features "compression"
+          cargo build --no-default-features --features "rstar"
+          cargo build --no-default-features --features "serde"
 
   lint:
     name: Lint
@@ -26,25 +32,11 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v6
 
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
-
       - name: Run cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --check
 
       - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --features "rayon serde rstar"
+        run: cargo clippy --check
 
   test:
     name: Test
