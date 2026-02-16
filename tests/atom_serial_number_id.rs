@@ -1,6 +1,6 @@
 //! Test serial numbers
 
-use custom_error::{BoxedError, StaticErrorContent};
+use context_error::{BoxedError, StaticErrorContent};
 use itertools::Itertools;
 use pdbtbx::*;
 

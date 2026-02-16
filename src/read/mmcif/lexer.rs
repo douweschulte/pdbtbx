@@ -2,7 +2,7 @@
 use crate::ErrorLevel;
 
 use super::lexitem::*;
-use custom_error::{BoxedError, Context, CreateError, FilePosition};
+use context_error::{BoxedError, Context, CreateError, FilePosition};
 
 /// Parse/lex a CIF file into CIF intermediate structure
 pub(crate) fn lex_cif(text: &str) -> Result<DataBlock, BoxedError<'static, ErrorLevel>> {
@@ -383,7 +383,7 @@ fn trim_comments_and_whitespace(input: &mut FilePosition<'_>) {
     }
 }
 
-/// Parse a piece of text enclosed by a char, it assumes the first FilePosition also matches the char.
+/// Parse a piece of text enclosed by a char, it assumes the first `FilePosition` also matches the char.
 /// It will fail if it finds a newline in the text. SO it can be used for single or double quoted strings.
 fn parse_enclosed<'a>(
     input: &mut FilePosition<'a>,
@@ -422,7 +422,7 @@ fn parse_enclosed<'a>(
     ))
 }
 
-/// Parse a multiline string <eol>; ...(text)... <eol>;, it assumes the first FilePosition is ';'
+/// Parse a multiline string <eol>; ...(text)... <eol>;, it assumes the first `FilePosition` is ';'
 fn parse_multiline_string<'a>(
     input: &mut FilePosition<'a>,
 ) -> Result<&'a str, BoxedError<'static, ErrorLevel>> {
@@ -547,7 +547,7 @@ const fn is_ordinary(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use custom_error::StaticErrorContent;
+    use context_error::StaticErrorContent;
 
     use super::*;
 

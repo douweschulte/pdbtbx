@@ -2,7 +2,7 @@
 
 /// A 3D affine transformation matrix
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TransformationMatrix {
     /// The matrix itself
     matrix: [[f64; 4]; 3],

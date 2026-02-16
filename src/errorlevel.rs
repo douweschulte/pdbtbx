@@ -1,10 +1,10 @@
-use custom_error::ErrorKind;
+use context_error::ErrorKind;
 
 use crate::StrictnessLevel;
 use std::fmt;
 
 /// This indicates the level of the error, to handle it differently based on the level of the raised error.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub enum ErrorLevel {
     /// An error that breaks the execution of the program.
     #[default]

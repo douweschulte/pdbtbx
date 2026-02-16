@@ -1,4 +1,5 @@
-use custom_error::{BoxedError, Context, CreateError};
+use context_error::{BoxedError, Context, CreateError};
+#[cfg(feature = "compression")]
 use flate2::Compression;
 
 use super::*;
@@ -35,6 +36,7 @@ pub fn save(
 /// type (pdb or mmCIF/PDBx) will be determined based on the given file extension.
 /// # Errors
 /// Fails if the validation fails with the given `level`.
+#[cfg(feature = "compression")]
 pub fn save_gz(
     pdb: &PDB,
     filename: impl AsRef<str>,

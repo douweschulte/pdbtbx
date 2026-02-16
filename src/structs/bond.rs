@@ -1,6 +1,6 @@
 /// Bond types between two atoms
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Bond {
     /// A covalent bond
     Covalent,

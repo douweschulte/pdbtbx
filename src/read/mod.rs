@@ -1,6 +1,8 @@
 #![allow(deprecated)] // Keep exporting them until fully removed
 
-pub use general::{open, open_gz};
+pub use general::open;
+#[cfg(feature = "compression")]
+pub use general::open_gz;
 pub use mmcif::{open_mmcif, open_mmcif_bufread, open_mmcif_raw};
 pub use pdb::{open_pdb, open_pdb_raw};
 pub use read_options::{Format, ReadOptions};

@@ -5,7 +5,7 @@ use std::{
     iter,
 };
 
-use custom_error::{BoxedError, Context, CreateError, ErrorKind, FullErrorContent};
+use context_error::{BoxedError, Context, CreateError, ErrorKind, FullErrorContent};
 #[cfg(feature = "compression")]
 use flate2::{write::GzEncoder, Compression};
 

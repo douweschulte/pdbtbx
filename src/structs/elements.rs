@@ -1,4 +1,4 @@
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// All elements from the periodic system.
 #[allow(missing_docs)]
@@ -581,7 +581,7 @@ const ELEMENT_NAMES: [&str; 118] = [
 ];
 
 /// Hold all atomic radii for a single element. So that in the code it is obvious which radius you use. All values are in Å (10e-10 m or 0.1 nm).
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AtomicRadius {
     /// Gets the atomic radius (defined up until 'Cm' 96) in Å.
     /// Source: Martin Rahm, Roald Hoffmann, and N. W. Ashcroft. Atomic and Ionic Radii of Elements 1-96. Chemistry - A European Journal, 22(41):14625–14632, oct 2016. <http://doi.org/10.1002/chem.201602949>.

@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufWriter;
 
-use custom_error::FullErrorContent;
-use custom_error::{BoxedError, Context, CreateError, ErrorKind};
+use context_error::FullErrorContent;
+use context_error::{BoxedError, Context, CreateError, ErrorKind};
 #[cfg(feature = "compression")]
 use flate2::{write::GzEncoder, Compression};
 
@@ -303,8 +303,7 @@ _atom_site.aniso_U[3][3]"
     let mut lines = Vec::new();
 
     for model in pdb.models() {
-        let mut chain_index = 0;
-        for chain in model.chains() {
+        for (chain_index, chain) in model.chains().enumerate() {
             for (residue_index, residue) in chain.residues().enumerate() {
                 for conformer in residue.conformers() {
                     for atom in conformer.atoms() {
@@ -319,7 +318,7 @@ _atom_site.aniso_U[3][3]"
                             conformer.name().to_string(), // Residue name
                             number_to_base26(chain_index), // Label Chain name, defined to be without gaps
                             chain.id().to_string(),        // Auth Chain name
-                            (chain_index + 1).to_string(),       // Entity ID, using chain serial number
+                            (chain_index + 1).to_string(), // Entity ID, using chain serial number
                             (residue_index + 1).to_string(), // `label_seq_id` defined to be [1-N] where N is the index
                             residue.serial_number().to_string(), // Residue serial number
                             residue.insertion_code().unwrap_or(".").to_string(), // Insertion code
@@ -363,7 +362,6 @@ _atom_site.aniso_U[3][3]"
                     }
                 }
             }
-        chain_index += 1;
         }
     }
     if !lines.is_empty() {

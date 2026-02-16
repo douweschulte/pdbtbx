@@ -38,7 +38,7 @@ use super::*;
 use std::marker::PhantomData;
 
 /// A struct to hold references to an Atom and its containing Conformer.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AtomConformer<'a> {
     /// This Atom
     atom: &'a Atom,
@@ -47,7 +47,7 @@ pub struct AtomConformer<'a> {
 }
 
 /// A struct to hold references to an Atom and its containing Conformer and Residue.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AtomConformerResidue<'a> {
     /// This Atom
     atom: &'a Atom,
@@ -58,7 +58,7 @@ pub struct AtomConformerResidue<'a> {
 }
 
 /// A struct to hold references to an Atom and its containing Conformer, Residue, and Chain.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AtomConformerResidueChain<'a> {
     /// This Atom
     atom: &'a Atom,
@@ -71,7 +71,7 @@ pub struct AtomConformerResidueChain<'a> {
 }
 
 /// A struct to hold references to an Atom and its containing Conformer, Residue, Chain, and Model.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AtomConformerResidueChainModel<'a> {
     /// This Atom
     atom: &'a Atom,
@@ -86,7 +86,7 @@ pub struct AtomConformerResidueChainModel<'a> {
 }
 
 /// A struct to hold mutable references to an Atom and its containing Conformer.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AtomConformerMut<'a> {
     /// This Atom
     atom: *mut Atom,
@@ -96,7 +96,7 @@ pub struct AtomConformerMut<'a> {
 }
 
 /// A struct to hold mutable references to an Atom and its containing Conformer and Residue.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AtomConformerResidueMut<'a> {
     /// This Atom
     atom: *mut Atom,
@@ -109,7 +109,7 @@ pub struct AtomConformerResidueMut<'a> {
 
 /// A struct to hold mutable references to an Atom and its containing Conformer, Residue, and
 /// Chain.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AtomConformerResidueChainMut<'a> {
     /// This Atom
     atom: *mut Atom,
@@ -123,7 +123,7 @@ pub struct AtomConformerResidueChainMut<'a> {
 }
 
 /// A struct to hold mutable references to an Atom and its containing Conformer, Residue, Chain, and Model.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AtomConformerResidueChainModelMut<'a> {
     /// This Atom
     atom: *mut Atom,

@@ -1,6 +1,6 @@
 use std::{cmp, ops::Range, str::FromStr};
 
-use custom_error::{BoxedError, Context, CreateError};
+use context_error::{BoxedError, Context, CreateError};
 
 use super::lexitem::*;
 use super::utils::{fast_parse_u64_from_string, fast_trim};
@@ -109,15 +109,9 @@ fn lex_header<'a>(
     } else {
         Ok((
             LexItem::Header(
-                line.chars().collect::<Vec<char>>()[10..50]
-                    .iter()
-                    .collect::<String>(),
-                line.chars().collect::<Vec<char>>()[50..59]
-                    .iter()
-                    .collect::<String>(),
-                line.chars().collect::<Vec<char>>()[62..66]
-                    .iter()
-                    .collect::<String>(),
+                line.chars().skip(10).take(39).collect::<String>(),
+                line.chars().skip(50).take(8).collect::<String>(),
+                line.chars().skip(62).take(3).collect::<String>(),
             ),
             Vec::new(),
         ))

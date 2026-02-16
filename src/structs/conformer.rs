@@ -8,7 +8,7 @@ use std::cmp::Ordering;
 use std::fmt;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 /// A Conformer containing multiple atoms, analogous to `atom_group` in cctbx
 pub struct Conformer {
     /// The name of this Conformer
@@ -368,7 +368,7 @@ impl fmt::Display for Conformer {
 
 impl PartialOrd for Conformer {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.id().cmp(&other.id()))
+        Some(self.cmp(other))
     }
 }
 

@@ -6,7 +6,7 @@ use rayon::prelude::*;
 use std::cmp::Ordering;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 /// A Chain containing multiple Residues
 pub struct Chain {
     /// The identifier of this Chain
@@ -549,7 +549,7 @@ impl fmt::Display for Chain {
 
 impl PartialOrd for Chain {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.id().cmp(other.id()))
+        Some(self.cmp(other))
     }
 }
 

@@ -1,4 +1,4 @@
-use custom_error::BoxedError;
+use context_error::BoxedError;
 
 use crate::structs::PDB;
 use crate::{ErrorLevel, StrictnessLevel};
@@ -54,7 +54,7 @@ pub fn open_gz(filename: impl AsRef<str>, level: StrictnessLevel) -> ReadResult 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use custom_error::StaticErrorContent;
+    use context_error::StaticErrorContent;
 
     #[test]
     #[cfg_attr(miri, ignore)]
