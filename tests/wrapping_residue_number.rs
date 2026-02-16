@@ -2,6 +2,7 @@
 
 use pdbtbx::*;
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn wrapping_residue_number() {
     let (pdb, errors) = ReadOptions::default()

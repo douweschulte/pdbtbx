@@ -9,6 +9,7 @@
 
 use pdbtbx::*;
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn main() {
     assert_eq!(22, number_of_h("example-pdbs/nucleic.pdb"));

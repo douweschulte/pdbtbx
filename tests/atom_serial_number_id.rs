@@ -28,6 +28,7 @@ fn get_atoms(filename: &str) -> Vec<Atom> {
         .collect()
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn atom_serial_number_and_id_unique_for_single_model_mmcif() {
     let filename_regular = "example-pdbs/rosetta_model.cif";
@@ -39,6 +40,7 @@ fn atom_serial_number_and_id_unique_for_single_model_mmcif() {
     assert!(atom_ids.iter().all_unique());
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn atom_serial_number_and_id_unique_for_single_model_pdb() {
     let filename_regular = "example-pdbs/rosetta_model.pdb";
@@ -50,6 +52,7 @@ fn atom_serial_number_and_id_unique_for_single_model_pdb() {
     assert!(atom_ids.iter().all_unique());
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn atom_serial_number_and_id_unique_for_single_model_large_pdb() {
     // check for bugs caused by atom numbers larger than PDB format allows
@@ -62,6 +65,7 @@ fn atom_serial_number_and_id_unique_for_single_model_large_pdb() {
     assert!(atom_ids.iter().all_unique());
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn atom_serial_number_only_unique_within_model_mmcif() {
     let filename_shared_ids = "example-pdbs/pTLS-6484.cif";
@@ -83,6 +87,7 @@ fn atom_serial_number_only_unique_within_model_mmcif() {
         .all_unique());
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn atom_serial_number_only_unique_within_model_pdb() {
     let filename = "example-pdbs/pTLS-6484.pdb";
@@ -95,12 +100,14 @@ fn atom_serial_number_only_unique_within_model_pdb() {
         .all_unique());
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn atom_id_unique_globally_pdb() {
     let filename = "example-pdbs/pTLS-6484.pdb";
     assert!(get_atoms(filename).iter().map(Atom::id).all_unique());
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn atom_id_unique_if_unique_in_input_mmcif() {
     let filename_unique_ids = "example-pdbs/3pdz.cif";
@@ -108,6 +115,7 @@ fn atom_id_unique_if_unique_in_input_mmcif() {
     assert!(structure.atoms().map(Atom::id).all_unique());
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn warning_if_atom_ids_not_unique_mmcif() {
     let filename_shared_ids = "example-pdbs/pTLS-6484.cif";

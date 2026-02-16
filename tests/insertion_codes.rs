@@ -2,6 +2,7 @@
 
 use pdbtbx::*;
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn insertion_codes() {
     let root = env!("CARGO_MANIFEST_DIR");

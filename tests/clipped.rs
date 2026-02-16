@@ -5,6 +5,7 @@ use pdbtbx::*;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn clipped() {
     let root = env!("CARGO_MANIFEST_DIR");
