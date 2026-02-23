@@ -1,5 +1,5 @@
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 /// The position of the sequence for a cross-reference of sequences.
 pub struct SequencePosition {
     /// The starting position
@@ -39,7 +39,7 @@ impl SequencePosition {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 /// A `DatabaseReference` containing the cross-reference to a corresponding database sequence for a Chain.
 pub struct DatabaseReference {
     /// The information about the database, (name, accession code, identification code), see DBREF documentation wwPDB v3.30
@@ -71,7 +71,7 @@ impl DatabaseReference {
 
 /// The information about the database see DBREF documentation wwPDB v3.30 <https://www.wwpdb.org/documentation/file-format-content/format33/sect3.html#DBREF>
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Database {
     /// Name of the database, eg Uniprot/UNP
     pub name: String,
@@ -92,7 +92,7 @@ impl From<(String, String, String)> for Database {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 /// A difference between the sequence of the database and the pdb file
 pub struct SequenceDifference {
     /// The residue in the PDB file

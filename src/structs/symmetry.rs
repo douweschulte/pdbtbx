@@ -5,7 +5,7 @@ use crate::transformation::TransformationMatrix;
 use std::cmp::Ordering;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 /// A Space group of a crystal
 pub struct Symmetry {
     /// The index of this symbol in Int. Crys. Handbook Vol A 2016

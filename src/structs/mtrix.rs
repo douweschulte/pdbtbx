@@ -3,7 +3,7 @@ use crate::transformation::TransformationMatrix;
 use std::cmp::Ordering;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 /// A transformation expressing non-crystallographic symmetry, used when transformations are required to generate the whole asymmetric subunit
 pub struct MtriX {
     /// The serial number of this transformation

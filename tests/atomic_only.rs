@@ -2,6 +2,7 @@
 
 use pdbtbx::*;
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn only_read_atoms() {
     // PDB parser

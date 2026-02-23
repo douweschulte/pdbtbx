@@ -12,7 +12,7 @@ use crate::{
 };
 
 /// Parse the given mmCIF file into a PDB struct.
-/// Returns a `BoxedError` if a `BreakingError` is found. Otherwise it returns the PDB with all errors/warnings found while parsing it.
+/// Returns a `BoxedError` if a `BreakingError` is found. Otherwise, it returns the PDB with all errors/warnings found while parsing it.
 ///
 /// # Related
 /// If you want to open a file from memory, see [`ReadOptions::read_raw`].
@@ -33,9 +33,7 @@ pub(crate) fn open_mmcif_with_options(
     options: &ReadOptions,
 ) -> Result<(PDB, Vec<BoxedError<'static, ErrorLevel>>), Vec<BoxedError<'static, ErrorLevel>>> {
     let filename = filename.as_ref();
-    let file = if let Ok(f) = File::open(filename) {
-        f
-    } else {
+    let Ok(file) = File::open(filename) else {
         return Err(vec![BoxedError::new(ErrorLevel::BreakingError, "Could not open file", "Could not open the specified file, make sure the path is correct, you have permission, and that it is not open in another program.", Context::default().source(filename).to_owned())]);
     };
     let reader = std::io::BufReader::new(file);
@@ -264,7 +262,7 @@ fn parse_mmcif_with_options(
             Item::SaveFrame(_) => None,
         };
         if let Some(e) = result {
-            combine_errors(&mut errors, e, options.level);
+            combine_errors(&mut errors, e);
         }
     }
 
@@ -273,7 +271,7 @@ fn parse_mmcif_with_options(
     }
 
     reshuffle_conformers(&mut pdb);
-    combine_errors(&mut errors, validate(&pdb), options.level);
+    combine_errors(&mut errors, validate(&pdb));
     if errors.iter().any(|e| e.get_kind().is_error(options.level)) {
         Err(errors)
     } else {
@@ -548,20 +546,17 @@ fn parse_atoms(
 
         let model = unsafe {
             // I could not find a way to make the borrow checker happy, but if no item
-            // could be find the borrow should be ended and as such safe for mutating
+            // could be found the borrow should have been ended and as such safe for mutating
             // in the second branch.
             let pdb_pointer: *mut PDB = pdb;
             (*pdb_pointer)
                 .models_mut()
                 .find(|m| m.serial_number() == model_number)
-                .map_or_else(
-                    || {
-                        (*pdb_pointer).add_model(Model::new(model_number));
-                        #[allow(clippy::unwrap_used)]
-                        (*pdb_pointer).models_mut().next_back().unwrap()
-                    },
-                    |m| m,
-                )
+                .unwrap_or_else(|| {
+                    (*pdb_pointer).add_model(Model::new(model_number));
+                    #[allow(clippy::unwrap_used)]
+                    (*pdb_pointer).models_mut().next_back().unwrap()
+                })
         };
         let current_model_atom_count = if let Some(c) = model_atom_counts.get(&model_number) {
             *c
@@ -650,7 +645,7 @@ fn get_text<'a>(
     _column: Option<&str>,
 ) -> Result<Option<String>, BoxedError<'a, ErrorLevel>> {
     match value {
-        Value::Text(t) => Ok(Some(t.to_string())),
+        Value::Text(t) => Ok(Some(t.clone())),
         Value::Inapplicable | Value::Unknown => Ok(None),
         Value::Numeric(n) => Ok(Some(format!("{n}"))),
         Value::NumericWithUncertainty(n, u) => Ok(Some(format!("{n}({u})"))),

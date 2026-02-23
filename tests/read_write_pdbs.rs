@@ -7,6 +7,7 @@ use std::{env, fs};
 use context_error::{ErrorKind, FullErrorContent, StaticErrorContent};
 use pdbtbx::*;
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn run_pdbs() {
     let current_dir = env::current_dir().unwrap();

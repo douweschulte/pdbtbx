@@ -6,7 +6,7 @@ use crate::{ParsingLevel, StrictnessLevel};
 
 use super::general::ReadResult;
 /// Used to set which format to read the file in.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum Format {
     /// Load PDB files
     Pdb,
@@ -55,7 +55,7 @@ impl TryFrom<&str> for Format {
 ///
 /// The format of the file is inferred by [`ReadOptions::guess_format`]
 /// when it is not set explicitly with [`ReadOptions::set_format`].
-#[derive(Debug, Default, Clone)]
+#[derive(Clone, Debug, Default)]
 pub struct ReadOptions {
     /// The format to read the file in.
     pub(crate) format: Format,
@@ -70,7 +70,6 @@ pub struct ReadOptions {
     pub(crate) capitalise_chains: bool,
 
     /// Decompress
-    #[cfg(feature = "compression")]
     pub(crate) decompress: bool,
 
     /// Discard hydrogens
@@ -98,7 +97,8 @@ impl ReadOptions {
     /// Guess the file format based on the file name extensions.
     pub fn guess_format(&mut self, filename: &str) -> &mut Self {
         if let Some((file_format, is_compressed)) = guess_format(filename) {
-            self.set_decompress(is_compressed).set_format(file_format)
+            self.decompress = is_compressed;
+            self.set_format(file_format)
         } else {
             self
         }
@@ -158,10 +158,22 @@ impl ReadOptions {
     /// If your file extensions are not canonical, set the format explicitly with [`ReadOptions::set_format`].
     pub fn read(&self, path: impl AsRef<str>) -> ReadResult {
         if self.decompress {
-            // open a decompression stream
-            let filename = path.as_ref();
+            #[cfg(feature = "compression")]
+            {
+                // open a decompression stream
+                let filename = path.as_ref();
 
-            self.read_auto(filename)
+                self.read_auto(filename)
+            }
+            #[cfg(not(feature = "compression"))]
+            {
+                Err(vec![BoxedError::new(
+                    crate::ErrorLevel::BreakingError,
+                    "Compressed file",
+                    "This crate was compiled without support for compressed files but a compressed file was given",
+                    Context::default().source(path.as_ref()).to_owned(),
+                )])
+            }
         } else {
             match self.format {
                 Format::Pdb => super::pdb::open_pdb_with_options(path, self),
@@ -176,6 +188,7 @@ impl ReadOptions {
     fn read_auto(&self, path: impl AsRef<str>) -> ReadResult {
         let filename = path.as_ref();
         if let Some((file_format, is_compressed)) = guess_format(filename) {
+            #[cfg(feature = "compression")]
             if is_compressed {
                 let file = std::fs::File::open(filename).map_err(|_| {
                     vec![BoxedError::new(
@@ -211,6 +224,13 @@ impl ReadOptions {
                     )])
                 }
             }
+            #[cfg(not(feature = "compression"))]
+            Err(vec![BoxedError::new(
+                crate::ErrorLevel::BreakingError,
+                "Compressed file",
+                "This crate was compiled without support for compressed files but a compressed file was given",
+                Context::default().source(filename).to_owned(),
+            )])
         } else {
             Err(vec![BoxedError::new(
                 crate::ErrorLevel::BreakingError,

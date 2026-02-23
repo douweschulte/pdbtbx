@@ -126,5 +126,5 @@ fn check_extension(filename: impl AsRef<str>, extension: impl AsRef<str>) -> boo
         .rsplit('.')
         .next()
         .map(|ext| ext.eq_ignore_ascii_case(extension.as_ref()))
-        == Some(true)
+        .unwrap_or_default()
 }

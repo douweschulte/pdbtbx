@@ -665,7 +665,7 @@ impl Eq for Atom {}
 
 impl PartialOrd for Atom {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.serial_number.cmp(&other.serial_number))
+        Some(self.cmp(other))
     }
 }
 

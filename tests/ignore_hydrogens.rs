@@ -2,6 +2,7 @@
 
 use pdbtbx::*;
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn ignore_hydrogens_in_pdb() {
     // PDB parser

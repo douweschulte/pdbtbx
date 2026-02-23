@@ -1,4 +1,4 @@
-use crate::{structs::*, ErrorLevel, StrictnessLevel};
+use crate::{structs::*, ErrorLevel};
 use context_error::{combine_error, combine_errors, BoxedError, Context, CreateError};
 
 /// Validate a given PDB file in terms of invariants that should be held up.
@@ -13,7 +13,7 @@ use context_error::{combine_error, combine_errors, BoxedError, Context, CreateEr
 pub fn validate(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
     let mut errors = Vec::new();
     if pdb.model_count() > 1 {
-        combine_errors(&mut errors, validate_models(pdb), StrictnessLevel::Strict);
+        combine_errors(&mut errors, validate_models(pdb));
     }
 
     if pdb.atoms().next().is_none() {
@@ -25,7 +25,6 @@ pub fn validate(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                 "No Atoms in the given PDB struct while validating.",
                 Context::none(),
             ),
-            StrictnessLevel::Strict,
         );
     }
     errors
@@ -43,7 +42,7 @@ pub fn validate(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
 #[must_use]
 pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
     let mut errors = Vec::new();
-    combine_errors(&mut errors, validate(pdb), StrictnessLevel::Strict);
+    combine_errors(&mut errors, validate(pdb));
     for model in pdb.models() {
         if model.serial_number() > 9999 {
             combine_error(
@@ -57,7 +56,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                     ),
                     Context::none(),
                 ),
-                StrictnessLevel::Strict,
             );
         }
         for chain in model.chains() {
@@ -73,7 +71,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                         ),
                         Context::none(),
                     ),
-                    StrictnessLevel::Strict,
                 );
             }
             for residue in chain.residues() {
@@ -89,7 +86,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                             ),
                             Context::none(),
                         ),
-                        StrictnessLevel::Strict,
                     );
                 }
                 if let Some(ic) = residue.insertion_code() {
@@ -105,7 +101,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                             ),
                                 Context::none(),
                             ),
-                            StrictnessLevel::Strict,
                         );
                     }
                 }
@@ -122,7 +117,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                                 ),
                                 Context::none(),
                             ),
-                            StrictnessLevel::Strict,
                         );
                     }
                     if let Some(alt_loc) = conformer.alternative_location() {
@@ -135,7 +129,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                                     conformer.id()
                                 ),
                                 Context::none(),
-                            ), StrictnessLevel::Strict);
+                            ));
                         }
                     }
                     if let Some((n, comment)) = conformer.modification() {
@@ -148,7 +142,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                                 residue.serial_number()
                             ),
                             Context::none(),
-                        ), StrictnessLevel::Strict);
+                        ));
                         }
                         if comment.len() > 41 {
                             combine_error(&mut errors, BoxedError::new(
@@ -159,7 +153,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                                 residue.serial_number()
                             ),
                             Context::none(),
-                        ), StrictnessLevel::Strict);
+                        ));
                         }
                     }
                     for atom in conformer.atoms() {
@@ -175,7 +169,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                                     ),
                                     Context::none(),
                                 ),
-                                StrictnessLevel::Strict,
                             );
                         }
                         if atom.serial_number() > 99999 {
@@ -190,7 +183,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                                 ),
                                     Context::none(),
                                 ),
-                                StrictnessLevel::Strict,
                             );
                         }
                         if atom.charge() > 9 || atom.charge() < -9 {
@@ -205,7 +197,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                             ),
                                     Context::none(),
                                 ),
-                                StrictnessLevel::Strict,
                             );
                         }
                         if atom.occupancy() > 999.99 {
@@ -220,7 +211,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                             ),
                                     Context::none(),
                                 ),
-                                StrictnessLevel::Strict,
                             );
                         }
                         if atom.b_factor() > 999.99 {
@@ -235,7 +225,6 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                                 ),
                                     Context::none(),
                                 ),
-                                StrictnessLevel::Strict,
                             );
                         }
                         if atom.x() > 9999.999 || atom.x() < -999.999 {
@@ -247,7 +236,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                                 atom.serial_number()
                             ),
                             Context::none(),
-                        ), StrictnessLevel::Strict);
+                        ));
                         }
                         if atom.y() > 9999.999 || atom.y() < -999.999 {
                             combine_error(&mut errors, BoxedError::new(
@@ -258,7 +247,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                                 atom.serial_number()
                             ),
                             Context::none(),
-                        ), StrictnessLevel::Strict);
+                        ));
                         }
                         if atom.z() > 9999.999 || atom.z() < -999.999 {
                             combine_error(&mut errors, BoxedError::new(
@@ -269,7 +258,7 @@ pub fn validate_pdb(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                                 atom.serial_number()
                             ),
                             Context::none(),
-                        ), StrictnessLevel::Strict);
+                        ));
                         }
                     }
                 }
@@ -303,7 +292,7 @@ fn validate_models(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                     total_atoms
                 ),
                 Context::none(),
-            ), StrictnessLevel::Strict);
+            ));
             continue;
         } else if model.atoms().filter(|a| !a.hetero()).count() != normal_atoms {
             combine_error(
@@ -319,7 +308,6 @@ fn validate_models(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                 ),
                     Context::none(),
                 ),
-                StrictnessLevel::Strict,
             );
             continue;
         }
@@ -336,7 +324,7 @@ fn validate_models(pdb: &PDB) -> Vec<BoxedError<'static, ErrorLevel>> {
                         model.serial_number()
                     ),
                     Context::none(),
-                ), StrictnessLevel::Strict);
+                ));
             }
         }
     }

@@ -2,6 +2,7 @@
 
 use pdbtbx::*;
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn correct_model_count() {
     // atom IDs shared between models, PDB parser
@@ -14,6 +15,7 @@ fn correct_model_count() {
     assert_eq!(30, count_models("example-pdbs/3pdz.cif", false));
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn only_read_first_model() {
     // atom IDs shared between models, PDB parser

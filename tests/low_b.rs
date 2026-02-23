@@ -4,6 +4,7 @@ use pdbtbx::*;
 use std::env;
 use std::path::Path;
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn low_b_factor_messages() {
     let filename = env::current_dir()

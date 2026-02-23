@@ -7,7 +7,7 @@ use std::ops;
 /// [`PDB::create_hierarchy_rtree`]. The rstar crate makes spatial lookup and queries
 /// way faster and feasible to use in high performance environments.
 #[allow(unused)]
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub enum Term {
     /// The model serial number, only used in (NMR) PDB files with multiple states of a protein, see [`Model::serial_number`].
@@ -134,12 +134,12 @@ impl Term {
 ///     println!("Atom '{}' is selected", hierarchy.atom().serial_number());
 /// }
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum Search {
     /// A search with operators, &, |, or ^
-    Ops(Ops, Box<Search>, Box<Search>),
+    Ops(Ops, Box<Self>, Box<Self>),
     /// !A (not)
-    Not(Box<Search>),
+    Not(Box<Self>),
     /// A (single search term)
     Single(Term),
     /// Known value
@@ -147,7 +147,7 @@ pub enum Search {
 }
 
 /// All operators that can be used in a search
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Ops {
     /// Binary and `&`
     And,

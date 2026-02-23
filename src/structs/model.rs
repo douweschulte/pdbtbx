@@ -7,7 +7,7 @@ use rayon::prelude::*;
 use std::cmp::Ordering;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 /// A Model containing multiple Chains.
 pub struct Model {
     /// The serial number of this Model
@@ -611,7 +611,7 @@ impl fmt::Display for Model {
 
 impl PartialOrd for Model {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.serial_number.cmp(&other.serial_number))
+        Some(self.cmp(other))
     }
 }
 
