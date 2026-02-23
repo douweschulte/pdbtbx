@@ -9,3 +9,5 @@ __pycache__
 Cargo.lock
 clippy.toml
 deny.toml
+UP000000625_83333_ECOLI_v6/
+flamegraph.svg
