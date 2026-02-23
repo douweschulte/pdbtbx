@@ -2,6 +2,7 @@
 
 use pdbtbx::*;
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn test_parsing_level_all() {
     let (structure, _errors) = ReadOptions::default()
@@ -13,6 +14,7 @@ fn test_parsing_level_all() {
     assert!(structure.atom_count() > 0);
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn test_parsing_level_none() {
     let result = ReadOptions::default()
@@ -26,6 +28,7 @@ fn test_parsing_level_none() {
     );
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn test_parsing_level_atom_only_no_hetatm() {
     let mut parsing_level = ParsingLevel::none();
@@ -51,6 +54,7 @@ fn test_parsing_level_atom_only_no_hetatm() {
     }
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn test_parsing_level_hetatm_only_no_atom() {
     let mut parsing_level = ParsingLevel::none();
@@ -71,6 +75,7 @@ fn test_parsing_level_hetatm_only_no_atom() {
     }
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn test_parsing_level_no_hetatm() {
     let mut parsing_level = ParsingLevel::all();
@@ -106,6 +111,7 @@ fn test_parsing_level_no_hetatm() {
     );
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn test_parsing_level_no_atom() {
     let mut parsing_level = ParsingLevel::all();
@@ -141,6 +147,7 @@ fn test_parsing_level_no_atom() {
     );
 }
 
+#[cfg_attr(miri, ignore)]
 #[test]
 fn test_parsing_level_atom_and_hetatm() {
     let mut parsing_level = ParsingLevel::none();
